@@ -1,0 +1,132 @@
+{
+  "app": {
+    "title": "LOKO",
+    "subtitle": "Bot Service Client"
+  },
+  "nav": {
+    "bots": "Mes bots",
+    "settings": "Paramètres"
+  },
+  "bot": {
+    "create": "Nouveau bot",
+    "noBot": "Aucun bot configuré",
+    "noBotDesc": "Créez votre premier bot pour commencer.",
+    "delete": "Supprimer",
+    "deleteConfirm": "Supprimer ce bot ?",
+    "status": {
+      "draft": "Brouillon",
+      "published": "Publié"
+    },
+    "wizard": {
+      "step1": "Projet",
+      "step2": "Intentions",
+      "step3": "Connaissances",
+      "step4": "Parcours",
+      "step5": "Messages",
+      "step6": "Publication",
+      "next": "Suivant",
+      "prev": "Précédent",
+      "save": "Enregistrer"
+    },
+    "project": {
+      "title": "Configuration du projet",
+      "name": "Nom du bot",
+      "namePlaceholder": "Ex: Assistant Nordique",
+      "channel": "Canal",
+      "channelWidget": "Widget web",
+      "channelApi": "API uniquement",
+      "channelBoth": "Les deux",
+      "language": "Langue",
+      "tone": "Profil de ton",
+      "toneFormel": "Formel",
+      "toneChaleureux": "Chaleureux",
+      "toneNeutre": "Neutre"
+    },
+    "intents": {
+      "title": "Intentions",
+      "add": "Ajouter une intention",
+      "label": "Libellé",
+      "definition": "Définition",
+      "examples": "Exemples d'entraînement",
+      "examplesCount": "{{count}} exemple(s)",
+      "minExamples": "Minimum 8 exemples requis",
+      "addExample": "Ajouter un exemple",
+      "subMotifs": "Sous-motifs",
+      "addSubMotif": "Ajouter un sous-motif",
+      "train": "Entraîner le classifieur",
+      "training": "Entraînement en cours…",
+      "trained": "Entraîné",
+      "evaluation": "Évaluation",
+      "accuracy": "Précision",
+      "confusion": "Matrice de confusion"
+    },
+    "knowledge": {
+      "title": "Base de connaissances",
+      "collection": "Collection de documents",
+      "collectionPlaceholder": "Nom de la collection",
+      "confidentiality": "Filtre de confidentialité",
+      "tagging": "Taggage des documents par intention"
+    },
+    "journey": {
+      "title": "Paramètres du parcours",
+      "seuilHaut": "Seuil haut (confiance élevée)",
+      "seuilBas": "Seuil bas (hors périmètre)",
+      "seuilSousMotif": "Seuil sous-motif",
+      "maxClarifications": "Clarifications max par demande",
+      "maxDemandes": "Demandes max par session",
+      "timeoutInactivite": "Timeout d'inactivité (sec)",
+      "retrievalMinScore": "Score minimum retrieval",
+      "retrievalMinChunks": "Chunks minimum retrieval"
+    },
+    "messages": {
+      "title": "Messages et templates",
+      "preview": "Aperçu",
+      "resetDefault": "Réinitialiser au défaut",
+      "variables": "Variables disponibles"
+    },
+    "publish": {
+      "title": "Publication",
+      "checks": "Vérifications",
+      "checkIntents": "Intentions configurées",
+      "checkExamples": "Exemples suffisants",
+      "checkTrained": "Classifieur entraîné",
+      "publishBtn": "Publier le bot",
+      "publishSuccess": "Bot publié avec succès",
+      "apiKey": "Clé API",
+      "generateKey": "Générer une clé",
+      "widgetSnippet": "Snippet d'intégration",
+      "copySnippet": "Copier"
+    },
+    "playground": {
+      "title": "Playground",
+      "trace": "Trace de diagnostic",
+      "noTrace": "Envoyez un message pour voir la trace."
+    },
+    "dashboard": {
+      "title": "Dashboard",
+      "sessions": "Sessions",
+      "selfcareRate": "Taux selfcare",
+      "escalations": "Escalades",
+      "latency": "Latence P50",
+      "feedback": "Feedback",
+      "feedbackPositive": "positif",
+      "selfcareByIntent": "Selfcare par intention",
+      "suggestions": "Suggestions d'amélioration",
+      "misclassified": "Retours négatifs",
+      "recentSessions": "Sessions récentes",
+      "addToTraining": "Ajouter",
+      "retrain": "Ré-entraîner",
+      "classified": "Classifié"
+    }
+  },
+  "common": {
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "loading": "Chargement…",
+    "error": "Erreur",
+    "success": "Succès",
+    "copy": "Copier",
+    "copied": "Copié !"
+  }
+}

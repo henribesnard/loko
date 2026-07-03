@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "loko"
+version = "0.1.0"
+description = "LOKO — deterministic chatbot platform for customer service"
+requires-python = ">=3.10"
+license = {text = "Proprietary"}
+
+dependencies = [
+    "pydantic>=2.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-asyncio>=0.21",
+    "ruff>=0.1",
+]
+ml = [
+    "setfit>=1.0",
+    "sentence-transformers>=2.2",
+]
+server = [
+    "fastapi>=0.100",
+    "uvicorn>=0.20",
+    "slowapi>=0.1",
+    "python-dotenv>=1.0",
+]
+crawler = [
+    "playwright>=1.40",
+    "beautifulsoup4>=4.12",
+    "lxml>=5.0",
+]
+
+[tool.setuptools.packages.find]
+include = ["loko*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100

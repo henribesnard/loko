@@ -1,0 +1,132 @@
+{
+  "app": {
+    "title": "LOKO",
+    "subtitle": "Bot Service Client"
+  },
+  "nav": {
+    "bots": "My bots",
+    "settings": "Settings"
+  },
+  "bot": {
+    "create": "New bot",
+    "noBot": "No bots configured",
+    "noBotDesc": "Create your first bot to get started.",
+    "delete": "Delete",
+    "deleteConfirm": "Delete this bot?",
+    "status": {
+      "draft": "Draft",
+      "published": "Published"
+    },
+    "wizard": {
+      "step1": "Project",
+      "step2": "Intents",
+      "step3": "Knowledge",
+      "step4": "Journey",
+      "step5": "Messages",
+      "step6": "Publish",
+      "next": "Next",
+      "prev": "Previous",
+      "save": "Save"
+    },
+    "project": {
+      "title": "Project configuration",
+      "name": "Bot name",
+      "namePlaceholder": "E.g. Nordic Assistant",
+      "channel": "Channel",
+      "channelWidget": "Web widget",
+      "channelApi": "API only",
+      "channelBoth": "Both",
+      "language": "Language",
+      "tone": "Tone profile",
+      "toneFormel": "Formal",
+      "toneChaleureux": "Warm",
+      "toneNeutre": "Neutral"
+    },
+    "intents": {
+      "title": "Intents",
+      "add": "Add intent",
+      "label": "Label",
+      "definition": "Definition",
+      "examples": "Training examples",
+      "examplesCount": "{{count}} example(s)",
+      "minExamples": "At least 8 examples required",
+      "addExample": "Add example",
+      "subMotifs": "Sub-motifs",
+      "addSubMotif": "Add sub-motif",
+      "train": "Train classifier",
+      "training": "Training in progress…",
+      "trained": "Trained",
+      "evaluation": "Evaluation",
+      "accuracy": "Accuracy",
+      "confusion": "Confusion matrix"
+    },
+    "knowledge": {
+      "title": "Knowledge base",
+      "collection": "Document collection",
+      "collectionPlaceholder": "Collection name",
+      "confidentiality": "Confidentiality filter",
+      "tagging": "Tag documents by intent"
+    },
+    "journey": {
+      "title": "Journey parameters",
+      "seuilHaut": "High threshold (high confidence)",
+      "seuilBas": "Low threshold (out of scope)",
+      "seuilSousMotif": "Sub-motif threshold",
+      "maxClarifications": "Max clarifications per request",
+      "maxDemandes": "Max requests per session",
+      "timeoutInactivite": "Inactivity timeout (sec)",
+      "retrievalMinScore": "Min retrieval score",
+      "retrievalMinChunks": "Min retrieval chunks"
+    },
+    "messages": {
+      "title": "Messages and templates",
+      "preview": "Preview",
+      "resetDefault": "Reset to default",
+      "variables": "Available variables"
+    },
+    "publish": {
+      "title": "Publish",
+      "checks": "Checks",
+      "checkIntents": "Intents configured",
+      "checkExamples": "Sufficient examples",
+      "checkTrained": "Classifier trained",
+      "publishBtn": "Publish bot",
+      "publishSuccess": "Bot published successfully",
+      "apiKey": "API key",
+      "generateKey": "Generate key",
+      "widgetSnippet": "Integration snippet",
+      "copySnippet": "Copy"
+    },
+    "playground": {
+      "title": "Playground",
+      "trace": "Diagnostic trace",
+      "noTrace": "Send a message to see the trace."
+    },
+    "dashboard": {
+      "title": "Dashboard",
+      "sessions": "Sessions",
+      "selfcareRate": "Selfcare rate",
+      "escalations": "Escalations",
+      "latency": "Latency P50",
+      "feedback": "Feedback",
+      "feedbackPositive": "positive",
+      "selfcareByIntent": "Selfcare by intent",
+      "suggestions": "Improvement suggestions",
+      "misclassified": "Negative feedback",
+      "recentSessions": "Recent sessions",
+      "addToTraining": "Add",
+      "retrain": "Retrain",
+      "classified": "Classified"
+    }
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "loading": "Loading…",
+    "error": "Error",
+    "success": "Success",
+    "copy": "Copy",
+    "copied": "Copied!"
+  }
+}
