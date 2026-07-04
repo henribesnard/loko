@@ -239,9 +239,20 @@ class BotGenerator:
 # ---------------------------------------------------------------------------
 
 class MockLLMProvider:
-    """Mock LLM provider that returns a fixed response token by token."""
+    """Mock LLM provider that returns a fixed response token by token.
+
+    Guard (R2-a): raises RuntimeError outside RAGKIT_ENV=test to prevent
+    silent mock usage in production.
+    """
 
     def __init__(self, response: str = ""):
+        import os
+
+        if os.environ.get("RAGKIT_ENV") != "test":
+            raise RuntimeError(
+                "MockLLMProvider cannot be used outside test environment. "
+                "Set RAGKIT_ENV=test or configure a real LLM provider."
+            )
         self.response = response
         self.last_messages: list[dict[str, str]] = []
 

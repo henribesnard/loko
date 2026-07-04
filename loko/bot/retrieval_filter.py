@@ -207,9 +207,18 @@ class InMemorySearchBackend:
 
     Stores chunks and returns those matching the provided filters,
     scored by simple text overlap.
+
+    Guard (R2-a): raises RuntimeError outside RAGKIT_ENV=test.
     """
 
     def __init__(self, chunks: list[Chunk] | None = None):
+        import os
+
+        if os.environ.get("RAGKIT_ENV") != "test":
+            raise RuntimeError(
+                "InMemorySearchBackend cannot be used outside test environment. "
+                "Set RAGKIT_ENV=test or configure a persistent search backend."
+            )
         self._chunks: list[Chunk] = chunks or []
 
     def add_chunk(self, chunk: Chunk) -> None:

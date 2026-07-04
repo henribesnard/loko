@@ -20,7 +20,15 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from loko.api.api_keys import APIKeyRecord
 from loko.api.auth import require_bot_api_key, validate_bot_id
+from loko.api.rate_limit import (
+    RATE_FEEDBACK,
+    RATE_MESSAGES,
+    RATE_READ,
+    RATE_SESSIONS,
+    get_limiter,
+)
 from loko.bot.config_store import load_bot_config
+from loko.bot.timeout import check_and_apply_timeout
 from loko.bot.generation import BotGenerator, MockLLMProvider
 from loko.bot.models import BotConfig, BotState
 from loko.bot.orchestrator import BotOrchestrator, SSEEvent
@@ -30,6 +38,19 @@ from loko.bot.session_store import SessionStore, get_session_store
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1/bot", tags=["bot-runtime"])
+
+# Rate limiter (None if slowapi not installed — desktop mode)
+_limiter = get_limiter()
+
+
+def _apply_limit(rate: str):
+    """Decorator that applies slowapi rate limiting if available, no-op otherwise."""
+    if _limiter is not None:
+        return _limiter.limit(rate)
+
+    def _noop(func):
+        return func
+    return _noop
 
 
 # ---------------------------------------------------------------------------
@@ -67,6 +88,7 @@ class SessionResponse(BaseModel):
 
 _ORCHESTRATORS: dict[str, BotOrchestrator] = {}
 _SESSION_LOCKS: dict[str, asyncio.Lock] = {}
+_SESSION_LOCKS_MAX = 10_000  # R4: bounded size to prevent unbounded memory growth
 
 
 def _get_orchestrator(bot_id: str, config: BotConfig) -> BotOrchestrator:
@@ -76,6 +98,9 @@ def _get_orchestrator(bot_id: str, config: BotConfig) -> BotOrchestrator:
     - Draft bots cannot be served at runtime (409).
     - Published bots use real classifier if available, else fail explicitly.
     - Mocks are only used when RAGKIT_ENV=test.
+
+    R2-b: Uses SQLiteSearchBackend (persistent) when documents exist,
+    falls back to InMemorySearchBackend in test mode only.
     """
     import os
 
@@ -85,7 +110,10 @@ def _get_orchestrator(bot_id: str, config: BotConfig) -> BotOrchestrator:
         is_test = os.environ.get("RAGKIT_ENV") == "test"
 
         classifier = _load_classifier(bot_id, allow_mock=is_test)
-        retriever = FilteredRetriever(InMemorySearchBackend())
+
+        # R2-b: use persistent knowledge store if documents exist
+        backend = _load_search_backend(bot_id, allow_mock=is_test)
+        retriever = FilteredRetriever(backend)
 
         # LLM: use mock only in test; otherwise fail with explicit message
         if is_test:
@@ -135,6 +163,33 @@ def _load_classifier(bot_id: str, *, allow_mock: bool = False) -> Any:
     return _MockClassifier()
 
 
+def _load_search_backend(bot_id: str, *, allow_mock: bool = False) -> Any:
+    """Load the search backend for a bot (R2-b).
+
+    Uses the persistent SQLite knowledge store if documents have been
+    ingested.  Falls back to InMemorySearchBackend only in test mode.
+    """
+    try:
+        from loko.bot.knowledge_store import get_knowledge_store
+
+        store = get_knowledge_store(bot_id)
+        if store.has_documents():
+            return store
+    except Exception:
+        logger.warning("Could not load knowledge store for bot %s", bot_id)
+
+    if allow_mock:
+        return InMemorySearchBackend()
+
+    # In production without documents — use empty knowledge store
+    # (will escalate due to retrieval failure)
+    try:
+        from loko.bot.knowledge_store import get_knowledge_store
+        return get_knowledge_store(bot_id)
+    except Exception:
+        return InMemorySearchBackend()
+
+
 class _SetFitClassifierAdapter:
     """Adapts SetFitClassifier to the ClassifierProtocol."""
 
@@ -165,7 +220,19 @@ class _SetFitClassifierAdapter:
 
 
 class _MockClassifier:
-    """Fallback classifier when no model is trained."""
+    """Fallback classifier when no model is trained.
+
+    Guard (R2-a): raises RuntimeError outside RAGKIT_ENV=test.
+    """
+
+    def __init__(self) -> None:
+        import os
+
+        if os.environ.get("RAGKIT_ENV") != "test":
+            raise RuntimeError(
+                "_MockClassifier cannot be used outside test environment. "
+                "Set RAGKIT_ENV=test or train a real classifier."
+            )
 
     def classify_l1(self, text: str) -> list[tuple[str, float]]:
         return [("hors_perimetre", 0.5)]
@@ -188,6 +255,40 @@ def clear_orchestrators() -> None:
     """Clear all cached orchestrators (for testing)."""
     _ORCHESTRATORS.clear()
     _SESSION_LOCKS.clear()
+
+
+def purge_session_locks(active_session_ids: set[str] | None = None) -> int:
+    """Remove locks for sessions that no longer exist (R4).
+
+    Called by the background purge task.  Removes entries whose lock is
+    not currently held and whose session_id is not in the active set.
+    Also enforces the bounded size by evicting unlocked entries when
+    the dict exceeds _SESSION_LOCKS_MAX.
+
+    Returns the number of entries removed.
+    """
+    removed = 0
+    to_remove: list[str] = []
+
+    for sid, lock in _SESSION_LOCKS.items():
+        if lock.locked():
+            continue  # in use — keep
+        if active_session_ids is not None and sid not in active_session_ids:
+            to_remove.append(sid)
+
+    # Also enforce max size: evict oldest unlocked entries
+    if len(_SESSION_LOCKS) > _SESSION_LOCKS_MAX:
+        for sid, lock in _SESSION_LOCKS.items():
+            if not lock.locked() and sid not in to_remove:
+                to_remove.append(sid)
+            if len(_SESSION_LOCKS) - len(to_remove) <= _SESSION_LOCKS_MAX:
+                break
+
+    for sid in to_remove:
+        _SESSION_LOCKS.pop(sid, None)
+        removed += 1
+
+    return removed
 
 
 # ---------------------------------------------------------------------------
@@ -213,7 +314,9 @@ def _sse_keepalive() -> str:
 # ---------------------------------------------------------------------------
 
 @router.post("/{bot_id}/sessions", status_code=201)
+@_apply_limit(RATE_SESSIONS)
 async def create_session(
+    request: Request,
     bot_id: str = Depends(validate_bot_id),
     _key: APIKeyRecord = Depends(require_bot_api_key),
 ) -> dict[str, Any]:
@@ -245,7 +348,9 @@ async def create_session(
 
 
 @router.post("/{bot_id}/sessions/{session_id}/messages")
+@_apply_limit(RATE_MESSAGES)
 async def send_message(
+    request: Request,
     session_id: str,
     req: MessageRequest,
     bot_id: str = Depends(validate_bot_id),
@@ -260,6 +365,49 @@ async def send_message(
     session = store.get_session(session_id)
     if not session:
         raise HTTPException(404, "Not found")
+
+    # R5: check inactivity timeout before processing
+    session, timeout_actions, timed_out = check_and_apply_timeout(session, config)
+    if timed_out:
+        # Persist the timeout transition and stream it
+        store.update_session(session)
+        from loko.bot.orchestrator import SSEEvent as _SSE
+        from loko.bot.models import EmitTemplate as _ET, CloseSession as _CS
+        from loko.bot.templates import render_template, resolve_template
+
+        async def _timeout_stream() -> AsyncIterator[str]:
+            yield _sse_encode(_SSE(event="state", data={"state": session.state.value}))
+            for action in timeout_actions:
+                if isinstance(action, _ET):
+                    template = resolve_template(
+                        config.templates, action.key, config.tone_profile,
+                    )
+                    lang = config.language if config.language != "auto" else "fr"
+                    text = render_template(template, lang, action.variables)
+                    yield _sse_encode(_SSE(
+                        event="template",
+                        data={
+                            "content": text,
+                            "template_key": action.key.value,
+                            "buttons": action.buttons,
+                        },
+                    ))
+                elif isinstance(action, _CS):
+                    yield _sse_encode(_SSE(
+                        event="end_of_turn", data={"reason": action.reason},
+                    ))
+            # R4: clean up lock for timed-out session
+            _SESSION_LOCKS.pop(session_id, None)
+
+        return StreamingResponse(
+            _timeout_stream(),
+            media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+                "X-Accel-Buffering": "no",
+            },
+        )
 
     if session.state in (BotState.FIN, BotState.TIMEOUT):
         raise HTTPException(400, "Session has ended")
@@ -293,6 +441,10 @@ async def send_message(
                 for turn in current_session.transcript[len(session.transcript):]:
                     store.add_turn(current_session.session_id, turn)
 
+                # R4: release session lock when session reaches terminal state
+                if current_session.state in (BotState.FIN, BotState.TIMEOUT):
+                    _SESSION_LOCKS.pop(session_id, None)
+
     return StreamingResponse(
         event_stream(),
         media_type="text/event-stream",
@@ -305,12 +457,18 @@ async def send_message(
 
 
 @router.get("/{bot_id}/sessions/{session_id}")
+@_apply_limit(RATE_READ)
 async def get_session(
+    request: Request,
     session_id: str,
     bot_id: str = Depends(validate_bot_id),
     _key: APIKeyRecord = Depends(require_bot_api_key),
 ) -> dict[str, Any]:
     """Get current session state and transcript."""
+    config = load_bot_config(bot_id)
+    if not config:
+        raise HTTPException(404, "Not found")
+
     store = get_session_store(bot_id)
     session = store.get_session(session_id)
     if not session:
@@ -319,6 +477,12 @@ async def get_session(
     # Verify session belongs to this bot
     if session.bot_id != bot_id:
         raise HTTPException(404, "Not found")
+
+    # R5: check and apply inactivity timeout on read
+    session, timeout_actions, timed_out = check_and_apply_timeout(session, config)
+    if timed_out:
+        store.update_session(session)
+        _SESSION_LOCKS.pop(session_id, None)
 
     return {
         "session_id": session.session_id,
@@ -331,7 +495,9 @@ async def get_session(
 
 
 @router.post("/{bot_id}/sessions/{session_id}/feedback")
+@_apply_limit(RATE_FEEDBACK)
 async def add_feedback(
+    request: Request,
     session_id: str,
     req: FeedbackRequest,
     bot_id: str = Depends(validate_bot_id),

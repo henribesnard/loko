@@ -27,9 +27,18 @@ class MockEscalationProvider:
     """Mock escalation provider for V1.
 
     Returns a configurable estimated wait time and logs the payload.
+
+    Guard (R2-a): raises RuntimeError outside RAGKIT_ENV=test.
     """
 
     def __init__(self, default_wait_minutes: int = 4) -> None:
+        import os
+
+        if os.environ.get("RAGKIT_ENV") != "test":
+            raise RuntimeError(
+                "MockEscalationProvider cannot be used outside test environment. "
+                "Set RAGKIT_ENV=test or configure a real escalation provider."
+            )
         self.default_wait_minutes = default_wait_minutes
         self.last_payload: EscalationPayload | None = None
 

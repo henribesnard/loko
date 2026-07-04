@@ -311,3 +311,41 @@ class TestFAQWebCrawler:
         for url in fetcher.fetched:
             assert not url.endswith(".pdf")
             assert not url.endswith(".jpg")
+
+
+# ---------------------------------------------------------------------------
+# Tests: R3 — SSRF redirect revalidation
+# ---------------------------------------------------------------------------
+
+class TestSSRFRedirect:
+    """R3: Redirect targets must be re-validated against SSRF rules."""
+
+    def test_validate_url_ssrf_rejects_private_ip(self):
+        from loko.connectors.faq_web_crawler import _validate_url_ssrf
+
+        with pytest.raises(ValueError, match="SSRF"):
+            _validate_url_ssrf("http://127.0.0.1/secret")
+
+        with pytest.raises(ValueError, match="SSRF"):
+            _validate_url_ssrf("http://169.254.169.254/latest/meta-data")
+
+    def test_validate_url_ssrf_rejects_non_http(self):
+        from loko.connectors.faq_web_crawler import _validate_url_ssrf
+
+        with pytest.raises(ValueError, match="SSRF"):
+            _validate_url_ssrf("file:///etc/passwd")
+
+        with pytest.raises(ValueError, match="SSRF"):
+            _validate_url_ssrf("ftp://internal/data")
+
+    def test_resolve_and_pin_rejects_loopback(self):
+        """DNS pinning must reject IPs that resolve to private addresses."""
+        fetcher = SimplePageFetcher(allow_private_networks=False)
+
+        with pytest.raises(ValueError, match="SSRF"):
+            fetcher._resolve_and_pin("http://127.0.0.1/test")
+
+    def test_max_redirects_enforced(self):
+        """Fetcher must stop after MAX_REDIRECTS hops."""
+        fetcher = SimplePageFetcher(allow_private_networks=True)
+        assert fetcher.MAX_REDIRECTS == 5

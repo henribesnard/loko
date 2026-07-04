@@ -11,6 +11,13 @@ services:
       - LOKO_ADMIN_TOKEN=${LOKO_ADMIN_TOKEN:?Set LOKO_ADMIN_TOKEN in .env}
       - RAGKIT_CORS_ORIGINS=${RAGKIT_CORS_ORIGINS:-}
       - LOKO_SESSION_RETENTION_DAYS=${LOKO_SESSION_RETENTION_DAYS:-30}
+      # Rate limiting (R1) — values are slowapi rate strings
+      - LOKO_RATE_SESSIONS=${LOKO_RATE_SESSIONS:-10/minute}
+      - LOKO_RATE_MESSAGES=${LOKO_RATE_MESSAGES:-30/minute}
+      - LOKO_RATE_FEEDBACK=${LOKO_RATE_FEEDBACK:-30/minute}
+      - LOKO_RATE_READ=${LOKO_RATE_READ:-60/minute}
+      # ML features (R2-a)
+      - LOKO_ML=${LOKO_ML:-on}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]

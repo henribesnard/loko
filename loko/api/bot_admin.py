@@ -145,8 +145,32 @@ async def publish_bot(bot_id: str) -> dict[str, Any]:
     if not model_exists(bot_id, "level1"):
         errors.append("Le classifieur L1 n'est pas entraine. Lancez l'entrainement d'abord.")
 
+    # R2-c: knowledge base coverage warnings
+    warnings: list[str] = []
+    try:
+        from loko.bot.knowledge_store import get_knowledge_store
+
+        kb = get_knowledge_store(bot_id)
+        non_system = [i for i in config.intents if not i.is_system]
+        coverage = kb.get_coverage([i.id for i in non_system])
+
+        for intent in non_system:
+            if coverage.get(intent.id, 0) == 0:
+                warnings.append(
+                    f"Aucun document pour l'intention '{intent.label}'. "
+                    f"Le bot escaladera systématiquement sur ce sujet."
+                )
+
+        if not kb.has_documents():
+            warnings.append(
+                "Aucun document dans la base de connaissances. "
+                "Le bot ne pourra pas générer de réponses contextuelles."
+            )
+    except Exception:
+        warnings.append("Impossible de vérifier la base de connaissances.")
+
     if errors:
-        raise HTTPException(400, {"errors": errors})
+        raise HTTPException(400, {"errors": errors, "warnings": warnings})
 
     updated = config.model_copy(update={"status": "published"})
     save_bot_config(updated)
@@ -155,7 +179,10 @@ async def publish_bot(bot_id: str) -> dict[str, Any]:
     from loko.api.bot_public import invalidate_orchestrator
     invalidate_orchestrator(bot_id)
 
-    return {"status": "published", "bot_id": bot_id}
+    result: dict[str, Any] = {"status": "published", "bot_id": bot_id}
+    if warnings:
+        result["warnings"] = warnings
+    return result
 
 
 # ---------------------------------------------------------------------------
@@ -171,6 +198,15 @@ async def train_bot(
     config = load_bot_config(bot_id)
     if not config:
         raise HTTPException(404, f"Bot {bot_id} not found")
+
+    # R2-a: LOKO_ML guard — refuse training when ML is explicitly disabled
+    import os
+    if os.environ.get("LOKO_ML", "on").lower() == "off":
+        raise HTTPException(
+            503,
+            "ML features are disabled (LOKO_ML=off). "
+            "Set LOKO_ML=on to enable training.",
+        )
 
     if bot_id in _TRAINING_STATE and _TRAINING_STATE[bot_id].get("status") == "running":
         raise HTTPException(409, "Training already in progress")
@@ -205,6 +241,127 @@ async def get_evaluation(bot_id: str) -> dict[str, Any]:
     if not evaluation:
         raise HTTPException(404, "Evaluation was not run during training.")
     return evaluation
+
+
+# ---------------------------------------------------------------------------
+# R2-b: Knowledge base / document management endpoints
+# ---------------------------------------------------------------------------
+
+
+class IngestDocumentRequest(BaseModel):
+    """Request body for document ingestion."""
+    content: str = Field(..., min_length=1, max_length=500_000)
+    source_url: str = ""
+    source_title: str = ""
+    bot_intents: list[str] = Field(default_factory=list)
+    bot_sub_motifs: list[str] = Field(default_factory=list)
+    confidentiality: str = "public"
+
+
+class UpdateTagsRequest(BaseModel):
+    """Request body for bulk tag updates."""
+    doc_ids: list[str] = Field(..., min_length=1)
+    bot_intents: list[str] | None = None
+    bot_sub_motifs: list[str] | None = None
+
+
+@router.post("/{bot_id}/documents", status_code=201)
+async def ingest_document(
+    bot_id: str,
+    req: IngestDocumentRequest,
+) -> dict[str, Any]:
+    """Ingest a document into the knowledge base."""
+    config = load_bot_config(bot_id)
+    if not config:
+        raise HTTPException(404, f"Bot {bot_id} not found")
+
+    from loko.bot.knowledge_store import get_knowledge_store
+
+    store = get_knowledge_store(bot_id)
+    doc_id = store.ingest_document(
+        req.content,
+        source_url=req.source_url,
+        source_title=req.source_title,
+        bot_intents=req.bot_intents,
+        bot_sub_motifs=req.bot_sub_motifs,
+        confidentiality=req.confidentiality,
+    )
+
+    return {"doc_id": doc_id, "bot_id": bot_id}
+
+
+@router.get("/{bot_id}/documents")
+async def list_documents(
+    bot_id: str,
+    intent: str | None = None,
+) -> list[dict[str, Any]]:
+    """List documents in the knowledge base, optionally filtered by intent."""
+    config = load_bot_config(bot_id)
+    if not config:
+        raise HTTPException(404, f"Bot {bot_id} not found")
+
+    from loko.bot.knowledge_store import get_knowledge_store
+
+    store = get_knowledge_store(bot_id)
+    return store.list_documents(intent=intent)
+
+
+@router.delete("/{bot_id}/documents/{doc_id}")
+async def delete_document(bot_id: str, doc_id: str) -> dict[str, str]:
+    """Delete a document from the knowledge base."""
+    config = load_bot_config(bot_id)
+    if not config:
+        raise HTTPException(404, f"Bot {bot_id} not found")
+
+    from loko.bot.knowledge_store import get_knowledge_store
+
+    store = get_knowledge_store(bot_id)
+    if not store.delete_document(doc_id):
+        raise HTTPException(404, "Document not found")
+
+    return {"status": "deleted", "doc_id": doc_id}
+
+
+@router.patch("/{bot_id}/documents/tags")
+async def update_document_tags(
+    bot_id: str,
+    req: UpdateTagsRequest,
+) -> dict[str, Any]:
+    """Bulk-update intent/sub-motif tags on documents."""
+    config = load_bot_config(bot_id)
+    if not config:
+        raise HTTPException(404, f"Bot {bot_id} not found")
+
+    from loko.bot.knowledge_store import get_knowledge_store
+
+    store = get_knowledge_store(bot_id)
+    updated = store.update_tags(
+        req.doc_ids,
+        bot_intents=req.bot_intents,
+        bot_sub_motifs=req.bot_sub_motifs,
+    )
+
+    return {"updated": updated}
+
+
+@router.get("/{bot_id}/knowledge/coverage")
+async def get_knowledge_coverage(bot_id: str) -> dict[str, Any]:
+    """Return document count per intent (for publication readiness checks)."""
+    config = load_bot_config(bot_id)
+    if not config:
+        raise HTTPException(404, f"Bot {bot_id} not found")
+
+    from loko.bot.knowledge_store import get_knowledge_store
+
+    store = get_knowledge_store(bot_id)
+    intent_ids = [i.id for i in config.intents if not i.is_system]
+    coverage = store.get_coverage(intent_ids)
+
+    return {
+        "bot_id": bot_id,
+        "coverage": coverage,
+        "total_documents": sum(coverage.values()),
+    }
 
 
 def _run_training_background(

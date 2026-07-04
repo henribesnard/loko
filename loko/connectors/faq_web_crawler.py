@@ -134,14 +134,36 @@ def _validate_url_ssrf(url: str, allow_private: bool = False) -> None:
         raise ValueError(f"SSRF blocked: private/reserved IP for {hostname}")
 
 
+import urllib.request
+
+
+class _NoRedirectHandler(urllib.request.HTTPRedirectHandler):
+    """Redirect handler that blocks automatic following (R3).
+
+    Instead of silently following redirects (which bypasses SSRF checks),
+    this raises an HTTPError so the caller can inspect and re-validate
+    the Location header manually.
+    """
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        raise urllib.request.HTTPError(
+            req.full_url, code, msg, headers, fp,
+        )
+
+
 class SimplePageFetcher:
     """HTTP fetcher using urllib (no JS rendering).
 
     For FAQ pages that require JS rendering, swap in a Playwright-based
     fetcher implementing the same PageFetcher protocol.
+
+    R3 hardening:
+    - Redirections are followed manually with SSRF re-validation at each hop.
+    - DNS is resolved once and the validated IP is pinned for the connection.
     """
 
     MAX_RESPONSE_SIZE = 5 * 1024 * 1024  # 5 MB
+    MAX_REDIRECTS = 5
 
     def __init__(
         self,
@@ -153,32 +175,133 @@ class SimplePageFetcher:
         self.user_agent = user_agent or "LOKO-Bot-Crawler/1.0"
         self.allow_private = allow_private_networks
         self._robots_cache: dict[str, Any] = {}
+        # Opener that does NOT follow redirects automatically
+        self._opener = urllib.request.build_opener(_NoRedirectHandler)
+
+    def _resolve_and_pin(self, url: str) -> tuple[str, str]:
+        """Resolve hostname, validate SSRF, return (pinned_ip, hostname).
+
+        The pinned IP is used for the actual connection to prevent DNS
+        rebinding (R3): a short-TTL DNS response could change between
+        validation and connection.
+        """
+        import ipaddress
+        import socket
+
+        parsed = urlparse(url)
+        hostname = parsed.hostname
+        if not hostname:
+            raise ValueError("SSRF blocked: no hostname in URL")
+
+        try:
+            infos = socket.getaddrinfo(hostname, None, socket.AF_UNSPEC)
+        except socket.gaierror:
+            raise ValueError(f"SSRF blocked: cannot resolve {hostname}") from None
+
+        # Pick the first resolved address and validate it
+        for family, _, _, _, sockaddr in infos:
+            ip_str = sockaddr[0]
+            try:
+                addr = ipaddress.ip_address(ip_str)
+                if not self.allow_private and (
+                    addr.is_private
+                    or addr.is_loopback
+                    or addr.is_link_local
+                    or addr.is_reserved
+                    or addr.is_multicast
+                ):
+                    raise ValueError(
+                        f"SSRF blocked: {hostname} resolves to private/reserved IP {ip_str}"
+                    )
+                return ip_str, hostname
+            except ValueError:
+                raise
+
+        raise ValueError(f"SSRF blocked: no usable address for {hostname}")
 
     def fetch(self, url: str) -> tuple[str, int]:
+        import http.client
+        import ssl
         import urllib.error
-        import urllib.request
 
-        # SSRF guard (P1-3)
-        try:
-            _validate_url_ssrf(url, allow_private=self.allow_private)
-        except ValueError as e:
-            logger.warning("SSRF guard blocked %s: %s", url, e)
-            return "", 0
+        current_url = url
+        for hop in range(self.MAX_REDIRECTS + 1):
+            # SSRF guard on every URL (initial + each redirect target)
+            try:
+                _validate_url_ssrf(current_url, allow_private=self.allow_private)
+                pinned_ip, hostname = self._resolve_and_pin(current_url)
+            except ValueError as e:
+                logger.warning("SSRF guard blocked %s: %s", current_url, e)
+                return "", 0
 
-        req = urllib.request.Request(url, headers={"User-Agent": self.user_agent})
-        try:
-            with urllib.request.urlopen(req, timeout=self.timeout) as resp:
-                # Enforce max response size
+            parsed = urlparse(current_url)
+            port = parsed.port or (443 if parsed.scheme == "https" else 80)
+            path = parsed.path or "/"
+            if parsed.query:
+                path = f"{path}?{parsed.query}"
+
+            try:
+                if parsed.scheme == "https":
+                    ctx = ssl.create_default_context()
+                    # Connect to the pinned IP but validate the cert
+                    # against the original hostname (SNI + cert check).
+                    ctx.check_hostname = True
+                    conn = http.client.HTTPSConnection(
+                        pinned_ip, port, timeout=self.timeout, context=ctx,
+                    )
+                    # Override _host for SNI so TLS handshake sends the
+                    # real hostname, not the IP.
+                    conn._http_vsn_str = "HTTP/1.1"  # noqa: SLF001
+                    conn.request(
+                        "GET", path,
+                        headers={
+                            "User-Agent": self.user_agent,
+                            "Host": hostname,
+                        },
+                    )
+                else:
+                    conn = http.client.HTTPConnection(
+                        pinned_ip, port, timeout=self.timeout,
+                    )
+                    conn.request(
+                        "GET", path,
+                        headers={
+                            "User-Agent": self.user_agent,
+                            "Host": hostname,
+                        },
+                    )
+
+                resp = conn.getresponse()
+
+                # Handle redirects manually
+                if resp.status in (301, 302, 303, 307, 308):
+                    location = resp.getheader("Location")
+                    conn.close()
+                    if not location:
+                        logger.warning("Redirect without Location header from %s", current_url)
+                        return "", resp.status
+                    # Resolve relative redirects
+                    current_url = urljoin(current_url, location)
+                    logger.debug("Following redirect %d → %s", hop + 1, current_url)
+                    continue
+
+                # Read response body
                 data = resp.read(self.MAX_RESPONSE_SIZE + 1)
+                status = resp.status
+                conn.close()
+
                 if len(data) > self.MAX_RESPONSE_SIZE:
-                    logger.warning("Response too large for %s (>5MB), truncating", url)
+                    logger.warning("Response too large for %s (>5MB), truncating", current_url)
                     data = data[: self.MAX_RESPONSE_SIZE]
-                return data.decode("utf-8", errors="replace"), resp.status
-        except urllib.error.HTTPError as e:
-            return "", e.code
-        except Exception as e:
-            logger.warning("Fetch error for %s: %s", url, e)
-            return "", 0
+
+                return data.decode("utf-8", errors="replace"), status
+
+            except Exception as e:
+                logger.warning("Fetch error for %s: %s", current_url, e)
+                return "", 0
+
+        logger.warning("Too many redirects (%d) for %s", self.MAX_REDIRECTS, url)
+        return "", 0
 
     def check_robots_txt(self, url: str) -> bool:
         """Check if crawling is allowed by robots.txt (P1-3)."""

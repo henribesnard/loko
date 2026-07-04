@@ -72,21 +72,31 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 # ---------------------------------------------------------------------------
 
 def _setup_rate_limiting(app: FastAPI) -> None:
-    """Configure slowapi rate limiting."""
-    try:
-        from slowapi import Limiter, _rate_limit_exceeded_handler
-        from slowapi.errors import RateLimitExceeded
-        from slowapi.util import get_remote_address
+    """Configure slowapi rate limiting.
 
-        limiter = Limiter(key_func=get_remote_address)
-        app.state.limiter = limiter
-        app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+    The Limiter instance is created in loko.api.rate_limit (shared module)
+    to avoid circular imports.  Per-route limits are applied via @_apply_limit
+    decorators directly on the endpoints in bot_public.py.
+    """
+    from loko.api.rate_limit import get_limiter, require_limiter_in_server_mode
 
-        # Apply route-specific limits via decorators at import time is complex,
-        # so we use a global default + per-route limits via the limiter object.
-        # The actual per-route limits are set on the router endpoints.
-    except ImportError:
+    # Fail-closed: in server mode, refuse to start without slowapi
+    require_limiter_in_server_mode()
+
+    limiter = get_limiter()
+    if limiter is None:
         logger.warning("slowapi not installed — rate limiting disabled")
+        return
+
+    app.state.limiter = limiter
+
+    try:
+        from slowapi import _rate_limit_exceeded_handler
+        from slowapi.errors import RateLimitExceeded
+
+        app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+    except ImportError:
+        pass
 
 
 # ---------------------------------------------------------------------------
@@ -94,7 +104,7 @@ def _setup_rate_limiting(app: FastAPI) -> None:
 # ---------------------------------------------------------------------------
 
 async def _session_purge_task() -> None:
-    """Periodically purge expired sessions (RGPD compliance)."""
+    """Periodically purge expired sessions (RGPD compliance) and orphan locks (R4)."""
     retention_days = int(os.environ.get("LOKO_SESSION_RETENTION_DAYS", "30"))
     interval_minutes = 60  # Check every hour
 
@@ -109,6 +119,9 @@ async def _session_purge_task() -> None:
                 datetime.now(timezone.utc) - timedelta(days=retention_days)
             ).isoformat()
 
+            # Collect active session IDs across all bots (R4)
+            active_session_ids: set[str] = set()
+
             bots = list_bots()
             for bot_info in bots:
                 try:
@@ -120,10 +133,20 @@ async def _session_purge_task() -> None:
                             purged,
                             bot_info["bot_id"],
                         )
+                    # Gather surviving session IDs for lock cleanup
+                    for s in store.list_sessions(bot_info["bot_id"], limit=100_000):
+                        active_session_ids.add(s["session_id"])
                 except Exception:
                     logger.exception(
                         "Error purging sessions for bot %s", bot_info["bot_id"]
                     )
+
+            # R4: purge orphan locks
+            from loko.api.bot_public import purge_session_locks
+
+            locks_removed = purge_session_locks(active_session_ids)
+            if locks_removed:
+                logger.info("Purged %d orphan session locks", locks_removed)
 
         except asyncio.CancelledError:
             break
