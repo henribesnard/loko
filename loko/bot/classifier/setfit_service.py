@@ -12,7 +12,9 @@ The service is designed to:
 from __future__ import annotations
 
 import logging
+import os
 import time
+from pathlib import Path
 from typing import Any
 
 from loko.bot.classifier.builtin_examples import DEMANDE_CONSEILLER_EXAMPLES
@@ -22,6 +24,32 @@ from loko.bot.models import BotConfig, Intent
 logger = logging.getLogger(__name__)
 
 DEFAULT_BASE_MODEL = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+
+# A2: local path for the base model (set by Dockerfile or env)
+_BASE_MODEL_PATH_ENV = "LOKO_BASE_MODEL_PATH"
+_DEFAULT_BASE_MODEL_PATH = "/app/models/base/minilm"
+
+
+def resolve_base_model(base_model: str = DEFAULT_BASE_MODEL) -> str:
+    """Return a local path if the base model is cached on disk, else the hub ID.
+
+    Checks LOKO_BASE_MODEL_PATH env var first, then the default
+    container path.  If neither exists, returns the hub identifier
+    (network access required).
+    """
+    env_path = os.environ.get(_BASE_MODEL_PATH_ENV, "")
+    if env_path and Path(env_path).is_dir():
+        logger.debug("Using local base model at %s", env_path)
+        return env_path
+
+    default = Path(_DEFAULT_BASE_MODEL_PATH)
+    if default.is_dir():
+        logger.debug("Using default local base model at %s", default)
+        return str(default)
+
+    # Fallback to hub ID — will need network access
+    logger.debug("No local base model found, using hub ID: %s", base_model)
+    return base_model
 
 
 class SetFitClassifier:
@@ -75,6 +103,9 @@ class SetFitClassifier:
 
         start = time.perf_counter()
 
+        # A2: resolve to local path if available
+        resolved_model = resolve_base_model(base_model)
+
         # Build label mapping
         unique_labels = sorted(set(labels))
         self._id_map = {label: idx for idx, label in enumerate(unique_labels)}
@@ -86,7 +117,7 @@ class SetFitClassifier:
 
         # Create model
         model = SetFitModel.from_pretrained(
-            base_model,
+            resolved_model,
             labels=unique_labels,
         )
 

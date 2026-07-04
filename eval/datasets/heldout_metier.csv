@@ -1,0 +1,101 @@
+text,intent
+arrêt de travail,arret_travail
+arrêter mon congé parental,arret_travail
+attestation de paiement,arret_travail
+complément invalidité,arret_travail
+concerne un at,arret_travail
+congé maternité,arret_travail
+connaître les conditions de complément de salaire en cas de temps partiel thérapeutique,arret_travail
+demande allocation invalidité,arret_travail
+explication sur arrêt de travail,arret_travail
+fin d'indemnisation congé maladie,arret_travail
+formulaire trente-trois seize,arret_travail
+indemnisation congé maternité,arret_travail
+information concernant la prestation allocation journalière,arret_travail
+prestations journalières,arret_travail
+remboursement d'allocation journalière,arret_travail
+renseignement suivi de dossier arrêt longue maladie,arret_travail
+renseignements concernant mon arrêt maladie,arret_travail
+retard sur le versement de mon congé maternité,arret_travail
+souci avec mes indemnité journalière pour mon congé maternité,arret_travail
+adresse sur mon contrat,changement_coordonnees
+changement de mon adresse postale,changement_coordonnees
+changement de relevé d'identité bancaire,changement_coordonnees
+erreur de RIB bancaire,changement_coordonnees
+faire un changement d'adresse électronique,changement_coordonnees
+mettre à jour mon adresse postale,changement_coordonnees
+mise à jour des informations personnelles adresse email téléphone,changement_coordonnees
+modification de mon adresse personnelle,changement_coordonnees
+modifier mes coordonnées d'adresse postale,changement_coordonnees
+nouvelle adresse postale,changement_coordonnees
+problème informations de coordonnées personnelles,changement_coordonnees
+précision sur une adresse postale,changement_coordonnees
+annulation de cotisation,cotisations
+cotisation annuelle augmenté,cotisations
+cotisation assurance,cotisations
+cotisation de ma fille MGEN,cotisations
+demander des explications par rapport à un prélèvement,cotisations
+difficulté de paiement,cotisations
+information concernant la cotisation de ma mutuelle,cotisations
+mandat SEPA,cotisations
+montant cotisation mutuelle,cotisations
+parler à un conseiller cotisation mutuelle,cotisations
+part de paiement de la cotisation prévoyance,cotisations
+payer mes cotisations,cotisations
+problème de prélèvement mensuel,cotisations
+prélèvement abusive prévoyance,cotisations
+recevoir mon échéancier,cotisations
+attestation d'ouverture des droits à l'assurance maladie,justificatif_droits
+attestation d'un ayant droit,justificatif_droits
+attestation de droits d'une de nos résidentes,justificatif_droits
+attestation de droits de sécurité sociale,justificatif_droits
+attestation de sécurité sociale de droits,justificatif_droits
+carte de la mutuelle MGEN pas reçu,justificatif_droits
+carte mutuelle MGEN,justificatif_droits
+carte mutuelle de maladie,justificatif_droits
+copie d'attestation d'ouverture des droits,justificatif_droits
+copie de l'attestation de sécurité sociale,justificatif_droits
+envoi de carte adhérent,justificatif_droits
+feuille attestation vitale,justificatif_droits
+obtenir la carte mutuelle,justificatif_droits
+recevoir ma carte d'adhésion,justificatif_droits
+recevoir par mail une attestation de sécurité sociale,justificatif_droits
+renouveler ma nouvelle carte MGEN mutuelle,justificatif_droits
+renseignement sur mes attestations,justificatif_droits
+renseignements sur mes attestations de droits,justificatif_droits
+explication courrier de résiliation,resiliation
+problème de résiliation de contrat,resiliation
+résiliation d'un enfant,resiliation
+résiliation mutuelle enfant,resiliation
+résiliation mutuelle santé,resiliation
+résilier la complémentaire santé de ma fille,resiliation
+résilier mon ancienne assurance santé,resiliation
+activer mon compte Ameli,services_en_ligne
+conflit compte Ameli,services_en_ligne
+connexion application MGEN,services_en_ligne
+création de compte internet,services_en_ligne
+créer un compte mutuelle,services_en_ligne
+difficulté d'accès au site internet,services_en_ligne
+difficulté de connexion sur le site,services_en_ligne
+impossibilité de me connecter à mon espace personnel,services_en_ligne
+information concernant ma connexion compte Ameli,services_en_ligne
+je voudrais avoir des précisions sur le compte Ameli,services_en_ligne
+pas d'accès à mon espace personnel,services_en_ligne
+problème de connexion sur le site,services_en_ligne
+problème technique avec mon espace,services_en_ligne
+problème technique site,services_en_ligne
+question création de compte MGEN,services_en_ligne
+renseignement relevés en ligne,services_en_ligne
+réinitialiser mon espace personnel,services_en_ligne
+signaler un problème de connexion sur mon compte,services_en_ligne
+téléchargement impossible,services_en_ligne
+au sujet des télétransmissions,teletransmission_noemie
+avoir la transmission Noemie,teletransmission_noemie
+informations par rapport aux transmissions à ma mutuelle,teletransmission_noemie
+informations sur la télétransmission à la mutuelle,teletransmission_noemie
+lien mutuelle,teletransmission_noemie
+mise en place du lien Noemie,teletransmission_noemie
+numéro de télétransmission de la MGEN,teletransmission_noemie
+problème de transmission de relevé à ma complémentaire,teletransmission_noemie
+savoir où en est le lien Noemie,teletransmission_noemie
+vérifier que la télétransmission entre ma mutuelle et ma sécurité sociale est en place,teletransmission_noemie

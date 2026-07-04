@@ -11,11 +11,20 @@ import time
 from collections import defaultdict
 from typing import Any
 
+from loko.bot.classifier.manifest import (
+    LevelInfo,
+    compute_dataset_hash,
+    compute_file_hashes,
+    measure_inference_latency,
+    write_manifest,
+)
+from loko.bot.classifier.model_store import get_model_dir
 from loko.bot.classifier.setfit_service import (
     DEFAULT_BASE_MODEL,
     SetFitClassifier,
     prepare_l1_training_data,
     prepare_l2_training_data,
+    resolve_base_model,
 )
 from loko.bot.models import BotConfig, Intent
 
@@ -123,7 +132,9 @@ def cross_validate(
 
         ds = Dataset.from_dict({"text": list(train_texts), "label": numeric_train})
 
-        model = SetFitModel.from_pretrained(base_model, labels=unique_labels)
+        # A2: resolve to local path if available
+        resolved = resolve_base_model(base_model)
+        model = SetFitModel.from_pretrained(resolved, labels=unique_labels)
         args = TrainingArguments(
             num_iterations=10,  # faster for CV
             num_epochs=1,
@@ -289,6 +300,59 @@ def train_bot_classifiers(
         l2_classifier = SetFitClassifier(config.bot_id, "level2", intent.id)
         l2_result = l2_classifier.train(l2_texts, l2_labels, base_model=base_model)
         results["level2"][intent.id] = l2_result
+
+    # --- A4: Write manifest (atomic commit marker) ---
+    _progress("writing_manifest")
+    try:
+        # Compute dataset hash
+        dataset_hash = compute_dataset_hash(texts, labels)
+
+        # Collect level info
+        levels: dict[str, LevelInfo] = {}
+
+        # L1
+        l1_dir = get_model_dir(config.bot_id, "level1")
+        levels["level1"] = LevelInfo(
+            files=compute_file_hashes(l1_dir),
+            labels=sorted(set(labels)),
+            n_train_examples=len(texts),
+        )
+
+        # L2s
+        for intent in config.intents:
+            if intent.id in results.get("level2", {}) and "error" not in results["level2"].get(intent.id, {}):
+                l2_dir = get_model_dir(config.bot_id, "level2", intent.id)
+                l2_texts_i, l2_labels_i = prepare_l2_training_data(intent)
+                levels[f"level2_{intent.id}"] = LevelInfo(
+                    files=compute_file_hashes(l2_dir),
+                    labels=sorted(set(l2_labels_i)),
+                    n_train_examples=len(l2_texts_i),
+                )
+
+        # B3: Measure inference latency
+        latency: dict[str, float] = {}
+        try:
+            latency = measure_inference_latency(config.bot_id)
+            results["inference_latency_ms"] = latency
+            logger.info(
+                "Inference latency for bot %s: P50=%.1fms, P95=%.1fms",
+                config.bot_id, latency.get("p50", 0), latency.get("p95", 0),
+            )
+        except Exception:
+            logger.warning("Could not measure inference latency", exc_info=True)
+
+        # Write manifest — LAST step
+        write_manifest(
+            bot_id=config.bot_id,
+            levels=levels,
+            dataset_hash=dataset_hash,
+            train_metrics=results.get("evaluation"),
+            inference_latency_ms=latency,
+        )
+        results["manifest"] = "written"
+    except Exception:
+        logger.exception("Failed to write manifest for bot %s", config.bot_id)
+        results["manifest"] = "error"
 
     _progress("done", results)
     return results

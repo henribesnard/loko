@@ -1,0 +1,127 @@
+text,intent
+C’est possible d’avoir un conseiller ?,parler_conseiller
+Donnez-moi un conseiller s’il vous plaît,parler_conseiller
+Est-ce que je peux parler à quelqu’un du service client ?,parler_conseiller
+J'ai besoin d'avoir quelqu'un au télephone,parler_conseiller
+J'ai besoin d'un conseiller en ligne,parler_conseiller
+J'ai besoin d'un contact téléphonique,parler_conseiller
+J'ai besoin d'un renseignement auprès de mon conseiller,parler_conseiller
+J'ai besoin d'une conseillère d'acceuil,parler_conseiller
+J'ai besoin de parler à un être humain,parler_conseiller
+Je cherche à joindre un conseiller commercial,parler_conseiller
+Je dois parler à la personne qui a repris mon dossier MGEN,parler_conseiller
+Je ne veux pas de robot,parler_conseiller
+Je ne veux pas parler à un robot,parler_conseiller
+Je préfère parler à un humain,parler_conseiller
+Je souhaite parler à un agent,parler_conseiller
+Je souhaite échanger avec un téleconseiller,parler_conseiller
+Je veux avoir un conseiller clientèle,parler_conseiller
+Je veux avoir un entretien avec un conseiller,parler_conseiller
+Je veux avoir un interlocuteur,parler_conseiller
+Je veux avoir une conseillère,parler_conseiller
+Je veux contacter le service administratif,parler_conseiller
+Je veux contacter une personne,parler_conseiller
+Je veux etre mis en relation avec un téleconseiller,parler_conseiller
+Je veux faire un point avec un conseiller,parler_conseiller
+Je veux joindre la MGEN,parler_conseiller
+Je veux joindre le service client,parler_conseiller
+Je veux joindre ma section départementale,parler_conseiller
+Je veux joindre mon conseiller,parler_conseiller
+Je veux mes opératrices,parler_conseiller
+Je veux obtenir le service,parler_conseiller
+Je veux parler à ma conseillère,parler_conseiller
+Je veux parler à quelqu’un,parler_conseiller
+Je veux parler à un agent,parler_conseiller
+Je veux parler à un conseiller,parler_conseiller
+Je veux parler à un humain,parler_conseiller
+Je veux parler à un opérateur,parler_conseiller
+Je veux parler à une personne réelle,parler_conseiller
+Je veux qu’un agent m’aide,parler_conseiller
+Je veux un conseiller pas un robot,parler_conseiller
+Je veux un renseignement par télephone,parler_conseiller
+Je veux échanger avec un conseiller MGEN,parler_conseiller
+Je veux être mis en contact avec le service support,parler_conseiller
+Je veux être mis en contact avec un conseiller,parler_conseiller
+Je veux être mis en relation avec un agent,parler_conseiller
+Je voudrais parler à un conseiller,parler_conseiller
+J’ai besoin de parler à un agent,parler_conseiller
+J’ai besoin d’un conseiller maintenant,parler_conseiller
+J’aimerais expliquer mon problème à quelqu’un,parler_conseiller
+J’aimerais parler à une vraie personne,parler_conseiller
+Parler à un humain,parler_conseiller
+Passez moi le standard,parler_conseiller
+Passez-moi un conseiller s’il vous plaît,parler_conseiller
+Pouvez-vous me transférer à un conseiller ?,parler_conseiller
+Urgent puis-je avoir quelqu'un de l'accueil,parler_conseiller
+besoin de parler à un correspondant MGEN,parler_conseiller
+c'est au sujet de la mgen et la mutuelle,parler_conseiller
+c'est au sujet de la mutuelle mgen,parler_conseiller
+demandes d'informations,parler_conseiller
+j'ai besoin de joindre MGEN service,parler_conseiller
+j'aimerais avoir un conseiller s'il vous plaît,parler_conseiller
+j'aimerais être mis en relation avec un conseiller,parler_conseiller
+j'aurais besoin de joindre conseiller,parler_conseiller
+je cherche à joindre une chargée de relations,parler_conseiller
+je devais rappeler,parler_conseiller
+je dois joindre un délégué départementale,parler_conseiller
+je dois parler à quelqu'un,parler_conseiller
+je dois poser une question à quelqu'un,parler_conseiller
+je dois prendre contact avec la gestion,parler_conseiller
+je désire avoir un correspondant téléphone,parler_conseiller
+je désirerais parler à quelqu'un,parler_conseiller
+je ne peux pas calculer la mutuelle je suis en demi-traitement,parler_conseiller
+je ne souhaite pas un robot,parler_conseiller
+je peux avoir un conseiller MGEN téléphone,parler_conseiller
+je souhaite avoir conseiller s'il vous plaît,parler_conseiller
+je souhaite avoir le service gestion,parler_conseiller
+je souhaite contacter quelqu'un,parler_conseiller
+je souhaite contacter un agent,parler_conseiller
+je souhaite m'entretenir avec un téléconseiller,parler_conseiller
+je souhaite parler à un conseiller d'urgence,parler_conseiller
+je souhaite parler à une personne,parler_conseiller
+je souhaite savoir comment contacter mgen,parler_conseiller
+je veux contacter ma section,parler_conseiller
+je veux joindre un correspondant,parler_conseiller
+je veux le service gestion,parler_conseiller
+je veux le service support,parler_conseiller
+je veux parler à mon correspondant,parler_conseiller
+je veux parler à quelqu'un,parler_conseiller
+je veux parler à un conseiller urgent,parler_conseiller
+je veux parler à un gestionnaire,parler_conseiller
+je veux prendre contact avec MGEN,parler_conseiller
+je veux prendre contact avec un conseiller,parler_conseiller
+je veux reprendre contact avec un délégué MGEN qui m'a téléphoné vendredi,parler_conseiller
+je voudrais avoir un conseiller pour gérer mon dossier,parler_conseiller
+je voudrais avoir un directeur,parler_conseiller
+je voudrais avoir une explication,parler_conseiller
+je voudrais contacter un agent,parler_conseiller
+je voudrais m'entretenir avec madame,parler_conseiller
+je voudrais parler à un conseiller pour euh justement le la la la nouvelle mise à jour de de toulouse pour la mgen le douze novembre,parler_conseiller
+je voudrais parler à un conseiller pour remboursement rejeté,parler_conseiller
+je voudrais pouvoir avoir quelqu'un au téléphone,parler_conseiller
+je voudrais prendre contact avec un gestionnaire de dossier,parler_conseiller
+je voudrais savoir comme je ne peux pas me connecter mais y'a mon mari,parler_conseiller
+je voudrais un conseiller s'il vous plaît,parler_conseiller
+je voudrais un contact avec madame,parler_conseiller
+je voudrais un opérateur,parler_conseiller
+je voudrais un représentant,parler_conseiller
+je voudrais un responsable,parler_conseiller
+je voudrais être mis en contact avec un avec une personne physique,parler_conseiller
+mets-moi en relation avec mon agence,parler_conseiller
+modification en mutuelle santé,parler_conseiller
+mon appel MGEN a été coupé,parler_conseiller
+mutuelle,parler_conseiller
+mutuelle obligatoire,parler_conseiller
+obtenir un conseiller au téléphone,parler_conseiller
+parler à un conseiller tout simplement,parler_conseiller
+passez-moi monsieur s'il vous plaît,parler_conseiller
+passez-moi quelqu'un s'il vous plait,parler_conseiller
+passez-moi une conseillère,parler_conseiller
+perte de carte mutuelle,parler_conseiller
+qu'est-ce que ça entraîne le fait d'avoir la mutuelle et sécu mgen,parler_conseiller
+renseignement sur la dématérialisation,parler_conseiller
+renseignement sur la prise de la mutuelle,parler_conseiller
+résiliation de mutuelle mgen,parler_conseiller
+sans mutuelle,parler_conseiller
+souscrire une mutuelle,parler_conseiller
+vous bénéficiez des services de mutuelle de la mgen,parler_conseiller

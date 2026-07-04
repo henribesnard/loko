@@ -16,8 +16,13 @@ services:
       - LOKO_RATE_MESSAGES=${LOKO_RATE_MESSAGES:-30/minute}
       - LOKO_RATE_FEEDBACK=${LOKO_RATE_FEEDBACK:-30/minute}
       - LOKO_RATE_READ=${LOKO_RATE_READ:-60/minute}
-      # ML features (R2-a)
+      # ML features (A1/A2/A6)
       - LOKO_ML=${LOKO_ML:-on}
+      - LOKO_BASE_MODEL_PATH=/app/models/base/minilm
+      - HF_HUB_OFFLINE=1
+      - TRANSFORMERS_OFFLINE=1
+      # Escalation provider (A3 — set to "mock" for dev/test)
+      - LOKO_ESCALATION_PROVIDER=${LOKO_ESCALATION_PROVIDER:-mock}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]

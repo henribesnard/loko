@@ -28,16 +28,21 @@ class MockEscalationProvider:
 
     Returns a configurable estimated wait time and logs the payload.
 
-    Guard (R2-a): raises RuntimeError outside RAGKIT_ENV=test.
+    Guard (A3/GNG-10): raises RuntimeError outside RAGKIT_ENV=test.
+    Exception: allowed when LOKO_ESCALATION_PROVIDER=mock is explicitly set
+    (simulates external SI client, admissible for protocol R4).
     """
 
     def __init__(self, default_wait_minutes: int = 4) -> None:
         import os
 
-        if os.environ.get("RAGKIT_ENV") != "test":
+        is_test = os.environ.get("RAGKIT_ENV") == "test"
+        is_explicit_mock = os.environ.get("LOKO_ESCALATION_PROVIDER") == "mock"
+        if not is_test and not is_explicit_mock:
             raise RuntimeError(
                 "MockEscalationProvider cannot be used outside test environment. "
-                "Set RAGKIT_ENV=test or configure a real escalation provider."
+                "Set RAGKIT_ENV=test, LOKO_ESCALATION_PROVIDER=mock, "
+                "or configure a real escalation provider."
             )
         self.default_wait_minutes = default_wait_minutes
         self.last_payload: EscalationPayload | None = None

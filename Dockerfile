@@ -6,7 +6,15 @@ RUN npm ci
 COPY desktop/ ./
 RUN npm run build
 
-# ---- Stage 2: Python backend (A1a — single image with CPU-only torch) ----
+# ---- Stage 2: Download base model (A2) ----
+FROM python:3.12-slim AS model-download
+RUN pip install --no-cache-dir huggingface_hub
+RUN python -c "\
+from huggingface_hub import snapshot_download; \
+snapshot_download('sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2', \
+                  local_dir='/models/base/minilm')"
+
+# ---- Stage 3: Python backend ----
 FROM python:3.12-slim
 WORKDIR /app
 
@@ -15,17 +23,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Install CPU-only PyTorch first (avoids pulling CUDA wheels)
+# Install CPU-only PyTorch first (avoids pulling CUDA wheels — A1)
 RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
 
-# Install Python dependencies (server + ML)
-COPY pyproject.toml ./
+# Install Python dependencies (server + ML) with constraints (A1)
+COPY pyproject.toml constraints-ml.txt ./
 RUN pip install --no-cache-dir -e ".[server,ml]"
 
-# Pre-download the base model into HF_HOME (A1 — no HF dependency at runtime)
-ENV HF_HOME=/app/.hf_cache
-RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2')" \
-    || echo "Warning: model pre-download failed, will download at first training"
+# A2: copy pre-downloaded base model to fixed local path
+COPY --from=model-download /models/base/minilm /app/models/base/minilm
 
 # Copy backend source
 COPY loko/ ./loko/
@@ -39,17 +45,27 @@ COPY --from=frontend-build /app/desktop/dist ./desktop/dist
 # Data volume for bot configs & sessions
 VOLUME /root/.loko
 
-# Environment variables documented for production
+# Environment variables (A2, A6)
 # Required:
 #   LOKO_ADMIN_TOKEN — admin API authentication token
-# Optional:
+# ML / Offline:
+#   LOKO_ML=on — enable ML features (default: on; off → /train returns 503)
+#   LOKO_BASE_MODEL_PATH — local path for base sentence-transformer model
+#   HF_HUB_OFFLINE=1 — block all Hugging Face hub network access
+#   TRANSFORMERS_OFFLINE=1 — block transformers library network access
+# Server:
 #   RAGKIT_MODE=server — enables server mode (requires LOKO_ADMIN_TOKEN)
 #   RAGKIT_CORS_ORIGINS — comma-separated list of allowed CORS origins
 #   LOKO_SESSION_RETENTION_DAYS=30 — session data retention (RGPD)
 #   LOKO_DATA_DIR — custom data directory (default: ~/.loko)
-#   LOKO_ML=on — enable ML features (default: on)
+#   LOKO_ESCALATION_PROVIDER — set to "mock" to allow MockEscalationProvider
 
 ENV RAGKIT_MODE=server
+ENV LOKO_ML=on
+ENV LOKO_BASE_MODEL_PATH=/app/models/base/minilm
+ENV HF_HUB_OFFLINE=1
+ENV TRANSFORMERS_OFFLINE=1
+ENV HF_HOME=/app/.hf_cache
 
 EXPOSE 8000
 

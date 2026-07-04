@@ -28,11 +28,12 @@ from loko.api.rate_limit import (
     get_limiter,
 )
 from loko.bot.config_store import load_bot_config
+from loko.bot.errors import ComponentUnavailableError
 from loko.bot.timeout import check_and_apply_timeout
-from loko.bot.generation import BotGenerator, MockLLMProvider
+from loko.bot.generation import BotGenerator
 from loko.bot.models import BotConfig, BotState
 from loko.bot.orchestrator import BotOrchestrator, SSEEvent
-from loko.bot.retrieval_filter import FilteredRetriever, InMemorySearchBackend
+from loko.bot.retrieval_filter import FilteredRetriever
 from loko.bot.session_store import SessionStore, get_session_store
 
 logger = logging.getLogger(__name__)
@@ -94,10 +95,11 @@ _SESSION_LOCKS_MAX = 10_000  # R4: bounded size to prevent unbounded memory grow
 def _get_orchestrator(bot_id: str, config: BotConfig) -> BotOrchestrator:
     """Get or create the orchestrator for a bot.
 
-    Fail-closed policy (P0-6):
+    Fail-closed policy (P0-6, A3, A5):
     - Draft bots cannot be served at runtime (409).
-    - Published bots use real classifier if available, else fail explicitly.
+    - Published bots use real classifier — no mock fallback.
     - Mocks are only used when RAGKIT_ENV=test.
+    - ComponentUnavailableError on any missing component.
 
     R2-b: Uses SQLiteSearchBackend (persistent) when documents exist,
     falls back to InMemorySearchBackend in test mode only.
@@ -105,28 +107,38 @@ def _get_orchestrator(bot_id: str, config: BotConfig) -> BotOrchestrator:
     import os
 
     if bot_id not in _ORCHESTRATORS:
-        from loko.bot.escalation import MockEscalationProvider
-
         is_test = os.environ.get("RAGKIT_ENV") == "test"
 
-        classifier = _load_classifier(bot_id, allow_mock=is_test)
+        # A3: classifier — no mock fallback, raises ComponentUnavailableError
+        classifier = _load_classifier(bot_id)
 
-        # R2-b: use persistent knowledge store if documents exist
-        backend = _load_search_backend(bot_id, allow_mock=is_test)
+        # R2-b: knowledge store
+        backend = _load_search_backend(bot_id)
         retriever = FilteredRetriever(backend)
 
-        # LLM: use mock only in test; otherwise fail with explicit message
+        # LLM: mock only in test; production requires real provider (phase R2)
         if is_test:
+            from loko.bot.generation import MockLLMProvider
             generator = BotGenerator(MockLLMProvider(
                 response="[Mock] Réponse de test."
             ))
         else:
-            generator = BotGenerator(MockLLMProvider(
-                response="La base de connaissances n'est pas encore configurée. "
-                         "Veuillez contacter l'administrateur."
-            ))
+            raise ComponentUnavailableError(
+                "llm", bot_id,
+                "No LLM provider configured. "
+                "Set RAGKIT_ENV=test or configure a real LLM provider (phase R2).",
+            )
 
-        escalation = MockEscalationProvider()
+        # Escalation: mock if test or LOKO_ESCALATION_PROVIDER=mock explicit
+        if is_test or os.environ.get("LOKO_ESCALATION_PROVIDER") == "mock":
+            from loko.bot.escalation import MockEscalationProvider
+            escalation = MockEscalationProvider()
+        else:
+            raise ComponentUnavailableError(
+                "escalation", bot_id,
+                "No escalation provider configured. "
+                "Set LOKO_ESCALATION_PROVIDER=mock or configure a real provider.",
+            )
 
         _ORCHESTRATORS[bot_id] = BotOrchestrator(
             classifier=classifier,
@@ -138,56 +150,61 @@ def _get_orchestrator(bot_id: str, config: BotConfig) -> BotOrchestrator:
     return _ORCHESTRATORS[bot_id]
 
 
-def _load_classifier(bot_id: str, *, allow_mock: bool = False) -> Any:
-    """Load the SetFit classifier for a bot.
+def _load_classifier(bot_id: str) -> Any:
+    """Load the SetFit classifier for a bot (A3).
 
-    If allow_mock is False (production), returns a classifier that
-    only returns results if a real model is available, otherwise
-    falls back to hors_perimetre with low confidence.
+    Fail-closed: raises ComponentUnavailableError if the model is not
+    trained or SetFit is not installed.  No mock fallback — tests must
+    use register_orchestrator() to inject mocks.
     """
     try:
         from loko.bot.classifier.model_store import model_exists
         from loko.bot.classifier.setfit_service import SetFitClassifier
-
-        if model_exists(bot_id, "level1"):
-            clf = SetFitClassifier(bot_id, "level1")
-            clf.load()
-            return _SetFitClassifierAdapter(bot_id, clf)
     except ImportError:
-        if not allow_mock:
-            logger.warning(
-                "SetFit not installed — classifier for bot %s will use fallback",
-                bot_id,
-            )
+        raise ComponentUnavailableError(
+            "classifier_l1", bot_id,
+            "SetFit not installed (pip install loko[ml])",
+        )
 
-    return _MockClassifier()
+    if not model_exists(bot_id, "level1"):
+        raise ComponentUnavailableError(
+            "classifier_l1", bot_id,
+            "Level 1 classifier not trained",
+        )
+
+    clf = SetFitClassifier(bot_id, "level1")
+    if not clf.load():
+        raise ComponentUnavailableError(
+            "classifier_l1", bot_id,
+            "Failed to load level 1 classifier from disk",
+        )
+
+    return _SetFitClassifierAdapter(bot_id, clf)
 
 
-def _load_search_backend(bot_id: str, *, allow_mock: bool = False) -> Any:
-    """Load the search backend for a bot (R2-b).
+def _load_search_backend(bot_id: str) -> Any:
+    """Load the search backend for a bot (R2-b, A3).
 
-    Uses the persistent SQLite knowledge store if documents have been
-    ingested.  Falls back to InMemorySearchBackend only in test mode.
+    Uses the persistent SQLite knowledge store.  Returns it even when
+    empty (retrieval will fail and the bot will escalate).
+    Falls back to InMemorySearchBackend only when RAGKIT_ENV=test.
     """
-    try:
-        from loko.bot.knowledge_store import get_knowledge_store
+    import os
 
-        store = get_knowledge_store(bot_id)
-        if store.has_documents():
-            return store
-    except Exception:
-        logger.warning("Could not load knowledge store for bot %s", bot_id)
-
-    if allow_mock:
-        return InMemorySearchBackend()
-
-    # In production without documents — use empty knowledge store
-    # (will escalate due to retrieval failure)
     try:
         from loko.bot.knowledge_store import get_knowledge_store
         return get_knowledge_store(bot_id)
     except Exception:
+        logger.warning("Could not load knowledge store for bot %s", bot_id)
+
+    if os.environ.get("RAGKIT_ENV") == "test":
+        from loko.bot.retrieval_filter import InMemorySearchBackend
         return InMemorySearchBackend()
+
+    raise ComponentUnavailableError(
+        "knowledge_store", bot_id,
+        "Failed to initialize knowledge store",
+    )
 
 
 class _SetFitClassifierAdapter:
@@ -329,7 +346,13 @@ async def create_session(
     if config.status != "published":
         raise HTTPException(409, "Bot is not published")
 
-    orchestrator = _get_orchestrator(bot_id, config)
+    # A5: ComponentUnavailableError → 503 (no session created)
+    try:
+        orchestrator = _get_orchestrator(bot_id, config)
+    except ComponentUnavailableError as exc:
+        logger.error("Bot %s unavailable: %s", bot_id, exc)
+        raise HTTPException(503, {"error": "bot_unavailable", "detail": exc.reason})
+
     store = get_session_store(bot_id)
 
     session, events = await orchestrator.create_and_start_session(config)
@@ -417,7 +440,12 @@ async def send_message(
     if lock.locked():
         raise HTTPException(409, "A message is already being processed for this session")
 
-    orchestrator = _get_orchestrator(bot_id, config)
+    # A5: ComponentUnavailableError → 503
+    try:
+        orchestrator = _get_orchestrator(bot_id, config)
+    except ComponentUnavailableError as exc:
+        logger.error("Bot %s unavailable: %s", bot_id, exc)
+        raise HTTPException(503, {"error": "bot_unavailable", "detail": exc.reason})
 
     async def event_stream() -> AsyncIterator[str]:
         current_session = session

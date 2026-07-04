@@ -1,0 +1,16 @@
+id,text,expected_behavior,note
+T01,connaitre le montant de ma cotisation et changer mon adresse,clarify_inter,double intention cotisations+changement_coordonnees
+T02,bonjour,reject,salutation sans demande
+T03,oui,reject,monosyllabe sans contexte
+T04,je veux parler a un conseiller pour ma cotisation,escalate,demande_conseiller malgre sujet metier
+T05,aide pour rembourser une prothese dentaire,reject,hors scope — dentaire non retenu
+T06,comment acceder a mon espace MGEN pour voir mes cotisations,clarify_inter,ambiguite services_en_ligne vs cotisations
+T07,j'ai demenage et je dois changer mon RIB et resilier ma mutuelle,clarify_inter,triple intention
+T08,aeioiu qlmskd jfqsd,reject,charabia
+T09,attestation,route,mot-clé fort — justificatif_droits
+T10,noemie,route,mot-clé fort — teletransmission_noemie
+T11,comment savoir si mon lien noemie est actif pour etre rembourse,route,teletransmission avec contexte remboursement
+T12,"je suis en arret depuis 3 mois, quand vais-je etre paye",route,arret_travail formulation indirecte
+T13,transferez-moi maintenant,escalate,demande_conseiller implicite aggressive
+T14,"je ne veux plus etre chez vous, comment faire",route,resiliation formulation indirecte
+T15,changement coordonnees bancaires et postales,route,changement_coordonnees — pas d'ambiguite

@@ -52,6 +52,24 @@ def sample_config(tmp_path, monkeypatch) -> BotConfig:
         status="published",
     )
     save_bot_config(config)
+
+    # A3: register a mock orchestrator — no implicit mock fallback in production
+    from loko.api.bot_public import _MockClassifier, register_orchestrator
+    from loko.bot.escalation import MockEscalationProvider
+    from loko.bot.generation import BotGenerator, MockLLMProvider
+    from loko.bot.orchestrator import BotOrchestrator
+    from loko.bot.retrieval_filter import FilteredRetriever, InMemorySearchBackend
+
+    register_orchestrator(
+        config.bot_id,
+        BotOrchestrator(
+            classifier=_MockClassifier(),
+            retriever=FilteredRetriever(InMemorySearchBackend()),
+            generator=BotGenerator(MockLLMProvider(response="[Mock] test")),
+            escalation=MockEscalationProvider(),
+        ),
+    )
+
     return config
 
 

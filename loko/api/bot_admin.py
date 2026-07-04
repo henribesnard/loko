@@ -141,9 +141,30 @@ async def publish_bot(bot_id: str) -> dict[str, Any]:
                 f"L'intention '{intent.label}' n'a que {len(intent.examples)} exemples (min 8)."
             )
 
-    from loko.bot.classifier.model_store import model_exists
-    if not model_exists(bot_id, "level1"):
-        errors.append("Le classifieur L1 n'est pas entraine. Lancez l'entrainement d'abord.")
+    # A4/A5: verify model integrity (manifest + hashes + smoke test)
+    from loko.bot.classifier.manifest import manifest_exists, verify_model
+
+    if not manifest_exists(bot_id):
+        errors.append("Le modele n'a pas de manifeste d'integrite. Relancez l'entrainement.")
+    else:
+        verification = verify_model(bot_id)
+        if not verification.ok:
+            for err in verification.errors:
+                errors.append(f"Verification du modele echouee: {err}")
+
+    # A5: check if training data changed since last training
+    if not errors:
+        from loko.bot.classifier.manifest import compute_dataset_hash, read_manifest
+        from loko.bot.classifier.setfit_service import prepare_l1_training_data
+
+        texts, labels = prepare_l1_training_data(config)
+        current_hash = compute_dataset_hash(texts, labels)
+        manifest = read_manifest(bot_id)
+        if manifest and manifest.get("dataset_hash") != current_hash:
+            errors.append(
+                "Les exemples d'entrainement ont change depuis le dernier entrainement. "
+                "Relancez l'entrainement avant de publier."
+            )
 
     # R2-c: knowledge base coverage warnings
     warnings: list[str] = []
@@ -241,6 +262,37 @@ async def get_evaluation(bot_id: str) -> dict[str, Any]:
     if not evaluation:
         raise HTTPException(404, "Evaluation was not run during training.")
     return evaluation
+
+
+@router.get("/{bot_id}/train/report")
+async def get_training_report(bot_id: str) -> dict[str, Any]:
+    """Full training report (B2): confusion matrix, F1, advice, latency, manifest."""
+    state = _TRAINING_STATE.get(bot_id)
+    if not state or not state.get("result"):
+        raise HTTPException(404, "No training report available. Train the bot first.")
+
+    result = state["result"]
+
+    report: dict[str, Any] = {
+        "bot_id": bot_id,
+        "level1": result.get("level1", {}),
+        "level2": result.get("level2", {}),
+        "evaluation": result.get("evaluation"),
+        "inference_latency_ms": result.get("inference_latency_ms"),
+        "manifest": result.get("manifest"),
+    }
+
+    # Enrich with manifest data if available
+    from loko.bot.classifier.manifest import read_manifest
+    manifest = read_manifest(bot_id)
+    if manifest:
+        report["manifest_data"] = {
+            "created_at": manifest.get("created_at"),
+            "dataset_hash": manifest.get("dataset_hash"),
+            "inference_latency_ms": manifest.get("inference_latency_ms"),
+        }
+
+    return report
 
 
 # ---------------------------------------------------------------------------
