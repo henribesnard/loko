@@ -29,6 +29,36 @@
   const AUTH_TOKEN = attr("data-api-key");
   const POSITION = attr("data-position") || "bottom-right";
   const THEME = attr("data-theme") || "light";
+  const LANG = attr("data-lang") || "fr";
+
+  // --- i18n (P2-1) ---
+  const I18N = {
+    fr: {
+      open_chat: "Ouvrir le chat",
+      close_chat: "Fermer le chat",
+      placeholder: "\u00C9crire un message\u2026",
+      send: "Envoyer",
+      useful: "Utile",
+      not_useful: "Pas utile",
+      online: "En ligne",
+      assistant: "Assistant",
+      error_start: "Impossible de d\u00E9marrer la conversation.",
+      error_message: "Une erreur est survenue.",
+    },
+    en: {
+      open_chat: "Open chat",
+      close_chat: "Close chat",
+      placeholder: "Type a message\u2026",
+      send: "Send",
+      useful: "Helpful",
+      not_useful: "Not helpful",
+      online: "Online",
+      assistant: "Assistant",
+      error_start: "Unable to start the conversation.",
+      error_message: "An error occurred.",
+    },
+  };
+  const t = I18N[LANG] || I18N.fr;
 
   if (!BOT_ID) {
     console.warn("[LOKO Widget] Missing data-bot-id attribute");
@@ -364,7 +394,7 @@
         this._renderMessages();
       } catch (err) {
         console.error("[LOKO Widget] Failed to create session:", err);
-        this._addBotMessage("Impossible de démarrer la conversation.");
+        this._addBotMessage(t.error_start);
       }
     }
 
@@ -421,7 +451,7 @@
         }
       } catch (err) {
         console.error("[LOKO Widget] Message error:", err);
-        this._addBotMessage("Une erreur est survenue.");
+        this._addBotMessage(t.error_message);
       } finally {
         this._streaming = false;
         this._renderMessages();
@@ -575,8 +605,8 @@
           <circle cx="32" cy="32" r="12" fill="var(--loko-text-on-brand)"/>
         </svg>
         <div style="flex:1">
-          <div class="loko-header-title">Assistant</div>
-          <div class="loko-header-status"><span class="loko-dot"></span>En ligne</div>
+          <div class="loko-header-title">${t.assistant}</div>
+          <div class="loko-header-status"><span class="loko-dot"></span>${t.online}</div>
         </div>
       `;
       win.appendChild(header);
@@ -595,14 +625,14 @@
 
       const input = document.createElement("input");
       input.className = "loko-input";
-      input.placeholder = "Écrire un message…";
+      input.placeholder = t.placeholder;
       input.setAttribute("aria-label", "Message");
       this._input = input;
 
       const send = document.createElement("button");
       send.className = "loko-send";
       send.innerHTML = "&#8594;";
-      send.setAttribute("aria-label", "Envoyer");
+      send.setAttribute("aria-label", t.send);
       this._sendBtn = send;
 
       input.addEventListener("keydown", (e) => {
@@ -622,7 +652,7 @@
       // Launcher
       const launcher = document.createElement("button");
       launcher.className = "loko-launcher";
-      launcher.setAttribute("aria-label", "Ouvrir le chat");
+      launcher.setAttribute("aria-label", t.open_chat);
       launcher.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`;
       launcher.addEventListener("click", () => this._toggle());
       this._launcher = launcher;
@@ -636,7 +666,7 @@
       this._window.classList.toggle("loko-hidden", !this._open);
       this._launcher.setAttribute(
         "aria-label",
-        this._open ? "Fermer le chat" : "Ouvrir le chat"
+        this._open ? t.close_chat : t.open_chat
       );
 
       if (this._open) {
@@ -712,9 +742,9 @@
             src.innerHTML = msg.sources
               .map(
                 (s) =>
-                  `<a href="${this._escapeHtml(s.url)}" target="_blank" rel="noopener">${this._escapeHtml(s.title)}</a>`
+                  `<a href="${this._safeUrl(s.url)}" target="_blank" rel="noopener noreferrer">${this._escapeHtml(s.title || s.url)}</a>`
               )
-              .join(" · ");
+              .join(" \u00B7 ");
             wrapper.appendChild(src);
           }
 
@@ -725,7 +755,7 @@
 
             const up = document.createElement("button");
             up.textContent = "\u{1F44D}";
-            up.setAttribute("aria-label", "Utile");
+            up.setAttribute("aria-label", t.useful);
             if (msg.feedback === "positive") up.classList.add("loko-fb-active");
             up.addEventListener("click", () => {
               msg.feedback = "positive";
@@ -735,7 +765,7 @@
 
             const down = document.createElement("button");
             down.textContent = "\u{1F44E}";
-            down.setAttribute("aria-label", "Pas utile");
+            down.setAttribute("aria-label", t.not_useful);
             if (msg.feedback === "negative")
               down.classList.add("loko-fb-active");
             down.addEventListener("click", () => {
@@ -767,13 +797,30 @@
 
     _formatText(text) {
       // Basic markdown: **bold**, links [text](url), newlines
+      const self = this;
       return this._escapeHtml(text)
         .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
         .replace(
           /\[([^\]]+)\]\(([^)]+)\)/g,
-          '<a href="$2" target="_blank" rel="noopener">$1</a>'
+          function(_, label, url) {
+            const safe = self._safeUrl(url);
+            return '<a href="' + safe + '" target="_blank" rel="noopener noreferrer">' + label + '</a>';
+          }
         )
         .replace(/\n/g, "<br>");
+    }
+
+    _safeUrl(url) {
+      // Only allow http: and https: schemes (P1-1 — XSS prevention)
+      try {
+        const parsed = new URL(url, location.origin);
+        if (parsed.protocol === "https:" || parsed.protocol === "http:") {
+          return parsed.href;
+        }
+      } catch (e) {
+        // Invalid URL
+      }
+      return "#";
     }
 
     _escapeHtml(str) {

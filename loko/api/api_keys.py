@@ -10,6 +10,7 @@ and allowed origins.
 from __future__ import annotations
 
 import hashlib
+import hmac as _hmac
 import json
 import logging
 import secrets
@@ -142,7 +143,7 @@ def validate_api_key(raw_key: str) -> APIKeyRecord | None:
             continue
         keys = _load_keys(bot_dir.name)
         for record in keys:
-            if record.key_hash == key_hash:
+            if _hmac.compare_digest(record.key_hash, key_hash):
                 return record
 
     return None
@@ -154,7 +155,7 @@ def validate_api_key_for_bot(raw_key: str, bot_id: str) -> APIKeyRecord | None:
     keys = _load_keys(bot_id)
 
     for record in keys:
-        if record.key_hash == key_hash:
+        if _hmac.compare_digest(record.key_hash, key_hash):
             return record
 
     return None
@@ -190,9 +191,24 @@ def revoke_api_key(bot_id: str, key_id: str) -> bool:
 
 
 def check_origin(record: APIKeyRecord, origin: str | None) -> bool:
-    """Check if an origin is allowed for this API key."""
-    if not record.allowed_origins:
-        return True  # no origin restriction
+    """Check if an origin is allowed for this API key.
+
+    Policy (fail-closed):
+    - allowed_origins=[] → reject cross-origin (no origin header = OK, e.g. server-to-server).
+    - allowed_origins=["*"] → allow all origins.
+    - allowed_origins=["https://a.com"] → only that origin.
+    - If origin header is absent (non-browser request) → allowed.
+    """
+    # Non-browser requests (no Origin header) are always allowed
     if not origin:
+        return True
+
+    # Explicit wildcard allows everything
+    if "*" in record.allowed_origins:
+        return True
+
+    # Empty list = no cross-origin allowed (fail-closed)
+    if not record.allowed_origins:
         return False
+
     return origin in record.allowed_origins

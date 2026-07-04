@@ -6,11 +6,27 @@ All data structures for the bot engine: config, session, traces, actions.
 from __future__ import annotations
 
 import enum
+import re
 import uuid
 from datetime import datetime, timezone
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field, field_validator, model_validator
+
+# ---------------------------------------------------------------------------
+# Slug validation (path traversal prevention)
+# ---------------------------------------------------------------------------
+
+SLUG_RE = re.compile(r"^[a-z0-9][a-z0-9_-]{0,63}$")
+
+
+def validate_slug(value: str, name: str = "id") -> str:
+    """Validate that a value is a safe slug (no path traversal)."""
+    if not SLUG_RE.match(value):
+        raise ValueError(
+            f"Invalid {name}: must match ^[a-z0-9][a-z0-9_-]{{0,63}}$ — got {value!r}"
+        )
+    return value
 
 
 # ---------------------------------------------------------------------------

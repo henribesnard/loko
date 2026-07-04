@@ -27,6 +27,11 @@ def get_model_dir(bot_id: str, level: str, intent_id: str | None = None) -> Path
     intent_id : str | None
         Required when level is "level2".
     """
+    from loko.bot.models import validate_slug
+
+    if intent_id is not None:
+        validate_slug(intent_id, "intent_id")
+
     base = get_bot_dir(bot_id) / "models"
     if level == "level1":
         model_dir = base / "level1"

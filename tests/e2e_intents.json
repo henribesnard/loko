@@ -1,0 +1,232 @@
+{
+  "intents": [
+    {
+      "id": "services_en_ligne",
+      "label": "Services en ligne",
+      "definition": "L adherent rencontre un besoin lie a son espace personnel en ligne ou a l application MGEN/Ameli.",
+      "examples": [
+        "acces a mon espace personnel",
+        "acces a mon compte MGEN",
+        "acces espace perso",
+        "acces a mon compte en ligne",
+        "MGEN connexion au compte Ameli",
+        "acces a mon application MGEN",
+        "acces compte personnel sur mon site MGEN",
+        "acces a mon espace adherent",
+        "acces a l espace personnel internet de ma fille",
+        "acces en ligne",
+        "acces site mutuelle",
+        "acces a mon espace client",
+        "acces au compte Ameli point FR",
+        "acces a mon espace internet",
+        "acceder au compte internet"
+      ],
+      "sub_motifs": [
+        {
+          "id": "mot_de_passe_oublie",
+          "label": "Mot de passe oublie",
+          "definition": "Mot de passe perdu, oublie ou a renouveler",
+          "examples": ["mot de passe perdu", "mot de passe oublie compte client", "recuperation de mon mot de passe", "renouveler mon mot de passe", "je souhaite recuperer mon mot de passe pour acceder a mon compte Ameli"]
+        },
+        {
+          "id": "identifiants_perdus",
+          "label": "Identifiants perdus",
+          "definition": "Identifiant de connexion perdu ou inconnu",
+          "examples": ["identifiant de connexion oublie", "je veux mes identifiants Ameli", "probleme d identifiant", "recevoir mes codes identifiant", "je voudrais un code d acces au compte Ameli"]
+        },
+        {
+          "id": "compte_bloque",
+          "label": "Compte bloque",
+          "definition": "Compte ou espace personnel bloque/verrouille",
+          "examples": ["compte bloque", "compte MGEN bloque", "debloquer mon compte personnel", "espace adherent bloque", "connexion espace personnel bloque"]
+        },
+        {
+          "id": "premiere_connexion",
+          "label": "Premiere connexion",
+          "definition": "Creation ou activation initiale du compte",
+          "examples": ["activer mon compte MGEN", "creation d un compte en ligne", "comment creer un compte Ameli", "activation de mon espace client", "activation compte mutuelle"]
+        },
+        {
+          "id": "probleme_technique",
+          "label": "Probleme technique",
+          "definition": "Dysfonctionnement du site/appli",
+          "examples": ["connexion impossible sur le site", "erreur de connexion", "espace personnel qui ne fonctionne pas", "dysfonctionnement de mon espace personnel en ligne", "impossible d acceder a mon compte Ameli"]
+        }
+      ],
+      "is_system": false
+    },
+    {
+      "id": "justificatif_droits",
+      "label": "Justificatif de droits",
+      "definition": "L adherent demande un document attestant de ses droits ou de sa couverture.",
+      "examples": [
+        "attestation de droits",
+        "attestation MGEN",
+        "attestation d affiliation a la securite sociale",
+        "attestation CPAM",
+        "attestation d assure social",
+        "attestation de carte vitale",
+        "attestation d ayant droit",
+        "attestation de droits de la securite sociale",
+        "attestation d ouverture de droits a la securite sociale",
+        "attestation d assurance maladie",
+        "aide pour la carte tiers payant",
+        "attestation MGEN pour ma fille",
+        "attestation de droits en urgence",
+        "attestation de couverture sociale",
+        "attestation de droits perdue",
+        "attestation avec la date d effet"
+      ],
+      "sub_motifs": [],
+      "is_system": false
+    },
+    {
+      "id": "arret_travail",
+      "label": "Arret de travail",
+      "definition": "L adherent a une demande liee a un arret de travail, un conge maladie ou l invalidite.",
+      "examples": [
+        "arret de travail",
+        "arret de maladie",
+        "comment declarer un arret de travail",
+        "allocation journaliere",
+        "indemnites journalieres",
+        "allocation journaliere pour arret de travail prolonge",
+        "complement de salaire en arret maladie",
+        "comment activer le maintien de salaire",
+        "arret maladie passage a demi-traitement",
+        "allocation longue maladie",
+        "attestation de salaire a remplir",
+        "attestation indemnite journaliere",
+        "attestation a remplir pour le versement de l ijss",
+        "allocation d invalidite",
+        "compensation perte salaire",
+        "autorisation de sortie pendant un conge maladie"
+      ],
+      "sub_motifs": [],
+      "is_system": false
+    },
+    {
+      "id": "cotisations",
+      "label": "Cotisations",
+      "definition": "L adherent a une question sur ses cotisations mutuelle/prevoyance.",
+      "examples": [
+        "connaitre le montant de ma cotisation",
+        "calcul de mes cotisations",
+        "augmentation des cotisations",
+        "comprendre mes cotisations",
+        "appel de cotisation mutuelle",
+        "comment effectuer le paiement de mes cotisations",
+        "comprendre mon echeancier",
+        "cotisation mutuelle au prelevement automatique",
+        "comprendre le prelevement sur mon salaire",
+        "contestation cotisation",
+        "changement du montant de ma cotisation",
+        "calcul montant de la cotisation conjoint",
+        "attestation de paiement des cotisations",
+        "concernant le prelevement de la mutuelle",
+        "comprendre le mode de calcul des cotisations",
+        "connaitre le cout de la mutuelle"
+      ],
+      "sub_motifs": [],
+      "is_system": false
+    },
+    {
+      "id": "changement_coordonnees",
+      "label": "Changement de coordonnees",
+      "definition": "L adherent veut modifier ses coordonnees personnelles dans son dossier.",
+      "examples": [
+        "changement d adresse apres demenagement",
+        "actualiser mon adresse postale",
+        "changement d adresse de domicile",
+        "besoin de changer mon RIB",
+        "changement de RIB pour les remboursements",
+        "ajouter un RIB",
+        "changement d adresse et de RIB",
+        "changement RIB assurance maladie",
+        "changement de IBAN",
+        "actualiser mon adresse email",
+        "besoin de changer d adresse courriel",
+        "changement d adresse courriel",
+        "adresse postale erronee",
+        "changement coordonnees bancaires familiale",
+        "changement d adresse dans mon dossier",
+        "changement de coordonnees personnelles"
+      ],
+      "sub_motifs": [],
+      "is_system": false
+    },
+    {
+      "id": "teletransmission_noemie",
+      "label": "Teletransmission Noemie",
+      "definition": "L adherent a une demande sur la teletransmission Noemie entre la securite sociale et la mutuelle.",
+      "examples": [
+        "comment mettre en place la teletransmission Noemie",
+        "activer le lien Noemie",
+        "beneficier de la teletransmission",
+        "annuler la teletransmission",
+        "arreter la teletransmission",
+        "deconnexion du service Noemie",
+        "connexion Noemie",
+        "explications fonctionnement Noemie",
+        "comment se fait la teletransmission entre le mutuelle et la secu",
+        "est-ce que le lien Noemie est cree avec ma nouvelle mutuelle",
+        "codes de teletransmission",
+        "deconnecter la mutuelle MGEN de ma securite sociale",
+        "au sujet des teletransmissions",
+        "comment faire une teletrans",
+        "contrat Noemie"
+      ],
+      "sub_motifs": [],
+      "is_system": false
+    },
+    {
+      "id": "resiliation",
+      "label": "Resiliation",
+      "definition": "L adherent veut resilier son contrat mutuelle ou prevoyance.",
+      "examples": [
+        "comment resilier la MGEN",
+        "demande de resiliation de contrat mutuelle",
+        "procedure de resiliation",
+        "delai de resiliation",
+        "conditions de resiliation mutuelle",
+        "courrier resiliation mutuelle",
+        "attestation de resiliation",
+        "annuler ma resiliation",
+        "ou en est la resiliation de mon contrat",
+        "demande resiliation prevoyance",
+        "information sur la resiliation d un beneficiaire",
+        "pouvoir resilier ma mutuelle",
+        "changement de mutuelle",
+        "justificatif resiliation mutuelle obligatoire",
+        "effectuer une resiliation"
+      ],
+      "sub_motifs": [],
+      "is_system": false
+    },
+    {
+      "id": "hors_perimetre",
+      "label": "Hors perimetre",
+      "definition": "Demande hors du perimetre des intentions gerees par le bot.",
+      "examples": [
+        "adresse pour envoyer un devis dentaire",
+        "aide pour le remboursement pour une prothese dentaire",
+        "achat de lentilles de contact",
+        "changer les verres",
+        "comment declarer un deces",
+        "beneficiaire capital deces",
+        "agrement pour une cure thermale",
+        "declaration accident de travail",
+        "declarer un accident corporel",
+        "activer un contrat logement",
+        "accord prealable pour une prescription medicale de transport",
+        "accuse reception de ma declaration de grossesse",
+        "achat de fauteuil roulant remboursement",
+        "adherer a une complementaire sante",
+        "adresse postale de la MGEN",
+        "prise en charge hospitalisation"
+      ],
+      "sub_motifs": [],
+      "is_system": true
+    }
+  ]
+}

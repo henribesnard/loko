@@ -10,9 +10,10 @@ import asyncio
 import logging
 from typing import Any
 
-from fastapi import APIRouter, BackgroundTasks, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from pydantic import BaseModel, Field
 
+from loko.api.auth import require_admin
 from loko.bot.config_store import (
     delete_bot,
     list_bots,
@@ -23,7 +24,11 @@ from loko.bot.models import BotConfig, Intent, JourneyParams, MessageTemplate, T
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/bot", tags=["bot-admin"])
+router = APIRouter(
+    prefix="/api/bot",
+    tags=["bot-admin"],
+    dependencies=[Depends(require_admin)],
+)
 
 # ---------------------------------------------------------------------------
 # Training state (in-memory, per bot)
@@ -98,6 +103,11 @@ async def update_bot(bot_id: str, req: BotUpdateRequest) -> dict[str, Any]:
     updates = req.model_dump(exclude_none=True)
     updated = config.model_copy(update=updates)
     save_bot_config(updated)
+
+    # Invalidate cached orchestrator so next request picks up new config
+    from loko.api.bot_public import invalidate_orchestrator
+    invalidate_orchestrator(bot_id)
+
     return updated.model_dump(mode="json")
 
 
@@ -140,6 +150,11 @@ async def publish_bot(bot_id: str) -> dict[str, Any]:
 
     updated = config.model_copy(update={"status": "published"})
     save_bot_config(updated)
+
+    # Invalidate cached orchestrator so runtime picks up new status
+    from loko.api.bot_public import invalidate_orchestrator
+    invalidate_orchestrator(bot_id)
+
     return {"status": "published", "bot_id": bot_id}
 
 

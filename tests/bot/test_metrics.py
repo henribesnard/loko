@@ -58,8 +58,12 @@ def populated_db(db_path: Path, store: SessionStore) -> Path:
         ("t1", "s1", "bot", "Bienvenue", "2024-01-01T10:00:00", "presentation", None, None, None, None, None),
         ("t2", "s1", "user", "Ma facture est fausse", "2024-01-01T10:00:30", None, None, None, "facturation", None, None),
         ("t3", "s1", "bot", "Voici les informations", "2024-01-01T10:01:00", None, None, None, None, None, None),
+        # s3: user turn before the bot clarification (needed for D2 fix)
+        ("t3b", "s3", "user", "Ma facture", "2024-01-01T12:00:15", None, None, None, "facturation", None, None),
         ("t4", "s3", "bot", "Clarification", "2024-01-01T12:00:30", "clarification_inter", '["facturation", "livraison"]', None, None, None, None),
+        # s5: user turn before the bot response, then the bot response that gets rated
         ("t5", "s5", "user", "Je veux parler à quelqu'un", "2024-01-01T14:00:30", None, None, None, "livraison", None, None),
+        ("t5b", "s5", "bot", "Je vous transfere", "2024-01-01T14:00:45", None, None, None, None, None, None),
     ]
     for t in turns:
         conn.execute(
@@ -84,11 +88,11 @@ def populated_db(db_path: Path, store: SessionStore) -> Path:
             tr,
         )
 
-    # Insert feedback
+    # Insert feedback (users rate BOT turns, not user turns)
     feedback = [
         ("s1", "t3", "positive", "", "2024-01-01T10:02:00"),
         ("s3", "t4", "negative", "Pas la bonne intention", "2024-01-01T12:01:00"),
-        ("s5", "t5", "negative", "Trop lent", "2024-01-01T14:01:00"),
+        ("s5", "t5b", "negative", "Trop lent", "2024-01-01T14:01:00"),
     ]
     for f in feedback:
         conn.execute(
@@ -189,8 +193,11 @@ class TestGetMisclassifiedTurns:
     def test_includes_user_message(self, populated_db: Path):
         turns = get_misclassified_turns(populated_db)
         messages = {t["user_message"] for t in turns}
-        # t4 is a bot turn with negative feedback, t5 is a user turn
+        # D2 fix: user_message is the preceding USER turn, not the rated bot turn
+        # t4 (bot) was preceded by t3b (user, "Ma facture")
+        # t5b (bot) was preceded by t5 (user, "Je veux parler à quelqu'un")
         assert any("parler" in m for m in messages)
+        assert any("facture" in m for m in messages)
 
     def test_includes_classification_scores(self, populated_db: Path):
         turns = get_misclassified_turns(populated_db)

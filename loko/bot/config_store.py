@@ -30,7 +30,7 @@ def save_bot_config(config: BotConfig) -> Path:
 
 def load_bot_config(bot_id: str) -> BotConfig | None:
     """Load a bot config from disk.  Returns None if not found."""
-    config_path = get_bot_dir(bot_id) / "config.json"
+    config_path = get_bot_dir(bot_id, create=False) / "config.json"
     if not config_path.exists():
         return None
     try:
@@ -63,7 +63,7 @@ def list_bots() -> list[dict[str, str]]:
 def delete_bot(bot_id: str) -> bool:
     """Delete a bot and all its data.  Returns True if found."""
     import shutil
-    bot_dir = get_bot_dir(bot_id)
+    bot_dir = get_bot_dir(bot_id, create=False)
     if bot_dir.exists():
         shutil.rmtree(bot_dir)
         logger.info("Bot deleted: %s", bot_id)

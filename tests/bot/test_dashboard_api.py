@@ -19,6 +19,7 @@ from loko.bot.session_store import get_bot_dir, _SCHEMA_SQL
 @pytest.fixture
 def app(tmp_path, monkeypatch):
     monkeypatch.setenv("LOKO_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("LOKO_ADMIN_TOKEN", "test-admin-token-12345")
     from loko.api.bot_public import clear_orchestrators
     clear_orchestrators()
     from loko.main import create_app
@@ -27,7 +28,10 @@ def app(tmp_path, monkeypatch):
 
 @pytest.fixture
 def client(app):
-    return TestClient(app)
+    c = TestClient(app)
+    # Add admin auth headers by default for dashboard tests
+    c.headers.update({"Authorization": "Bearer test-admin-token-12345"})
+    return c
 
 
 @pytest.fixture
@@ -83,9 +87,19 @@ def bot_with_sessions(tmp_path, monkeypatch) -> str:
         ("t1", "s1", "user", "Ma facture", "2024-01-01T10:00:30",
          None, None, None, "facturation", None, None),
     )
+    # Bot response (this is what the user rates)
+    conn.execute(
+        """INSERT INTO turns
+           (turn_id, session_id, role, content, timestamp,
+            template_key, buttons, button_selected,
+            intent, sub_motif, sources)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        ("t1b", "s1", "bot", "Voici votre facture", "2024-01-01T10:00:45",
+         None, None, None, None, None, None),
+    )
     conn.execute(
         "INSERT INTO feedback (session_id, turn_id, rating, comment, timestamp) VALUES (?, ?, ?, ?, ?)",
-        ("s1", "t1", "negative", "Mauvaise réponse", "2024-01-01T10:01:00"),
+        ("s1", "t1b", "negative", "Mauvaise réponse", "2024-01-01T10:01:00"),
     )
     conn.commit()
     conn.close()

@@ -9,16 +9,21 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from fastapi import APIRouter, BackgroundTasks, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
+from loko.api.auth import require_admin
 from loko.bot.config_store import load_bot_config, save_bot_config
 from loko.bot.metrics import compute_metrics, get_misclassified_turns, get_session_replay
 from loko.bot.session_store import get_bot_dir
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/bot", tags=["bot-dashboard"])
+router = APIRouter(
+    prefix="/api/bot",
+    tags=["bot-dashboard"],
+    dependencies=[Depends(require_admin)],
+)
 
 
 # ---------------------------------------------------------------------------
@@ -58,7 +63,7 @@ async def get_metrics(bot_id: str) -> dict[str, Any]:
 @router.get("/{bot_id}/dashboard/sessions")
 async def list_recent_sessions(
     bot_id: str,
-    limit: int = 20,
+    limit: int = Query(default=20, le=100),
     offset: int = 0,
 ) -> list[dict[str, Any]]:
     """List recent sessions for the dashboard."""

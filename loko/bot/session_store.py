@@ -326,10 +326,32 @@ def get_bots_dir() -> Path:
     return bots_dir
 
 
-def get_bot_dir(bot_id: str) -> Path:
-    """Return the directory for a specific bot."""
-    bot_dir = get_bots_dir() / bot_id
-    bot_dir.mkdir(parents=True, exist_ok=True)
+def get_bot_dir(bot_id: str, *, create: bool = True) -> Path:
+    """Return the directory for a specific bot.
+
+    Args:
+        bot_id: Bot identifier (must be a valid slug).
+        create: If True (default), create the directory if missing.
+                Set to False for read-only lookups to avoid disk
+                pollution by enumeration.
+
+    Raises:
+        ValueError: If bot_id fails slug validation or results in
+                    a path outside the bots directory (traversal).
+    """
+    from loko.bot.models import validate_slug
+
+    validate_slug(bot_id, "bot_id")
+
+    bots_dir = get_bots_dir()
+    bot_dir = (bots_dir / bot_id).resolve()
+
+    # Path traversal guard
+    if bots_dir.resolve() not in bot_dir.parents and bot_dir != bots_dir.resolve():
+        raise ValueError(f"Invalid bot_id: path traversal detected — {bot_id!r}")
+
+    if create:
+        bot_dir.mkdir(parents=True, exist_ok=True)
     return bot_dir
 
 

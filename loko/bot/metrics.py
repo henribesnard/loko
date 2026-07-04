@@ -210,6 +210,8 @@ def get_misclassified_turns(
     conn.row_factory = sqlite3.Row
 
     try:
+        # D2 fix: feedback.turn_id points to the BOT turn (which was rated).
+        # We need to find the preceding USER turn to get the actual user message.
         rows = conn.execute("""
             SELECT
                 f.session_id,
@@ -217,9 +219,10 @@ def get_misclassified_turns(
                 f.rating,
                 f.comment,
                 f.timestamp as feedback_time,
-                t.content as user_message,
-                t.intent,
+                t.content as bot_message,
+                t.intent as bot_intent,
                 t.sub_motif,
+                t.timestamp as bot_turn_time,
                 s.current_intent as session_intent
             FROM feedback f
             JOIN turns t ON f.turn_id = t.turn_id
@@ -231,6 +234,19 @@ def get_misclassified_turns(
 
         results = []
         for r in rows:
+            # Find the preceding user turn (the one the bot was responding to)
+            user_turn_row = conn.execute("""
+                SELECT content, intent FROM turns
+                WHERE session_id = ? AND role = 'user'
+                  AND timestamp < ?
+                ORDER BY timestamp DESC LIMIT 1
+            """, (r["session_id"], r["bot_turn_time"])).fetchone()
+
+            user_message = user_turn_row["content"] if user_turn_row else ""
+            user_intent = (
+                user_turn_row["intent"] if user_turn_row else None
+            )
+
             # Try to find classification trace for context
             trace_row = conn.execute("""
                 SELECT detail FROM traces
@@ -245,8 +261,10 @@ def get_misclassified_turns(
             results.append({
                 "session_id": r["session_id"],
                 "turn_id": r["turn_id"],
-                "user_message": r["user_message"],
-                "classified_intent": r["intent"] or r["session_intent"],
+                "user_message": user_message,
+                "classified_intent": (
+                    user_intent or r["bot_intent"] or r["session_intent"]
+                ),
                 "sub_motif": r["sub_motif"],
                 "feedback_comment": r["comment"],
                 "feedback_time": r["feedback_time"],

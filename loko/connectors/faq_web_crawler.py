@@ -88,6 +88,52 @@ class PageFetcher(Protocol):
 # Simple fetcher (requests-based, no JS rendering)
 # ---------------------------------------------------------------------------
 
+def _is_private_ip(hostname: str) -> bool:
+    """Check if a hostname resolves to a private/loopback/link-local IP.
+
+    Used to prevent SSRF attacks (P1-3).
+    """
+    import ipaddress
+    import socket
+
+    try:
+        infos = socket.getaddrinfo(hostname, None, socket.AF_UNSPEC)
+    except socket.gaierror:
+        return True  # Cannot resolve → reject (fail-closed)
+
+    for family, _, _, _, sockaddr in infos:
+        ip_str = sockaddr[0]
+        try:
+            addr = ipaddress.ip_address(ip_str)
+            if (
+                addr.is_private
+                or addr.is_loopback
+                or addr.is_link_local
+                or addr.is_reserved
+                or addr.is_multicast
+            ):
+                return True
+        except ValueError:
+            return True
+
+    return False
+
+
+def _validate_url_ssrf(url: str, allow_private: bool = False) -> None:
+    """Validate a URL against SSRF: reject private IPs and non-http(s) schemes."""
+    parsed = urlparse(url)
+
+    if parsed.scheme not in ("http", "https"):
+        raise ValueError(f"SSRF blocked: unsupported scheme {parsed.scheme!r}")
+
+    hostname = parsed.hostname
+    if not hostname:
+        raise ValueError("SSRF blocked: no hostname in URL")
+
+    if not allow_private and _is_private_ip(hostname):
+        raise ValueError(f"SSRF blocked: private/reserved IP for {hostname}")
+
+
 class SimplePageFetcher:
     """HTTP fetcher using urllib (no JS rendering).
 
@@ -95,23 +141,67 @@ class SimplePageFetcher:
     fetcher implementing the same PageFetcher protocol.
     """
 
-    def __init__(self, timeout: int = 30, user_agent: str | None = None):
+    MAX_RESPONSE_SIZE = 5 * 1024 * 1024  # 5 MB
+
+    def __init__(
+        self,
+        timeout: int = 30,
+        user_agent: str | None = None,
+        allow_private_networks: bool = False,
+    ):
         self.timeout = timeout
         self.user_agent = user_agent or "LOKO-Bot-Crawler/1.0"
+        self.allow_private = allow_private_networks
+        self._robots_cache: dict[str, Any] = {}
 
     def fetch(self, url: str) -> tuple[str, int]:
-        import urllib.request
         import urllib.error
+        import urllib.request
+
+        # SSRF guard (P1-3)
+        try:
+            _validate_url_ssrf(url, allow_private=self.allow_private)
+        except ValueError as e:
+            logger.warning("SSRF guard blocked %s: %s", url, e)
+            return "", 0
 
         req = urllib.request.Request(url, headers={"User-Agent": self.user_agent})
         try:
             with urllib.request.urlopen(req, timeout=self.timeout) as resp:
-                return resp.read().decode("utf-8", errors="replace"), resp.status
+                # Enforce max response size
+                data = resp.read(self.MAX_RESPONSE_SIZE + 1)
+                if len(data) > self.MAX_RESPONSE_SIZE:
+                    logger.warning("Response too large for %s (>5MB), truncating", url)
+                    data = data[: self.MAX_RESPONSE_SIZE]
+                return data.decode("utf-8", errors="replace"), resp.status
         except urllib.error.HTTPError as e:
             return "", e.code
         except Exception as e:
             logger.warning("Fetch error for %s: %s", url, e)
             return "", 0
+
+    def check_robots_txt(self, url: str) -> bool:
+        """Check if crawling is allowed by robots.txt (P1-3)."""
+        import urllib.robotparser
+
+        parsed = urlparse(url)
+        robots_url = f"{parsed.scheme}://{parsed.netloc}/robots.txt"
+
+        if robots_url not in self._robots_cache:
+            rp = urllib.robotparser.RobotFileParser()
+            rp.set_url(robots_url)
+            try:
+                rp.read()
+            except Exception:
+                # If robots.txt is unreachable, allow crawling
+                self._robots_cache[robots_url] = None
+                return True
+            self._robots_cache[robots_url] = rp
+
+        rp = self._robots_cache[robots_url]
+        if rp is None:
+            return True
+        return rp.can_fetch(self.user_agent, url)
 
     def fetch_sitemap(self, url: str) -> list[str]:
         """Parse a sitemap.xml and extract <loc> URLs."""
@@ -119,10 +209,21 @@ class SimplePageFetcher:
         if status != 200 or not html:
             return []
 
-        urls: list[str] = []
-        for match in re.finditer(r"<loc>\s*(.*?)\s*</loc>", html):
-            urls.append(match.group(1))
-        return urls
+        # Use xml.etree for safer parsing (P1-3)
+        try:
+            import xml.etree.ElementTree as ET
+            root = ET.fromstring(html)
+            # Handle namespace
+            ns = ""
+            if root.tag.startswith("{"):
+                ns = root.tag.split("}")[0] + "}"
+            return [loc.text.strip() for loc in root.iter(f"{ns}loc") if loc.text]
+        except Exception:
+            # Fallback to regex for malformed sitemaps
+            urls: list[str] = []
+            for match in re.finditer(r"<loc>\s*(.*?)\s*</loc>", html):
+                urls.append(match.group(1))
+            return urls
 
 
 # ---------------------------------------------------------------------------
@@ -253,6 +354,13 @@ class FAQWebCrawler:
             if depth > self.config.max_depth:
                 state.skipped += 1
                 continue
+
+            # robots.txt check (P1-3)
+            if self.config.respect_robots and hasattr(self.fetcher, "check_robots_txt"):
+                if not self.fetcher.check_robots_txt(url):
+                    logger.debug("Robots.txt disallows %s", url)
+                    state.skipped += 1
+                    continue
 
             try:
                 html, status = self.fetcher.fetch(url)

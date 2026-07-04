@@ -1,0 +1,22 @@
+services:
+  loko:
+    build: .
+    ports:
+      - "8001:8000"
+    volumes:
+      - loko-data:/root/.loko
+    environment:
+      - PYTHONUNBUFFERED=1
+      - RAGKIT_MODE=server
+      - LOKO_ADMIN_TOKEN=${LOKO_ADMIN_TOKEN:?Set LOKO_ADMIN_TOKEN in .env}
+      - RAGKIT_CORS_ORIGINS=${RAGKIT_CORS_ORIGINS:-}
+      - LOKO_SESSION_RETENTION_DAYS=${LOKO_SESSION_RETENTION_DAYS:-30}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+
+volumes:
+  loko-data:

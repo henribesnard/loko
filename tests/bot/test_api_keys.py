@@ -53,11 +53,22 @@ class TestAPIKeys:
         monkeypatch.setenv("LOKO_DATA_DIR", str(tmp_path))
         assert not revoke_api_key("bot-1", "nonexistent")
 
-    def test_origin_check_no_restriction(self):
+    def test_origin_check_empty_list_blocks_cross_origin(self):
+        """P1-4: Empty allowed_origins blocks cross-origin (fail-closed)."""
         record = APIKeyRecord(
             key_id="k1", key_hash="h1", bot_id="b1", allowed_origins=[],
         )
-        assert check_origin(record, "https://example.com")
+        # Non-browser (no origin) is allowed
+        assert check_origin(record, None)
+        # Cross-origin is blocked
+        assert not check_origin(record, "https://example.com")
+
+    def test_origin_check_wildcard_allows_all(self):
+        """P1-4: Explicit wildcard allows all origins."""
+        record = APIKeyRecord(
+            key_id="k1", key_hash="h1", bot_id="b1", allowed_origins=["*"],
+        )
+        assert check_origin(record, "https://anything.com")
         assert check_origin(record, None)
 
     def test_origin_check_with_restriction(self):
@@ -67,7 +78,8 @@ class TestAPIKeys:
         )
         assert check_origin(record, "https://allowed.com")
         assert not check_origin(record, "https://other.com")
-        assert not check_origin(record, None)
+        # Non-browser request (no origin) is allowed
+        assert check_origin(record, None)
 
     def test_key_scoped_to_bot(self, tmp_path, monkeypatch):
         monkeypatch.setenv("LOKO_DATA_DIR", str(tmp_path))
