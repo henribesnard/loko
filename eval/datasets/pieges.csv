@@ -1,16 +1,16 @@
 id,text,expected_behavior,note
-T01,connaitre le montant de ma cotisation et changer mon adresse,clarify_inter,double intention cotisations+changement_coordonnees
-T02,bonjour,reject,salutation sans demande
-T03,oui,reject,monosyllabe sans contexte
-T04,je veux parler a un conseiller pour ma cotisation,escalate,demande_conseiller malgre sujet metier
-T05,aide pour rembourser une prothese dentaire,reject,hors scope — dentaire non retenu
-T06,comment acceder a mon espace MGEN pour voir mes cotisations,clarify_inter,ambiguite services_en_ligne vs cotisations
-T07,j'ai demenage et je dois changer mon RIB et resilier ma mutuelle,clarify_inter,triple intention
-T08,aeioiu qlmskd jfqsd,reject,charabia
-T09,attestation,route,mot-clé fort — justificatif_droits
-T10,noemie,route,mot-clé fort — teletransmission_noemie
-T11,comment savoir si mon lien noemie est actif pour etre rembourse,route,teletransmission avec contexte remboursement
-T12,"je suis en arret depuis 3 mois, quand vais-je etre paye",route,arret_travail formulation indirecte
-T13,transferez-moi maintenant,escalate,demande_conseiller implicite aggressive
-T14,"je ne veux plus etre chez vous, comment faire",route,resiliation formulation indirecte
-T15,changement coordonnees bancaires et postales,route,changement_coordonnees — pas d'ambiguite
+T01,je souhaiterais débloquer mon compte Ameli,route:services_en_ligne,services_en_ligne/compte_bloque sans clarification
+T02,modification mot de passe,route:services_en_ligne,services_en_ligne/mot_de_passe_oublie sans clarification
+T03,accès à mon compte mutuelle MGEN,clarify_intra:services_en_ligne,sous-motif incertain — clarification intra attendue
+T04,RIB coordonnées bancaires,clarify_inter:changement_coordonnees|cotisations,ambigu changement_coordonnees/cotisations
+T05,changement de banque pour les prélèvements de cotisations,clarify_inter:changement_coordonnees|cotisations,zone grise RIB/prélèvement
+T06,attestation de paiement,clarify_inter:arret_travail|cotisations|justificatif_droits,ambigu arret_travail/cotisations/justificatif_droits
+T07,attestation de droits MGEN,route:justificatif_droits,justificatif_droits direct
+T08,complément de salaire arrêt longue maladie,route:arret_travail,arret_travail direct
+T09,est-ce qu'il y a une télétransmission entre vous et la mutuelle,route:teletransmission_noemie,teletransmission_noemie direct (contrôle positif)
+T10,comment résilier mon ancienne mutuelle,route:resiliation,resiliation direct
+T11,Je préfère parler à un humain,escalate:demande_explicite,sortie transverse demande_conseiller
+T12,déclarer un accident de ski,reject,hors_périmètre — accident non retenu
+T13,bilan bucco-dentaire détartrage,reject,hors_périmètre — dentaire non retenu
+T14,Noemie,route:teletransmission_noemie,mot unique — robustesse entrées ultra-courtes
+T15,la référence iban et le numéro de carte vitale ne sont pas reconnus,route:services_en_ligne,piège IBAN+carte vitale — services_en_ligne

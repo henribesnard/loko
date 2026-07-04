@@ -5,7 +5,8 @@ from __future__ import annotations
 import pytest
 
 from loko.bot.models import BotConfig, Chunk, EscalationMotif, JourneyParams
-from loko.bot.retrieval_filter import FilteredRetriever, InMemorySearchBackend
+from loko.bot.retrieval_filter import FilteredRetriever
+from loko.testing.mocks import InMemorySearchBackend
 
 
 # ---------------------------------------------------------------------------

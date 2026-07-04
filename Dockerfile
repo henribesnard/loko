@@ -28,7 +28,7 @@ RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/wh
 
 # Install Python dependencies (server + ML) with constraints (A1)
 COPY pyproject.toml constraints-ml.txt ./
-RUN pip install --no-cache-dir -e ".[server,ml]"
+RUN pip install --no-cache-dir -c constraints-ml.txt -e ".[server,ml]"
 
 # A2: copy pre-downloaded base model to fixed local path
 COPY --from=model-download /models/base/minilm /app/models/base/minilm

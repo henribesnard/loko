@@ -27,6 +27,7 @@ from loko.api.rate_limit import (
     RATE_SESSIONS,
     get_limiter,
 )
+from loko.bot.classifier.loader import load_classifier, load_search_backend
 from loko.bot.config_store import load_bot_config
 from loko.bot.errors import ComponentUnavailableError
 from loko.bot.timeout import check_and_apply_timeout
@@ -95,167 +96,30 @@ _SESSION_LOCKS_MAX = 10_000  # R4: bounded size to prevent unbounded memory grow
 def _get_orchestrator(bot_id: str, config: BotConfig) -> BotOrchestrator:
     """Get or create the orchestrator for a bot.
 
-    Fail-closed policy (P0-6, A3, A5):
+    Fail-closed policy (P0-6, A3, A5, C7):
     - Draft bots cannot be served at runtime (409).
     - Published bots use real classifier — no mock fallback.
-    - Mocks are only used when RAGKIT_ENV=test.
+    - Tests must use register_orchestrator() to inject mocks.
     - ComponentUnavailableError on any missing component.
 
-    R2-b: Uses SQLiteSearchBackend (persistent) when documents exist,
-    falls back to InMemorySearchBackend in test mode only.
+    R2-b: Uses SQLiteSearchBackend (persistent) when documents exist.
     """
-    import os
-
     if bot_id not in _ORCHESTRATORS:
-        is_test = os.environ.get("RAGKIT_ENV") == "test"
-
         # A3: classifier — no mock fallback, raises ComponentUnavailableError
-        classifier = _load_classifier(bot_id)
+        classifier = load_classifier(bot_id)
 
         # R2-b: knowledge store
-        backend = _load_search_backend(bot_id)
+        backend = load_search_backend(bot_id)
         retriever = FilteredRetriever(backend)
 
-        # LLM: mock only in test; production requires real provider (phase R2)
-        if is_test:
-            from loko.bot.generation import MockLLMProvider
-            generator = BotGenerator(MockLLMProvider(
-                response="[Mock] Réponse de test."
-            ))
-        else:
-            raise ComponentUnavailableError(
-                "llm", bot_id,
-                "No LLM provider configured. "
-                "Set RAGKIT_ENV=test or configure a real LLM provider (phase R2).",
-            )
-
-        # Escalation: mock if test or LOKO_ESCALATION_PROVIDER=mock explicit
-        if is_test or os.environ.get("LOKO_ESCALATION_PROVIDER") == "mock":
-            from loko.bot.escalation import MockEscalationProvider
-            escalation = MockEscalationProvider()
-        else:
-            raise ComponentUnavailableError(
-                "escalation", bot_id,
-                "No escalation provider configured. "
-                "Set LOKO_ESCALATION_PROVIDER=mock or configure a real provider.",
-            )
-
-        _ORCHESTRATORS[bot_id] = BotOrchestrator(
-            classifier=classifier,
-            retriever=retriever,
-            generator=generator,
-            escalation=escalation,
+        # LLM: production requires real provider (phase R2)
+        raise ComponentUnavailableError(
+            "llm", bot_id,
+            "No LLM provider configured. "
+            "Use register_orchestrator() in tests or configure a real LLM provider (phase R2).",
         )
 
     return _ORCHESTRATORS[bot_id]
-
-
-def _load_classifier(bot_id: str) -> Any:
-    """Load the SetFit classifier for a bot (A3).
-
-    Fail-closed: raises ComponentUnavailableError if the model is not
-    trained or SetFit is not installed.  No mock fallback — tests must
-    use register_orchestrator() to inject mocks.
-    """
-    try:
-        from loko.bot.classifier.model_store import model_exists
-        from loko.bot.classifier.setfit_service import SetFitClassifier
-    except ImportError:
-        raise ComponentUnavailableError(
-            "classifier_l1", bot_id,
-            "SetFit not installed (pip install loko[ml])",
-        )
-
-    if not model_exists(bot_id, "level1"):
-        raise ComponentUnavailableError(
-            "classifier_l1", bot_id,
-            "Level 1 classifier not trained",
-        )
-
-    clf = SetFitClassifier(bot_id, "level1")
-    if not clf.load():
-        raise ComponentUnavailableError(
-            "classifier_l1", bot_id,
-            "Failed to load level 1 classifier from disk",
-        )
-
-    return _SetFitClassifierAdapter(bot_id, clf)
-
-
-def _load_search_backend(bot_id: str) -> Any:
-    """Load the search backend for a bot (R2-b, A3).
-
-    Uses the persistent SQLite knowledge store.  Returns it even when
-    empty (retrieval will fail and the bot will escalate).
-    Falls back to InMemorySearchBackend only when RAGKIT_ENV=test.
-    """
-    import os
-
-    try:
-        from loko.bot.knowledge_store import get_knowledge_store
-        return get_knowledge_store(bot_id)
-    except Exception:
-        logger.warning("Could not load knowledge store for bot %s", bot_id)
-
-    if os.environ.get("RAGKIT_ENV") == "test":
-        from loko.bot.retrieval_filter import InMemorySearchBackend
-        return InMemorySearchBackend()
-
-    raise ComponentUnavailableError(
-        "knowledge_store", bot_id,
-        "Failed to initialize knowledge store",
-    )
-
-
-class _SetFitClassifierAdapter:
-    """Adapts SetFitClassifier to the ClassifierProtocol."""
-
-    def __init__(self, bot_id: str, l1_classifier: Any):
-        self.bot_id = bot_id
-        self._l1 = l1_classifier
-        self._l2_cache: dict[str, Any] = {}
-
-    def classify_l1(self, text: str) -> list[tuple[str, float]]:
-        return self._l1.classify(text)
-
-    def classify_l2(self, intent_id: str, text: str) -> list[tuple[str, float]]:
-        if intent_id not in self._l2_cache:
-            try:
-                from loko.bot.classifier.model_store import model_exists
-                from loko.bot.classifier.setfit_service import SetFitClassifier
-
-                if model_exists(self.bot_id, "level2", intent_id):
-                    clf = SetFitClassifier(self.bot_id, "level2", intent_id)
-                    clf.load()
-                    self._l2_cache[intent_id] = clf
-                else:
-                    return []
-            except ImportError:
-                return []
-
-        return self._l2_cache[intent_id].classify(text)
-
-
-class _MockClassifier:
-    """Fallback classifier when no model is trained.
-
-    Guard (R2-a): raises RuntimeError outside RAGKIT_ENV=test.
-    """
-
-    def __init__(self) -> None:
-        import os
-
-        if os.environ.get("RAGKIT_ENV") != "test":
-            raise RuntimeError(
-                "_MockClassifier cannot be used outside test environment. "
-                "Set RAGKIT_ENV=test or train a real classifier."
-            )
-
-    def classify_l1(self, text: str) -> list[tuple[str, float]]:
-        return [("hors_perimetre", 0.5)]
-
-    def classify_l2(self, intent_id: str, text: str) -> list[tuple[str, float]]:
-        return []
 
 
 def register_orchestrator(bot_id: str, orchestrator: BotOrchestrator) -> None:

@@ -189,8 +189,8 @@ def _register_controlled_orchestrator(
     classifier: ControlledClassifier,
 ):
     """Register an orchestrator with a controlled classifier."""
-    from loko.bot.escalation import MockEscalationProvider
-    from loko.bot.generation import BotGenerator, MockLLMProvider
+    from loko.testing.mocks import MockEscalationProvider, MockLLMProvider
+    from loko.bot.generation import BotGenerator
     from loko.bot.orchestrator import BotOrchestrator
     from loko.api.bot_public import register_orchestrator
 

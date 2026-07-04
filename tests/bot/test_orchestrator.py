@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 from typing import Any
 
-from loko.bot.generation import BotGenerator, MockLLMProvider
+from loko.bot.generation import BotGenerator
 from loko.bot.models import (
     BotConfig,
     Chunk,
@@ -16,7 +16,8 @@ from loko.bot.models import (
     SubMotif,
 )
 from loko.bot.orchestrator import BotOrchestrator, SSEEvent
-from loko.bot.retrieval_filter import FilteredRetriever, InMemorySearchBackend
+from loko.bot.retrieval_filter import FilteredRetriever
+from loko.testing.mocks import InMemorySearchBackend, MockLLMProvider
 
 
 # ---------------------------------------------------------------------------

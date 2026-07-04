@@ -25,27 +25,26 @@ logger = logging.getLogger("loko.eval")
 
 
 def _load_classifier(bot_dir: Path) -> Any:
-    """Load the trained SetFit classifier from a bot directory."""
-    from loko.bot.classifier.setfit_service import SetFitClassifier
+    """Load the trained SetFit classifier from a bot directory.
+
+    Sets LOKO_DATA_DIR so model_store resolves the correct path,
+    then delegates to the shared loader (C8).
+    """
+    import os
 
     bot_id = bot_dir.name
-    model_dir = bot_dir / "models" / "level1"
-
-    if not (model_dir / "config.json").exists():
-        print(f"Error: No trained model found at {model_dir}", file=sys.stderr)
-        sys.exit(1)
-
-    # We need to set LOKO_DATA_DIR so model_store finds the right path
-    import os
     data_dir = bot_dir.parent.parent  # ~/.loko/bots/bot-id -> ~/.loko
     os.environ.setdefault("LOKO_DATA_DIR", str(data_dir))
 
-    clf = SetFitClassifier(bot_id, "level1")
-    if not clf.load():
-        print(f"Error: Failed to load classifier from {model_dir}", file=sys.stderr)
-        sys.exit(1)
+    from loko.bot.classifier.loader import load_classifier
+    from loko.bot.errors import ComponentUnavailableError
 
-    return clf
+    try:
+        adapter = load_classifier(bot_id)
+        return adapter._l1  # unwrap adapter — CLI wraps with its own _ClassifierAdapter
+    except ComponentUnavailableError as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        sys.exit(1)
 
 
 def _load_config(bot_dir: Path) -> Any:

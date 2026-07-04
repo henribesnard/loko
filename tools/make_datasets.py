@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
-"""C1 — Generate frozen evaluation datasets from MGEN verbatims.
+"""C1/C3/C4/C5 — Generate and verify frozen evaluation datasets.
 
 Usage:
     python tools/make_datasets.py --source dataset.csv --out eval/datasets/
+    python tools/make_datasets.py --check eval/datasets/
 
 Inputs:
     dataset.csv — 6062 MGEN verbatims with columns: text, intent, locale
 
 Outputs (in --out directory):
-    train.csv              — postulat examples (from bot config intents)
+    train.csv              — postulat §2 strict examples (125 rows)
     heldout_metier.csv     — 100 stratified verbatims from 7 retained intents
     heldout_conseiller.csv — 126 "parler_conseiller" verbatims
     heldout_horsscope.csv  — 100 stratified from 32 non-selected intents
@@ -23,11 +24,166 @@ from __future__ import annotations
 import argparse
 import csv
 import hashlib
-import json
 import random
 import sys
+import unicodedata
 from collections import defaultdict
 from pathlib import Path
+
+# -----------------------------------------------------------------------
+# Postulat §2 — exact training examples (Option A: few-shot strict)
+# -----------------------------------------------------------------------
+
+POSTULAT_EXAMPLES: list[dict[str, str]] = []
+
+_POSTULAT_RAW: dict[str, list[str]] = {
+    "services_en_ligne": [
+        "accès à mon espace personnel",
+        "accès à mon compte MGEN",
+        "accès espace perso",
+        "accès à mon compte en ligne",
+        "MGEN connexion au compte Ameli",
+        "accès à mon application MGEN",
+        "accès compte personnel sur mon site MGEN",
+        "accès à mon espace adhérent",
+        "accès à l'espace personnel internet de ma fille",
+        "accès en ligne",
+        "accès site mutuelle",
+        "accès à mon espace client",
+        "accès au compte Ameli point FR",
+        "accès à mon espace internet",
+        "accéder au compte internet",
+    ],
+    "justificatif_droits": [
+        "attestation de droits",
+        "attestation MGEN",
+        "attestation d'affiliation à la sécurité sociale",
+        "attestation CPAM",
+        "attestation d'assuré social",
+        "attestation de carte vitale",
+        "attestation d'ayant droit",
+        "attestation de droits de la sécurité sociale",
+        "attestation d'ouverture de droits à la sécurité sociale",
+        "attestation d'assurance maladie",
+        "aide pour la carte tiers payant",
+        "attestation MGEN pour ma fille",
+        "attestation de droits en urgence",
+        "attestation de couverture sociale",
+        "attestation de droits perdue",
+        "attestation avec la date d'effet",
+    ],
+    "arret_travail": [
+        "arrêt de travail",
+        "arrêt de maladie",
+        "comment déclarer un arrêt de travail",
+        "allocation journalière",
+        "indemnités journalières",
+        "allocation journalière pour arrêt de travail prolongé",
+        "complément de salaire en arrêt maladie",
+        "comment activer le maintien de salaire",
+        "arrêt maladie passage à demi-traitement",
+        "allocation longue maladie",
+        "attestation de salaire à remplir",
+        "attestation indemnité journalière",
+        "attestation à remplir pour le versement de l'ijss",
+        "allocation d'invalidité",
+        "compensation perte salaire",
+        "autorisation de sortie pendant un congé maladie",
+    ],
+    "cotisations": [
+        "connaître le montant de ma cotisation",
+        "calcul de mes cotisations",
+        "augmentation des cotisations",
+        "comprendre mes cotisations",
+        "appel de cotisation mutuelle",
+        "comment effectuer le paiement de mes cotisations",
+        "comprendre mon échéancier",
+        "cotisation mutuelle au prélèvement automatique",
+        "comprendre le prélèvement sur mon salaire",
+        "contestation cotisation",
+        "changement du montant de ma cotisation",
+        "calcul montant de la cotisation conjoint",
+        "attestation de paiement des cotisations",
+        "concernant le prélèvement de la mutuelle",
+        "comprendre le mode de calcul des cotisations",
+        "connaître le coût de la mutuelle",
+    ],
+    "changement_coordonnees": [
+        "changement d'adresse après déménagement",
+        "actualiser mon adresse postale",
+        "changement d'adresse de domicile",
+        "besoin de changer mon RIB",
+        "changement de RIB pour les remboursements",
+        "ajouter un RIB",
+        "changement d'adresse et de RIB",
+        "changement RIB assurance maladie",
+        "changement de IBAN",
+        "actualiser mon adresse email",
+        "besoin de changer d'adresse courriel",
+        "changement d'adresse courriel",
+        "adresse postale erronée",
+        "changement coordonnées bancaires familiale",
+        "changement d'adresse dans mon dossier",
+        "changement de coordonnées personnelles",
+    ],
+    "teletransmission_noemie": [
+        "comment mettre en place la télétransmission Noemie",
+        "activer le lien Noemie",
+        "bénéficier de la télétransmission",
+        "annuler la télétransmission",
+        "arrêter la télétransmission",
+        "déconnexion du service Noemie",
+        "connexion Noemie",
+        "explications fonctionnement Noemie",
+        "comment se fait la télétransmission entre le mutuelle et la sécu",
+        "est-ce que le lien Noemie est créé avec ma nouvelle mutuelle",
+        "codes de télétransmission",
+        "déconnecter la mutuelle MGEN de ma sécurité sociale",
+        "au sujet des télétransmissions",
+        "comment faire une télétrans",
+        "contrat Noemie",
+    ],
+    "resiliation": [
+        "comment résilier la MGEN",
+        "demande de résiliation de contrat mutuelle",
+        "procédure de résiliation",
+        "délai de résiliation",
+        "conditions de résiliation mutuelle",
+        "courrier résiliation mutuelle",
+        "attestation de résiliation",
+        "annuler ma résiliation",
+        "où en est la résiliation de mon contrat",
+        "demande résiliation prévoyance",
+        "information sur la résiliation d'un bénéficiaire",
+        "pouvoir résilier ma mutuelle",
+        "changement de mutuelle",
+        "justificatif résiliation mutuelle obligatoire",
+        "effectuer une résiliation",
+    ],
+    "hors_perimetre": [
+        "adresse pour envoyer un devis dentaire",
+        "aide pour le remboursement pour une prothèse dentaire",
+        "achat de lentilles de contact",
+        "changer les verres",
+        "comment déclarer un décès",
+        "bénéficiaire capital décès",
+        "agrément pour une cure thermale",
+        "déclaration accident de travail",
+        "déclarer un accident corporel",
+        "activer un contrat logement",
+        "accord préalable pour une prescription médicale de transport",
+        "accusé réception de ma déclaration de grossesse",
+        "achat de fauteuil roulant remboursement",
+        "adhérer à une complémentaire santé",
+        "adresse postale de la MGEN",
+        "prise en charge hospitalisation",
+    ],
+}
+
+for _intent, _examples in sorted(_POSTULAT_RAW.items()):
+    for _text in _examples:
+        POSTULAT_EXAMPLES.append({"text": _text, "intent": _intent})
+
 
 # The 7 intents retained in the postulat (from e2e_intents.json)
 RETAINED_INTENTS = {
@@ -43,40 +199,86 @@ RETAINED_INTENTS = {
 # System intent for transverse escalation
 CONSEILLER_INTENT = "parler_conseiller"
 
-# Edge cases for trap testing (T01-T15)
+# -----------------------------------------------------------------------
+# Edge cases T01-T15 (postulat §4 strict)
+# -----------------------------------------------------------------------
+
 PIEGE_CASES = [
-    {"id": "T01", "text": "connaitre le montant de ma cotisation et changer mon adresse",
-     "expected_behavior": "clarify_inter", "note": "double intention cotisations+changement_coordonnees"},
-    {"id": "T02", "text": "bonjour",
-     "expected_behavior": "reject", "note": "salutation sans demande"},
-    {"id": "T03", "text": "oui",
-     "expected_behavior": "reject", "note": "monosyllabe sans contexte"},
-    {"id": "T04", "text": "je veux parler a un conseiller pour ma cotisation",
-     "expected_behavior": "escalate", "note": "demande_conseiller malgre sujet metier"},
-    {"id": "T05", "text": "aide pour rembourser une prothese dentaire",
-     "expected_behavior": "reject", "note": "hors scope — dentaire non retenu"},
-    {"id": "T06", "text": "comment acceder a mon espace MGEN pour voir mes cotisations",
-     "expected_behavior": "clarify_inter", "note": "ambiguite services_en_ligne vs cotisations"},
-    {"id": "T07", "text": "j'ai demenage et je dois changer mon RIB et resilier ma mutuelle",
-     "expected_behavior": "clarify_inter", "note": "triple intention"},
-    {"id": "T08", "text": "aeioiu qlmskd jfqsd",
-     "expected_behavior": "reject", "note": "charabia"},
-    {"id": "T09", "text": "attestation",
-     "expected_behavior": "route", "note": "mot-clé fort — justificatif_droits"},
-    {"id": "T10", "text": "noemie",
-     "expected_behavior": "route", "note": "mot-clé fort — teletransmission_noemie"},
-    {"id": "T11", "text": "comment savoir si mon lien noemie est actif pour etre rembourse",
-     "expected_behavior": "route", "note": "teletransmission avec contexte remboursement"},
-    {"id": "T12", "text": "je suis en arret depuis 3 mois, quand vais-je etre paye",
-     "expected_behavior": "route", "note": "arret_travail formulation indirecte"},
-    {"id": "T13", "text": "transferez-moi maintenant",
-     "expected_behavior": "escalate", "note": "demande_conseiller implicite aggressive"},
-    {"id": "T14", "text": "je ne veux plus etre chez vous, comment faire",
-     "expected_behavior": "route", "note": "resiliation formulation indirecte"},
-    {"id": "T15", "text": "changement coordonnees bancaires et postales",
-     "expected_behavior": "route", "note": "changement_coordonnees — pas d'ambiguite"},
+    {"id": "T01", "text": "je souhaiterais débloquer mon compte Ameli",
+     "expected_behavior": "route:services_en_ligne",
+     "note": "services_en_ligne/compte_bloque sans clarification"},
+    {"id": "T02", "text": "modification mot de passe",
+     "expected_behavior": "route:services_en_ligne",
+     "note": "services_en_ligne/mot_de_passe_oublie sans clarification"},
+    {"id": "T03", "text": "accès à mon compte mutuelle MGEN",
+     "expected_behavior": "clarify_intra:services_en_ligne",
+     "note": "sous-motif incertain — clarification intra attendue"},
+    {"id": "T04", "text": "RIB coordonnées bancaires",
+     "expected_behavior": "clarify_inter:changement_coordonnees|cotisations",
+     "note": "ambigu changement_coordonnees/cotisations"},
+    {"id": "T05", "text": "changement de banque pour les prélèvements de cotisations",
+     "expected_behavior": "clarify_inter:changement_coordonnees|cotisations",
+     "note": "zone grise RIB/prélèvement"},
+    {"id": "T06", "text": "attestation de paiement",
+     "expected_behavior": "clarify_inter:arret_travail|cotisations|justificatif_droits",
+     "note": "ambigu arret_travail/cotisations/justificatif_droits"},
+    {"id": "T07", "text": "attestation de droits MGEN",
+     "expected_behavior": "route:justificatif_droits",
+     "note": "justificatif_droits direct"},
+    {"id": "T08", "text": "complément de salaire arrêt longue maladie",
+     "expected_behavior": "route:arret_travail",
+     "note": "arret_travail direct"},
+    {"id": "T09", "text": "est-ce qu'il y a une télétransmission entre vous et la mutuelle",
+     "expected_behavior": "route:teletransmission_noemie",
+     "note": "teletransmission_noemie direct (contrôle positif)"},
+    {"id": "T10", "text": "comment résilier mon ancienne mutuelle",
+     "expected_behavior": "route:resiliation",
+     "note": "resiliation direct"},
+    {"id": "T11", "text": "Je préfère parler à un humain",
+     "expected_behavior": "escalate:demande_explicite",
+     "note": "sortie transverse demande_conseiller"},
+    {"id": "T12", "text": "déclarer un accident de ski",
+     "expected_behavior": "reject",
+     "note": "hors_périmètre — accident non retenu"},
+    {"id": "T13", "text": "bilan bucco-dentaire détartrage",
+     "expected_behavior": "reject",
+     "note": "hors_périmètre — dentaire non retenu"},
+    {"id": "T14", "text": "Noemie",
+     "expected_behavior": "route:teletransmission_noemie",
+     "note": "mot unique — robustesse entrées ultra-courtes"},
+    {"id": "T15", "text": "la référence iban et le numéro de carte vitale ne sont pas reconnus",
+     "expected_behavior": "route:services_en_ligne",
+     "note": "piège IBAN+carte vitale — services_en_ligne"},
 ]
 
+# Expected counts
+EXPECTED_COUNTS = {
+    "train.csv": len(POSTULAT_EXAMPLES),  # 125
+    "heldout_metier.csv": 100,
+    "heldout_conseiller.csv": 125,
+    "heldout_horsscope.csv": 100,
+    "pieges.csv": 15,
+}
+
+
+# -----------------------------------------------------------------------
+# Text normalization for overlap detection (C3.2 / C5.d)
+# -----------------------------------------------------------------------
+
+def normalize_text(text: str) -> str:
+    """Normalize text for overlap comparison: lowercase, strip accents, reduce spaces."""
+    text = text.strip().lower()
+    # Strip accents
+    nfkd = unicodedata.normalize("NFKD", text)
+    text = "".join(c for c in nfkd if not unicodedata.combining(c))
+    # Reduce whitespace
+    text = " ".join(text.split())
+    return text
+
+
+# -----------------------------------------------------------------------
+# Dataset generation
+# -----------------------------------------------------------------------
 
 def load_source_dataset(path: Path) -> list[dict[str, str]]:
     """Load dataset.csv (text, intent, locale)."""
@@ -134,62 +336,70 @@ def write_csv(path: Path, rows: list[dict[str, str]], fieldnames: list[str]) -> 
 
 
 def generate_datasets(source_path: Path, out_dir: Path) -> dict[str, int]:
-    """Generate all evaluation datasets. Returns filename → row count."""
+    """Generate all evaluation datasets. Returns filename -> row count."""
     rng = random.Random(42)
     out_dir.mkdir(parents=True, exist_ok=True)
 
     all_rows = load_source_dataset(source_path)
     counts: dict[str, int] = {}
 
-    # 1. Separate by category
-    metier_rows = [r for r in all_rows if r["intent"] in RETAINED_INTENTS]
-    conseiller_rows = [r for r in all_rows if r["intent"] == CONSEILLER_INTENT]
-    horsscope_rows = [r for r in all_rows
-                      if r["intent"] not in RETAINED_INTENTS
-                      and r["intent"] != CONSEILLER_INTENT]
+    # Build exclusion set: postulat + piege normalized texts
+    postulat_norm = {normalize_text(r["text"]) for r in POSTULAT_EXAMPLES}
+    piege_norm = {normalize_text(p["text"]) for p in PIEGE_CASES}
+    excluded_norm = postulat_norm | piege_norm
 
-    # 2. train.csv — all postulat examples (from e2e_intents.json config)
-    # We use the verbatims from dataset.csv that match retained intents
-    # but EXCLUDE heldout samples (will be separated below)
-    # First, generate heldout sets, then train = metier - heldout
+    # 1. train.csv — postulat §2 strict (C4 Option A)
+    train_rows = sorted(POSTULAT_EXAMPLES, key=lambda r: (r["intent"], r["text"]))
+    train_path = out_dir / "train.csv"
+    write_csv(train_path, train_rows, ["text", "intent"])
+    counts["train.csv"] = len(train_rows)
+
+    # 2. Separate source rows by category, excluding train/piege texts
+    metier_pool = [
+        r for r in all_rows
+        if r["intent"] in RETAINED_INTENTS
+        and normalize_text(r["text"]) not in excluded_norm
+    ]
+    conseiller_pool = [
+        r for r in all_rows
+        if r["intent"] == CONSEILLER_INTENT
+        and normalize_text(r["text"]) not in excluded_norm
+    ]
+    horsscope_pool = [
+        r for r in all_rows
+        if r["intent"] not in RETAINED_INTENTS
+        and r["intent"] != CONSEILLER_INTENT
+        and normalize_text(r["text"]) not in excluded_norm
+    ]
 
     # 3. heldout_metier.csv — 100 stratified from retained intents
     rng_metier = random.Random(42)
-    heldout_metier = stratified_sample(metier_rows, 100, rng_metier)
-    heldout_metier_texts = {r["text"] for r in heldout_metier}
-
-    heldout_path = out_dir / "heldout_metier.csv"
+    heldout_metier = stratified_sample(metier_pool, 100, rng_metier)
     heldout_metier_sorted = sorted(heldout_metier, key=lambda r: (r["intent"], r["text"]))
+    heldout_path = out_dir / "heldout_metier.csv"
     write_csv(heldout_path, heldout_metier_sorted, ["text", "intent"])
     counts["heldout_metier.csv"] = len(heldout_metier)
 
-    # 4. train.csv — metier rows NOT in heldout
-    train_rows = [r for r in metier_rows if r["text"] not in heldout_metier_texts]
-    train_rows_sorted = sorted(train_rows, key=lambda r: (r["intent"], r["text"]))
-    train_path = out_dir / "train.csv"
-    write_csv(train_path, train_rows_sorted, ["text", "intent"])
-    counts["train.csv"] = len(train_rows)
-
-    # 5. heldout_conseiller.csv — all 126 parler_conseiller verbatims
-    conseiller_sorted = sorted(conseiller_rows, key=lambda r: r["text"])
+    # 4. heldout_conseiller.csv — all parler_conseiller verbatims
+    conseiller_sorted = sorted(conseiller_pool, key=lambda r: r["text"])
     conseiller_path = out_dir / "heldout_conseiller.csv"
     write_csv(conseiller_path, conseiller_sorted, ["text", "intent"])
-    counts["heldout_conseiller.csv"] = len(conseiller_rows)
+    counts["heldout_conseiller.csv"] = len(conseiller_pool)
 
-    # 6. heldout_horsscope.csv — 100 stratified from 32 non-selected intents
+    # 5. heldout_horsscope.csv — 100 stratified from non-selected intents
     rng_horsscope = random.Random(42)
-    heldout_horsscope = stratified_sample(horsscope_rows, 100, rng_horsscope)
+    heldout_horsscope = stratified_sample(horsscope_pool, 100, rng_horsscope)
     heldout_horsscope_sorted = sorted(heldout_horsscope, key=lambda r: (r["intent"], r["text"]))
     horsscope_path = out_dir / "heldout_horsscope.csv"
     write_csv(horsscope_path, heldout_horsscope_sorted, ["text", "intent"])
     counts["heldout_horsscope.csv"] = len(heldout_horsscope)
 
-    # 7. pieges.csv — 15 edge cases
+    # 6. pieges.csv — 15 edge cases from postulat §4
     pieges_path = out_dir / "pieges.csv"
     write_csv(pieges_path, PIEGE_CASES, ["id", "text", "expected_behavior", "note"])
     counts["pieges.csv"] = len(PIEGE_CASES)
 
-    # 8. HASHES.sha256
+    # 7. HASHES.sha256
     hash_lines: list[str] = []
     for fname in sorted(counts.keys()):
         fpath = out_dir / fname
@@ -202,11 +412,115 @@ def generate_datasets(source_path: Path, out_dir: Path) -> dict[str, int]:
     return counts
 
 
+# -----------------------------------------------------------------------
+# C5 — Verification mode (--check)
+# -----------------------------------------------------------------------
+
+def check_datasets(datasets_dir: Path) -> list[str]:
+    """Verify datasets without regenerating. Returns list of errors (empty = OK)."""
+    errors: list[str] = []
+
+    # (a) Presence of 5 files + HASHES
+    required = list(EXPECTED_COUNTS.keys()) + ["HASHES.sha256"]
+    for fname in required:
+        if not (datasets_dir / fname).is_file():
+            errors.append(f"Missing file: {fname}")
+    if errors:
+        return errors  # can't continue without files
+
+    # (b) Exact row counts
+    for fname, expected_count in EXPECTED_COUNTS.items():
+        actual = _count_csv_rows(datasets_dir / fname)
+        if actual != expected_count:
+            errors.append(f"{fname}: expected {expected_count} rows, got {actual}")
+
+    # (c) Hash verification
+    hashes_path = datasets_dir / "HASHES.sha256"
+    for line in hashes_path.read_text(encoding="utf-8").strip().split("\n"):
+        parts = line.split("  ", 1)
+        if len(parts) != 2:
+            errors.append(f"Invalid HASHES line: {line}")
+            continue
+        expected_hash, fname = parts
+        actual_hash = compute_sha256(datasets_dir / fname)
+        if actual_hash != expected_hash:
+            errors.append(f"Hash mismatch for {fname}")
+
+    # (d) Intersection checks (all pairs, case-folded/accent-normalized)
+    sets: dict[str, set[str]] = {}
+    for fname in EXPECTED_COUNTS:
+        texts: set[str] = set()
+        with open(datasets_dir / fname, encoding="utf-8", newline="") as f:
+            for row in csv.DictReader(f):
+                texts.add(normalize_text(row["text"]))
+        sets[fname] = texts
+
+    pair_checks = [
+        ("train.csv", "heldout_metier.csv"),
+        ("train.csv", "heldout_conseiller.csv"),
+        ("train.csv", "heldout_horsscope.csv"),
+        ("train.csv", "pieges.csv"),
+        ("pieges.csv", "heldout_metier.csv"),
+        ("pieges.csv", "heldout_conseiller.csv"),
+        ("pieges.csv", "heldout_horsscope.csv"),
+    ]
+    for a, b in pair_checks:
+        overlap = sets[a] & sets[b]
+        if overlap:
+            samples = list(overlap)[:3]
+            errors.append(f"Overlap {a} x {b}: {len(overlap)} texts (e.g. {samples})")
+
+    # (e) Validate expected_behavior syntax in pieges.csv
+    valid_prefixes = ("route:", "clarify_inter:", "clarify_intra:", "reject", "escalate:")
+    with open(datasets_dir / "pieges.csv", encoding="utf-8", newline="") as f:
+        for row in csv.DictReader(f):
+            behavior = row["expected_behavior"]
+            if not any(behavior.startswith(p) for p in valid_prefixes):
+                errors.append(f"Invalid expected_behavior for {row['id']}: {behavior}")
+
+    # (e bis) Validate piege IDs are T01-T15
+    with open(datasets_dir / "pieges.csv", encoding="utf-8", newline="") as f:
+        ids = [row["id"] for row in csv.DictReader(f)]
+    expected_ids = [f"T{i:02d}" for i in range(1, 16)]
+    if sorted(ids) != expected_ids:
+        errors.append(f"Piege IDs mismatch: got {ids}, expected {expected_ids}")
+
+    return errors
+
+
+def _count_csv_rows(path: Path) -> int:
+    with open(path, encoding="utf-8", newline="") as f:
+        return sum(1 for _ in csv.DictReader(f))
+
+
+# -----------------------------------------------------------------------
+# CLI
+# -----------------------------------------------------------------------
+
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Generate frozen evaluation datasets (C1)")
-    parser.add_argument("--source", required=True, help="Path to dataset.csv")
-    parser.add_argument("--out", required=True, help="Output directory")
+    parser = argparse.ArgumentParser(description="Generate/verify frozen evaluation datasets (C1/C5)")
+    parser.add_argument("--source", help="Path to dataset.csv (required for generation)")
+    parser.add_argument("--out", help="Output directory (for generation)")
+    parser.add_argument("--check", metavar="DIR", help="Verify existing datasets (no regeneration)")
     args = parser.parse_args()
+
+    if args.check:
+        check_dir = Path(args.check)
+        if not check_dir.is_dir():
+            print(f"Error: {check_dir} is not a directory", file=sys.stderr)
+            sys.exit(1)
+        errors = check_datasets(check_dir)
+        if errors:
+            print("FAIL — dataset verification errors:", file=sys.stderr)
+            for e in errors:
+                print(f"  - {e}", file=sys.stderr)
+            sys.exit(1)
+        else:
+            print(f"OK — all checks passed for {check_dir}")
+            sys.exit(0)
+
+    if not args.source or not args.out:
+        parser.error("--source and --out are required for generation (or use --check)")
 
     source_path = Path(args.source)
     if not source_path.is_file():
@@ -219,7 +533,7 @@ def main() -> None:
     print(f"Generated datasets in {out_dir}:")
     for fname, count in sorted(counts.items()):
         print(f"  {fname}: {count} rows")
-    print(f"  HASHES.sha256: written")
+    print("  HASHES.sha256: written")
 
 
 if __name__ == "__main__":

@@ -1,7 +1,7 @@
-"""LOKO Bot — Escalation provider interface and mock V1.
+"""LOKO Bot — Escalation provider interface.
 
-The escalation contract is frozen (spec §8).  The mock provider is the
-default; real integrations plug in via the same interface.
+The escalation contract is frozen (spec §8).  Mock provider moved to
+loko.testing.mocks (C7).  Real integrations plug in via the same interface.
 """
 
 from __future__ import annotations
@@ -21,40 +21,3 @@ class EscalationProvider(Protocol):
     async def escalate(self, payload: EscalationPayload) -> EscalationResult:
         """Send the escalation payload and return the result."""
         ...
-
-
-class MockEscalationProvider:
-    """Mock escalation provider for V1.
-
-    Returns a configurable estimated wait time and logs the payload.
-
-    Guard (A3/GNG-10): raises RuntimeError outside RAGKIT_ENV=test.
-    Exception: allowed when LOKO_ESCALATION_PROVIDER=mock is explicitly set
-    (simulates external SI client, admissible for protocol R4).
-    """
-
-    def __init__(self, default_wait_minutes: int = 4) -> None:
-        import os
-
-        is_test = os.environ.get("RAGKIT_ENV") == "test"
-        is_explicit_mock = os.environ.get("LOKO_ESCALATION_PROVIDER") == "mock"
-        if not is_test and not is_explicit_mock:
-            raise RuntimeError(
-                "MockEscalationProvider cannot be used outside test environment. "
-                "Set RAGKIT_ENV=test, LOKO_ESCALATION_PROVIDER=mock, "
-                "or configure a real escalation provider."
-            )
-        self.default_wait_minutes = default_wait_minutes
-        self.last_payload: EscalationPayload | None = None
-
-    async def escalate(self, payload: EscalationPayload) -> EscalationResult:
-        self.last_payload = payload
-        logger.info(
-            "Mock escalation: conversation=%s intent=%s motif=%s",
-            payload.conversation_id,
-            payload.intention,
-            payload.motif_escalade.value,
-        )
-        return EscalationResult(
-            temps_attente_estime_min=self.default_wait_minutes,
-        )

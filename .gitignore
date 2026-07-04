@@ -54,3 +54,9 @@ loko-handoff/
 
 # Package lock (regenerated on install)
 desktop/package-lock.json
+
+# Client dataset (sensitive, not tracked — only eval/datasets/ frozen sets)
+dataset.csv
+
+# Campaign artifacts (archived outside git)
+eval/campagne-*/

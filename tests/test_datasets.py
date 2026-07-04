@@ -1,10 +1,11 @@
-"""C1 — Tests for frozen evaluation datasets.
+"""C1/C3/C4/C5 — Tests for frozen evaluation datasets.
 
 Verifies invariants:
-  - train/held-out intersection is empty
-  - Exact row counts
+  - All dataset pairs are disjoint (train, heldout, pieges)
+  - Exact row counts (125/100/125/100/15)
   - SHA-256 hashes match HASHES.sha256
   - pieges.csv has exactly 15 cases T01-T15
+  - --check mode passes
 """
 
 from __future__ import annotations
@@ -44,11 +45,29 @@ def _sha256(path: Path) -> str:
 
 @_require_datasets
 def test_train_heldout_disjoint():
-    """Train and held-out sets must be disjoint (no data leakage)."""
+    """Train and all held-out sets must be disjoint (no data leakage)."""
     train_texts = _read_texts(DATASETS_DIR / "train.csv")
-    heldout_texts = _read_texts(DATASETS_DIR / "heldout_metier.csv")
-    overlap = train_texts & heldout_texts
-    assert not overlap, f"Overlap found: {list(overlap)[:5]}"
+    for fname in ["heldout_metier.csv", "heldout_conseiller.csv",
+                   "heldout_horsscope.csv", "pieges.csv"]:
+        other_texts = _read_texts(DATASETS_DIR / fname)
+        overlap = train_texts & other_texts
+        assert not overlap, f"Overlap train x {fname}: {list(overlap)[:5]}"
+
+
+@_require_datasets
+def test_pieges_heldout_disjoint():
+    """Pieges and held-out sets must be disjoint."""
+    piege_texts = _read_texts(DATASETS_DIR / "pieges.csv")
+    for fname in ["heldout_metier.csv", "heldout_conseiller.csv",
+                   "heldout_horsscope.csv"]:
+        other_texts = _read_texts(DATASETS_DIR / fname)
+        overlap = piege_texts & other_texts
+        assert not overlap, f"Overlap pieges x {fname}: {list(overlap)[:5]}"
+
+
+@_require_datasets
+def test_train_count():
+    assert _count_rows(DATASETS_DIR / "train.csv") == 125
 
 
 @_require_datasets
@@ -58,7 +77,7 @@ def test_heldout_metier_count():
 
 @_require_datasets
 def test_heldout_conseiller_count():
-    assert _count_rows(DATASETS_DIR / "heldout_conseiller.csv") == 126
+    assert _count_rows(DATASETS_DIR / "heldout_conseiller.csv") == 125
 
 
 @_require_datasets
@@ -83,6 +102,18 @@ def test_pieges_ids():
 
 
 @_require_datasets
+def test_pieges_expected_behavior_syntax():
+    """expected_behavior must use the normalized syntax."""
+    valid_prefixes = ("route:", "clarify_inter:", "clarify_intra:", "reject", "escalate:")
+    with open(DATASETS_DIR / "pieges.csv", encoding="utf-8", newline="") as f:
+        for row in csv.DictReader(f):
+            behavior = row["expected_behavior"]
+            assert any(behavior.startswith(p) for p in valid_prefixes), (
+                f"Invalid expected_behavior for {row['id']}: {behavior}"
+            )
+
+
+@_require_datasets
 def test_hashes_match():
     """HASHES.sha256 must match actual file hashes."""
     hashes_path = DATASETS_DIR / "HASHES.sha256"
@@ -94,6 +125,15 @@ def test_hashes_match():
         expected_hash, fname = parts
         actual = _sha256(DATASETS_DIR / fname)
         assert actual == expected_hash, f"Hash mismatch for {fname}"
+
+
+@_require_datasets
+def test_check_mode():
+    """tools/make_datasets.py --check passes on the committed datasets."""
+    from tools.make_datasets import check_datasets
+
+    errors = check_datasets(DATASETS_DIR)
+    assert not errors, f"--check errors: {errors}"
 
 
 @_require_datasets

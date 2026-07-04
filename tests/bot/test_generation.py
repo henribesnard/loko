@@ -6,10 +6,10 @@ import pytest
 
 from loko.bot.generation import (
     BotGenerator,
-    MockLLMProvider,
     build_system_prompt,
     build_user_prompt,
 )
+from loko.testing.mocks import MockLLMProvider
 from loko.bot.models import BotConfig, BotLLMConfig, Chunk, ToneProfile
 
 

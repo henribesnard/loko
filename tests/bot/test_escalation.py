@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from loko.bot.escalation import MockEscalationProvider
+from loko.testing.mocks import MockEscalationProvider
 from loko.bot.models import EscalationMotif, EscalationPayload
 
 

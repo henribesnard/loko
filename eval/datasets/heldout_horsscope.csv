@@ -1,101 +1,101 @@
 text,intent
-assurance accident de la vie,accident
 demander une attestation CPAM accident,accident
-renseignement sur la rémunération suite à un accident de travail,accident
-aide à l'insertion à domicile des personnes en situation de handicap par la sécurité sociale,action_sociale
-affiliation caisse primaire d'assurance maladie,adhesion_affiliation
-avoir un devis pour une mutuelle prévoyance,adhesion_affiliation
-changement de rattachement à l'assurance maladie,adhesion_affiliation
-contrat d'affiliation MGEN,adhesion_affiliation
-enregistrement de mon régime général,adhesion_affiliation
-finaliser mon contrat d'adhésion,adhesion_affiliation
-relance affiliation employeur,adhesion_affiliation
+renseignement sur une prise en charge accident domestique,accident
+Information sur aide exceptionnelle pour perte de salaire,action_sociale
+avoir un devis pour une mutuelle santé en tant que fonctionnaire,adhesion_affiliation
+changement de régime d'affiliation,adhesion_affiliation
+courriel contrats collectifs,adhesion_affiliation
+enregistrer mes droits auprès de l'assurance maladie,adhesion_affiliation
+finaliser mon dossier d'adhésion,adhesion_affiliation
+information sur la nouvelle affiliation éducation nationale,adhesion_affiliation
+relance de l'affiliation collectives,adhesion_affiliation
 accord préalable pour audioprothèse,aides_auditives
-appareil auditif cassée,aides_auditives
-demande de cent pour cent par mon médecin,ald_exotm
-aide pour le sport santé,bilan_prevention
+achat audioprothésiste audio prothèse,aides_auditives
+attestation de droits ALD cent-pourcent,ald_exotm
+information pour le sport sur ordonnance,bilan_prevention
 information sur le check-up,bilan_prevention
 service pour le dépistage du cancer du sein,bilan_prevention
-opposition sur ma carte vitale,carte_vitale
-carte à l'étranger,ceam
-ça serait pour faire une assurance maladie européenne,ceam
-modification d'offre MGEN,changement_de_couverture
-évolution de mon offre,changement_de_couverture
-changement de rendez-vous,contact
-connaître l'adresse pour envoyer une entente préalable,contact
-horaire de service téléphonique,contact
-information sur l'adresse postale de la MGEN dont je dépends,contact
-prendre rendez-vous avec la section départementale,contact
-annulation d'une cure,cure_thermale
-j'aimerais bien un renseignement concernant mon refus de cure,cure_thermale
-je viens de faire une cure thermale je voudrais savoir quels sont les papiers à vous renvoyer,cure_thermale
-je voudrais des renseignements concernant une cure thermale,cure_thermale
-quelle est la prise en charge pour la cure thermale,cure_thermale
-connaître l'avancement de mon dossier capital décès,deces
-demande de formulaire de déclaration de décès,deces
-déclaration de décès assuré,deces
-démarche pour déclaration de décès,deces
-indemnité succession décès,deces
-comprendre mon relevé de prestation,decompte_releveprestations
-confirmation de réception d'un devis dentaire,dentaire
-des renseignements sur le suivi d'une réclamation remboursement dentaire,dentaire
-information sur ma note d'honoraires dentaire,dentaire
-prise en charge pour des soins en orthodontie,dentaire
-problème de remboursement consultation dentaire,dentaire
-quelle est la prise en charge pour un bridge dentaire,dentaire
-renseignement concernant des devis dentaire,dentaire
+problème avec une carte vitale,carte_vitale
+attestation de carte assurance européenne maladie,ceam
+je voudrais une carte d'assuré pour voyager en Europe,ceam
+changer de garantie,changement_de_couverture
+renseignement sur mon nouveau forfait mutuelle,changement_de_couverture
+changer un rendez-vous,contact
+horaire section MGEN,contact
+information sur l'adresse pour envoyer les feuilles de soin,contact
+où envoyer les remboursements pour la section,contact
+prévenir de mon retard à un rendez-vous,contact
+attente réception accord cure médicale,cure_thermale
+j'aimerais connaitre les conditions de prise en charge d'une demande de cure,cure_thermale
+je souhaiterais avoir des renseignements par rapport à une demande de cure thermale,cure_thermale
+je voudrais savoir si je recevrai très bientôt la réponse à une demande de cure thermale,cure_thermale
+quelle est la prise en charge pour une mini-cure anti-stress,cure_thermale
+demande information suite décès,deces
+déclaration décès sociétaire,deces
+désignation des bénéficiaires de la prestation décès,deces
+information concernant le capital décès,deces
+joindre le service succession,deces
+renseignement sur relevé de prestation,decompte_releveprestations
+devis bridges dentaire,dentaire
+devis de traitement d'orthopédie dento-faciale,dentaire
+devis dentaire reste à charge zéro,dentaire
+prise en charge gouttière orthodontie,dentaire
+problème courrier MT-Dents,dentaire
+problème de suivi de dossier dentaire,dentaire
+question concernant les honoraires facturé par le dentiste,dentaire
+changement de caisse après retraite,donnees_personne
 changement de prénom,donnees_personne
 changement pour un changement de travail,donnees_personne
-déclaration de changement de situation,donnees_personne
-information sur un changement de nom,donnees_personne
-parler à un conseiller pour ma retraite,donnees_personne
+information concernant mon statut de disponibilité,donnees_personne
 quel régime dans le cas d'une disponibilité de l'éducation nationale,donnees_personne
-assurance crédit immobilier,habitat
-simulation d'assurance emprunteur,habitat
-agit d'une hospitalisation et j'aimerais savoir,hospitalisation
-une hospitalisation,hospitalisation
-journée de rentrer,journee_de_rentree
-complément de soin PMA,maternite
-où envoyer ma déclaration de grossesse,maternite
-forfait ostéopathie,medecine_douce
+signaler un changement d'employeur,donnees_personne
+demande garantie assurance emprunteur,habitat
+prestation lié à l'assurance emprunteur,habitat
+renseignement sur un remboursement concernant une opération,hospitalisation
+renseignements pour une chambre,hospitalisation
+prise de rendez-vous rentrée,journee_de_rentree
+comment effectuer la déclaration de grossesse,maternite
+envoyer ma déclaration de grossesse,maternite
+demande remboursement séance hypnose,medecine_douce
 prise en charge acupuncture,medecine_douce
-explication sur les thermes hors parcours coordonné,mt_parcours_de_soins
-informations sur un majoration de hors parcours de soin coordonnées,mt_parcours_de_soins
-prise en charge frais d'obsèques,offres_essentielles
-service protection juridique,offres_essentielles
-je voudrais obtenir un remboursement sécurité sociale pour des lunettes,optique
-quelle est la prise en charge pour une paire de lunettes et des verres progressifs,optique
-refus de remboursement de lunettes,optique
-refuse de me rembourser des lunettes,optique
-comment faire une demande de remboursement,pec_soins_courants
-concernant les IRM,pec_soins_courants
+comment faire pour trouver un médecin traitant,mt_parcours_de_soins
+faut-il passer par le médecin traitant avant aller voir un stomatologue,mt_parcours_de_soins
+attestation assurance voyage,offres_essentielles
+devis assurance santé animale,offres_essentielles
+prise en charge optique ordonnance étranger,optique
+remboursement acte de chirurgie des yeux,optique
+remboursement de lunettes après opération de cataracte,optique
+renseignement rééducation strabisme,optique
+concernant un examen de radiographie de la main au vingt-huit mars deux-mille-quinze,pec_soins_courants
 en attente d'un remboursement,pec_soins_courants
-erreur de remboursement médecin traitant,pec_soins_courants
-information générale remboursement,pec_soins_courants
-information sur le remboursement pour des orthèses,pec_soins_courants
-la prise en charge pour des chaussures orthopédiques,pec_soins_courants
-non remboursement de consultation médicale,pec_soins_courants
-prise en charge analyse biologique,pec_soins_courants
-prise en charge consultation de médecin généraliste,pec_soins_courants
-remboursement au docteur,pec_soins_courants
-remboursement de dépassement autorisés,pec_soins_courants
-renseignement sur un médicament,pec_soins_courants
+envoi d'une demande de remboursement de médecin,pec_soins_courants
+erreur de versement pour remboursement,pec_soins_courants
+information médicament,pec_soins_courants
+information sur le tiers payant pédicure,pec_soins_courants
+non remboursement de pharmacie,pec_soins_courants
+prise en charge analyse de laboratoire,pec_soins_courants
+prise en charge consultation médecine générale,pec_soins_courants
+remboursement consultation sages-femmes,pec_soins_courants
+remboursement d'une somme du,pec_soins_courants
+remboursement de facture acquittée que je ne comprends pas,pec_soins_courants
+renseignement sur une consultation généraliste,pec_soins_courants
 c'est par rapport aux participations forfaitaires et franchises,pf_fr
-j'ai une question sur les détails de créance de participation forfaitaire et de franchise du foyer,pf_fr
-je veux parler des participations forfaitaires applicables,pf_fr
-je voudrais des renseignements sur la créance de participation forfaitaire,pf_fr
-convention professionnel de santé,professionel_sante
-infirmière libérale facturation bloqué,professionel_sante
-MGEN FILIA,rc_autres_offres
-formule équilibre,rc_autres_offres
+c'est à propos d'une participation forfaitaire et franchise sur mon dernier relevé,pf_fr
+j'ai un souci avec le prélèvement des franchises sécurité sociale,pf_fr
+je viens de recevoir une lettre pour des participations forfaitaires et de franchises que je dois régler sous quinze jours je voudrais des explications,pf_fr
+je suis professionnel de santé,professionel_sante
+problème de rejet facture,professionel_sante
+CSS,rc_autres_offres
+M T E,rc_autres_offres
 avoir des renseignements sur les aide à domicile,services_aide_domicile
-solution pour aide à domicile,services_aide_domicile
-je voudrais les imprimés pour me faire rembourser des transports pour l'hôpital en voiture particulière,transport
-quelle est la prise en charge pour un remboursement d'ambulance,transport
-règlement d'une facture d'ambulance,transport
-est-ce que la densitométrie remboursé,vaccins_osteodensitometrie
+renseignement pour une aide médicale à domicile,services_aide_domicile
+information prise en charge ambulance,transport
+je souhaiterais avoir des renseignements au sujet d'un refus de prise en charge de transport,transport
+transport en VSL,transport
+où se faire vacciner,vaccins_osteodensitometrie
 changement d'affiliation pour ma fille,vie_du_contrat
+comment faire une demande de dispense à la mutuelle,vie_du_contrat
 demande dispenses d'adhésion à la mutuelle obligatoire,vie_du_contrat
 demander la C S S,vie_du_contrat
-problème par rapport à un bénéficiaire,vie_du_contrat
-problème pour rattacher ma fille,vie_du_contrat
+mise à jour de mes ayants droit,vie_du_contrat
+rattachement familial,vie_du_contrat
