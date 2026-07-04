@@ -52,8 +52,7 @@ htmlcov/
 loko-handoff.zip
 loko-handoff/
 
-# Package lock (regenerated on install)
-desktop/package-lock.json
+# desktop/package-lock.json — tracked for reproducible Docker builds (npm ci)
 
 # Client dataset (sensitive, not tracked — only eval/datasets/ frozen sets)
 dataset.csv

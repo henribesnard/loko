@@ -24,7 +24,7 @@
 | CE-1 | Lots A, B, C mergés sur `main`, CI verte (jobs standard + nightly + offline) | Lien vers les runs CI | ☐ |
 | CE-2 | Tag posé (ex. `v0.3.0`), commit consigné | `git describe --tags` | ☐ |
 | CE-3 | Image construite depuis le tag, digest consigné | `docker inspect --format='{{index .RepoDigests 0}}' loko:v0.3.0` | ☐ |
-| CE-4 | Datasets figés présents et conformes | `sha256sum -c eval/datasets/HASHES.sha256` → 5 fichiers OK (`train.csv`, `heldout_metier.csv` = 100 lignes, `heldout_conseiller.csv` = 126, `heldout_horsscope.csv` = 100, `pieges.csv` = 15) | ☐ |
+| CE-4 | Datasets figés présents et conformes | `sha256sum -c eval/datasets/HASHES.sha256` → 5 fichiers OK (`train.csv`, `heldout_metier.csv` = 100 lignes, `heldout_conseiller.csv` = 125, `heldout_horsscope.csv` = 100, `pieges.csv` = 15) | ☐ |
 | CE-5 | Intersection train/held-out vide | `python tools/make_datasets.py --check` → exit 0 | ☐ |
 | CE-6 | `loko-eval` installé dans l'image | `docker run --rm loko:v0.3.0 loko-eval --version` | ☐ |
 | CE-7 | Répertoire d'artefacts créé, gabarit de rapport (annexe A) copié | `eval/campagne-R0R1/2026-07-XX/` | ☐ |
@@ -70,7 +70,7 @@ Création du bot de campagne : POST de la configuration MGEN complète du postul
 **Procédure** : exécuter le test paramétré `tests/bot/test_no_mock_guard.py` in-container, puis contre-épreuve manuelle hors pytest :
 ```bash
 docker exec -e RAGKIT_ENV= loko-campagne python -c \
-  "from loko.bot.classifier.mock import _MockClassifier; _MockClassifier()"
+  "from loko.testing.mocks import _MockClassifier; _MockClassifier()"
 ```
 **Attendu** : `RuntimeError … interdit hors RAGKIT_ENV=test (GNG-10)` pour les 4 classes ; la variante `LOKO_ESCALATION_PROVIDER=mock` n'autorise **que** `MockEscalationProvider`.
 **Artefact** : `V1-1_mock_guard.txt` (les 4 tracebacks + le cas autorisé).
@@ -79,8 +79,8 @@ docker exec -e RAGKIT_ENV= loko-campagne python -c \
 **Procédure** : sur un répertoire modèle vide puis sur un répertoire au manifeste corrompu :
 ```bash
 docker exec loko-campagne python - <<'PY'
-from loko.bot.classifier.loader import _load_classifier
-_load_classifier(bot_id="bot-inexistant")
+from loko.bot.classifier.loader import load_classifier
+load_classifier(bot_id="bot-inexistant")
 PY
 ```
 **Attendu** : `ComponentUnavailableError("classifier_l1", …)` — jamais une instance. Vérifier par inspection (`git grep allow_mock`) que le paramètre a disparu de la signature.
@@ -161,7 +161,7 @@ loko-eval --bot-dir /data/bots/{id} --dataset eval/datasets/heldout_metier.csv \
 ```bash
 loko-eval --dataset eval/datasets/heldout_conseiller.csv --threshold-check gng2:0.90 …
 ```
-**Attendu** : ≥ 90 % des 126 verbatims → décision `transverse:demande_conseiller`.
+**Attendu** : ≥ 90 % des 125 verbatims → décision `transverse:demande_conseiller`.
 
 ### V3-3 — GNG-3 : rejet hors-scope
 ```bash
