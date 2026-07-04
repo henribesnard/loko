@@ -73,7 +73,7 @@ class ClassifierProtocol(Protocol):
 class EscalationProtocol(Protocol):
     """Interface for escalation to human agent."""
 
-    async def escalate(self, payload: EscalationPayload) -> dict[str, Any]:
+    async def escalate(self, payload: EscalationPayload) -> Any:
         """Send escalation request. Returns at least temps_attente_estime_min."""
         ...
 
@@ -482,9 +482,12 @@ class BotOrchestrator:
         with traces.measure("escalation") as ctx:
             result = await self.escalation.escalate(payload)
             ctx["motif"] = action.motif.value
-            ctx["result"] = result
+            ctx["result"] = result.model_dump() if hasattr(result, "model_dump") else result
 
-        temps_attente = result.get("temps_attente_estime_min", 4)
+        if isinstance(result, dict):
+            temps_attente = result.get("temps_attente_estime_min", 4)
+        else:
+            temps_attente = getattr(result, "temps_attente_estime_min", 4)
         session, esc_actions = handle_escalation_result(session, config, temps_attente)
 
         yield session, SSEEvent(event="state", data={"state": session.state.value})

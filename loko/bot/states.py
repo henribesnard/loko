@@ -208,7 +208,7 @@ def on_clarification_inter_button(
     session: BotSession, event: Event, config: BotConfig,
 ) -> TransitionResult:
     """CLARIFICATION_INTER: user clicked a choice button."""
-    selected_label = event.data.get("button", "")
+    selected_label = event.data.get("selected", event.data.get("button", ""))
     # Find intent id from label
     intent_map = {i.label: i.id for i in config.intents}
     intent_id = intent_map.get(selected_label)
@@ -314,7 +314,7 @@ def on_clarification_intra_button(
     session: BotSession, event: Event, config: BotConfig,
 ) -> TransitionResult:
     """CLARIFICATION_INTRA: user clicked a sub-motif or 'Autre'."""
-    selected_label = event.data.get("button", "")
+    selected_label = event.data.get("selected", event.data.get("button", ""))
 
     if selected_label == "Autre":
         # Retrieve on whole intent; if scores too low -> escalade
@@ -483,12 +483,12 @@ TRANSITIONS: dict[tuple[BotState, EventType], TransitionHandler] = {
     (BotState.RETRIEVAL_GENERATION, EventType.RETRIEVAL_GENERATION_DONE): on_retrieval_generation_done,
     # Satisfaction survey
     (BotState.ENQUETE_SATISFACTION, EventType.BUTTON_CLICK): lambda s, e, c: (
-        on_satisfaction_positive(s, e, c) if e.data.get("button") == "Oui"
+        on_satisfaction_positive(s, e, c) if e.data.get("selected", e.data.get("button")) == "Oui"
         else on_satisfaction_negative(s, e, c)
     ),
     # Another question?
     (BotState.AUTRE_DEMANDE, EventType.BUTTON_CLICK): lambda s, e, c: (
-        on_autre_demande_oui(s, e, c) if e.data.get("button") == "Oui"
+        on_autre_demande_oui(s, e, c) if e.data.get("selected", e.data.get("button")) == "Oui"
         else on_autre_demande_non(s, e, c)
     ),
 }
