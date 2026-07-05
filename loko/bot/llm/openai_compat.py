@@ -1,0 +1,180 @@
+"""LOKO Bot — OpenAI-compatible LLM provider (K2).
+
+Async HTTP client for any endpoint implementing the OpenAI
+``/v1/chat/completions`` streaming protocol.  Covers OpenAI, DeepSeek,
+Mistral, vLLM, Ollama, and any compatible server in a single
+implementation.
+
+Temperature is hardcoded to 0 (protocol determinism requirement).
+"""
+
+from __future__ import annotations
+
+import json
+import logging
+import time
+from typing import AsyncIterator
+
+import httpx
+
+logger = logging.getLogger(__name__)
+
+# Timeout defaults (seconds)
+_DEFAULT_CONNECT_TIMEOUT = 10
+_DEFAULT_READ_TIMEOUT = 60
+
+
+class OpenAICompatProvider:
+    """LLM provider using the OpenAI chat completions API.
+
+    Satisfies the ``LLMProvider`` protocol from ``loko.bot.generation``.
+
+    Parameters
+    ----------
+    base_url : str
+        API base URL (e.g. ``https://api.openai.com/v1``).
+        The ``/chat/completions`` path is appended automatically.
+    api_key : str
+        Bearer token for ``Authorization`` header.
+    model : str
+        Default model identifier.
+    """
+
+    def __init__(self, base_url: str, api_key: str, model: str) -> None:
+        self.base_url = base_url.rstrip("/")
+        self.api_key = api_key
+        self.default_model = model
+
+    async def stream_chat(
+        self,
+        messages: list[dict[str, str]],
+        *,
+        model: str = "",
+        temperature: float = 0.0,
+        max_tokens: int = 800,
+        timeout: int = 60,
+    ) -> AsyncIterator[str]:
+        """Stream chat completion tokens from an OpenAI-compatible API.
+
+        Parameters match the ``LLMProvider`` protocol.  ``temperature``
+        is **always forced to 0** regardless of the caller value
+        (determinism requirement).
+        """
+        effective_model = model or self.default_model
+        url = f"{self.base_url}/chat/completions"
+
+        payload = {
+            "model": effective_model,
+            "messages": messages,
+            "temperature": 0,  # hardcoded — determinism
+            "max_tokens": max_tokens,
+            "stream": True,
+        }
+
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+            "Accept": "text/event-stream",
+        }
+
+        t0 = time.perf_counter()
+        first_token_time: float | None = None
+        token_count = 0
+
+        transport_timeout = httpx.Timeout(
+            connect=_DEFAULT_CONNECT_TIMEOUT,
+            read=float(timeout),
+            write=30.0,
+            pool=10.0,
+        )
+
+        async with httpx.AsyncClient(timeout=transport_timeout) as client:
+            try:
+                async with client.stream(
+                    "POST", url, json=payload, headers=headers,
+                ) as response:
+                    if response.status_code == 401:
+                        logger.error("LLM provider returned 401 Unauthorized")
+                        raise LLMProviderError(
+                            "LLM provider authentication failed (401). "
+                            "Check LOKO_LLM_API_KEY.",
+                            status_code=401,
+                        )
+                    if response.status_code == 429:
+                        logger.error("LLM provider returned 429 Too Many Requests")
+                        raise LLMProviderError(
+                            "LLM provider rate-limited (429). Retry later.",
+                            status_code=429,
+                        )
+                    if response.status_code >= 400:
+                        body = await response.aread()
+                        logger.error(
+                            "LLM provider error %d: %s",
+                            response.status_code, body[:500],
+                        )
+                        raise LLMProviderError(
+                            f"LLM provider error ({response.status_code})",
+                            status_code=response.status_code,
+                        )
+
+                    # Parse SSE stream
+                    async for line in response.aiter_lines():
+                        if not line:
+                            continue
+                        if not line.startswith("data: "):
+                            continue
+                        data_str = line[len("data: "):]
+                        if data_str.strip() == "[DONE]":
+                            break
+
+                        try:
+                            chunk = json.loads(data_str)
+                        except json.JSONDecodeError:
+                            logger.debug("Skipping non-JSON SSE line: %s", data_str[:100])
+                            continue
+
+                        choices = chunk.get("choices", [])
+                        if not choices:
+                            continue
+
+                        delta = choices[0].get("delta", {})
+                        content = delta.get("content")
+                        if content:
+                            if first_token_time is None:
+                                first_token_time = time.perf_counter()
+                            token_count += 1
+                            yield content
+
+            except httpx.TimeoutException:
+                elapsed = time.perf_counter() - t0
+                logger.error(
+                    "LLM provider timeout after %.1fs (limit=%ds)",
+                    elapsed, timeout,
+                )
+                raise LLMProviderError(
+                    f"LLM provider timeout after {elapsed:.0f}s",
+                    status_code=0,
+                )
+            except LLMProviderError:
+                raise
+            except httpx.HTTPError as exc:
+                logger.error("LLM HTTP error: %s", exc)
+                raise LLMProviderError(
+                    f"LLM provider connection error: {exc}",
+                    status_code=0,
+                ) from exc
+
+        elapsed = time.perf_counter() - t0
+        ttft = (first_token_time - t0) if first_token_time else elapsed
+        logger.info(
+            "LLM generation done: model=%s tokens=%d ttft=%.2fs total=%.2fs",
+            effective_model, token_count, ttft, elapsed,
+        )
+
+
+class LLMProviderError(Exception):
+    """Raised when the LLM provider returns an error or times out."""
+
+    def __init__(self, message: str, status_code: int = 0) -> None:
+        self.status_code = status_code
+        super().__init__(message)

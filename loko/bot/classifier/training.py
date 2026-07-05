@@ -71,12 +71,20 @@ def cross_validate(
     base_model: str = DEFAULT_BASE_MODEL,
     k: int = 5,
 ) -> EvaluationResult:
-    """Run k-fold cross-validation and produce a confusion matrix + advice.
+    """Head-only k-fold cross-validation (K3 performance fix).
 
-    If there are too few examples per class for k folds, falls back to
-    leave-one-out.
+    Strategy: train the sentence-transformer body ONCE on all data,
+    encode all texts into embeddings, then cross-validate ONLY the
+    logistic head (fast — seconds, not minutes). This keeps the
+    confusion matrix honest for its purpose (detecting confused pairs)
+    while reducing cost from k×train_body to 1×train_body + k×fit_head.
+
+    If there are too few examples per class for k folds, falls back
+    to leave-one-out.
     """
+    import numpy as np
     from setfit import SetFitModel, Trainer, TrainingArguments
+    from sklearn.linear_model import LogisticRegression
     from datasets import Dataset
 
     start = time.perf_counter()
@@ -95,16 +103,34 @@ def cross_validate(
     if min_count < k:
         k = max(2, min_count)
 
-    # Build indexed pairs and shuffle deterministically
+    # --- Step 1: Train body once on all data (contrastive) ---
+    numeric_labels_all = [label_to_idx[l] for l in labels]
+    ds_all = Dataset.from_dict({"text": texts, "label": numeric_labels_all})
+
+    resolved = resolve_base_model(base_model)
+    model = SetFitModel.from_pretrained(resolved, labels=unique_labels)
+    args = TrainingArguments(
+        num_iterations=20,
+        num_epochs=1,
+        batch_size=16,
+    )
+    trainer = Trainer(model=model, args=args, train_dataset=ds_all)
+    trainer.train()
+
+    # --- Step 2: Encode all texts into embeddings ---
+    embeddings = model.model_body.encode(texts, show_progress_bar=False)
+    embeddings = np.array(embeddings)
+
+    # --- Step 3: Stratified k-fold CV on the head only ---
     import random
-    pairs = list(zip(texts, labels))
+    pairs_idx = list(range(len(texts)))
     rng = random.Random(42)
-    rng.shuffle(pairs)
+    rng.shuffle(pairs_idx)
 
     # Group by class for stratified folding
-    class_buckets: dict[str, list[int]] = defaultdict(list)
-    for i, (_, label) in enumerate(pairs):
-        class_buckets[label].append(i)
+    class_buckets: dict[int, list[int]] = defaultdict(list)
+    for i in pairs_idx:
+        class_buckets[label_to_idx[labels[i]]].append(i)
 
     # Create stratified folds
     folds: list[list[int]] = [[] for _ in range(k)]
@@ -112,42 +138,29 @@ def cross_validate(
         for i, idx in enumerate(cls_indices):
             folds[i % k].append(idx)
 
-    # Cross-validate
     all_true: list[int] = []
     all_pred: list[int] = []
 
     for fold_idx in range(k):
         val_indices = set(folds[fold_idx])
-        train_pairs = [(t, l) for i, (t, l) in enumerate(pairs) if i not in val_indices]
-        val_pairs = [(t, l) for i, (t, l) in enumerate(pairs) if i in val_indices]
+        train_idx = [i for i in range(len(texts)) if i not in val_indices]
+        val_idx = list(val_indices)
 
-        if not train_pairs or not val_pairs:
+        if not train_idx or not val_idx:
             continue
 
-        train_texts, train_labels = zip(*train_pairs)
-        val_texts, val_labels = zip(*val_pairs)
+        X_train = embeddings[train_idx]
+        y_train = [label_to_idx[labels[i]] for i in train_idx]
+        X_val = embeddings[val_idx]
+        y_val = [label_to_idx[labels[i]] for i in val_idx]
 
-        numeric_train = [label_to_idx[l] for l in train_labels]
-        numeric_val = [label_to_idx[l] for l in val_labels]
+        # Fit logistic head only (very fast)
+        head = LogisticRegression(max_iter=500, random_state=42)
+        head.fit(X_train, y_train)
+        preds = head.predict(X_val)
 
-        ds = Dataset.from_dict({"text": list(train_texts), "label": numeric_train})
-
-        # A2: resolve to local path if available
-        resolved = resolve_base_model(base_model)
-        model = SetFitModel.from_pretrained(resolved, labels=unique_labels)
-        args = TrainingArguments(
-            num_iterations=10,  # faster for CV
-            num_epochs=1,
-            batch_size=16,
-        )
-        trainer = Trainer(model=model, args=args, train_dataset=ds)
-        trainer.train()
-
-        preds = model.predict(list(val_texts))
-        pred_indices = [int(p) for p in preds]
-
-        all_true.extend(numeric_val)
-        all_pred.extend(pred_indices)
+        all_true.extend(y_val)
+        all_pred.extend(int(p) for p in preds)
 
     # Build confusion matrix
     cm = [[0] * n_classes for _ in range(n_classes)]
@@ -175,6 +188,7 @@ def cross_validate(
     advice = _generate_advice(unique_labels, cm, class_counts, per_class_f1)
 
     duration = time.perf_counter() - start
+    logger.info("Cross-validation completed in %.1fs (head-only CV on %d folds)", duration, k)
 
     return EvaluationResult(
         class_names=unique_labels,

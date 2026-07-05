@@ -187,6 +187,21 @@ def create_app() -> FastAPI:
     # --- Rate limiting (P0-5) ---
     _setup_rate_limiting(app)
 
+    # --- K1: ModelIntegrityError → 422 with machine code ---
+    from loko.bot.errors import ModelIntegrityError
+
+    @app.exception_handler(ModelIntegrityError)
+    async def _model_integrity_handler(request: Request, exc: ModelIntegrityError):
+        return JSONResponse(
+            status_code=422,
+            content={
+                "error": "model_integrity",
+                "code": exc.code,
+                "detail": exc.detail,
+                "bot_id": exc.bot_id,
+            },
+        )
+
     # --- Routers ---
     mode = os.environ.get("RAGKIT_MODE", "desktop")
     admin_token = os.environ.get("LOKO_ADMIN_TOKEN")

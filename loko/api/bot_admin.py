@@ -141,30 +141,35 @@ async def publish_bot(bot_id: str) -> dict[str, Any]:
                 f"L'intention '{intent.label}' n'a que {len(intent.examples)} exemples (min 8)."
             )
 
+    # Business validation errors → 400 (before model integrity)
+    if errors:
+        raise HTTPException(400, {"errors": errors})
+
     # A4/A5: verify model integrity (manifest + hashes + smoke test)
+    # Model integrity failures → 422 with machine code (K1)
     from loko.bot.classifier.manifest import manifest_exists, verify_model
+    from loko.bot.errors import ModelIntegrityError
 
     if not manifest_exists(bot_id):
-        errors.append("Le modele n'a pas de manifeste d'integrite. Relancez l'entrainement.")
-    else:
-        verification = verify_model(bot_id)
-        if not verification.ok:
-            for err in verification.errors:
-                errors.append(f"Verification du modele echouee: {err}")
+        raise ModelIntegrityError(bot_id, "manifest_missing",
+                                  "Aucun manifeste d'integrite. Relancez l'entrainement.")
+
+    verification = verify_model(bot_id)
+    if not verification.ok:
+        code = verification.error_code or "verification_error"
+        detail = "; ".join(verification.errors)
+        raise ModelIntegrityError(bot_id, code, detail)
 
     # A5: check if training data changed since last training
-    if not errors:
-        from loko.bot.classifier.manifest import compute_dataset_hash, read_manifest
-        from loko.bot.classifier.setfit_service import prepare_l1_training_data
+    from loko.bot.classifier.manifest import compute_dataset_hash, read_manifest
+    from loko.bot.classifier.setfit_service import prepare_l1_training_data
 
-        texts, labels = prepare_l1_training_data(config)
-        current_hash = compute_dataset_hash(texts, labels)
-        manifest = read_manifest(bot_id)
-        if manifest and manifest.get("dataset_hash") != current_hash:
-            errors.append(
-                "Les exemples d'entrainement ont change depuis le dernier entrainement. "
-                "Relancez l'entrainement avant de publier."
-            )
+    texts, labels = prepare_l1_training_data(config)
+    current_hash = compute_dataset_hash(texts, labels)
+    manifest = read_manifest(bot_id)
+    if manifest and manifest.get("dataset_hash") != current_hash:
+        raise ModelIntegrityError(bot_id, "retrain_required",
+                                  "Les exemples ont change depuis le dernier entrainement.")
 
     # R2-c: knowledge base coverage warnings
     warnings: list[str] = []
@@ -189,9 +194,6 @@ async def publish_bot(bot_id: str) -> dict[str, Any]:
             )
     except Exception:
         warnings.append("Impossible de vérifier la base de connaissances.")
-
-    if errors:
-        raise HTTPException(400, {"errors": errors, "warnings": warnings})
 
     updated = config.model_copy(update={"status": "published"})
     save_bot_config(updated)

@@ -60,6 +60,8 @@ class ModelVerification:
         first = self.errors[0].lower()
         if "manifest" in first and ("missing" in first or "not found" in first):
             return "manifest_missing"
+        if "manifest" in first and ("invalid" in first or "schema" in first or "json" in first):
+            return "manifest_invalid"
         if "hash" in first:
             return "hash_mismatch"
         if "load" in first:
@@ -163,9 +165,12 @@ def verify_model(bot_id: str) -> ModelVerification:
     errors: list[str] = []
 
     # (a) Manifest presence and schema
+    path = get_manifest_path(bot_id)
+    if not path.is_file():
+        return ModelVerification(ok=False, errors=["Manifest not found"])
     manifest = read_manifest(bot_id)
     if manifest is None:
-        return ModelVerification(ok=False, errors=["Manifest not found or invalid JSON"])
+        return ModelVerification(ok=False, errors=["Manifest invalid JSON or unreadable"])
 
     if manifest.get("schema") != MANIFEST_SCHEMA_VERSION:
         errors.append(

@@ -96,9 +96,10 @@ _SESSION_LOCKS_MAX = 10_000  # R4: bounded size to prevent unbounded memory grow
 def _get_orchestrator(bot_id: str, config: BotConfig) -> BotOrchestrator:
     """Get or create the orchestrator for a bot.
 
-    Fail-closed policy (P0-6, A3, A5, C7):
+    Fail-closed policy (P0-6, A3, A5, C7, K2):
     - Draft bots cannot be served at runtime (409).
     - Published bots use real classifier — no mock fallback.
+    - LLM provider built from LOKO_LLM_* env vars (K2).
     - Tests must use register_orchestrator() to inject mocks.
     - ComponentUnavailableError on any missing component.
 
@@ -112,12 +113,32 @@ def _get_orchestrator(bot_id: str, config: BotConfig) -> BotOrchestrator:
         backend = load_search_backend(bot_id)
         retriever = FilteredRetriever(backend)
 
-        # LLM: production requires real provider (phase R2)
-        raise ComponentUnavailableError(
-            "llm", bot_id,
-            "No LLM provider configured. "
-            "Use register_orchestrator() in tests or configure a real LLM provider (phase R2).",
+        # K2: LLM provider from env vars (openai_compat)
+        from loko.bot.llm import build_llm_provider
+
+        llm_provider = build_llm_provider(bot_id)
+        generator = BotGenerator(llm_provider, config.llm)
+
+        # Escalation: MockEscalationProvider allowed when explicitly configured
+        import os
+        escalation_provider_name = os.environ.get("LOKO_ESCALATION_PROVIDER", "")
+        if escalation_provider_name == "mock":
+            from loko.testing.mocks import MockEscalationProvider
+            escalation = MockEscalationProvider()
+        else:
+            raise ComponentUnavailableError(
+                "escalation", bot_id,
+                "No escalation provider configured. "
+                "Set LOKO_ESCALATION_PROVIDER=mock for testing.",
+            )
+
+        orchestrator = BotOrchestrator(
+            classifier=classifier,
+            retriever=retriever,
+            generator=generator,
+            escalation=escalation,
         )
+        _ORCHESTRATORS[bot_id] = orchestrator
 
     return _ORCHESTRATORS[bot_id]
 
