@@ -12,7 +12,9 @@ RUN pip install --no-cache-dir huggingface_hub
 RUN python -c "\
 from huggingface_hub import snapshot_download; \
 snapshot_download('sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2', \
-                  local_dir='/models/base/minilm')"
+                  local_dir='/models/base/minilm', \
+                  ignore_patterns=['onnx/*', 'openvino/*', 'tf_model*', 'pytorch_model*', \
+                                   'rust_model*', 'flax_model*', '.cache/*', '.gitattributes'])"
 
 # ---- Stage 3: Python backend ----
 FROM python:3.12-slim
@@ -27,20 +29,32 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
 
 # Install Python dependencies (server + ML) with constraints (A1)
+# Two-step: deps first (cached layer), then package install with source
 COPY pyproject.toml constraints-ml.txt ./
-RUN pip install --no-cache-dir -c constraints-ml.txt -e ".[server,ml]"
+RUN mkdir -p loko && touch loko/__init__.py && \
+    pip install --no-cache-dir -c constraints-ml.txt ".[server,ml,dev]" && \
+    rm -rf loko/
+
+# Remove build-essential (only needed for compiling C extensions above)
+RUN apt-get purge -y build-essential && apt-get autoremove -y && rm -rf /var/lib/apt/lists/*
+
+# Copy backend source and install package (no-deps, source only)
+COPY loko/ ./loko/
+RUN pip install --no-cache-dir --no-deps .
 
 # A2: copy pre-downloaded base model to fixed local path
 COPY --from=model-download /models/base/minilm /app/models/base/minilm
-
-# Copy backend source
-COPY loko/ ./loko/
 
 # Copy widget
 COPY widget/ ./widget/
 
 # Copy built frontend
 COPY --from=frontend-build /app/desktop/dist ./desktop/dist
+
+# Copy eval datasets, tools, and tests (needed for in-container validation protocol)
+COPY eval/ ./eval/
+COPY tools/ ./tools/
+COPY tests/ ./tests/
 
 # Data volume for bot configs & sessions
 VOLUME /root/.loko
