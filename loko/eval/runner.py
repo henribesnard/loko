@@ -54,7 +54,8 @@ class EvalReport:
     extra: dict[str, Any] = field(default_factory=dict)
     duration_s: float = 0.0
 
-    def to_dict(self) -> dict[str, Any]:
+    def to_report_dict(self) -> dict[str, Any]:
+        """Deterministic report data (no timing — goes into report.json)."""
         d = {
             "mode": self.mode,
             "dataset": self.dataset,
@@ -63,12 +64,23 @@ class EvalReport:
             "accuracy": round(self.accuracy, 4),
             "per_class": self.per_class,
             "confusion": self.confusion,
-            "duration_s": round(self.duration_s, 2),
             "n_errors": len(self.errors),
             "errors": [asdict(e) for e in self.errors[:50]],
         }
         if self.extra:
             d["extra"] = self.extra
+        return d
+
+    def to_meta_dict(self) -> dict[str, Any]:
+        """Non-deterministic metadata (timing — goes into meta.json)."""
+        return {
+            "duration_s": round(self.duration_s, 2),
+        }
+
+    def to_dict(self) -> dict[str, Any]:
+        """Full report including timing (for backward compat / in-memory use)."""
+        d = self.to_report_dict()
+        d.update(self.to_meta_dict())
         return d
 
 
@@ -212,6 +224,53 @@ def evaluate_decision(
     return report
 
 
+def check_expected_behavior(expected: str, decision: Decision) -> bool:
+    """Check if a decision matches the expected_behavior specification.
+
+    Grammar (from pieges.csv):
+      route:{intent}                         → type == "route" AND intent matches
+      clarify_intra:{intent}                 → route to correct intent OR
+                                               clarify_inter with intent in candidates
+      clarify_inter:{a}|{b}[|{c}]           → type == "clarify_inter" AND all
+                                               expected intents in candidates
+      escalate[:{detail}]                    → type == "escalate"
+      reject                                 → type == "reject"
+    """
+    if ":" in expected:
+        behavior_type, detail = expected.split(":", 1)
+    else:
+        behavior_type = expected
+        detail = ""
+
+    if behavior_type == "route":
+        return decision.type == "route" and decision.intent == detail
+
+    if behavior_type == "clarify_intra":
+        # Direct route to the correct intent is acceptable (even better)
+        if decision.type == "route" and decision.intent == detail:
+            return True
+        # Clarification with the intent in candidates is also acceptable
+        if decision.type == "clarify_inter":
+            candidate_ids = [c[0] for c in decision.candidates]
+            return detail in candidate_ids
+        return False
+
+    if behavior_type == "clarify_inter":
+        if decision.type != "clarify_inter":
+            return False
+        expected_intents = detail.split("|")
+        candidate_ids = [c[0] for c in decision.candidates]
+        return all(intent_id in candidate_ids for intent_id in expected_intents)
+
+    if behavior_type == "escalate":
+        return decision.type == "escalate"
+
+    if behavior_type == "reject":
+        return decision.type == "reject"
+
+    return False
+
+
 def evaluate_pieges(
     classifier: Any,
     pieges_path: Path,
@@ -220,7 +279,8 @@ def evaluate_pieges(
     """Mode 'pieges': evaluate edge cases with expected_behavior.
 
     Each row has: id, text, expected_behavior, note.
-    expected_behavior is one of: route, clarify_inter, reject, escalate.
+    expected_behavior grammar: route:{intent}, clarify_intra:{intent},
+    clarify_inter:{a}|{b}[|{c}], escalate[:{detail}], reject.
     """
     start = time.perf_counter()
     rows = load_dataset(pieges_path)
@@ -235,11 +295,19 @@ def evaluate_pieges(
         scores = classifier.classify_l1(text)
         decision = decide(scores, config)
 
-        correct = decision.type == expected
+        correct = check_expected_behavior(expected, decision)
+
+        # Build a descriptive predicted string for errors.csv
+        predicted_str = decision.type
+        if decision.intent:
+            predicted_str += f":{decision.intent}"
+        if decision.candidates:
+            cand_str = "|".join(c[0] for c in decision.candidates)
+            predicted_str = f"{decision.type}:{cand_str}"
 
         eval_row = EvalRow(
             text=text, expected=expected,
-            predicted=decision.type,
+            predicted=predicted_str,
             score=decision.score,
             decision_type=decision.type,
             correct=correct,
@@ -319,22 +387,41 @@ def threshold_sweep(
     return results
 
 
+_ERRORS_CSV_FIELDNAMES = [
+    "text", "expected", "predicted", "score", "decision_type", "correct", "detail",
+]
+
+
 def write_report(report: EvalReport, out_dir: Path) -> None:
-    """Write evaluation results to files."""
+    """Write evaluation results to files.
+
+    Produces:
+      - report.json  — deterministic data (metrics, verdicts, hashes)
+      - meta.json    — non-deterministic data (duration_s)
+      - errors.csv   — all errors (if any)
+      - confusion.csv — confusion matrix (raw mode only)
+    """
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    # report.json
+    # report.json — deterministic only (L1.3: no duration_s)
     report_path = out_dir / "report.json"
     report_path.write_text(
-        json.dumps(report.to_dict(), ensure_ascii=False, indent=2),
+        json.dumps(report.to_report_dict(), ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
 
-    # errors.csv
+    # meta.json — non-deterministic (timing)
+    meta_path = out_dir / "meta.json"
+    meta_path.write_text(
+        json.dumps(report.to_meta_dict(), ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+
+    # errors.csv — L1.1: fieldnames include 'correct'
     if report.errors:
         errors_path = out_dir / "errors.csv"
         with open(errors_path, "w", encoding="utf-8", newline="") as f:
-            writer = csv.DictWriter(f, fieldnames=["text", "expected", "predicted", "score", "decision_type", "detail"])
+            writer = csv.DictWriter(f, fieldnames=_ERRORS_CSV_FIELDNAMES)
             writer.writeheader()
             for e in report.errors:
                 writer.writerow(asdict(e))

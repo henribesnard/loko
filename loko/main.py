@@ -234,6 +234,12 @@ def create_app() -> FastAPI:
     async def health() -> dict[str, str]:
         return {"status": "ok", "service": "loko-bot"}
 
+    # --- L4: recover interrupted training jobs on boot ---
+    @app.on_event("startup")
+    async def recover_training_jobs():
+        from loko.api.bot_admin import recover_interrupted_jobs
+        recover_interrupted_jobs()
+
     # --- Session purge background task (P1-7) ---
     @app.on_event("startup")
     async def start_purge_task():

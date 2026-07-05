@@ -252,26 +252,58 @@ def verify_model(bot_id: str) -> ModelVerification:
     return ModelVerification(ok=True)
 
 
+_WARMUP_RUNS = 10
+_MEASURE_RUNS = 100
+
+
 def measure_inference_latency(
     bot_id: str,
-    n_samples: int = 100,
-) -> dict[str, float]:
-    """Measure P50/P95 inference latency on the L1 classifier (B3).
+    n_warmup: int = _WARMUP_RUNS,
+    n_samples: int = _MEASURE_RUNS,
+) -> dict[str, Any]:
+    """Measure P50/P95 inference latency on the L1 classifier (B3/L5).
 
-    Returns dict with keys: p50, p95 (in milliseconds).
-    Raises if the model is not loaded.
+    Methodology (aligned with independent counter-measure):
+      1. Free training resources (GC, reset BLAS threads to runtime value)
+      2. Warm-up: ``n_warmup`` inferences not counted (cache priming)
+      3. Measure: ``n_samples`` inferences timed individually
+      4. Report P50/P95 in milliseconds + methodology metadata
+
+    Returns dict with keys: p50, p95, methodology.
+    Raises if the model cannot be loaded.
     """
+    import gc
+
     from loko.bot.classifier.setfit_service import SetFitClassifier
 
+    # --- Step 0: free training resources ---
+    gc.collect()
+
+    try:
+        import torch
+        # Reset thread count to a sensible runtime value (training may have
+        # bumped it).  Default to physical core count or 4.
+        import os
+        runtime_threads = int(os.environ.get("LOKO_INFERENCE_THREADS", "4"))
+        torch.set_num_threads(runtime_threads)
+    except ImportError:
+        pass  # No torch — ONNX runtime or similar
+
+    # --- Load model ---
     clf = SetFitClassifier(bot_id, "level1")
     if not clf.load():
         raise RuntimeError(f"Cannot measure latency: model not loaded for bot {bot_id}")
 
     # Use smoke verbatims in rotation for realistic diversity
-    sample_texts = [SMOKE_VERBATIMS[i % len(SMOKE_VERBATIMS)] for i in range(n_samples)]
+    all_texts = [SMOKE_VERBATIMS[i % len(SMOKE_VERBATIMS)] for i in range(n_warmup + n_samples)]
 
+    # --- Step 1: warm-up (not counted) ---
+    for text in all_texts[:n_warmup]:
+        clf.classify(text, top_k=5)
+
+    # --- Step 2: measured inferences ---
     latencies: list[float] = []
-    for text in sample_texts:
+    for text in all_texts[n_warmup:]:
         start = time.perf_counter()
         clf.classify(text, top_k=5)
         elapsed_ms = (time.perf_counter() - start) * 1000
@@ -284,4 +316,10 @@ def measure_inference_latency(
     return {
         "p50": round(latencies[p50_idx], 2),
         "p95": round(latencies[min(p95_idx, len(latencies) - 1)], 2),
+        "methodology": {
+            "warmup": n_warmup,
+            "measured": n_samples,
+            "gc_before": True,
+            "threads_reset": True,
+        },
     }

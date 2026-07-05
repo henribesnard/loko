@@ -199,6 +199,13 @@ class BotLLMConfig(BaseModel):
     timeout: int = Field(default=60, ge=10, le=300)
 
 
+class TrainingParams(BaseModel):
+    """L2: configurable training hyperparameters."""
+    num_iterations: int = Field(default=5, ge=1, le=100)
+    num_epochs: int = Field(default=1, ge=1, le=10)
+    batch_size: int = Field(default=16, ge=4, le=128)
+
+
 # ---------------------------------------------------------------------------
 # Bot config (top-level)
 # ---------------------------------------------------------------------------
@@ -213,6 +220,7 @@ class BotConfig(BaseModel):
     tone_profile: ToneProfile = ToneProfile.NEUTRE
     intents: list[Intent] = Field(default_factory=list)
     journey: JourneyParams = Field(default_factory=JourneyParams)
+    training: TrainingParams = Field(default_factory=TrainingParams)
     templates: dict[TemplateKey, MessageTemplate] = Field(default_factory=dict)
     knowledge_collection: str = ""
     confidentiality_filter: list[str] = Field(

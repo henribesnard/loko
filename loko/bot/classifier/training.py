@@ -2,6 +2,9 @@
 
 Provides cross-validation, confusion matrix, and human-readable advice
 for improving intent classification quality.
+
+L2: profiling per phase, configurable training budget, cached embeddings.
+L3: CV on base model embeddings, margin-based advice.
 """
 
 from __future__ import annotations
@@ -53,16 +56,21 @@ class EvaluationResult:
         self.per_class_f1 = per_class_f1
         self.advice = advice
         self.duration_s = duration_s
+        self.extra_data: dict[str, Any] = {}
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        d: dict[str, Any] = {
             "class_names": self.class_names,
             "confusion_matrix": self.confusion_matrix,
             "accuracy": round(self.accuracy, 4),
             "per_class_f1": {k: round(v, 4) for k, v in self.per_class_f1.items()},
             "advice": self.advice,
+            "cv_method": "base_model_frozen",
             "duration_s": round(self.duration_s, 2),
         }
+        if self.extra_data:
+            d.update(self.extra_data)
+        return d
 
 
 def cross_validate(
@@ -71,68 +79,58 @@ def cross_validate(
     base_model: str = DEFAULT_BASE_MODEL,
     k: int = 5,
 ) -> EvaluationResult:
-    """Head-only k-fold cross-validation (K3 performance fix).
+    """CV on base-model embeddings + margin analysis on final model (L3).
 
-    Strategy: train the sentence-transformer body ONCE on all data,
-    encode all texts into embeddings, then cross-validate ONLY the
-    logistic head (fast — seconds, not minutes). This keeps the
-    confusion matrix honest for its purpose (detecting confused pairs)
-    while reducing cost from k×train_body to 1×train_body + k×fit_head.
+    Strategy (L3 revision — fixes K3.2 data leakage):
+      1. Encode all texts with the FROZEN base model (pre-fine-tuning).
+         These embeddings measure intrinsic separability, not post-training
+         accuracy (which is inflated because the body saw all examples).
+      2. Stratified k-fold CV of a logistic head on these base embeddings.
+         The confusion matrix reveals genuinely confused pairs.
+      3. Generate advice from both the confusion matrix and (later, when
+         the trained model is available) margin analysis.
 
     If there are too few examples per class for k folds, falls back
     to leave-one-out.
     """
     import numpy as np
-    from setfit import SetFitModel, Trainer, TrainingArguments
     from sklearn.linear_model import LogisticRegression
-    from datasets import Dataset
 
     start = time.perf_counter()
     unique_labels = sorted(set(labels))
     label_to_idx = {l: i for i, l in enumerate(unique_labels)}
     n_classes = len(unique_labels)
 
-    # Count per class
     class_counts: dict[str, int] = defaultdict(int)
     for l in labels:
         class_counts[l] += 1
 
     min_count = min(class_counts.values()) if class_counts else 0
-
-    # Adjust k for leave-one-out if too few examples
     if min_count < k:
         k = max(2, min_count)
 
-    # --- Step 1: Train body once on all data (contrastive) ---
-    numeric_labels_all = [label_to_idx[l] for l in labels]
-    ds_all = Dataset.from_dict({"text": texts, "label": numeric_labels_all})
+    # --- Step 1: Encode with FROZEN base model (no fine-tuning) ---
+    from sentence_transformers import SentenceTransformer
 
     resolved = resolve_base_model(base_model)
-    model = SetFitModel.from_pretrained(resolved, labels=unique_labels)
-    args = TrainingArguments(
-        num_iterations=20,
-        num_epochs=1,
-        batch_size=16,
-    )
-    trainer = Trainer(model=model, args=args, train_dataset=ds_all)
-    trainer.train()
-
-    # --- Step 2: Encode all texts into embeddings ---
-    embeddings = model.model_body.encode(texts, show_progress_bar=False)
+    base_encoder = SentenceTransformer(resolved)
+    embeddings = base_encoder.encode(texts, show_progress_bar=False)
     embeddings = np.array(embeddings)
+    del base_encoder  # free memory
 
-    # --- Step 3: Stratified k-fold CV on the head only ---
+    encode_time = time.perf_counter() - start
+    logger.info("Base-model encoding: %.1fs for %d texts", encode_time, len(texts))
+
+    # --- Step 2: Stratified k-fold CV on the head only ---
     import random
     pairs_idx = list(range(len(texts)))
     rng = random.Random(42)
     rng.shuffle(pairs_idx)
 
-    # Group by class for stratified folding
     class_buckets: dict[int, list[int]] = defaultdict(list)
     for i in pairs_idx:
         class_buckets[label_to_idx[labels[i]]].append(i)
 
-    # Create stratified folds
     folds: list[list[int]] = [[] for _ in range(k)]
     for cls_indices in class_buckets.values():
         for i, idx in enumerate(cls_indices):
@@ -154,7 +152,6 @@ def cross_validate(
         X_val = embeddings[val_idx]
         y_val = [label_to_idx[labels[i]] for i in val_idx]
 
-        # Fit logistic head only (very fast)
         head = LogisticRegression(max_iter=500, random_state=42)
         head.fit(X_train, y_train)
         preds = head.predict(X_val)
@@ -168,12 +165,10 @@ def cross_validate(
         if 0 <= true_idx < n_classes and 0 <= pred_idx < n_classes:
             cm[true_idx][pred_idx] += 1
 
-    # Compute accuracy
     correct = sum(cm[i][i] for i in range(n_classes))
     total = sum(sum(row) for row in cm)
     accuracy = correct / total if total > 0 else 0.0
 
-    # Per-class F1
     per_class_f1: dict[str, float] = {}
     for i, cls_name in enumerate(unique_labels):
         tp = cm[i][i]
@@ -184,11 +179,14 @@ def cross_validate(
         f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0.0
         per_class_f1[cls_name] = f1
 
-    # Generate advice
     advice = _generate_advice(unique_labels, cm, class_counts, per_class_f1)
 
     duration = time.perf_counter() - start
-    logger.info("Cross-validation completed in %.1fs (head-only CV on %d folds)", duration, k)
+    logger.info(
+        "Cross-validation completed in %.1fs (base-model CV on %d folds, "
+        "encode=%.1fs, cv=%.1fs)",
+        duration, k, encode_time, duration - encode_time,
+    )
 
     return EvaluationResult(
         class_names=unique_labels,
@@ -252,6 +250,50 @@ def _generate_advice(
 # Full training pipeline
 # ---------------------------------------------------------------------------
 
+def compute_margin_analysis(
+    classifier: SetFitClassifier,
+    texts: list[str],
+    labels: list[str],
+    *,
+    margin_threshold: float = 0.15,
+) -> tuple[list[tuple[str, str, int]], list[str]]:
+    """L3: compute top1-top2 margin for each example on the trained model.
+
+    Returns
+    -------
+    weak_pairs : list[(intent_a, intent_b, count)]
+        Pairs of intents where count examples have margin < threshold.
+    advice : list[str]
+        Actionable advice from margin analysis.
+    """
+    from collections import Counter
+
+    pair_counts: Counter[tuple[str, str]] = Counter()
+
+    for text, expected in zip(texts, labels):
+        scores = classifier.classify(text, top_k=2)
+        if len(scores) < 2:
+            continue
+        top1_id, top1_score = scores[0]
+        top2_id, top2_score = scores[1]
+        margin = top1_score - top2_score
+        if margin < margin_threshold:
+            pair = tuple(sorted([top1_id, top2_id]))
+            pair_counts[pair] += 1
+
+    weak_pairs = [(a, b, c) for (a, b), c in pair_counts.most_common()]
+    advice: list[str] = []
+    for a, b, count in weak_pairs:
+        if count >= 3:
+            advice.append(
+                f"Les intentions '{a}' et '{b}' sont proches en marge "
+                f"({count} exemples avec ecart top1-top2 < {margin_threshold}). "
+                f"Ajoutez des exemples discriminants entre ces deux intentions."
+            )
+
+    return weak_pairs, advice
+
+
 def train_bot_classifiers(
     config: BotConfig,
     base_model: str = DEFAULT_BASE_MODEL,
@@ -271,13 +313,18 @@ def train_bot_classifiers(
 
     Returns
     -------
-    dict with training results and optional evaluation.
+    dict with training results, optional evaluation, and phase profile.
     """
     results: dict[str, Any] = {"level1": {}, "level2": {}, "evaluation": None}
+    profile: dict[str, float] = {}
+    t_start = time.perf_counter()
 
     def _progress(step: str, detail: dict[str, Any] | None = None) -> None:
         if on_progress:
             on_progress(step, detail or {})
+
+    # Read training hyperparameters from config (L2)
+    tp = config.training
 
     # --- Level 1 ---
     _progress("l1_preparing")
@@ -288,17 +335,37 @@ def train_bot_classifiers(
         return results
 
     _progress("l1_training", {"num_samples": len(texts), "num_classes": len(set(labels))})
+    t_l1 = time.perf_counter()
     classifier = SetFitClassifier(config.bot_id, "level1")
-    train_result = classifier.train(texts, labels, base_model=base_model)
+    train_result = classifier.train(
+        texts, labels,
+        base_model=base_model,
+        num_iterations=tp.num_iterations,
+        num_epochs=tp.num_epochs,
+        batch_size=tp.batch_size,
+    )
+    profile["l1_train_s"] = round(time.perf_counter() - t_l1, 2)
     results["level1"] = train_result
 
-    # --- Evaluation L1 ---
+    # --- Evaluation L1 (L3: base-model CV + margin analysis) ---
     if run_evaluation and len(texts) >= 4:
         _progress("l1_evaluating")
+        t_eval = time.perf_counter()
         eval_result = cross_validate(texts, labels, base_model=base_model)
+
+        # L3: margin analysis on the trained model
+        weak_pairs, margin_advice = compute_margin_analysis(classifier, texts, labels)
+        eval_result.advice.extend(margin_advice)
+        if weak_pairs:
+            eval_result.extra_data["margin_weak_pairs"] = [
+                {"a": a, "b": b, "count": c} for a, b, c in weak_pairs
+            ]
+
+        profile["eval_s"] = round(time.perf_counter() - t_eval, 2)
         results["evaluation"] = eval_result.to_dict()
 
     # --- Level 2 (per intent with sub-motifs) ---
+    t_l2 = time.perf_counter()
     for intent in config.intents:
         if not intent.sub_motifs:
             continue
@@ -312,19 +379,23 @@ def train_bot_classifiers(
 
         _progress("l2_training", {"intent": intent.id, "num_samples": len(l2_texts)})
         l2_classifier = SetFitClassifier(config.bot_id, "level2", intent.id)
-        l2_result = l2_classifier.train(l2_texts, l2_labels, base_model=base_model)
+        l2_result = l2_classifier.train(
+            l2_texts, l2_labels,
+            base_model=base_model,
+            num_iterations=tp.num_iterations,
+            num_epochs=tp.num_epochs,
+            batch_size=tp.batch_size,
+        )
         results["level2"][intent.id] = l2_result
+    profile["l2_train_s"] = round(time.perf_counter() - t_l2, 2)
 
     # --- A4: Write manifest (atomic commit marker) ---
     _progress("writing_manifest")
     try:
-        # Compute dataset hash
         dataset_hash = compute_dataset_hash(texts, labels)
 
-        # Collect level info
         levels: dict[str, LevelInfo] = {}
 
-        # L1
         l1_dir = get_model_dir(config.bot_id, "level1")
         levels["level1"] = LevelInfo(
             files=compute_file_hashes(l1_dir),
@@ -332,7 +403,6 @@ def train_bot_classifiers(
             n_train_examples=len(texts),
         )
 
-        # L2s
         for intent in config.intents:
             if intent.id in results.get("level2", {}) and "error" not in results["level2"].get(intent.id, {}):
                 l2_dir = get_model_dir(config.bot_id, "level2", intent.id)
@@ -343,10 +413,12 @@ def train_bot_classifiers(
                     n_train_examples=len(l2_texts_i),
                 )
 
-        # B3: Measure inference latency
-        latency: dict[str, float] = {}
+        # B3: Measure inference latency (L5: with warm-up + resource cleanup)
+        latency: dict[str, Any] = {}
         try:
+            t_lat = time.perf_counter()
             latency = measure_inference_latency(config.bot_id)
+            profile["latency_measure_s"] = round(time.perf_counter() - t_lat, 2)
             results["inference_latency_ms"] = latency
             logger.info(
                 "Inference latency for bot %s: P50=%.1fms, P95=%.1fms",
@@ -355,7 +427,6 @@ def train_bot_classifiers(
         except Exception:
             logger.warning("Could not measure inference latency", exc_info=True)
 
-        # Write manifest — LAST step
         write_manifest(
             bot_id=config.bot_id,
             levels=levels,
@@ -367,6 +438,10 @@ def train_bot_classifiers(
     except Exception:
         logger.exception("Failed to write manifest for bot %s", config.bot_id)
         results["manifest"] = "error"
+
+    profile["total_s"] = round(time.perf_counter() - t_start, 2)
+    results["profile"] = profile
+    logger.info("Training profile for bot %s: %s", config.bot_id, profile)
 
     _progress("done", results)
     return results

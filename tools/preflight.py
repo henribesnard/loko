@@ -49,23 +49,31 @@ def _print_result(ce_id: str, description: str, passed: bool, detail: str = "") 
 def check_ce1_git_clean() -> bool:
     """CE-1: worktree clean, on main branch."""
     result = _run(["git", "status", "--porcelain"], cwd=ROOT)
-    untracked = [
-        line for line in result.stdout.strip().splitlines()
-        if line.strip() and not line.strip().startswith("?? PLAN_")
-        and not line.strip().startswith("?? PROTOCOLE_")
-        and not line.strip().startswith("?? RAPPORT_")
-        and not line.strip().startswith("?? AMELIORATION_")
-    ]
+    all_lines = [line for line in result.stdout.strip().splitlines() if line.strip()]
+
+    # Separate campaign docs (PLAN_, RAPPORT_, etc.) from real unclean files
+    doc_patterns = ("?? PLAN_", "?? PROTOCOLE_", "?? RAPPORT_", "?? AMELIORATION_",
+                    " M PLAN_", " M PROTOCOLE_", " M RAPPORT_", " M AMELIORATION_")
+    untracked = [line for line in all_lines
+                 if not any(line.strip().startswith(p.strip()) for p in doc_patterns)]
+    doc_files = [line for line in all_lines if line not in untracked]
+
     clean = len(untracked) == 0
 
     branch = _run(["git", "rev-parse", "--abbrev-ref", "HEAD"], cwd=ROOT)
     branch_name = branch.stdout.strip()
 
-    return _print_result(
-        "CE-1", "Worktree clean, main branch",
-        clean and branch_name == "main",
-        f"branch={branch_name}, untracked={len(untracked)}",
-    )
+    passed = clean and branch_name == "main"
+
+    detail = f"branch={branch_name}, untracked={len(untracked)}"
+    if not passed and untracked:
+        detail += "\n    Non-clean files (action required — commit or move):"
+        for line in untracked:
+            detail += f"\n      {line.strip()}"
+    if doc_files:
+        detail += f"\n    Campaign docs (ignored): {len(doc_files)} file(s)"
+
+    return _print_result("CE-1", "Worktree clean, main branch", passed, detail)
 
 
 def check_ce2_tag(tag: str | None) -> bool:
@@ -82,15 +90,32 @@ def check_ce2_tag(tag: str | None) -> bool:
 
 
 def check_ce3_image(image: str | None) -> bool:
-    """CE-3: Docker image built from tag."""
+    """CE-3: Docker image built from tag, size by digest ≤ 1.6 Go (L6/K4.3)."""
     if not image:
         return _print_result("CE-3", "Docker image built", False, "no --image specified, skipped")
 
     result = _run(["docker", "inspect", "--format", "{{.Id}}", image])
-    ok = result.returncode == 0
-    digest = result.stdout.strip()[:20] if ok else "not found"
+    if result.returncode != 0:
+        return _print_result("CE-3", "Docker image built", False, "image not found")
 
-    return _print_result("CE-3", "Docker image built", ok, f"image={image}, id={digest}...")
+    digest = result.stdout.strip()[:20]
+
+    # L6: measure size via inspect (not 'docker images') — actual on-disk size
+    size_result = _run(["docker", "inspect", "--format", "{{.Size}}", image])
+    if size_result.returncode == 0:
+        try:
+            size_bytes = int(size_result.stdout.strip())
+            size_mb = size_bytes / (1024 * 1024)
+            threshold_mb = 1600  # 1.6 Go
+            size_ok = size_mb <= threshold_mb
+            detail = f"image={image}, id={digest}..., size={size_mb:.0f}MB (inspect/digest)"
+            if not size_ok:
+                detail += f" > {threshold_mb}MB THRESHOLD"
+            return _print_result("CE-3", "Docker image built + size", size_ok, detail)
+        except ValueError:
+            pass
+
+    return _print_result("CE-3", "Docker image built", True, f"image={image}, id={digest}...")
 
 
 def check_ce4_datasets() -> bool:

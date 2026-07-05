@@ -7,7 +7,10 @@ Covers: CRUD bots, intentions, templates, training, evaluation, playground.
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
+from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
@@ -21,6 +24,7 @@ from loko.bot.config_store import (
     save_bot_config,
 )
 from loko.bot.models import BotConfig, Intent, JourneyParams, MessageTemplate, TemplateKey
+from loko.bot.session_store import get_bot_dir, get_bots_dir
 
 logger = logging.getLogger(__name__)
 
@@ -31,10 +35,92 @@ router = APIRouter(
 )
 
 # ---------------------------------------------------------------------------
-# Training state (in-memory, per bot)
+# Training state (in-memory, per bot) — L4: backed by train_state.json
 # ---------------------------------------------------------------------------
 
 _TRAINING_STATE: dict[str, dict[str, Any]] = {}
+
+_TRAIN_STATE_FILENAME = "train_state.json"
+
+
+def _train_state_path(bot_id: str) -> Path:
+    """Path to the on-disk training state file for a bot."""
+    return get_bot_dir(bot_id) / _TRAIN_STATE_FILENAME
+
+
+def _persist_train_state(bot_id: str) -> None:
+    """Write the current in-memory training state to disk."""
+    state = _TRAINING_STATE.get(bot_id)
+    if not state:
+        return
+    # Only persist status, step, error, timestamp — not the full result
+    disk_state = {
+        "status": state.get("status"),
+        "step": state.get("step"),
+        "error": state.get("error"),
+        "timestamp": state.get("timestamp", datetime.now(timezone.utc).isoformat()),
+    }
+    try:
+        path = _train_state_path(bot_id)
+        path.write_text(
+            json.dumps(disk_state, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+    except OSError:
+        logger.warning("Could not persist training state for bot %s", bot_id)
+
+
+def _load_train_state(bot_id: str) -> dict[str, Any] | None:
+    """Read training state from disk, or None if absent."""
+    try:
+        path = _train_state_path(bot_id)
+        if not path.is_file():
+            return None
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return None
+
+
+def recover_interrupted_jobs() -> None:
+    """L4: on server boot, requalify any 'running' job as 'failed/interrupted'.
+
+    Scans all bot directories for train_state.json with status == 'running'
+    and marks them as failed.
+    """
+    bots_dir = get_bots_dir()
+    if not bots_dir.is_dir():
+        return
+    for bot_dir in bots_dir.iterdir():
+        if not bot_dir.is_dir():
+            continue
+        state_path = bot_dir / _TRAIN_STATE_FILENAME
+        if not state_path.is_file():
+            continue
+        try:
+            state = json.loads(state_path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            continue
+        if state.get("status") == "running":
+            bot_id = bot_dir.name
+            logger.warning(
+                "Bot %s had a training job in 'running' state at boot — "
+                "requalifying as 'failed/interrupted'",
+                bot_id,
+            )
+            state["status"] = "failed"
+            state["error"] = "interrupted"
+            state["step"] = "interrupted"
+            state_path.write_text(
+                json.dumps(state, ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
+            # Also populate in-memory state
+            _TRAINING_STATE[bot_id] = {
+                "status": "failed",
+                "step": "interrupted",
+                "error": "interrupted",
+                "result": None,
+            }
 
 
 # ---------------------------------------------------------------------------
@@ -234,7 +320,13 @@ async def train_bot(
     if bot_id in _TRAINING_STATE and _TRAINING_STATE[bot_id].get("status") == "running":
         raise HTTPException(409, "Training already in progress")
 
-    _TRAINING_STATE[bot_id] = {"status": "running", "step": "queued", "result": None}
+    _TRAINING_STATE[bot_id] = {
+        "status": "running",
+        "step": "queued",
+        "result": None,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+    _persist_train_state(bot_id)
 
     background_tasks.add_task(
         _run_training_background,
@@ -250,6 +342,10 @@ async def train_bot(
 async def get_training_status(bot_id: str) -> dict[str, Any]:
     state = _TRAINING_STATE.get(bot_id)
     if not state:
+        # L4: check disk for persisted state (e.g. after restart)
+        disk_state = _load_train_state(bot_id)
+        if disk_state:
+            return {"bot_id": bot_id, **disk_state}
         return {"status": "idle", "bot_id": bot_id}
     return {"bot_id": bot_id, **state}
 
@@ -442,7 +538,9 @@ def _run_training_background(
         )
         _TRAINING_STATE[bot_id]["result"] = result
         _TRAINING_STATE[bot_id]["status"] = "completed"
+        _persist_train_state(bot_id)
     except Exception as exc:
         logger.exception("Training failed for bot %s", bot_id)
         _TRAINING_STATE[bot_id]["status"] = "failed"
         _TRAINING_STATE[bot_id]["error"] = str(exc)
+        _persist_train_state(bot_id)
