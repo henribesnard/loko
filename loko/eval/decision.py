@@ -84,8 +84,20 @@ def decide(
             return Decision(type="escalate", intent=best_id, score=best_score)
         return Decision(type="reject", intent=best_id, score=best_score)
 
-    # Above seuil_haut → route directly
+    # Above seuil_haut → route directly (unless ecart too small — M2)
     if best_score >= journey.seuil_haut:
+        seuil_ecart = journey.seuil_ecart_clarification
+        if seuil_ecart > 0 and len(l1_scores) >= 2:
+            second_id, second_score = l1_scores[1]
+            ecart = round(best_score - second_score, 9)
+            if ecart < seuil_ecart:
+                # Gap too small → clarify instead of routing
+                return Decision(
+                    type="clarify_inter",
+                    intent=best_id,
+                    score=best_score,
+                    candidates=[(best_id, best_score), (second_id, second_score)],
+                )
         return Decision(type="route", intent=best_id, score=best_score)
 
     # Medium confidence → clarification

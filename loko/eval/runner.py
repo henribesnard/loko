@@ -387,6 +387,129 @@ def threshold_sweep(
     return results
 
 
+def threshold_sweep_3axis(
+    classifier: Any,
+    datasets: dict[str, Path],
+    config: Any,
+    seuil_haut_range: tuple[float, float, float] = (0.6, 0.9, 0.05),
+    seuil_bas_range: tuple[float, float, float] = (0.3, 0.6, 0.05),
+    seuil_ecart_range: tuple[float, float, float] = (0.0, 0.25, 0.05),
+) -> list[dict[str, Any]]:
+    """M2 — 3-axis sweep: seuil_haut x seuil_bas x seuil_ecart.
+
+    Pre-computes inference scores once per dataset, then evaluates
+    decide() on every grid point (pure function — fast).
+
+    Parameters
+    ----------
+    datasets : dict[str, Path]
+        Keys: "metier", "conseiller", "horsscope", "pieges".
+        Values: paths to CSV files.
+
+    Returns list of dicts, each with:
+        seuil_haut, seuil_bas, seuil_ecart,
+        gng1, gng2, gng3, gng3_routes_directes, pieges, pieges_correct.
+    """
+    # Pre-compute scores for each dataset (once)
+    precomputed: dict[str, list[tuple[dict[str, str], list[tuple[str, float]]]]] = {}
+    for label, path in datasets.items():
+        rows = load_dataset(path)
+        scored: list[tuple[dict[str, str], list[tuple[str, float]]]] = []
+        for row in rows:
+            scores = classifier.classify_l1(row["text"])
+            scored.append((row, scores))
+        precomputed[label] = scored
+
+    results: list[dict[str, Any]] = []
+
+    sh = seuil_haut_range[0]
+    while sh <= seuil_haut_range[1] + 1e-9:
+        sb = seuil_bas_range[0]
+        while sb <= seuil_bas_range[1] + 1e-9:
+            if sb >= sh:
+                sb += seuil_bas_range[2]
+                continue
+
+            se = seuil_ecart_range[0]
+            while se <= seuil_ecart_range[1] + 1e-9:
+                modified_journey = config.journey.model_copy(
+                    update={
+                        "seuil_haut": round(sh, 4),
+                        "seuil_bas": round(sb, 4),
+                        "seuil_ecart_clarification": round(se, 4),
+                    },
+                )
+                modified_config = config.model_copy(update={"journey": modified_journey})
+
+                point: dict[str, Any] = {
+                    "seuil_haut": round(sh, 3),
+                    "seuil_bas": round(sb, 3),
+                    "seuil_ecart": round(se, 3),
+                }
+
+                # GNG-1 (metier)
+                if "metier" in precomputed:
+                    correct = 0
+                    total = len(precomputed["metier"])
+                    for row, scores in precomputed["metier"]:
+                        expected = row["intent"]
+                        decision = decide(scores, modified_config)
+                        if decision.type == "route" and decision.intent == expected:
+                            correct += 1
+                        elif decision.type == "clarify_inter":
+                            if expected in [c[0] for c in decision.candidates]:
+                                correct += 1
+                        elif decision.type == "escalate" and expected == "demande_conseiller":
+                            correct += 1
+                        elif decision.type == "reject" and expected == "hors_perimetre":
+                            correct += 1
+                    point["gng1"] = round(correct / total, 4) if total else 0
+
+                # GNG-2 (conseiller)
+                if "conseiller" in precomputed:
+                    correct = 0
+                    total = len(precomputed["conseiller"])
+                    for _, scores in precomputed["conseiller"]:
+                        decision = decide(scores, modified_config)
+                        if decision.type == "escalate":
+                            correct += 1
+                    point["gng2"] = round(correct / total, 4) if total else 0
+
+                # GNG-3 (horsscope)
+                if "horsscope" in precomputed:
+                    correct = 0
+                    routes_directes = 0
+                    total = len(precomputed["horsscope"])
+                    for _, scores in precomputed["horsscope"]:
+                        decision = decide(scores, modified_config)
+                        if decision.type in ("reject", "escalate"):
+                            correct += 1
+                        elif decision.type == "route":
+                            routes_directes += 1
+                    point["gng3"] = round(correct / total, 4) if total else 0
+                    point["gng3_routes_directes"] = routes_directes
+
+                # Pieges
+                if "pieges" in precomputed:
+                    correct = 0
+                    total = len(precomputed["pieges"])
+                    for row, scores in precomputed["pieges"]:
+                        expected = row.get("expected_behavior", "")
+                        decision = decide(scores, modified_config)
+                        if check_expected_behavior(expected, decision):
+                            correct += 1
+                    point["pieges"] = round(correct / total, 4) if total else 0
+                    point["pieges_correct"] = correct
+                    point["pieges_total"] = total
+
+                results.append(point)
+                se += seuil_ecart_range[2]
+            sb += seuil_bas_range[2]
+        sh += seuil_haut_range[2]
+
+    return results
+
+
 _ERRORS_CSV_FIELDNAMES = [
     "text", "expected", "predicted", "score", "decision_type", "correct", "detail",
 ]

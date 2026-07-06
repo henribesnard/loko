@@ -162,7 +162,7 @@ def create_app() -> FastAPI:
     """Create and configure the FastAPI application."""
     app = FastAPI(
         title="LOKO Bot Service",
-        version="0.1.0",
+        version="0.3.6",
         description="Deterministic chatbot platform for customer service.",
     )
 

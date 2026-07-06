@@ -83,13 +83,21 @@ def main() -> None:
         description="LOKO Evaluation CLI (C2) — evaluate classifier + decision logic",
     )
     parser.add_argument("--bot-dir", required=True, help="Path to bot directory (~/.loko/bots/my-bot)")
-    parser.add_argument("--dataset", required=True, help="Path to evaluation CSV dataset")
+    parser.add_argument("--dataset", default=None, help="Path to evaluation CSV dataset")
     parser.add_argument("--mode", choices=["raw", "decision", "pieges"], default="decision")
     parser.add_argument("--out", default="eval_output", help="Output directory for results")
     parser.add_argument("--threshold-check", type=float, default=None,
                         help="Minimum accuracy to pass (e.g. 0.85). Exit code 1 if below.")
     parser.add_argument("--sweep", nargs="?", const="seuil_haut=0.6:0.9:0.05,seuil_bas=0.3:0.6:0.05",
                         help="Run threshold sweep (C3). Optional: custom ranges.")
+    parser.add_argument(
+        "--sweep-datasets",
+        help=(
+            "M2: 3-axis sweep across multiple datasets. Format: "
+            "metier=path,conseiller=path,horsscope=path,pieges=path. "
+            "Implies --sweep with seuil_ecart axis."
+        ),
+    )
     parser.add_argument("--verbose", "-v", action="store_true")
 
     args = parser.parse_args()
@@ -100,15 +108,10 @@ def main() -> None:
         logging.basicConfig(level=logging.INFO)
 
     bot_dir = Path(args.bot_dir)
-    dataset_path = Path(args.dataset)
     out_dir = Path(args.out)
 
     if not bot_dir.is_dir():
         print(f"Error: {bot_dir} is not a directory", file=sys.stderr)
-        sys.exit(1)
-
-    if not dataset_path.is_file():
-        print(f"Error: {dataset_path} not found", file=sys.stderr)
         sys.exit(1)
 
     # Load classifier and config
@@ -121,8 +124,60 @@ def main() -> None:
         evaluate_pieges,
         evaluate_raw,
         threshold_sweep,
+        threshold_sweep_3axis,
         write_report,
     )
+
+    # M2: 3-axis sweep across multiple datasets
+    if args.sweep_datasets:
+        ds_dict: dict[str, Path] = {}
+        for part in args.sweep_datasets.split(","):
+            label, path_str = part.strip().split("=")
+            p = Path(path_str.strip())
+            if not p.is_file():
+                print(f"Error: dataset '{label}' not found at {p}", file=sys.stderr)
+                sys.exit(1)
+            ds_dict[label.strip()] = p
+
+        # Parse sweep ranges (including seuil_ecart)
+        sweep_str = args.sweep or "seuil_haut=0.6:0.9:0.05,seuil_bas=0.3:0.6:0.05,seuil_ecart=0.0:0.25:0.05"
+        ranges = _parse_sweep(sweep_str)
+        sh_range = ranges.get("seuil_haut", (0.6, 0.9, 0.05))
+        sb_range = ranges.get("seuil_bas", (0.3, 0.6, 0.05))
+        se_range = ranges.get("seuil_ecart", (0.0, 0.25, 0.05))
+
+        results = threshold_sweep_3axis(
+            classifier, ds_dict, config, sh_range, sb_range, se_range,
+        )
+
+        out_dir.mkdir(parents=True, exist_ok=True)
+        sweep_path = out_dir / "sweep_3axis.csv"
+        if results:
+            with open(sweep_path, "w", encoding="utf-8", newline="") as f:
+                writer = csv.DictWriter(f, fieldnames=list(results[0].keys()))
+                writer.writeheader()
+                writer.writerows(results)
+
+        # Also write as JSON for programmatic use
+        sweep_json = out_dir / "sweep_3axis.json"
+        sweep_json.write_text(
+            json.dumps(results, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+
+        print(f"3-axis sweep: {len(results)} points written to {sweep_path}")
+        print(f"Datasets: {', '.join(f'{k}={v}' for k, v in ds_dict.items())}")
+        return
+
+    # Require --dataset for non-sweep modes
+    if not args.dataset:
+        print("Error: --dataset is required (unless using --sweep-datasets)", file=sys.stderr)
+        sys.exit(1)
+
+    dataset_path = Path(args.dataset)
+    if not dataset_path.is_file():
+        print(f"Error: {dataset_path} not found", file=sys.stderr)
+        sys.exit(1)
 
     # Run evaluation
     if args.sweep:

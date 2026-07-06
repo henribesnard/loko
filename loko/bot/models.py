@@ -139,6 +139,14 @@ class JourneyParams(BaseModel):
     """Configurable parameters of the conversation state machine."""
     seuil_haut: float = Field(default=0.75, ge=0.0, le=1.0)
     seuil_bas: float = Field(default=0.45, ge=0.0, le=1.0)
+    seuil_ecart_clarification: float = Field(
+        default=0.0, ge=0.0, le=1.0,
+        description=(
+            "M2: minimum gap between top1 and top2 scores to route directly. "
+            "If top1 >= seuil_haut but top1 - top2 < seuil_ecart, clarify "
+            "instead of routing. Default 0.0 = disabled (backward compat)."
+        ),
+    )
     seuil_sous_motif: float = Field(default=0.60, ge=0.0, le=1.0)
     max_clarifications: int = Field(default=1, ge=0, le=3)
     max_demandes: int = Field(default=5, ge=1, le=20)

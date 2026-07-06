@@ -76,8 +76,21 @@ def check_ce1_git_clean() -> bool:
     return _print_result("CE-1", "Worktree clean, main branch", passed, detail)
 
 
-def check_ce2_tag(tag: str | None) -> bool:
-    """CE-2: tag present."""
+def _read_pyproject_version() -> str:
+    """Read version from pyproject.toml."""
+    pyproject = ROOT / "pyproject.toml"
+    for line in pyproject.read_text(encoding="utf-8").splitlines():
+        if line.strip().startswith("version"):
+            # version = "0.3.6"
+            return line.split("=", 1)[1].strip().strip('"').strip("'")
+    return "(unknown)"
+
+
+def check_ce2_tag(tag: str | None, image: str | None = None) -> bool:
+    """CE-2: tag present + triple version check (M3).
+
+    Verifies: git describe --tags == pyproject.toml version == pip show loko (in image).
+    """
     result = _run(["git", "describe", "--tags", "--exact-match"], cwd=ROOT)
     current_tag = result.stdout.strip()
     if tag:
@@ -86,7 +99,33 @@ def check_ce2_tag(tag: str | None) -> bool:
         ok = bool(current_tag)
         tag = current_tag or "(none)"
 
-    return _print_result("CE-2", "Tag present", ok, f"tag={tag}")
+    tag_passed = _print_result("CE-2a", "Tag present", ok, f"tag={tag}")
+
+    # Triple version check (M3)
+    pyproject_version = _read_pyproject_version()
+    # Strip leading 'v' from tag for comparison (v0.3.6 -> 0.3.6)
+    tag_version = current_tag.lstrip("v") if current_tag else "(none)"
+
+    versions_match = tag_version == pyproject_version
+    detail = f"tag={tag_version}, pyproject={pyproject_version}"
+
+    # Check pip show loko in image if available
+    if image:
+        pip_result = _run(["docker", "run", "--rm", image, "pip", "show", "loko"])
+        pip_version = "(unknown)"
+        if pip_result.returncode == 0:
+            for line in pip_result.stdout.splitlines():
+                if line.startswith("Version:"):
+                    pip_version = line.split(":", 1)[1].strip()
+                    break
+        versions_match = versions_match and (pip_version == pyproject_version)
+        detail += f", pip={pip_version}"
+    else:
+        detail += ", pip=skipped (no image)"
+
+    triple_passed = _print_result("CE-2b", "Triple version check (M3)", versions_match, detail)
+
+    return tag_passed and triple_passed
 
 
 def check_ce3_image(image: str | None) -> bool:
@@ -202,7 +241,7 @@ def main() -> None:
 
     results = [
         check_ce1_git_clean(),
-        check_ce2_tag(args.tag),
+        check_ce2_tag(args.tag, args.image),
         check_ce3_image(args.image),
         check_ce4_datasets(),
         check_ce5_datasets_check(),

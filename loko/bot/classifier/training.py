@@ -47,7 +47,7 @@ class EvaluationResult:
         confusion_matrix: list[list[int]],
         accuracy: float,
         per_class_f1: dict[str, float],
-        advice: list[str],
+        advice: list[dict[str, Any]],
         duration_s: float,
     ):
         self.class_names = class_names
@@ -203,47 +203,130 @@ def _generate_advice(
     cm: list[list[int]],
     class_counts: dict[str, int],
     per_class_f1: dict[str, float],
-) -> list[str]:
-    """Generate actionable advice from the confusion matrix."""
-    advice: list[str] = []
+) -> list[dict[str, Any]]:
+    """Generate structured advice from the confusion matrix (M1).
+
+    Returns list of dicts, each with at least: type, suggestion.
+    Pair entries also carry: pair, evidence, n_exemples_faibles.
+    """
+    advice: list[dict[str, Any]] = []
     n = len(class_names)
 
-    # 1. Find confused pairs
+    # 1. Confused pairs from CV (off-diagonal >= 2)
     for i in range(n):
         for j in range(n):
             if i == j:
                 continue
             errors = cm[i][j]
-            total_i = sum(cm[i])
-            if total_i > 0 and errors / total_i > 0.2:
-                advice.append(
-                    f"'{class_names[i]}' et '{class_names[j]}' se confondent "
-                    f"({errors}/{total_i} erreurs). "
-                    f"Ajoutez des exemples discriminants entre ces deux intentions."
-                )
+            if errors >= 2:
+                total_i = sum(cm[i])
+                advice.append({
+                    "type": "confused_pair",
+                    "pair": sorted([class_names[i], class_names[j]]),
+                    "evidence": "cv",
+                    "n_exemples_faibles": errors,
+                    "suggestion": (
+                        f"'{class_names[i]}' et '{class_names[j]}' se confondent "
+                        f"en CV base ({errors}/{total_i} erreurs). "
+                        f"Ajoutez des exemples discriminants entre ces deux intentions."
+                    ),
+                })
 
     # 2. Under-represented classes
-    for cls_name, count in class_counts.items():
+    for cls_name, count in sorted(class_counts.items()):
         if count < 8:
-            advice.append(
-                f"'{cls_name}' n'a que {count} exemples. "
-                f"Ajoutez-en pour atteindre au moins 15 (recommande)."
-            )
+            advice.append({
+                "type": "under_represented",
+                "intent": cls_name,
+                "n_exemples_faibles": count,
+                "suggestion": (
+                    f"'{cls_name}' n'a que {count} exemples. "
+                    f"Ajoutez-en pour atteindre au moins 15 (recommande)."
+                ),
+            })
         elif count < 15:
-            advice.append(
-                f"'{cls_name}' a {count} exemples. "
-                f"15-20 exemples sont recommandes pour une classification fiable."
-            )
+            advice.append({
+                "type": "under_represented",
+                "intent": cls_name,
+                "n_exemples_faibles": count,
+                "suggestion": (
+                    f"'{cls_name}' a {count} exemples. "
+                    f"15-20 exemples sont recommandes pour une classification fiable."
+                ),
+            })
 
     # 3. Low F1 classes
-    for cls_name, f1 in per_class_f1.items():
+    for cls_name, f1 in sorted(per_class_f1.items()):
         if f1 < 0.5:
-            advice.append(
-                f"'{cls_name}' a un F1 de {f1:.2f} (faible). "
-                f"Verifiez la qualite et la distinctivite de ses exemples."
-            )
+            advice.append({
+                "type": "low_f1",
+                "intent": cls_name,
+                "n_exemples_faibles": 0,
+                "suggestion": (
+                    f"'{cls_name}' a un F1 de {f1:.2f} (faible). "
+                    f"Verifiez la qualite et la distinctivite de ses exemples."
+                ),
+            })
 
     return advice
+
+
+def _merge_and_sort_advice(
+    cv_advice: list[dict[str, Any]],
+    margin_advice: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """M1: merge CV and margin advice, deduplicate pairs, sort by severity.
+
+    For pair advice: if the same pair appears in both CV and margin evidence,
+    merge into a single entry with evidence="both".
+    Sort: confused_pairs first (by n_exemples_faibles desc), then other types.
+    """
+    # Index margin advice by pair for merging
+    margin_by_pair: dict[tuple[str, ...], dict[str, Any]] = {}
+    for entry in margin_advice:
+        if entry.get("type") == "confused_pair":
+            key = tuple(sorted(entry.get("pair", [])))
+            margin_by_pair[key] = entry
+
+    merged: list[dict[str, Any]] = []
+    seen_pairs: set[tuple[str, ...]] = set()
+
+    # Process CV advice — merge with margin if same pair
+    for entry in cv_advice:
+        if entry.get("type") == "confused_pair":
+            key = tuple(sorted(entry.get("pair", [])))
+            if key in margin_by_pair:
+                # Merge: use margin data (has verbatims) + note CV evidence
+                m = margin_by_pair[key].copy()
+                m["evidence"] = "both"
+                m["n_exemples_faibles"] = max(
+                    entry.get("n_exemples_faibles", 0),
+                    m.get("n_exemples_faibles", 0),
+                )
+                merged.append(m)
+                seen_pairs.add(key)
+            else:
+                merged.append(entry)
+                seen_pairs.add(key)
+        else:
+            merged.append(entry)
+
+    # Add margin-only pairs not yet seen
+    for entry in margin_advice:
+        if entry.get("type") == "confused_pair":
+            key = tuple(sorted(entry.get("pair", [])))
+            if key not in seen_pairs:
+                merged.append(entry)
+                seen_pairs.add(key)
+
+    # Sort: confused_pairs first (by n_exemples_faibles desc), then others
+    def _sort_key(entry: dict[str, Any]) -> tuple[int, int]:
+        if entry.get("type") == "confused_pair":
+            return (0, -entry.get("n_exemples_faibles", 0))
+        return (1, 0)
+
+    merged.sort(key=_sort_key)
+    return merged
 
 
 # ---------------------------------------------------------------------------
@@ -256,19 +339,23 @@ def compute_margin_analysis(
     labels: list[str],
     *,
     margin_threshold: float = 0.15,
-) -> tuple[list[tuple[str, str, int]], list[str]]:
-    """L3: compute top1-top2 margin for each example on the trained model.
+    max_verbatims: int = 3,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """M1: compute top1-top2 margin for each example on the trained model.
 
     Returns
     -------
-    weak_pairs : list[(intent_a, intent_b, count)]
-        Pairs of intents where count examples have margin < threshold.
-    advice : list[str]
-        Actionable advice from margin analysis.
+    weak_pairs : list[dict]
+        Each dict: {pair, count, avg_margin, verbatims}.
+        ALL pairs with at least 1 weak example, sorted by count desc.
+    advice : list[dict]
+        Structured advice entries for each weak pair.
     """
-    from collections import Counter
+    from collections import Counter, defaultdict as ddict
 
     pair_counts: Counter[tuple[str, str]] = Counter()
+    pair_margins: ddict[tuple[str, str], list[float]] = ddict(list)
+    pair_verbatims: ddict[tuple[str, str], list[str]] = ddict(list)
 
     for text, expected in zip(texts, labels):
         scores = classifier.classify(text, top_k=2)
@@ -280,16 +367,47 @@ def compute_margin_analysis(
         if margin < margin_threshold:
             pair = tuple(sorted([top1_id, top2_id]))
             pair_counts[pair] += 1
+            pair_margins[pair].append(margin)
+            pair_verbatims[pair].append(text)
 
-    weak_pairs = [(a, b, c) for (a, b), c in pair_counts.most_common()]
-    advice: list[str] = []
-    for a, b, count in weak_pairs:
-        if count >= 3:
-            advice.append(
+    # Build structured weak_pairs sorted by count desc, then avg margin asc
+    weak_pairs: list[dict[str, Any]] = []
+    for (a, b), count in pair_counts.most_common():
+        margins = pair_margins[(a, b)]
+        avg_margin = sum(margins) / len(margins) if margins else 0.0
+        verbatims = pair_verbatims[(a, b)][:max_verbatims]
+        weak_pairs.append({
+            "pair": [a, b],
+            "count": count,
+            "avg_margin": round(avg_margin, 4),
+            "verbatims": verbatims,
+        })
+
+    # Generate structured advice for each pair (no count threshold — M1)
+    advice: list[dict[str, Any]] = []
+    for wp in weak_pairs:
+        a, b = wp["pair"]
+        count = wp["count"]
+        verbatim_str = ""
+        if wp["verbatims"]:
+            examples = [f'"{v[:80]}"' for v in wp["verbatims"]]
+            verbatim_str = f" Exemples a faible marge : {', '.join(examples)}."
+
+        advice.append({
+            "type": "confused_pair",
+            "pair": [a, b],
+            "evidence": "margins",
+            "n_exemples_faibles": count,
+            "avg_margin": wp["avg_margin"],
+            "suggestion": (
                 f"Les intentions '{a}' et '{b}' sont proches en marge "
-                f"({count} exemples avec ecart top1-top2 < {margin_threshold}). "
+                f"({count} exemples avec ecart top1-top2 < {margin_threshold}, "
+                f"marge moyenne {wp['avg_margin']:.3f}). "
                 f"Ajoutez des exemples discriminants entre ces deux intentions."
-            )
+                f"{verbatim_str}"
+            ),
+            "verbatims": wp["verbatims"],
+        })
 
     return weak_pairs, advice
 
@@ -347,19 +465,21 @@ def train_bot_classifiers(
     profile["l1_train_s"] = round(time.perf_counter() - t_l1, 2)
     results["level1"] = train_result
 
-    # --- Evaluation L1 (L3: base-model CV + margin analysis) ---
+    # --- Evaluation L1 (L3: base-model CV + M1: structured advice) ---
     if run_evaluation and len(texts) >= 4:
         _progress("l1_evaluating")
         t_eval = time.perf_counter()
         eval_result = cross_validate(texts, labels, base_model=base_model)
 
-        # L3: margin analysis on the trained model
+        # M1: margin analysis on the trained model
         weak_pairs, margin_advice = compute_margin_analysis(classifier, texts, labels)
-        eval_result.advice.extend(margin_advice)
+
+        # M1: merge CV + margin advice, deduplicate pairs, sort by severity
+        merged = _merge_and_sort_advice(eval_result.advice, margin_advice)
+        eval_result.advice = merged
+
         if weak_pairs:
-            eval_result.extra_data["margin_weak_pairs"] = [
-                {"a": a, "b": b, "count": c} for a, b, c in weak_pairs
-            ]
+            eval_result.extra_data["margin_weak_pairs"] = weak_pairs
 
         profile["eval_s"] = round(time.perf_counter() - t_eval, 2)
         results["evaluation"] = eval_result.to_dict()
