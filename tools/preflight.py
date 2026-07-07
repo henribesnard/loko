@@ -47,31 +47,41 @@ def _print_result(ce_id: str, description: str, passed: bool, detail: str = "") 
 
 
 def check_ce1_git_clean() -> bool:
-    """CE-1: worktree clean, on main branch."""
+    """CE-1: worktree clean, on main branch.
+
+    W1 amendment: display full git status --porcelain with actionable help.
+    No files should be uncommitted before tagging a campaign.
+    """
     result = _run(["git", "status", "--porcelain"], cwd=ROOT)
-    all_lines = [line for line in result.stdout.strip().splitlines() if line.strip()]
-
-    # Separate campaign docs (PLAN_, RAPPORT_, etc.) from real unclean files
-    doc_patterns = ("?? PLAN_", "?? PROTOCOLE_", "?? RAPPORT_", "?? AMELIORATION_",
-                    " M PLAN_", " M PROTOCOLE_", " M RAPPORT_", " M AMELIORATION_")
-    untracked = [line for line in all_lines
-                 if not any(line.strip().startswith(p.strip()) for p in doc_patterns)]
-    doc_files = [line for line in all_lines if line not in untracked]
-
-    clean = len(untracked) == 0
+    dirty_files = [line for line in result.stdout.strip().splitlines() if line.strip()]
 
     branch = _run(["git", "rev-parse", "--abbrev-ref", "HEAD"], cwd=ROOT)
     branch_name = branch.stdout.strip()
 
-    passed = clean and branch_name == "main"
+    # Check git describe --dirty for additional verification
+    describe = _run(["git", "describe", "--tags", "--dirty", "--always"], cwd=ROOT)
+    git_describe = describe.stdout.strip()
+    is_dirty = "-dirty" in git_describe
 
-    detail = f"branch={branch_name}, untracked={len(untracked)}"
-    if not passed and untracked:
-        detail += "\n    Non-clean files (action required — commit or move):"
-        for line in untracked:
-            detail += f"\n      {line.strip()}"
-    if doc_files:
-        detail += f"\n    Campaign docs (ignored): {len(doc_files)} file(s)"
+    passed = len(dirty_files) == 0 and branch_name == "main" and not is_dirty
+
+    detail = f"branch={branch_name}, git describe={git_describe}"
+
+    if not passed:
+        detail += f"\n\n  WARNING: WORKTREE NOT CLEAN - {len(dirty_files)} uncommitted file(s)"
+        detail += "\n  =============================================================="
+        detail += "\n  ACTION REQUIRED before tagging campaign:"
+        detail += "\n    1. Review files below"
+        detail += "\n    2. Either commit them: git add <files> && git commit -m '...'"
+        detail += "\n    3. Or move them outside worktree"
+        detail += "\n  ==============================================================\n"
+
+        if dirty_files:
+            detail += "\n  Full git status --porcelain output:"
+            for line in dirty_files:
+                detail += f"\n    {line}"
+
+        detail += "\n\n  CE-1 will fail until worktree is clean (git describe != *-dirty)\n"
 
     return _print_result("CE-1", "Worktree clean, main branch", passed, detail)
 
