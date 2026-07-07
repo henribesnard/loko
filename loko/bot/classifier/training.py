@@ -59,13 +59,17 @@ class EvaluationResult:
         self.extra_data: dict[str, Any] = {}
 
     def to_dict(self) -> dict[str, Any]:
+        # W3.3: cv_method reflects multi-seed averaging if n_seeds > 1
+        n_seeds = self.extra_data.get("n_seeds", 1)
+        cv_method = f"base_model_frozen_{n_seeds}seeds" if n_seeds > 1 else "base_model_frozen"
+
         d: dict[str, Any] = {
             "class_names": self.class_names,
             "confusion_matrix": self.confusion_matrix,
             "accuracy": round(self.accuracy, 4),
             "per_class_f1": {k: round(v, 4) for k, v in self.per_class_f1.items()},
             "advice": self.advice,
-            "cv_method": "base_model_frozen",
+            "cv_method": cv_method,
             "duration_s": round(self.duration_s, 2),
         }
         if self.extra_data:
@@ -78,6 +82,7 @@ def cross_validate(
     labels: list[str],
     base_model: str = DEFAULT_BASE_MODEL,
     k: int = 5,
+    n_seeds: int = 3,
 ) -> EvaluationResult:
     """CV on base-model embeddings + margin analysis on final model (L3).
 
@@ -89,6 +94,11 @@ def cross_validate(
          The confusion matrix reveals genuinely confused pairs.
       3. Generate advice from both the confusion matrix and (later, when
          the trained model is available) margin analysis.
+
+    W3.3 amendment (protocol v2.1):
+      - Run CV with n_seeds different random partitions (default 3)
+      - Average confusion matrices across seeds to reduce variance
+      - This makes V2-5 signal measurement more robust on small datasets
 
     If there are too few examples per class for k folds, falls back
     to leave-one-out.
@@ -121,49 +131,67 @@ def cross_validate(
     encode_time = time.perf_counter() - start
     logger.info("Base-model encoding: %.1fs for %d texts", encode_time, len(texts))
 
-    # --- Step 2: Stratified k-fold CV on the head only ---
+    # --- Step 2: Multi-seed stratified k-fold CV (W3.3) ---
     import random
-    pairs_idx = list(range(len(texts)))
-    rng = random.Random(42)
-    rng.shuffle(pairs_idx)
 
-    class_buckets: dict[int, list[int]] = defaultdict(list)
-    for i in pairs_idx:
-        class_buckets[label_to_idx[labels[i]]].append(i)
+    # W3.3: Run CV with n_seeds different partitions, average confusion matrices
+    cms_all_seeds: list[list[list[int]]] = []
 
-    folds: list[list[int]] = [[] for _ in range(k)]
-    for cls_indices in class_buckets.values():
-        for i, idx in enumerate(cls_indices):
-            folds[i % k].append(idx)
+    for seed_idx in range(n_seeds):
+        seed = 42 + seed_idx  # Use 42, 43, 44 for n_seeds=3
 
-    all_true: list[int] = []
-    all_pred: list[int] = []
+        pairs_idx = list(range(len(texts)))
+        rng = random.Random(seed)
+        rng.shuffle(pairs_idx)
 
-    for fold_idx in range(k):
-        val_indices = set(folds[fold_idx])
-        train_idx = [i for i in range(len(texts)) if i not in val_indices]
-        val_idx = list(val_indices)
+        class_buckets: dict[int, list[int]] = defaultdict(list)
+        for i in pairs_idx:
+            class_buckets[label_to_idx[labels[i]]].append(i)
 
-        if not train_idx or not val_idx:
-            continue
+        folds: list[list[int]] = [[] for _ in range(k)]
+        for cls_indices in class_buckets.values():
+            for i, idx in enumerate(cls_indices):
+                folds[i % k].append(idx)
 
-        X_train = embeddings[train_idx]
-        y_train = [label_to_idx[labels[i]] for i in train_idx]
-        X_val = embeddings[val_idx]
-        y_val = [label_to_idx[labels[i]] for i in val_idx]
+        all_true: list[int] = []
+        all_pred: list[int] = []
 
-        head = LogisticRegression(max_iter=500, random_state=42)
-        head.fit(X_train, y_train)
-        preds = head.predict(X_val)
+        for fold_idx in range(k):
+            val_indices = set(folds[fold_idx])
+            train_idx = [i for i in range(len(texts)) if i not in val_indices]
+            val_idx = list(val_indices)
 
-        all_true.extend(y_val)
-        all_pred.extend(int(p) for p in preds)
+            if not train_idx or not val_idx:
+                continue
 
-    # Build confusion matrix
-    cm = [[0] * n_classes for _ in range(n_classes)]
-    for true_idx, pred_idx in zip(all_true, all_pred):
-        if 0 <= true_idx < n_classes and 0 <= pred_idx < n_classes:
-            cm[true_idx][pred_idx] += 1
+            X_train = embeddings[train_idx]
+            y_train = [label_to_idx[labels[i]] for i in train_idx]
+            X_val = embeddings[val_idx]
+            y_val = [label_to_idx[labels[i]] for i in val_idx]
+
+            head = LogisticRegression(max_iter=500, random_state=seed)
+            head.fit(X_train, y_train)
+            preds = head.predict(X_val)
+
+            all_true.extend(y_val)
+            all_pred.extend(int(p) for p in preds)
+
+        # Build confusion matrix for this seed
+        cm_seed = [[0] * n_classes for _ in range(n_classes)]
+        for true_idx, pred_idx in zip(all_true, all_pred):
+            if 0 <= true_idx < n_classes and 0 <= pred_idx < n_classes:
+                cm_seed[true_idx][pred_idx] += 1
+
+        cms_all_seeds.append(cm_seed)
+
+    # Average confusion matrices across seeds (W3.3)
+    cm = [[0.0] * n_classes for _ in range(n_classes)]
+    for i in range(n_classes):
+        for j in range(n_classes):
+            cm[i][j] = sum(cms[i][j] for cms in cms_all_seeds) / n_seeds
+
+    # Round to integers for final confusion matrix
+    cm = [[int(round(cm[i][j])) for j in range(n_classes)] for i in range(n_classes)]
 
     correct = sum(cm[i][i] for i in range(n_classes))
     total = sum(sum(row) for row in cm)
@@ -183,12 +211,12 @@ def cross_validate(
 
     duration = time.perf_counter() - start
     logger.info(
-        "Cross-validation completed in %.1fs (base-model CV on %d folds, "
+        "Cross-validation completed in %.1fs (base-model CV on %d folds × %d seeds, "
         "encode=%.1fs, cv=%.1fs)",
-        duration, k, encode_time, duration - encode_time,
+        duration, k, n_seeds, encode_time, duration - encode_time,
     )
 
-    return EvaluationResult(
+    result = EvaluationResult(
         class_names=unique_labels,
         confusion_matrix=cm,
         accuracy=accuracy,
@@ -196,6 +224,8 @@ def cross_validate(
         advice=advice,
         duration_s=duration,
     )
+    result.extra_data["n_seeds"] = n_seeds  # W3.3: track multi-seed averaging
+    return result
 
 
 def _generate_advice(

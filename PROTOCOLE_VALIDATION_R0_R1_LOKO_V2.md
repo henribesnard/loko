@@ -106,9 +106,15 @@ R0 a été intégralement validé en campagne v0.3.5 (V1-1→V1-5 PASS). Les cri
 **Attendu** : matrice exportée (CV `base_model_frozen`, méthode consignée) ; **`advice` non vide dès qu'au moins une paire faible est détectée** (par CV hors-diagonale ou par marges), la première entrée désignant la paire la plus faible avec une suggestion actionnable citant des verbatims à faible marge. La paire n'est **pas prescrite** par le protocole — c'est la détection par l'outil qui est testée. (Si aucune paire faible n'est détectée nulle part, `advice=[]` est un PASS, mais V2-5 devient inexécutable et doit être déclaré tel avec la preuve.)
 **Artefact** : `V2-4_confusion.csv`, `V2-4_advice.json`.
 
-### V2-5 — Cycle d'amélioration mesuré, sur la paire détectée (amendement A3 + W3.2)
+### V2-5 — Cycle d'amélioration mesuré, sur la paire détectée (amendement A3 + W3.2 + W3.3)
 **Procédure** : prendre la **première paire de `advice`** (état actuel attendu : `arret_travail`/`justificatif_droits`). Ajouter 3 exemples discriminants de chaque côté via l'API admin **au bot jetable**, retrain, ré-exporter rapport et matrice.
-**Attendu** : réduction mesurable du signal de la paire (case CV et/ou nombre d'exemples à faible marge, valeurs avant/après consignées) ; `dataset_hash` modifié ; durée du retrain ≤ 300 s.
+
+**Critère de réduction (W3.3 — protocole v2.1)** : PASS si **au moins UN** des deux signaux diminue :
+  1. Case CV de la paire (moyenne sur **3 seeds** de partition CV pour réduire variance)
+  2. Nombre d'exemples à faible marge sur la paire (`margin_weak_pairs`)
+
+**Attendu** : réduction ≥ 1 sur au moins un signal ; `cv_method=base_model_frozen_3seeds` dans le rapport ; `dataset_hash` modifié ; durée du retrain ≤ 300 s. Valeurs avant/après consignées pour les deux signaux.
+
 **Artefact** : `V2-5_comparison.json`, `V2-5_matrices_avant_apres.csv`.
 **Nettoyage** : après V2-6, supprimer le bot jetable (`rm -rf data/bots/{clone_id}` ou via API `DELETE /api/bot/{clone_id}`).
 
