@@ -4,7 +4,7 @@
 > **Objet** : protocole d'exécution de la campagne validant **R0 (intégrité anti-mock)** et **R1 (entraînement réel + évaluation statistique)**, après livraison du plan `PLAN_CORRECTION_V0_3_6_LOKO.md` (items M1–M3).
 > **Références** : `PROTOCOLE_RECETTE_PRODUIT_LOKO_V2.md` (critères GNG du GO final), `PLAN_CORRECTION_V0_3_6_LOKO.md` (arbitrages A1–A6), `POSTULAT_TEST_E2E_LOKO.md` §2 (config MGEN), `FEUILLE_DE_ROUTE_VALIDATION_FINALE_R0_R1_LOKO.md` (chantiers W1–W5).
 > **Ce que cette campagne décide** : l'ouverture des phases R2–R9. Elle ne décide **pas** le GO produit.
-> **Ce qui change en v2.1** (amendements W3) : (1) **W3.1** — sélection Pareto contrainte (GNG-3 ≥ 80%, routes_directes ≤ 5, maximisation lexicographique GNG-1→GNG-2→pièges) ; (2) **W3.2** — V2-4/V2-5 sur bot jetable (`tools/clone_bot.py`), V3 mesure le modèle V2-1 figé (évite contamination train) ; (3) **W3.3** (non implémenté encore) — 3-seed CV pour V2-5 ; (4) **W3.4** (non implémenté encore) — hash dataset + manifeste dans report natif. Les seuils GNG-1/GNG-2/pièges sont **inchangés** : 85 %, 90 %, 12/15.
+> **Ce qui change en v2.1** (amendements W3) : (1) **W3.1** — sélection Pareto contrainte (GNG-3 ≥ 80%, routes_directes ≤ 5, maximisation lexicographique GNG-1→GNG-2→pièges, export frontière Pareto, warning si coin de grille) ; (2) **W3.2** — V2-4/V2-5 sur bot jetable (`tools/clone_bot.py`), V3 mesure le modèle V2-1 figé (évite contamination train) ; (3) **W3.3** — 3-seed CV moyenné pour V2-5 (réduit variance), critère dual (case CV OU marge), `cv_method=base_model_frozen_3seeds` ; (4) **W3.4** — `dataset_hash` (SHA256) + `manifest_reference` embarqués dans `report.json` natif (traçabilité sans sidecar). Les seuils GNG-1/GNG-2/pièges sont **inchangés** : 85 %, 90 %, 12/15.
 
 ---
 
@@ -238,3 +238,21 @@ Pièges : {…}/15, écarts commentés : §…
 | A4 | V3-5 calibration optionnelle « si échec marginal » | V3-0 sweep 3 axes obligatoire avant toute mesure | Deux campagnes où 80 % des erreurs GNG-1/GNG-2 sont des faux rejets sans qu'aucun seuil n'ait jamais été interrogé. |
 | A5 | Routes directes hors-scope : sous-compte « reporté » | Critère : ≤ 5/100 pour R0+R1 (0 reste le critère du GO final) | Empêche le sweep d'améliorer GNG-1 en dégradant le risque client réel ; borne intermédiaire réaliste (8/100 constaté). |
 | A6 | `heldout_conseiller = 126` | `= 125` | Alignement sur les datasets figés réels (hashes) et les rapports. |
+
+## Annexe D — Amendements W3 (protocole v2.1) — traçabilité
+
+| Amdt | Phase | Ancien (v2.0) | Nouveau (v2.1) | Justification |
+|---|---|---|---|---|
+| W3.1 | V3-0 | Sélection par distance aux cibles GNG | Sélection Pareto contrainte : GNG-3 ≥ 80% ET routes_directes ≤ 5 ; maximisation lexicographique GNG-1→GNG-2→pièges ; export frontière ; warning si coin | Campagne v0.3.6 : coin de grille (haut 0.90, bas 0.30, écart 0.05) symptôme de fonction dominée par un axe. Sélection Pareto empêche artefact méthodologique. |
+| W3.2 | V2-4/V2-5 | Exécutés sur le bot de campagne (train modifié avant V3) | V2-4/V2-5 sur **bot jetable** cloné (`tools/clone_bot.py`), V3 mesure le bot V2-1 figé | Campagne v0.3.6 : V2-5 ajoute 6 exemples `hors_perimetre` juste avant V3-3 (mesure rejet) → contamination. Isolation garantit V3 mesure le train de référence. |
+| W3.3 | V2-5 | Matrice CV k=5 single-seed ; critère : case CV réduite | 3-seed CV moyenné (seeds 42/43/44) ; critère dual : case CV OU marge réduite ; `cv_method=base_model_frozen_3seeds` | Campagne v0.3.6 : +6 exemples, signal 8→8 confusions (FAIL). Variance élevée sur k=5 avec 131 exemples. 3-seed averaging + critère dual rend mesure robuste. |
+| W3.4 | V3 | `report.json` + sidecar `V3_summary.json` pour traçabilité | `dataset_hash` (SHA256) + `manifest_reference` (bot_id/dataset_hash/trained_at) embarqués dans `report.json` natif | Anomalie protocole v0.3.6 : dépendance fichiers annexes pour opposabilité. Native embedding rend chaque rapport auto-suffisant et traçable. |
+
+**Note méthodologique** : les amendements W3 corrigent des artefacts de mesure et contaminations identifiés en v0.3.6, sans modifier les critères GO (seuils GNG 85/90/80, pièges 12/15). La validation R0+R1 vise à établir le plateau actuel avant W4 (enrichissement train).
+
+---
+
+**Historique versions** :
+- v1.0 (4 juil. 2026) : protocole initial post-M1/M2/M3
+- v2.0 (6 juil. 2026) : amendements A1–A6 (calibration obligatoire, détection automatique paire, sweep 3 axes, etc.)
+- **v2.1 (7 juil. 2026)** : amendements W3.1–W3.4 (Pareto, bot jetable, 3-seed CV, hash natif)
