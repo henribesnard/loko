@@ -14,6 +14,7 @@ Metrics:
 from __future__ import annotations
 
 import csv
+import hashlib
 import json
 import logging
 import time
@@ -48,6 +49,8 @@ class EvalReport:
     correct: int = 0
     accuracy: float = 0.0
     per_class: dict[str, dict[str, Any]] = field(default_factory=dict)
+    dataset_hash: str = ""  # W3.4: SHA256 of dataset file for traceability
+    manifest_reference: dict[str, str] = field(default_factory=dict)  # W3.4: bot_id + manifest hash
     confusion: dict[str, dict[str, int]] = field(default_factory=dict)
     errors: list[EvalRow] = field(default_factory=list)
     all_rows: list[EvalRow] = field(default_factory=list)
@@ -67,6 +70,11 @@ class EvalReport:
             "n_errors": len(self.errors),
             "errors": [asdict(e) for e in self.errors[:50]],
         }
+        # W3.4: dataset hash + manifest reference for traceability
+        if self.dataset_hash:
+            d["dataset_hash"] = self.dataset_hash
+        if self.manifest_reference:
+            d["manifest_reference"] = self.manifest_reference
         if self.extra:
             d["extra"] = self.extra
         return d
@@ -93,9 +101,37 @@ def load_dataset(path: Path) -> list[dict[str, str]]:
     return rows
 
 
+def compute_dataset_hash(path: Path) -> str:
+    """Compute SHA256 hash of dataset file for traceability (W3.4)."""
+    sha256 = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(8192), b""):
+            sha256.update(chunk)
+    return sha256.hexdigest()
+
+
+def load_manifest_reference(bot_id: str) -> dict[str, str]:
+    """Load manifest reference for traceability (W3.4).
+
+    Returns dict with bot_id and dataset_hash from manifest if available.
+    """
+    from loko.bot.classifier.manifest import read_manifest
+
+    manifest = read_manifest(bot_id)
+    if not manifest:
+        return {"bot_id": bot_id, "status": "no_manifest"}
+
+    return {
+        "bot_id": bot_id,
+        "dataset_hash": manifest.get("dataset_hash", ""),
+        "trained_at": manifest.get("created_at", ""),
+    }
+
+
 def evaluate_raw(
     classifier: Any,
     dataset_path: Path,
+    bot_id: str | None = None,
 ) -> EvalReport:
     """Mode 'raw': argmax accuracy of classifier alone (no thresholds).
 
@@ -108,7 +144,18 @@ def evaluate_raw(
     """
     start = time.perf_counter()
     rows = load_dataset(dataset_path)
-    report = EvalReport(mode="raw", dataset=dataset_path.name, total=len(rows))
+
+    # W3.4: compute dataset hash and load manifest reference
+    dataset_hash = compute_dataset_hash(dataset_path)
+    manifest_ref = load_manifest_reference(bot_id) if bot_id else {}
+
+    report = EvalReport(
+        mode="raw",
+        dataset=dataset_path.name,
+        total=len(rows),
+        dataset_hash=dataset_hash,
+        manifest_reference=manifest_ref,
+    )
 
     confusion: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
     class_correct: dict[str, int] = defaultdict(int)
@@ -156,6 +203,7 @@ def evaluate_decision(
     classifier: Any,
     dataset_path: Path,
     config: Any,
+    bot_id: str | None = None,
 ) -> EvalReport:
     """Mode 'decision': uses decide() with real thresholds.
 
@@ -172,7 +220,18 @@ def evaluate_decision(
     """
     start = time.perf_counter()
     rows = load_dataset(dataset_path)
-    report = EvalReport(mode="decision", dataset=dataset_path.name, total=len(rows))
+
+    # W3.4: compute dataset hash and load manifest reference
+    dataset_hash = compute_dataset_hash(dataset_path)
+    manifest_ref = load_manifest_reference(bot_id) if bot_id else {}
+
+    report = EvalReport(
+        mode="decision",
+        dataset=dataset_path.name,
+        total=len(rows),
+        dataset_hash=dataset_hash,
+        manifest_reference=manifest_ref,
+    )
 
     ds_name = dataset_path.stem.lower()
 
@@ -275,6 +334,7 @@ def evaluate_pieges(
     classifier: Any,
     pieges_path: Path,
     config: Any,
+    bot_id: str | None = None,
 ) -> EvalReport:
     """Mode 'pieges': evaluate edge cases with expected_behavior.
 
@@ -284,7 +344,18 @@ def evaluate_pieges(
     """
     start = time.perf_counter()
     rows = load_dataset(pieges_path)
-    report = EvalReport(mode="pieges", dataset=pieges_path.name, total=len(rows))
+
+    # W3.4: compute dataset hash and load manifest reference
+    dataset_hash = compute_dataset_hash(pieges_path)
+    manifest_ref = load_manifest_reference(bot_id) if bot_id else {}
+
+    report = EvalReport(
+        mode="pieges",
+        dataset=pieges_path.name,
+        total=len(rows),
+        dataset_hash=dataset_hash,
+        manifest_reference=manifest_ref,
+    )
 
     for row in rows:
         text = row["text"]

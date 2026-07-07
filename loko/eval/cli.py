@@ -234,12 +234,15 @@ def main() -> None:
         print(f"Sweep results written to {sweep_path} ({len(results)} combinations)")
         return
 
+    # W3.4: pass bot_id for manifest reference
+    bot_id = config.bot_id if hasattr(config, "bot_id") else None
+
     if args.mode == "raw":
-        report = evaluate_raw(classifier, dataset_path)
+        report = evaluate_raw(classifier, dataset_path, bot_id=bot_id)
     elif args.mode == "pieges":
-        report = evaluate_pieges(classifier, dataset_path, config)
+        report = evaluate_pieges(classifier, dataset_path, config, bot_id=bot_id)
     else:
-        report = evaluate_decision(classifier, dataset_path, config)
+        report = evaluate_decision(classifier, dataset_path, config, bot_id=bot_id)
 
     # Write results
     write_report(report, out_dir)
