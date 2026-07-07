@@ -1,10 +1,10 @@
-# ✅ LOKO — Protocole de validation R0+R1 — version 2.0 (amendé post-campagnes v0.3.4/v0.3.5)
+# ✅ LOKO — Protocole de validation R0+R1 — version 2.1 (amendé W3)
 
-> **Version** : 2.0 — 6 juillet 2026 — remplace la version 1.0 du 4 juillet 2026.
+> **Version** : 2.1 — 7 juillet 2026 — remplace la version 2.0 du 6 juillet 2026.
 > **Objet** : protocole d'exécution de la campagne validant **R0 (intégrité anti-mock)** et **R1 (entraînement réel + évaluation statistique)**, après livraison du plan `PLAN_CORRECTION_V0_3_6_LOKO.md` (items M1–M3).
-> **Références** : `PROTOCOLE_RECETTE_PRODUIT_LOKO_V2.md` (critères GNG du GO final), `PLAN_CORRECTION_V0_3_6_LOKO.md` (arbitrages A1–A6), `POSTULAT_TEST_E2E_LOKO.md` §2 (config MGEN).
+> **Références** : `PROTOCOLE_RECETTE_PRODUIT_LOKO_V2.md` (critères GNG du GO final), `PLAN_CORRECTION_V0_3_6_LOKO.md` (arbitrages A1–A6), `POSTULAT_TEST_E2E_LOKO.md` §2 (config MGEN), `FEUILLE_DE_ROUTE_VALIDATION_FINALE_R0_R1_LOKO.md` (chantiers W1–W5).
 > **Ce que cette campagne décide** : l'ouverture des phases R2–R9. Elle ne décide **pas** le GO produit.
-> **Ce qui change en v2.0** : les six amendements de l'annexe C — mesure V0-5 par inspect, seuil V2-1 à 300 s, V2-4/V2-5 sur la paire détectée par l'outil, calibration V3-0 obligatoire avant mesure, plafond routes directes GNG-3, triple vérification de version. Les seuils GNG-1/GNG-2/pièges sont **inchangés** : 85 %, 90 %, 12/15. R0 ayant été validé fonctionnellement en v0.3.5, son volet passe en mode confirmation rapide (aucun critère assoupli, exécution allégée).
+> **Ce qui change en v2.1** (amendements W3) : (1) **W3.1** — sélection Pareto contrainte (GNG-3 ≥ 80%, routes_directes ≤ 5, maximisation lexicographique GNG-1→GNG-2→pièges) ; (2) **W3.2** — V2-4/V2-5 sur bot jetable (`tools/clone_bot.py`), V3 mesure le modèle V2-1 figé (évite contamination train) ; (3) **W3.3** (non implémenté encore) — 3-seed CV pour V2-5 ; (4) **W3.4** (non implémenté encore) — hash dataset + manifeste dans report natif. Les seuils GNG-1/GNG-2/pièges sont **inchangés** : 85 %, 90 %, 12/15.
 
 ---
 
@@ -99,15 +99,18 @@ R0 a été intégralement validé en campagne v0.3.5 (V1-1→V1-5 PASS). Les cri
 **Attendu** : pas de manifeste partiel ; statut persisté `failed/interrupted` (pas `idle`) ; retrain suivant `completed`.
 **Artefact** : `V2-3_atomicity.json`.
 
-### V2-4 — Matrice, paires faibles et conseil (amendement A3)
-**Procédure** : `GET /train/report` → matrice 9×9, `margin_weak_pairs`, `advice`.
+### V2-4 — Matrice, paires faibles et conseil (amendement A3 + W3.2)
+**Isolation V2-4/V2-5** (protocole v2.1) : cloner le bot de campagne post-V2-1 vers un **bot jetable** (`tools/clone_bot.py {bot_id} v2-disposable`). V2-4 et V2-5 s'exécutent sur ce clone. Le bot de campagne reste figé à V2-1 et sera mesuré par V3. Ceci évite la contamination méthodologique (V2-5 ajoutant des exemples juste avant mesure V3).
+
+**Procédure** : `GET /train/report` du **bot jetable** → matrice 9×9, `margin_weak_pairs`, `advice`.
 **Attendu** : matrice exportée (CV `base_model_frozen`, méthode consignée) ; **`advice` non vide dès qu'au moins une paire faible est détectée** (par CV hors-diagonale ou par marges), la première entrée désignant la paire la plus faible avec une suggestion actionnable citant des verbatims à faible marge. La paire n'est **pas prescrite** par le protocole — c'est la détection par l'outil qui est testée. (Si aucune paire faible n'est détectée nulle part, `advice=[]` est un PASS, mais V2-5 devient inexécutable et doit être déclaré tel avec la preuve.)
 **Artefact** : `V2-4_confusion.csv`, `V2-4_advice.json`.
 
-### V2-5 — Cycle d'amélioration mesuré, sur la paire détectée (amendement A3)
-**Procédure** : prendre la **première paire de `advice`** (état actuel attendu : `arret_travail`/`justificatif_droits`). Ajouter 3 exemples discriminants de chaque côté via l'API admin, retrain, ré-exporter rapport et matrice.
+### V2-5 — Cycle d'amélioration mesuré, sur la paire détectée (amendement A3 + W3.2)
+**Procédure** : prendre la **première paire de `advice`** (état actuel attendu : `arret_travail`/`justificatif_droits`). Ajouter 3 exemples discriminants de chaque côté via l'API admin **au bot jetable**, retrain, ré-exporter rapport et matrice.
 **Attendu** : réduction mesurable du signal de la paire (case CV et/ou nombre d'exemples à faible marge, valeurs avant/après consignées) ; `dataset_hash` modifié ; durée du retrain ≤ 300 s.
 **Artefact** : `V2-5_comparison.json`, `V2-5_matrices_avant_apres.csv`.
+**Nettoyage** : après V2-6, supprimer le bot jetable (`rm -rf data/bots/{clone_id}` ou via API `DELETE /api/bot/{clone_id}`).
 
 ### V2-6 — Latence d'inférence
 **Procédure** : `inference_latency_ms` du manifeste post-V2-5 (warm-up + 100 inférences au repos) + contre-mesure indépendante (100 verbatims held-out, `perf_counter`).
@@ -118,7 +121,9 @@ R0 a été intégralement validé en campagne v0.3.5 (V1-1→V1-5 PASS). Les cri
 
 ## 6. Volet V3 — Phase R1.b : calibration puis évaluation statistique
 
-Tout s'exécute in-container sur le modèle issu de V2-5. Chaque `report.json` embarque hash du dataset et référence du manifeste. Les durées vivent dans `meta.json`, hors périmètre des diffs.
+**Modèle mesuré** (protocole v2.1) : **bot de campagne figé post-V2-1** (PAS le bot jetable V2-4/V2-5). Ceci garantit que les métriques GNG mesurent le train de référence, exempt de contamination V2-5. Seule la boucle V3-7 tracée peut enrichir ce train.
+
+Tout s'exécute in-container sur ce modèle. Chaque `report.json` embarque hash du dataset et référence du manifeste. Les durées vivent dans `meta.json`, hors périmètre des diffs.
 
 ### V3-0 — Calibration obligatoire (amendement A4, remplace l'ancien V3-5 optionnel)
 **Procédure** :
