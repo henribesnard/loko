@@ -240,6 +240,78 @@ def create_app() -> FastAPI:
         from loko.api.bot_admin import recover_interrupted_jobs
         recover_interrupted_jobs()
 
+    # --- W1.2: check published bots for model availability at boot ---
+    @app.on_event("startup")
+    async def check_published_bots():
+        """Scan all published bots and log CRITICAL for unavailable models.
+
+        V1-4 requirement: exploitant must see incident at boot, not just at first request.
+        Behavior: server starts anyway (fail-fast per request), but logs warn operator.
+        """
+        import logging
+        from loko.bot.config_store import list_bots, load_bot_config
+        from loko.bot.classifier.loader import load_classifier
+        from loko.bot.errors import ComponentUnavailableError
+
+        logger = logging.getLogger("loko.boot")
+
+        try:
+            all_bots = list_bots()
+            published_bots = []
+
+            for bot_info in all_bots:
+                bot_id = bot_info.get("bot_id")
+                if not bot_id:
+                    continue
+
+                try:
+                    config = load_bot_config(bot_id)
+                    if config and config.status == "published":
+                        published_bots.append((bot_id, config.name))
+                except Exception:
+                    pass  # Skip bots with config errors (will be caught in runtime)
+
+            if not published_bots:
+                logger.info("No published bots found at startup")
+                return
+
+            logger.info(f"Checking {len(published_bots)} published bot(s) for model availability...")
+
+            unavailable_count = 0
+            for bot_id, bot_name in published_bots:
+                try:
+                    # Try to load the classifier (will raise ComponentUnavailableError if missing)
+                    _ = load_classifier(bot_id)
+                    logger.debug(f"Bot {bot_id} ({bot_name}): classifier available")
+                except ComponentUnavailableError as exc:
+                    # CRITICAL: model unavailable for published bot
+                    # Log bot_id and error code, NO disk paths (security)
+                    error_code = getattr(exc, "code", "unknown")
+                    logger.critical(
+                        f"Published bot unavailable at startup: "
+                        f"bot_id={bot_id} name='{bot_name}' "
+                        f"error=classifier_l1_unavailable code={error_code}"
+                    )
+                    unavailable_count += 1
+                except Exception as exc:
+                    # Unexpected error during check (not a known ComponentUnavailableError)
+                    logger.error(
+                        f"Unexpected error checking bot {bot_id} ({bot_name}): "
+                        f"{type(exc).__name__}: {exc}"
+                    )
+
+            if unavailable_count > 0:
+                logger.critical(
+                    f"STARTUP CHECK: {unavailable_count}/{len(published_bots)} published bot(s) "
+                    f"have unavailable models - they will fail-fast on requests"
+                )
+            else:
+                logger.info(f"All {len(published_bots)} published bot(s) have available models")
+
+        except Exception as exc:
+            # Don't crash server if startup check itself fails
+            logger.error(f"Failed to check published bots at startup: {exc}")
+
     # --- Session purge background task (P1-7) ---
     @app.on_event("startup")
     async def start_purge_task():
