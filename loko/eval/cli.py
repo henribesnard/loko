@@ -123,6 +123,7 @@ def main() -> None:
         evaluate_decision,
         evaluate_pieges,
         evaluate_raw,
+        select_best_thresholds_pareto,
         threshold_sweep,
         threshold_sweep_3axis,
         write_report,
@@ -150,7 +151,17 @@ def main() -> None:
             classifier, ds_dict, config, sh_range, sb_range, se_range,
         )
 
+        # W3.1: Pareto-constrained selection
+        grid_bounds = {
+            "seuil_haut": (sh_range[0], sh_range[1]),
+            "seuil_bas": (sb_range[0], sb_range[1]),
+            "seuil_ecart": (se_range[0], se_range[1]),
+        }
+        selection = select_best_thresholds_pareto(results, grid_bounds)
+
         out_dir.mkdir(parents=True, exist_ok=True)
+
+        # Write full sweep results (with pareto markers)
         sweep_path = out_dir / "sweep_3axis.csv"
         if results:
             with open(sweep_path, "w", encoding="utf-8", newline="") as f:
@@ -165,8 +176,34 @@ def main() -> None:
             encoding="utf-8",
         )
 
+        # Write selection result
+        selection_json = out_dir / "selection.json"
+        selection_json.write_text(
+            json.dumps(selection, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+
+        # Report selection
         print(f"3-axis sweep: {len(results)} points written to {sweep_path}")
         print(f"Datasets: {', '.join(f'{k}={v}' for k, v in ds_dict.items())}")
+        print(f"\nPareto selection (v2.1):")
+        print(f"  Feasible points: {selection['feasible_count']}/{len(results)}")
+        print(f"  Pareto frontier: {len(selection['pareto_frontier'])} points")
+
+        if selection["selected"]:
+            sel = selection["selected"]
+            print(f"  Selected: haut={sel['seuil_haut']:.2f} bas={sel['seuil_bas']:.2f} ecart={sel['seuil_ecart']:.2f}")
+            print(f"    GNG-1={sel.get('gng1', 0)*100:.1f}% GNG-2={sel.get('gng2', 0)*100:.1f}% GNG-3={sel.get('gng3', 0)*100:.1f}%")
+            print(f"    Routes directes={sel.get('gng3_routes_directes', 0)} Pieges={sel.get('pieges_correct', 0)}/{sel.get('pieges_total', 0)}")
+        else:
+            print("  No feasible point found - see selection.json for closest candidates")
+
+        if selection.get("warnings"):
+            print(f"\nWarnings:")
+            for w in selection["warnings"]:
+                print(f"  - {w}")
+
+        print(f"\nSelection details: {selection_json}")
         return
 
     # Require --dataset for non-sweep modes

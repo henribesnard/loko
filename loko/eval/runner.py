@@ -510,6 +510,149 @@ def threshold_sweep_3axis(
     return results
 
 
+def select_best_thresholds_pareto(
+    sweep_results: list[dict[str, Any]],
+    grid_bounds: dict[str, tuple[float, float]] | None = None,
+) -> dict[str, Any]:
+    """W3.1 — Pareto-constrained selection of best threshold point.
+
+    Selection strategy (v2.1):
+      1. Filter feasible: GNG-3 ≥ 0.80 AND routes_directes ≤ 5
+      2. Maximize lexicographically: GNG-1 → GNG-2 → pièges_correct
+      3. Export full Pareto frontier
+      4. Warn if selected point is at grid edge
+
+    Parameters
+    ----------
+    sweep_results : list[dict]
+        Output from threshold_sweep_3axis (240 points).
+    grid_bounds : dict[str, tuple[float, float]] | None
+        Optional grid bounds for edge detection, e.g.:
+        {"seuil_haut": (0.6, 0.9), "seuil_bas": (0.3, 0.6), "seuil_ecart": (0.0, 0.25)}
+
+    Returns
+    -------
+    dict with keys:
+        selected : dict — the chosen point (or None if no feasible point)
+        feasible_count : int
+        pareto_frontier : list[dict] — all Pareto-optimal points
+        warnings : list[str]
+        selection_method : str — "pareto_constrained"
+    """
+    if not sweep_results:
+        return {
+            "selected": None,
+            "feasible_count": 0,
+            "pareto_frontier": [],
+            "warnings": ["No sweep results provided"],
+            "selection_method": "pareto_constrained",
+        }
+
+    # Hard constraints
+    GNG3_MIN = 0.80
+    ROUTES_DIRECTES_MAX = 5
+
+    # Filter feasible points
+    feasible = []
+    for point in sweep_results:
+        gng3 = point.get("gng3", 0)
+        routes = point.get("gng3_routes_directes", 999)  # Default high if missing
+
+        if gng3 >= GNG3_MIN and routes <= ROUTES_DIRECTES_MAX:
+            feasible.append(point)
+
+    warnings = []
+    if not feasible:
+        # No feasible point → find 5 closest to constraints
+        warnings.append(
+            f"No feasible point (GNG-3 ≥ {GNG3_MIN} AND routes ≤ {ROUTES_DIRECTES_MAX})"
+        )
+
+        # Distance to feasibility (normalized)
+        def constraint_distance(p: dict) -> float:
+            gng3_violation = max(0, GNG3_MIN - p.get("gng3", 0))
+            routes_violation = max(0, p.get("gng3_routes_directes", 0) - ROUTES_DIRECTES_MAX)
+            # Normalize: gng3 is [0,1], routes is count → scale routes by 0.01
+            return gng3_violation + (routes_violation * 0.01)
+
+        closest = sorted(sweep_results, key=constraint_distance)[:5]
+
+        return {
+            "selected": None,
+            "feasible_count": 0,
+            "pareto_frontier": [],
+            "closest_infeasible": closest,
+            "warnings": warnings + [
+                f"Reporting {len(closest)} closest points - manual review required"
+            ],
+            "selection_method": "pareto_constrained",
+        }
+
+    # Lexicographic maximization: GNG-1 → GNG-2 → pièges
+    # Sort by (desc gng1, desc gng2, desc pieges_correct)
+    def lex_key(p: dict) -> tuple[float, float, float]:
+        return (
+            -p.get("gng1", 0),  # Maximize GNG-1 (negative for desc sort)
+            -p.get("gng2", 0),  # Then maximize GNG-2
+            -p.get("pieges_correct", 0),  # Then maximize pièges
+        )
+
+    feasible_sorted = sorted(feasible, key=lex_key)
+    selected = feasible_sorted[0]  # Best point
+
+    # Compute Pareto frontier (all non-dominated points)
+    # A point dominates another if it's >= on all objectives and > on at least one
+    def dominates(a: dict, b: dict) -> bool:
+        """Check if point a dominates point b on (gng1, gng2, pieges)."""
+        a_gng1, a_gng2, a_pieges = a.get("gng1", 0), a.get("gng2", 0), a.get("pieges_correct", 0)
+        b_gng1, b_gng2, b_pieges = b.get("gng1", 0), b.get("gng2", 0), b.get("pieges_correct", 0)
+
+        # a >= b on all objectives
+        if a_gng1 < b_gng1 or a_gng2 < b_gng2 or a_pieges < b_pieges:
+            return False
+
+        # a > b on at least one objective
+        return a_gng1 > b_gng1 or a_gng2 > b_gng2 or a_pieges > b_pieges
+
+    pareto_frontier = []
+    for point in feasible:
+        # Check if any other point dominates this one
+        if not any(dominates(other, point) for other in feasible if other is not point):
+            pareto_frontier.append(point)
+
+    # Mark Pareto points in original sweep results for export
+    pareto_ids = {
+        (p["seuil_haut"], p["seuil_bas"], p["seuil_ecart"]) for p in pareto_frontier
+    }
+    for point in sweep_results:
+        point["pareto"] = (
+            point["seuil_haut"],
+            point["seuil_bas"],
+            point["seuil_ecart"],
+        ) in pareto_ids
+
+    # Edge detection
+    if grid_bounds:
+        at_edge = []
+        for param, (low, high) in grid_bounds.items():
+            val = selected.get(param, 0)
+            if abs(val - low) < 0.01 or abs(val - high) < 0.01:
+                at_edge.append(f"{param}={val:.2f} (edge: [{low}, {high}])")
+
+        if at_edge:
+            warnings.append(
+                f"Selected point at grid edge - consider extending grid: {', '.join(at_edge)}"
+            )
+
+    return {
+        "selected": selected,
+        "feasible_count": len(feasible),
+        "pareto_frontier": pareto_frontier,
+        "warnings": warnings,
+        "selection_method": "pareto_constrained",
+    }
+
+
 _ERRORS_CSV_FIELDNAMES = [
     "text", "expected", "predicted", "score", "decision_type", "correct", "detail",
 ]
