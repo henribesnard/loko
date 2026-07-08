@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "react-router-dom";
 import { Bot, Globe, LogOut } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { LokoGlyph } from "@/components/ui/LokoGlyph";
 
 interface SidebarProps {
   onLogout?: () => void;
@@ -25,9 +26,7 @@ export function Sidebar({ onLogout }: SidebarProps) {
     <aside className="w-56 flex flex-col border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
       {/* Logo */}
       <div className="px-5 py-4 flex items-center gap-2.5">
-        <div className="w-8 h-8 rounded-lg bg-brand-500 flex items-center justify-center">
-          <span className="text-white font-bold text-sm">L</span>
-        </div>
+        <LokoGlyph size={32} />
         <div>
           <div className="font-semibold text-sm">{t("app.title")}</div>
           <div className="text-[11px] text-gray-400">{t("app.subtitle")}</div>
