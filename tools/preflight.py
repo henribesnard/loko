@@ -238,15 +238,78 @@ def check_ce7_campaign_dir(campaign_dir: str | None) -> bool:
     return _print_result("CE-7", "Campaign directory ready", ok, detail)
 
 
+def check_ce9_bot_conformity(bot_dir: str | None) -> bool:
+    """CE-9: Bot conformity — 9 intents + L2 labels (protocol v2.2).
+
+    Verifies BEFORE V2:
+    - 9 intentions (7 métier + hors_perimetre + demande_conseiller)
+    - ≥ 8 examples per non-system intent
+    - L2 services_en_ligne declared with ≥ 5 sub-motif labels
+    Output: machine-readable JSON conformity report.
+    """
+    if not bot_dir:
+        return _print_result("CE-9", "Bot conformity (9 intents + L2)", False,
+                             "no --bot-dir specified, skipped")
+
+    config_path = Path(bot_dir) / "config.json"
+    if not config_path.is_file():
+        return _print_result("CE-9", "Bot conformity", False,
+                             f"config.json not found at {config_path}")
+
+    import json
+    config = json.loads(config_path.read_text(encoding="utf-8"))
+    intents = config.get("intents", [])
+    intent_ids = {i["id"] for i in intents}
+
+    errors: list[str] = []
+
+    # Check 9 intents
+    required = {
+        "hors_perimetre", "demande_conseiller",
+        "arret_travail", "changement_coordonnees", "cotisations",
+        "justificatif_droits", "resiliation", "services_en_ligne",
+        "teletransmission_noemie",
+    }
+    missing = required - intent_ids
+    if missing:
+        errors.append(f"missing: {sorted(missing)}")
+    if len(intents) != 9:
+        errors.append(f"expected 9 intents, got {len(intents)}")
+
+    # Check ≥ 8 examples per non-system intent
+    for intent in intents:
+        n_ex = len(intent.get("examples", []))
+        is_sys = intent.get("is_system", False)
+        if not is_sys and n_ex < 8:
+            errors.append(f"'{intent['id']}' has {n_ex} examples (min 8)")
+
+    # Check L2 services_en_ligne
+    sel = next((i for i in intents if i["id"] == "services_en_ligne"), None)
+    if sel:
+        subs = sel.get("sub_motifs", [])
+        if len(subs) < 5:
+            errors.append(f"services_en_ligne L2 has {len(subs)} labels (need ≥ 5)")
+    else:
+        errors.append("services_en_ligne intent not found")
+
+    ok = len(errors) == 0
+    detail = f"{len(intents)} intents, {len(errors)} issues" if errors else f"9 intents, L2 OK"
+    if errors:
+        detail += " — " + "; ".join(errors)
+
+    return _print_result("CE-9", "Bot conformity (9 intents + L2)", ok, detail)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Preflight check for LOKO validation campaigns (C10)")
     parser.add_argument("--tag", default=None, help="Expected git tag (e.g. v0.3.1)")
     parser.add_argument("--image", default=None, help="Docker image to verify (e.g. loko:v0.3.1)")
     parser.add_argument("--campaign-dir", default=None, help="Campaign artifacts directory")
+    parser.add_argument("--bot-dir", default=None, help="Bot directory for CE-9 conformity check")
     args = parser.parse_args()
 
     print(f"\n{'='*60}")
-    print("  LOKO Preflight — CE-1 to CE-7")
+    print("  LOKO Preflight — CE-1 to CE-9 (protocole v2.2)")
     print(f"{'='*60}\n")
 
     results = [
@@ -257,6 +320,7 @@ def main() -> None:
         check_ce5_datasets_check(),
         check_ce6_eval_installed(args.image),
         check_ce7_campaign_dir(args.campaign_dir),
+        check_ce9_bot_conformity(args.bot_dir),
     ]
 
     passed = sum(results)
@@ -264,7 +328,7 @@ def main() -> None:
     all_ok = all(results)
 
     print(f"\n{'='*60}")
-    print(f"  Result: {passed}/{total} checks passed {'— ALL CLEAR' if all_ok else '— BLOCKED'}")
+    print(f"  Result: {passed}/{total} checks passed {'— ALL CLEAR (v2.2)' if all_ok else '— BLOCKED'}")
     print(f"{'='*60}\n")
 
     sys.exit(0 if all_ok else 1)

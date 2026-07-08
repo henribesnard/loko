@@ -59,3 +59,15 @@ dataset.csv
 
 # Campaign artifacts (archived outside git)
 eval/campagne-*/
+
+# Training checkpoints (regenerable)
+checkpoints/
+
+# Model binary files (regenerable from training data)
+data/bots/*/models/level1/model.safetensors
+data/bots/*/models/level1/model_head.pkl
+data/bots/*/models/level2_*/model.safetensors
+data/bots/*/models/level2_*/model_head.pkl
+
+# Windows artifacts
+nul

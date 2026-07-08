@@ -1,0 +1,15 @@
+text,intent
+est-ce que la teletransmission marche avec ma mutuelle,teletransmission_noemie
+la mutuelle et la secu sont-elles connectees,teletransmission_noemie
+connexion automatique entre ma mutuelle et ma caisse primaire,teletransmission_noemie
+mutuelle reliee a la securite sociale comment ca marche,teletransmission_noemie
+pourquoi ma mutuelle ne recoit pas les informations de la secu,teletransmission_noemie
+liaison automatique entre la mutuelle et l'assurance maladie,teletransmission_noemie
+transport medical VSL ou ambulance prise en charge,hors_perimetre
+bon de transport pour un rendez-vous medical,hors_perimetre
+soins dentaires prise en charge detartrage,hors_perimetre
+bilan dentaire annuel chez le dentiste,hors_perimetre
+debloquer mon espace personnel sur Ameli,services_en_ligne
+modifier le mot de passe de mon compte en ligne,services_en_ligne
+coordonnees bancaires pour le prelevement des cotisations,cotisations
+RIB pour le paiement de ma cotisation mutuelle,cotisations

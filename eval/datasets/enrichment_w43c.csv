@@ -1,0 +1,26 @@
+text,intent
+je ne veux pas d'un automate,demande_conseiller
+arretez avec votre robot je veux un humain,demande_conseiller
+pas de robot je veux parler a quelqu'un,demande_conseiller
+le standard s'il vous plait,demande_conseiller
+transferez-moi au standard,demande_conseiller
+j'ai ete coupe pendant mon appel a la MGEN,demande_conseiller
+mon appel a ete interrompu je rappelle,demande_conseiller
+on m'a raccroche au nez je souhaite parler a quelqu'un,demande_conseiller
+c'est pour la mutuelle,demande_conseiller
+j'appelle au sujet de ma mutuelle,demande_conseiller
+renseignement sur ma mutuelle,demande_conseiller
+c'est a propos de la MGEN,demande_conseiller
+information mutuelle s'il vous plait,demande_conseiller
+je voudrais des renseignements generaux,demande_conseiller
+j'ai juste une question a poser,demande_conseiller
+debloquer mon compte sur Ameli,services_en_ligne
+mon compte Ameli est bloque que faire,services_en_ligne
+modification de mon mot de passe,services_en_ligne
+changer mon mot de passe en ligne,services_en_ligne
+mes references ne sont pas reconnues quand je me connecte au portail,services_en_ligne
+prise en charge d'un detartrage dentaire,hors_perimetre
+remboursement pour un bilan dentaire de controle,hors_perimetre
+nettoyage dentaire chez le dentiste remboursement,hors_perimetre
+changer de banque pour recevoir les virements,changement_coordonnees
+nouveau RIB pour les remboursements et prelevements,changement_coordonnees

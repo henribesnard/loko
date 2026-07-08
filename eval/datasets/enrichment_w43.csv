@@ -1,0 +1,86 @@
+text,intent
+je voudrais joindre un conseiller MGEN par telephone,demande_conseiller
+est-ce que je peux contacter un agent MGEN,demande_conseiller
+passez-moi quelqu'un du service,demande_conseiller
+je veux etre mis en relation avec un interlocuteur,demande_conseiller
+je souhaite avoir un contact telephonique avec un agent,demande_conseiller
+joindre quelqu'un de la MGEN,demande_conseiller
+je cherche a contacter le service gestion MGEN,demande_conseiller
+je veux un renseignement aupres d'un conseiller,demande_conseiller
+je souhaiterais etre rappele par un conseiller,demande_conseiller
+il faut que je parle a un responsable,demande_conseiller
+je voudrais avoir quelqu'un au bout du fil,demande_conseiller
+mettez-moi en contact avec un gestionnaire,demande_conseiller
+je souhaite prendre rendez-vous avec un conseiller MGEN,demande_conseiller
+je veux discuter avec un vrai interlocuteur,demande_conseiller
+c'est pour avoir quelqu'un au telephone s'il vous plait,demande_conseiller
+est-ce possible de parler a une personne du service,demande_conseiller
+je ne comprends rien il me faut un conseiller,demande_conseiller
+bonjour je rappelle suite a un message,demande_conseiller
+je dois etre rappele par le service MGEN,demande_conseiller
+c'est au sujet d'un appel recu de la MGEN,demande_conseiller
+j'ai besoin d'explications je veux un conseiller,demande_conseiller
+dites moi comment joindre un correspondant MGEN,demande_conseiller
+je veux obtenir un contact avec le service client,demande_conseiller
+transferez-moi a un responsable s'il vous plait,demande_conseiller
+je veux un interlocuteur humain pas un chatbot,demande_conseiller
+prise en charge de mon hospitalisation prevue,hors_perimetre
+remboursement prothese auditive,hors_perimetre
+devis pour des lentilles progressives,hors_perimetre
+remboursement consultation specialiste,hors_perimetre
+prise en charge seance de kinesitherapie,hors_perimetre
+remboursement soins dentaires couronne,hors_perimetre
+information sur la carte europeenne assurance maladie,hors_perimetre
+demande d'accord pour transport medical,hors_perimetre
+remboursement pharmacie non effectue,hors_perimetre
+prise en charge operation de la cataracte,hors_perimetre
+information sur les soins optiques et verres progressifs,hors_perimetre
+demander un duplicata de carte vitale,hors_perimetre
+signaler le deces d'un adherent,hors_perimetre
+information sur le conge parental,hors_perimetre
+renseignement sur le bilan de prevention,hors_perimetre
+renseignement forfait orthodontie enfant,hors_perimetre
+information prise en charge ambulance urgence,hors_perimetre
+comment obtenir une aide a domicile,hors_perimetre
+demande d'accord pour cure thermale rhumatologie,hors_perimetre
+rattacher un ayant droit a mon contrat,hors_perimetre
+renseignement dispense adhesion mutuelle obligatoire,hors_perimetre
+changement d'affiliation apres retraite,hors_perimetre
+information sur les franchises medicales,hors_perimetre
+prise en charge chirurgie reparatrice,hors_perimetre
+remboursement consultation sage-femme,hors_perimetre
+modifier mon mot de passe MGEN,services_en_ligne
+changer le mot de passe de mon espace adherent,services_en_ligne
+reinitialiser mon mot de passe en ligne,services_en_ligne
+mot de passe expire sur le site MGEN,services_en_ligne
+debloquer l'acces a mon espace personnel,services_en_ligne
+mon compte en ligne est bloque comment faire,services_en_ligne
+erreur technique sur le site de la MGEN,services_en_ligne
+impossible de se connecter a l'espace adherent,services_en_ligne
+l'application mobile MGEN ne fonctionne plus,services_en_ligne
+je n'arrive pas a acceder a mon compte Ameli depuis l'appli,services_en_ligne
+mes identifiants ne sont pas reconnus sur le site,services_en_ligne
+probleme technique quand je veux telecharger une attestation en ligne,services_en_ligne
+comment recuperer l'acces a mon espace client MGEN,services_en_ligne
+la page de connexion affiche une erreur,services_en_ligne
+mon numero de securite sociale n'est pas reconnu sur le portail,services_en_ligne
+declarer un arret maladie longue duree,arret_travail
+formulaire de demande d'indemnites journalieres,arret_travail
+comment obtenir le complement de salaire maladie,arret_travail
+prolongation d'arret de travail comment faire,arret_travail
+signaler un conge longue maladie CLM,arret_travail
+document indemnites journalieres securite sociale,arret_travail
+renseignement sur le versement des IJ,arret_travail
+je suis en arret et je n'ai rien recu encore,arret_travail
+formulaire cerfa 3116 indemnites journalieres,arret_travail
+demi traitement suite a maladie longue duree,arret_travail
+comment fonctionne la teletransmission entre la secu et la mutuelle,teletransmission_noemie
+je veux activer le lien Noemie entre MGEN et la securite sociale,teletransmission_noemie
+pourquoi la mutuelle ne recoit pas automatiquement mes feuilles de soins,teletransmission_noemie
+probleme de teletransmission des remboursements,teletransmission_noemie
+je veux couper la teletransmission Noemie,teletransmission_noemie
+modifier le releve d'identite bancaire pour le remboursement,changement_coordonnees
+je dois mettre a jour mon IBAN pour les virements,changement_coordonnees
+changement de domicile suite a mutation professionnelle,changement_coordonnees
+corriger l'adresse email de mon compte,changement_coordonnees
+mon numero de telephone a change il faut mettre a jour,changement_coordonnees

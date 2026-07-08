@@ -1,0 +1,318 @@
+text,intent
+allocation d'invalidité,arret_travail
+allocation journalière,arret_travail
+allocation journalière pour arrêt de travail prolongé,arret_travail
+allocation longue maladie,arret_travail
+arrêt de maladie,arret_travail
+arrêt de travail,arret_travail
+arrêt maladie passage à demi-traitement,arret_travail
+attestation de salaire à remplir,arret_travail
+attestation indemnité journalière,arret_travail
+attestation à remplir pour le versement de l'ijss,arret_travail
+autorisation de sortie pendant un congé maladie,arret_travail
+comment activer le maintien de salaire,arret_travail
+comment déclarer un arrêt de travail,arret_travail
+compensation perte salaire,arret_travail
+complément de salaire en arrêt maladie,arret_travail
+indemnités journalières,arret_travail
+actualiser mon adresse email,changement_coordonnees
+actualiser mon adresse postale,changement_coordonnees
+adresse postale erronée,changement_coordonnees
+ajouter un RIB,changement_coordonnees
+besoin de changer d'adresse courriel,changement_coordonnees
+besoin de changer mon RIB,changement_coordonnees
+changement RIB assurance maladie,changement_coordonnees
+changement coordonnées bancaires familiale,changement_coordonnees
+changement d'adresse après déménagement,changement_coordonnees
+changement d'adresse courriel,changement_coordonnees
+changement d'adresse dans mon dossier,changement_coordonnees
+changement d'adresse de domicile,changement_coordonnees
+changement d'adresse et de RIB,changement_coordonnees
+changement de IBAN,changement_coordonnees
+changement de RIB pour les remboursements,changement_coordonnees
+changement de coordonnées personnelles,changement_coordonnees
+appel de cotisation mutuelle,cotisations
+attestation de paiement des cotisations,cotisations
+augmentation des cotisations,cotisations
+calcul de mes cotisations,cotisations
+calcul montant de la cotisation conjoint,cotisations
+changement du montant de ma cotisation,cotisations
+comment effectuer le paiement de mes cotisations,cotisations
+comprendre le mode de calcul des cotisations,cotisations
+comprendre le prélèvement sur mon salaire,cotisations
+comprendre mes cotisations,cotisations
+comprendre mon échéancier,cotisations
+concernant le prélèvement de la mutuelle,cotisations
+connaître le coût de la mutuelle,cotisations
+connaître le montant de ma cotisation,cotisations
+contestation cotisation,cotisations
+cotisation mutuelle au prélèvement automatique,cotisations
+accord préalable pour une prescription médicale de transport,hors_perimetre
+accusé réception de ma déclaration de grossesse,hors_perimetre
+achat de fauteuil roulant remboursement,hors_perimetre
+achat de lentilles de contact,hors_perimetre
+activer un contrat logement,hors_perimetre
+adhérer à une complémentaire santé,hors_perimetre
+adresse postale de la MGEN,hors_perimetre
+adresse pour envoyer un devis dentaire,hors_perimetre
+agrément pour une cure thermale,hors_perimetre
+aide pour le remboursement pour une prothèse dentaire,hors_perimetre
+bénéficiaire capital décès,hors_perimetre
+changer les verres,hors_perimetre
+comment déclarer un décès,hors_perimetre
+déclaration accident de travail,hors_perimetre
+déclarer un accident corporel,hors_perimetre
+prise en charge hospitalisation,hors_perimetre
+aide pour la carte tiers payant,justificatif_droits
+attestation CPAM,justificatif_droits
+attestation MGEN,justificatif_droits
+attestation MGEN pour ma fille,justificatif_droits
+attestation avec la date d'effet,justificatif_droits
+attestation d'affiliation à la sécurité sociale,justificatif_droits
+attestation d'assurance maladie,justificatif_droits
+attestation d'assuré social,justificatif_droits
+attestation d'ayant droit,justificatif_droits
+attestation d'ouverture de droits à la sécurité sociale,justificatif_droits
+attestation de carte vitale,justificatif_droits
+attestation de couverture sociale,justificatif_droits
+attestation de droits,justificatif_droits
+attestation de droits de la sécurité sociale,justificatif_droits
+attestation de droits en urgence,justificatif_droits
+attestation de droits perdue,justificatif_droits
+annuler ma résiliation,resiliation
+attestation de résiliation,resiliation
+changement de mutuelle,resiliation
+comment résilier la MGEN,resiliation
+conditions de résiliation mutuelle,resiliation
+courrier résiliation mutuelle,resiliation
+demande de résiliation de contrat mutuelle,resiliation
+demande résiliation prévoyance,resiliation
+délai de résiliation,resiliation
+effectuer une résiliation,resiliation
+information sur la résiliation d'un bénéficiaire,resiliation
+justificatif résiliation mutuelle obligatoire,resiliation
+où en est la résiliation de mon contrat,resiliation
+pouvoir résilier ma mutuelle,resiliation
+procédure de résiliation,resiliation
+MGEN connexion au compte Ameli,services_en_ligne
+accès au compte Ameli point FR,services_en_ligne
+accès compte personnel sur mon site MGEN,services_en_ligne
+accès en ligne,services_en_ligne
+accès espace perso,services_en_ligne
+accès site mutuelle,services_en_ligne
+accès à l'espace personnel internet de ma fille,services_en_ligne
+accès à mon application MGEN,services_en_ligne
+accès à mon compte MGEN,services_en_ligne
+accès à mon compte en ligne,services_en_ligne
+accès à mon espace adhérent,services_en_ligne
+accès à mon espace client,services_en_ligne
+accès à mon espace internet,services_en_ligne
+accès à mon espace personnel,services_en_ligne
+accéder au compte internet,services_en_ligne
+activer le lien Noemie,teletransmission_noemie
+annuler la télétransmission,teletransmission_noemie
+arrêter la télétransmission,teletransmission_noemie
+au sujet des télétransmissions,teletransmission_noemie
+bénéficier de la télétransmission,teletransmission_noemie
+codes de télétransmission,teletransmission_noemie
+comment faire une télétrans,teletransmission_noemie
+comment mettre en place la télétransmission Noemie,teletransmission_noemie
+comment se fait la télétransmission entre le mutuelle et la sécu,teletransmission_noemie
+connexion Noemie,teletransmission_noemie
+contrat Noemie,teletransmission_noemie
+déconnecter la mutuelle MGEN de ma sécurité sociale,teletransmission_noemie
+déconnexion du service Noemie,teletransmission_noemie
+est-ce que le lien Noemie est créé avec ma nouvelle mutuelle,teletransmission_noemie
+explications fonctionnement Noemie,teletransmission_noemie
+j'ai un souci avec mes AJ,arret_travail
+formulaire 3116 à remplir pour la sécu,arret_travail
+prolongation de mon congé maladie,arret_travail
+versement des indemnités en retard,arret_travail
+euh j'suis en maladie là et j'ai rien reçu,arret_travail
+demi traitement fonctionnaire maladie,arret_travail
+mi-temps thérapeutique reprise,arret_travail
+CLM prolongé comment ça se passe,arret_travail
+maintien salaire pendant hospitalisation,arret_travail
+subrogation employeur arret de travail,arret_travail
+ma carte tiers payant,justificatif_droits
+certificat d'adhésion à la mutuelle,justificatif_droits
+j'ai perdu ma carte mutualiste,justificatif_droits
+attestation pour mon employeur,justificatif_droits
+besoin d'un justificatif de couverture en urgence,justificatif_droits
+renouvellement de ma carte de mutuelle,justificatif_droits
+télécharger mon attestation sécu,justificatif_droits
+numéro de sécurité sociale sur la carte,justificatif_droits
+document prouvant mes droits santé,justificatif_droits
+j'ai besoin d'une carte TP pour le médecin,justificatif_droits
+problème connexion espace MGEN,services_en_ligne
+l'appli MGEN marche plus,services_en_ligne
+comment créer mon compte en ligne,services_en_ligne
+je veux accéder à mes remboursements en ligne,services_en_ligne
+mon espace adhérent ne s'ouvre pas,services_en_ligne
+site internet MGEN en panne,services_en_ligne
+j'arrive pas à me connecter sur Ameli,services_en_ligne
+réinitialiser mes identifiants,services_en_ligne
+enregistrement compte personnel mutuelle,services_en_ligne
+télécharger l'application MGEN,services_en_ligne
+activer mon espace en ligne MGEN,services_en_ligne
+page blanche quand je me connecte,services_en_ligne
+mettre à jour mon adresse suite à déménagement,changement_coordonnees
+nouvelle adresse mail à communiquer,changement_coordonnees
+modifier mon RIB de remboursement,changement_coordonnees
+j'ai déménagé faut mettre à jour,changement_coordonnees
+correction de mon numéro de téléphone,changement_coordonnees
+mon IBAN a changé,changement_coordonnees
+envoyer mes nouvelles coordonnées bancaires,changement_coordonnees
+signaler un changement de domicile,changement_coordonnees
+montant mutuelle retraité,cotisations
+combien je paye de mutuelle,cotisations
+ma cotisation a augmenté pourquoi,cotisations
+prélèvement mutuelle sur ma retraite,cotisations
+échéancier des cotisations MGEN,cotisations
+tarif de la mutuelle pour un couple,cotisations
+résilier la complémentaire de mon enfant,resiliation
+arrêter mon contrat mutuelle,resiliation
+quitter la MGEN,resiliation
+mettre fin à mon adhésion,resiliation
+résiliation prévoyance pour départ retraite,resiliation
+liaison entre ma mutuelle et la sécu,teletransmission_noemie
+relier MGEN à mon compte Ameli,teletransmission_noemie
+pourquoi mes remboursements ne sont pas automatiques,teletransmission_noemie
+mise en place du tiers payant Noemie,teletransmission_noemie
+la mutuelle ne rembourse pas automatiquement,teletransmission_noemie
+remboursement de mes lunettes,hors_perimetre
+prise en charge d'une opération chirurgicale,hors_perimetre
+remboursement dentaire prothèse,hors_perimetre
+déclaration de grossesse,hors_perimetre
+comment me faire rembourser une consultation,hors_perimetre
+devis pour un appareil auditif,hors_perimetre
+garantie décès,hors_perimetre
+aide au logement étudiant,hors_perimetre
+je voudrais joindre un conseiller MGEN par telephone,demande_conseiller
+est-ce que je peux contacter un agent MGEN,demande_conseiller
+passez-moi quelqu'un du service,demande_conseiller
+je veux etre mis en relation avec un interlocuteur,demande_conseiller
+je souhaite avoir un contact telephonique avec un agent,demande_conseiller
+joindre quelqu'un de la MGEN,demande_conseiller
+je cherche a contacter le service gestion MGEN,demande_conseiller
+je veux un renseignement aupres d'un conseiller,demande_conseiller
+je souhaiterais etre rappele par un conseiller,demande_conseiller
+il faut que je parle a un responsable,demande_conseiller
+je voudrais avoir quelqu'un au bout du fil,demande_conseiller
+mettez-moi en contact avec un gestionnaire,demande_conseiller
+je souhaite prendre rendez-vous avec un conseiller MGEN,demande_conseiller
+je veux discuter avec un vrai interlocuteur,demande_conseiller
+c'est pour avoir quelqu'un au telephone s'il vous plait,demande_conseiller
+est-ce possible de parler a une personne du service,demande_conseiller
+je ne comprends rien il me faut un conseiller,demande_conseiller
+bonjour je rappelle suite a un message,demande_conseiller
+je dois etre rappele par le service MGEN,demande_conseiller
+c'est au sujet d'un appel recu de la MGEN,demande_conseiller
+j'ai besoin d'explications je veux un conseiller,demande_conseiller
+dites moi comment joindre un correspondant MGEN,demande_conseiller
+je veux obtenir un contact avec le service client,demande_conseiller
+transferez-moi a un responsable s'il vous plait,demande_conseiller
+je veux un interlocuteur humain pas un chatbot,demande_conseiller
+remboursement prothese auditive,hors_perimetre
+devis pour des lentilles progressives,hors_perimetre
+remboursement soins dentaires couronne,hors_perimetre
+information sur la carte europeenne assurance maladie,hors_perimetre
+remboursement pharmacie non effectue,hors_perimetre
+prise en charge operation de la cataracte,hors_perimetre
+information sur les soins optiques et verres progressifs,hors_perimetre
+demander un duplicata de carte vitale,hors_perimetre
+signaler le deces d'un adherent,hors_perimetre
+renseignement forfait orthodontie enfant,hors_perimetre
+comment obtenir une aide a domicile,hors_perimetre
+demande d'accord pour cure thermale rhumatologie,hors_perimetre
+renseignement dispense adhesion mutuelle obligatoire,hors_perimetre
+information sur les franchises medicales,hors_perimetre
+devis pour assurance emprunteur,hors_perimetre
+remboursement de frais d'optique verres et monture,hors_perimetre
+modifier mon mot de passe MGEN,services_en_ligne
+changer le mot de passe de mon espace adherent,services_en_ligne
+reinitialiser mon mot de passe en ligne,services_en_ligne
+mot de passe expire sur le site MGEN,services_en_ligne
+debloquer l'acces a mon espace personnel,services_en_ligne
+mon compte en ligne est bloque comment faire,services_en_ligne
+erreur technique sur le site de la MGEN,services_en_ligne
+impossible de se connecter a l'espace adherent,services_en_ligne
+l'application mobile MGEN ne fonctionne plus,services_en_ligne
+je n'arrive pas a acceder a mon compte Ameli depuis l'appli,services_en_ligne
+mes identifiants ne sont pas reconnus sur le site,services_en_ligne
+probleme technique quand je veux telecharger une attestation en ligne,services_en_ligne
+comment recuperer l'acces a mon espace client MGEN,services_en_ligne
+la page de connexion affiche une erreur,services_en_ligne
+mon numero de securite sociale n'est pas reconnu sur le portail,services_en_ligne
+creer un espace en ligne pour consulter mes documents,services_en_ligne
+declarer un arret maladie longue duree,arret_travail
+formulaire de demande d'indemnites journalieres,arret_travail
+comment obtenir le complement de salaire maladie,arret_travail
+prolongation d'arret de travail comment faire,arret_travail
+signaler un conge longue maladie CLM,arret_travail
+document indemnites journalieres securite sociale,arret_travail
+renseignement sur le versement des IJ,arret_travail
+je suis en arret et je n'ai rien recu encore,arret_travail
+formulaire cerfa 3116 indemnites journalieres,arret_travail
+demi traitement suite a maladie longue duree,arret_travail
+probleme avec mon arret maladie en cours,arret_travail
+information sur mon conge maternite MGEN,arret_travail
+renseignement AJ allocation journaliere,arret_travail
+besoin d'un document pour arret de travail,arret_travail
+signaler un CLD conge longue duree,arret_travail
+complement de salaire fonctionnaire maladie longue,arret_travail
+information conge maternite indemnisation,arret_travail
+imprime pour demande d'indemnites MGEN,arret_travail
+comment fonctionne la teletransmission entre la secu et la mutuelle,teletransmission_noemie
+je veux activer le lien Noemie entre MGEN et la securite sociale,teletransmission_noemie
+pourquoi la mutuelle ne recoit pas automatiquement mes feuilles de soins,teletransmission_noemie
+probleme de teletransmission des remboursements,teletransmission_noemie
+je veux couper la teletransmission Noemie,teletransmission_noemie
+renseignement sur le fonctionnement du dispositif Noemie,teletransmission_noemie
+est-ce que Noemie est active sur mon dossier,teletransmission_noemie
+lien Noemie pour mon enfant etudiant,teletransmission_noemie
+modifier le releve d'identite bancaire pour le remboursement,changement_coordonnees
+je dois mettre a jour mon IBAN pour les virements,changement_coordonnees
+changement de domicile suite a mutation professionnelle,changement_coordonnees
+corriger l'adresse email de mon compte,changement_coordonnees
+mon numero de telephone a change il faut mettre a jour,changement_coordonnees
+demander un certificat d'adhesion mutuelle,justificatif_droits
+besoin d'un certificat d'affiliation MGEN,justificatif_droits
+duplicata de ma carte tiers payant mutualiste,justificatif_droits
+obtenir une attestation de droits pour mon employeur,justificatif_droits
+j'ai perdu ma carte de tiers payant mutuelle,justificatif_droits
+je ne veux pas d'un automate,demande_conseiller
+arretez avec votre robot je veux un humain,demande_conseiller
+pas de robot je veux parler a quelqu'un,demande_conseiller
+le standard s'il vous plait,demande_conseiller
+transferez-moi au standard,demande_conseiller
+j'ai ete coupe pendant mon appel a la MGEN,demande_conseiller
+mon appel a ete interrompu je rappelle,demande_conseiller
+on m'a raccroche au nez je souhaite parler a quelqu'un,demande_conseiller
+c'est pour la mutuelle,demande_conseiller
+j'appelle au sujet de ma mutuelle,demande_conseiller
+renseignement sur ma mutuelle,demande_conseiller
+c'est a propos de la MGEN,demande_conseiller
+information mutuelle s'il vous plait,demande_conseiller
+je voudrais des renseignements generaux,demande_conseiller
+j'ai juste une question a poser,demande_conseiller
+debloquer mon compte sur Ameli,services_en_ligne
+mon compte Ameli est bloque que faire,services_en_ligne
+modification de mon mot de passe,services_en_ligne
+changer mon mot de passe en ligne,services_en_ligne
+mes references ne sont pas reconnues quand je me connecte au portail,services_en_ligne
+prise en charge d'un detartrage dentaire,hors_perimetre
+remboursement pour un bilan dentaire de controle,hors_perimetre
+nettoyage dentaire chez le dentiste remboursement,hors_perimetre
+changer de banque pour recevoir les virements,changement_coordonnees
+nouveau RIB pour les remboursements et prelevements,changement_coordonnees
+teletransmission entre ma mutuelle et la securite sociale,teletransmission_noemie
+lien entre ma mutuelle et la caisse primaire d'assurance maladie,teletransmission_noemie
+est-ce que ma mutuelle transmet automatiquement a la secu,teletransmission_noemie
+ma mutuelle ne fait pas le lien avec la securite sociale,teletransmission_noemie
+inscription sur le site Ameli pour creer un compte,services_en_ligne
+comment acceder a mon espace Ameli en ligne,services_en_ligne
+ouverture de mon compte personnel Ameli,services_en_ligne
+transmettre un nouveau RIB a la MGEN,changement_coordonnees
+envoyer un justificatif de changement d'adresse,changement_coordonnees
+prelevement de ma cotisation sur mon compte bancaire,cotisations

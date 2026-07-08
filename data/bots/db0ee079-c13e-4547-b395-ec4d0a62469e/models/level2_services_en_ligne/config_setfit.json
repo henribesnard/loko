@@ -1,0 +1,10 @@
+{
+  "normalize_embeddings": false,
+  "labels": [
+    "compte_bloque",
+    "identifiants_perdus",
+    "mot_de_passe_oublie",
+    "premiere_connexion",
+    "probleme_technique"
+  ]
+}
