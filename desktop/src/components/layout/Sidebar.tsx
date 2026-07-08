@@ -1,9 +1,13 @@
 import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "react-router-dom";
-import { Bot, Globe } from "lucide-react";
+import { Bot, Globe, LogOut } from "lucide-react";
 import { cn } from "@/lib/cn";
 
-export function Sidebar() {
+interface SidebarProps {
+  onLogout?: () => void;
+}
+
+export function Sidebar({ onLogout }: SidebarProps) {
   const { t, i18n } = useTranslation();
   const { pathname } = useLocation();
 
@@ -53,7 +57,7 @@ export function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="px-3 py-3 border-t border-gray-200 dark:border-gray-800">
+      <div className="px-3 py-3 border-t border-gray-200 dark:border-gray-800 space-y-1">
         <button
           onClick={toggleLang}
           className="flex items-center gap-2 px-3 py-1.5 text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
@@ -61,6 +65,15 @@ export function Sidebar() {
           <Globe size={14} />
           {i18n.language.toUpperCase()}
         </button>
+        {onLogout && (
+          <button
+            onClick={onLogout}
+            className="flex items-center gap-2 px-3 py-1.5 text-xs text-gray-500 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+          >
+            <LogOut size={14} />
+            {t("auth.logout")}
+          </button>
+        )}
       </div>
     </aside>
   );

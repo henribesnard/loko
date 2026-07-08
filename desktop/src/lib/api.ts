@@ -6,6 +6,24 @@
  */
 
 const BASE = "";
+const STORAGE_KEY = "loko_auth";
+
+export function getAdminToken(): string | null {
+  return sessionStorage.getItem(STORAGE_KEY);
+}
+
+export function setAdminToken(token: string): void {
+  sessionStorage.setItem(STORAGE_KEY, token);
+}
+
+export function clearAdminToken(): void {
+  sessionStorage.removeItem(STORAGE_KEY);
+}
+
+function authHeaders(): Record<string, string> {
+  const token = getAdminToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
 
 export async function api<T = unknown>(
   path: string,
@@ -14,6 +32,7 @@ export async function api<T = unknown>(
   const res = await fetch(`${BASE}${path}`, {
     headers: {
       "Content-Type": "application/json",
+      ...authHeaders(),
       ...options.headers,
     },
     ...options,
@@ -31,7 +50,7 @@ export async function apiStream(
 ): Promise<ReadableStream<Uint8Array>> {
   const res = await fetch(`${BASE}${path}`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...authHeaders() },
     body: JSON.stringify(body),
   });
   if (!res.ok) {

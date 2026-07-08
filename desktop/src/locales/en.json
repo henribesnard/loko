@@ -119,6 +119,13 @@
       "classified": "Classified"
     }
   },
+  "auth": {
+    "tokenLabel": "Admin token",
+    "tokenPlaceholder": "Paste your token here",
+    "login": "Sign in",
+    "logout": "Sign out",
+    "error": "Invalid token or server unreachable"
+  },
   "common": {
     "save": "Save",
     "cancel": "Cancel",

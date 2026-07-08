@@ -9,19 +9,23 @@ import { useBotList } from "@/hooks/useBotConfig";
 export function BotList() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { bots, loading, createBot, deleteBot } = useBotList();
+  const { bots, loading, error: listError, createBot, deleteBot } = useBotList();
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState("");
   const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
 
   const handleCreate = async () => {
     if (!newName.trim()) return;
     setCreating(true);
+    setCreateError(null);
     try {
       const bot = await createBot(newName.trim());
       setShowCreate(false);
       setNewName("");
       navigate(`/bot/${bot.bot_id}/wizard`);
+    } catch (err) {
+      setCreateError(err instanceof Error ? err.message : t("common.error"));
     } finally {
       setCreating(false);
     }
@@ -53,6 +57,13 @@ export function BotList() {
           </Button>
         </div>
 
+        {/* List error */}
+        {listError && (
+          <div className="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 text-sm text-red-700 dark:text-red-400">
+            {listError}
+          </div>
+        )}
+
         {/* Create form */}
         {showCreate && (
           <div className="mb-6 p-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
@@ -75,11 +86,15 @@ export function BotList() {
                 onClick={() => {
                   setShowCreate(false);
                   setNewName("");
+                  setCreateError(null);
                 }}
               >
                 {t("common.cancel")}
               </Button>
             </div>
+            {createError && (
+              <p className="mt-2 text-xs text-red-600 dark:text-red-400">{createError}</p>
+            )}
           </div>
         )}
 

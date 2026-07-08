@@ -119,6 +119,13 @@
       "classified": "Classifié"
     }
   },
+  "auth": {
+    "tokenLabel": "Token administrateur",
+    "tokenPlaceholder": "Collez votre token ici",
+    "login": "Se connecter",
+    "logout": "Déconnexion",
+    "error": "Token invalide ou serveur inaccessible"
+  },
   "common": {
     "save": "Enregistrer",
     "cancel": "Annuler",
