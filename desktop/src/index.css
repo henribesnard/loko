@@ -1,16 +1,221 @@
+/* LOKO Design System — Tokens + Tailwind */
+
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ================================================================
+   COLOR TOKENS
+   ================================================================ */
+
 :root {
-  --brand-primary: #0F7D63;
-  --brand-primary-tint: #EAF6F1;
-  --accent-primary: #A8752D;
+  /* ---- Brand green ramp ---- */
+  --green-50:  #EAF6F1;
+  --green-100: #CFEBE0;
+  --green-200: #A0D7C2;
+  --green-300: #6FC0A2;
+  --green-400: #3D9E80;
+  --green-500: #0F7D63;
+  --green-600: #0C6551;
+  --green-700: #0A5142;
+  --green-800: #083F34;
+  --green-900: #062E26;
+
+  /* ---- Accent bronze ---- */
+  --bronze-50:  #FBF4E9;
+  --bronze-100: #F1E1C4;
+  --bronze-200: #E3C593;
+  --bronze-300: #D2A85F;
+  --bronze-400: #BE8F3F;
+  --bronze-500: #A8752D;
+  --bronze-600: #8B5F24;
+  --bronze-700: #6E4B1E;
+
+  /* ---- Neutrals — cool graphite ---- */
+  --gray-0:   #FFFFFF;
+  --gray-25:  #FAFBFA;
+  --gray-50:  #F5F7F6;
+  --gray-100: #EBEEED;
+  --gray-200: #DBE0DE;
+  --gray-300: #C2C9C6;
+  --gray-400: #98A19D;
+  --gray-500: #717A77;
+  --gray-600: #545C59;
+  --gray-700: #3D4341;
+  --gray-800: #292E2C;
+  --gray-900: #181B1A;
+  --gray-950: #0D0F0E;
+
+  /* ---- Semantic ---- */
+  --success-500: var(--green-500);
+  --success-100: var(--green-100);
+  --success-700: var(--green-700);
+
+  --warning-100: #FBF0DA;
+  --warning-500: #B9812A;
+  --warning-700: #7A5518;
+
+  --error-100: #FBE9E6;
+  --error-500: #C0432C;
+  --error-700: #832C1B;
+
+  --info-100: #E7F0F4;
+  --info-500: #3E7A9B;
+  --info-700: #2A5468;
+
+  /* ---- Typography ---- */
+  --font-sans: 'Geist', -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'Geist Mono', 'SFMono-Regular', Consolas, monospace;
+
+  --tracking-tight: -0.02em;
+  --tracking-normal: 0em;
+  --tracking-wide: 0.02em;
+
+  --leading-tight: 1.1;
+  --leading-snug: 1.3;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.65;
+
+  /* ---- Spacing ---- */
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-pill: 999px;
+
+  /* ---- Effects ---- */
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --duration-fast: 120ms;
+  --duration-base: 200ms;
+  --duration-slow: 320ms;
 }
+
+/* ================= LIGHT (default) ================= */
+:root, [data-theme="light"] {
+  --surface-page: var(--gray-25);
+  --surface-canvas: var(--gray-0);
+  --surface-card: var(--gray-0);
+  --surface-sunken: var(--gray-50);
+  --surface-overlay: rgba(13, 15, 14, 0.48);
+  --surface-inverse: var(--gray-900);
+
+  --border-subtle: var(--gray-100);
+  --border-default: var(--gray-200);
+  --border-strong: var(--gray-400);
+  --border-focus: var(--green-500);
+
+  --text-primary: var(--gray-900);
+  --text-secondary: var(--gray-600);
+  --text-tertiary: var(--gray-500);
+  --text-disabled: var(--gray-300);
+  --text-on-brand: var(--gray-0);
+  --text-on-inverse: var(--gray-50);
+  --text-link: var(--green-700);
+
+  --brand-primary: var(--green-500);
+  --brand-primary-hover: var(--green-600);
+  --brand-primary-active: var(--green-700);
+  --brand-primary-tint: var(--green-50);
+  --brand-primary-border: var(--green-200);
+  --brand-on-primary: var(--gray-0);
+
+  --accent-primary: var(--bronze-500);
+  --accent-tint: var(--bronze-50);
+  --accent-border: var(--bronze-200);
+
+  --success-bg: var(--success-100);
+  --success-fg: var(--success-700);
+  --success-border: var(--green-200);
+
+  --warning-bg: var(--warning-100);
+  --warning-fg: var(--warning-700);
+  --warning-border: #EBD3A0;
+
+  --error-bg: var(--error-100);
+  --error-fg: var(--error-700);
+  --error-border: #E8C1B8;
+
+  --info-bg: var(--info-100);
+  --info-fg: var(--info-700);
+  --info-border: #C7DCE5;
+
+  --focus-ring: 0 0 0 3px rgba(15, 125, 99, 0.24);
+  --shadow-color: 220 10% 20%;
+
+  --shadow-sm: 0 1px 2px hsl(220 10% 20% / 0.08), 0 1px 1px hsl(220 10% 20% / 0.04);
+  --shadow-md: 0 4px 12px hsl(220 10% 20% / 0.10), 0 2px 4px hsl(220 10% 20% / 0.06);
+  --shadow-lg: 0 12px 32px hsl(220 10% 20% / 0.14), 0 4px 10px hsl(220 10% 20% / 0.08);
+}
+
+/* ================= DARK ================= */
+[data-theme="dark"] {
+  --surface-page: var(--gray-950);
+  --surface-canvas: var(--gray-900);
+  --surface-card: #14201C;
+  --surface-sunken: #101715;
+  --surface-overlay: rgba(0, 0, 0, 0.6);
+  --surface-inverse: var(--gray-50);
+
+  --border-subtle: #202826;
+  --border-default: #2B3532;
+  --border-strong: #47524E;
+  --border-focus: var(--green-400);
+
+  --text-primary: #F2F5F3;
+  --text-secondary: #AFB8B4;
+  --text-tertiary: #828B87;
+  --text-disabled: #4A524F;
+  --text-on-brand: var(--gray-950);
+  --text-on-inverse: var(--gray-900);
+  --text-link: var(--green-300);
+
+  --brand-primary: var(--green-400);
+  --brand-primary-hover: var(--green-300);
+  --brand-primary-active: var(--green-200);
+  --brand-primary-tint: #12251F;
+  --brand-primary-border: #1D3B32;
+  --brand-on-primary: var(--gray-950);
+
+  --accent-primary: var(--bronze-300);
+  --accent-tint: #2B2013;
+  --accent-border: #4A3A20;
+
+  --success-bg: #12251F;
+  --success-fg: var(--green-300);
+  --success-border: #1D3B32;
+
+  --warning-bg: #2B2213;
+  --warning-fg: #E6B966;
+  --warning-border: #4A3B20;
+
+  --error-bg: #2B1815;
+  --error-fg: #E68B76;
+  --error-border: #4A2921;
+
+  --info-bg: #14232B;
+  --info-fg: #8FC1DE;
+  --info-border: #223B48;
+
+  --focus-ring: 0 0 0 3px rgba(111, 192, 162, 0.28);
+  --shadow-color: 0 0% 0%;
+
+  --shadow-sm: 0 1px 2px hsl(0 0% 0% / 0.08), 0 1px 1px hsl(0 0% 0% / 0.04);
+  --shadow-md: 0 4px 12px hsl(0 0% 0% / 0.10), 0 2px 4px hsl(0 0% 0% / 0.06);
+  --shadow-lg: 0 12px 32px hsl(0 0% 0% / 0.14), 0 4px 10px hsl(0 0% 0% / 0.08);
+}
+
+/* ================================================================
+   BASE STYLES
+   ================================================================ */
 
 body {
   margin: 0;
-  font-family: 'Geist', system-ui, -apple-system, sans-serif;
+  font-family: var(--font-sans);
+  background: var(--surface-page);
+  color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -18,5 +223,5 @@ body {
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #C2C9C6; border-radius: 3px; }
-.dark ::-webkit-scrollbar-thumb { background: #3D4341; }
+::-webkit-scrollbar-thumb { background: var(--gray-300); border-radius: 3px; }
+[data-theme="dark"] ::-webkit-scrollbar-thumb { background: var(--gray-700); }

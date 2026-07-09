@@ -5,6 +5,8 @@ import { BotWizard } from "@/pages/bot/BotWizard";
 import { BotPlayground } from "@/pages/bot/BotPlayground";
 import { BotDashboard } from "@/pages/bot/BotDashboard";
 import { LoginPage } from "@/pages/LoginPage";
+import { SignupPage } from "@/pages/auth/SignupPage";
+import { ResetPasswordPage } from "@/pages/auth/ResetPasswordPage";
 import { useAuth } from "@/hooks/useAuth";
 
 export default function App() {
@@ -12,18 +14,26 @@ export default function App() {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-gray-50 dark:bg-gray-950">
-        <p className="text-sm text-gray-500">Chargement…</p>
+      <div className="flex h-screen items-center justify-center bg-surface-page">
+        <p className="text-sm text-loko-tertiary">Chargement…</p>
       </div>
     );
   }
 
+  // Public routes (accessible without auth)
   if (!authenticated) {
-    return <LoginPage onLogin={login} />;
+    return (
+      <Routes>
+        <Route path="/signup" element={<SignupPage />} />
+        <Route path="/reset" element={<ResetPasswordPage />} />
+        <Route path="*" element={<LoginPage onLogin={login} />} />
+      </Routes>
+    );
   }
 
+  // Authenticated routes
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-950 text-gray-700 dark:text-gray-200">
+    <div className="flex h-screen bg-surface-page text-loko-primary">
       <Sidebar onLogout={logout} />
       <main className="flex-1 overflow-hidden">
         <Routes>

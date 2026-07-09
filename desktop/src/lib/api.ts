@@ -2,10 +2,28 @@
  * LOKO — HTTP API client.
  *
  * Wraps fetch() for the FastAPI backend.
- * In dev mode, requests are proxied via Vite (see vite.config.ts).
+ * Authentication: session cookie (HttpOnly, set by /api/auth/login).
+ * For ops super-admin: Bearer token via sessionStorage.
  */
 
 const BASE = "";
+
+// -- Ops admin token (super-admin only, /ops routes) --
+const OPS_STORAGE_KEY = "loko_ops_auth";
+
+export function getOpsToken(): string | null {
+  return sessionStorage.getItem(OPS_STORAGE_KEY);
+}
+
+export function setOpsToken(token: string): void {
+  sessionStorage.setItem(OPS_STORAGE_KEY, token);
+}
+
+export function clearOpsToken(): void {
+  sessionStorage.removeItem(OPS_STORAGE_KEY);
+}
+
+// -- Legacy admin token compatibility (kept for backward compat during migration) --
 const STORAGE_KEY = "loko_auth";
 
 export function getAdminToken(): string | null {
@@ -21,8 +39,11 @@ export function clearAdminToken(): void {
 }
 
 function authHeaders(): Record<string, string> {
-  const token = getAdminToken();
-  return token ? { Authorization: `Bearer ${token}` } : {};
+  // Try ops token first (for /api/ops routes), then legacy admin token
+  const ops = getOpsToken();
+  if (ops) return { Authorization: `Bearer ${ops}` };
+  const admin = getAdminToken();
+  return admin ? { Authorization: `Bearer ${admin}` } : {};
 }
 
 export async function api<T = unknown>(
@@ -30,6 +51,7 @@ export async function api<T = unknown>(
   options: RequestInit = {},
 ): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
       ...authHeaders(),
@@ -50,6 +72,7 @@ export async function apiStream(
 ): Promise<ReadableStream<Uint8Array>> {
   const res = await fetch(`${BASE}${path}`, {
     method: "POST",
+    credentials: "include",
     headers: { "Content-Type": "application/json", ...authHeaders() },
     body: JSON.stringify(body),
   });

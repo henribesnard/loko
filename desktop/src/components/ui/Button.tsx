@@ -11,13 +11,13 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variantStyles: Record<Variant, string> = {
   primary:
-    "bg-brand-500 text-white hover:bg-brand-600 focus-visible:ring-brand-500",
+    "bg-brand-500 text-[var(--text-on-brand)] hover:bg-brand-600 active:bg-brand-700",
   secondary:
-    "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-600 dark:hover:bg-gray-700",
+    "bg-[var(--surface-card)] text-[var(--text-secondary)] border border-[var(--border-default)] hover:bg-[var(--surface-sunken)]",
   ghost:
-    "text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800",
+    "text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]",
   danger:
-    "bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-500",
+    "bg-[var(--error-fg)] text-white hover:opacity-90",
 };
 
 const sizeStyles: Record<Size, string> = {
@@ -32,8 +32,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       ref={ref}
       disabled={disabled}
       className={cn(
-        "inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
+        "inline-flex items-center justify-center gap-2 rounded-[var(--radius-md)] font-semibold transition-colors",
+        "focus-visible:outline-none focus-visible:shadow-[var(--focus-ring)]",
         "disabled:opacity-50 disabled:cursor-not-allowed",
         variantStyles[variant],
         sizeStyles[size],

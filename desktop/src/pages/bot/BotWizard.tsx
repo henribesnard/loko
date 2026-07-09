@@ -1,8 +1,7 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Check } from "lucide-react";
-import { cn } from "@/lib/cn";
+import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useBotConfig } from "@/hooks/useBotConfig";
 import { BotProject } from "./wizard/BotProject";
@@ -52,7 +51,7 @@ export function BotWizard() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <p className="text-sm text-gray-500">{t("common.loading")}</p>
+        <p className="text-sm" style={{ color: "var(--text-tertiary)" }}>{t("common.loading")}</p>
       </div>
     );
   }
@@ -60,7 +59,7 @@ export function BotWizard() {
   if (error || !config || !botId) {
     return (
       <div className="flex items-center justify-center h-full">
-        <p className="text-sm text-red-500">{error || "Bot not found"}</p>
+        <p className="text-sm" style={{ color: "var(--error-fg)" }}>{error || "Bot not found"}</p>
       </div>
     );
   }
@@ -70,23 +69,33 @@ export function BotWizard() {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center gap-3 px-6 py-3 border-b border-gray-200 dark:border-gray-800">
+      <div
+        className="flex items-center gap-3 px-6 py-3"
+        style={{ borderBottom: "1px solid var(--border-subtle)", background: "var(--surface-canvas)" }}
+      >
         <button
           onClick={() => navigate("/bot")}
-          className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          className="p-1 rounded transition-colors"
+          style={{ color: "var(--text-secondary)" }}
         >
           <ArrowLeft size={16} />
         </button>
-        <h2 className="text-sm font-semibold truncate">{config.name}</h2>
-        <div className="ml-auto text-xs text-gray-400">
+        <h2 className="text-sm font-semibold truncate" style={{ color: "var(--text-primary)" }}>{config.name}</h2>
+        <div
+          className="ml-auto text-xs font-mono"
+          style={{ color: "var(--text-tertiary)" }}
+        >
           {config.status === "published"
             ? t("bot.status.published")
             : t("bot.status.draft")}
         </div>
       </div>
 
-      {/* Step navigation */}
-      <div className="flex items-center gap-1 px-6 py-3 border-b border-gray-200 dark:border-gray-800 overflow-x-auto">
+      {/* Step navigation — prototype style: numbered dots with active border */}
+      <div
+        className="flex items-center gap-1 px-4 py-2 overflow-x-auto"
+        style={{ borderBottom: "1px solid var(--border-subtle)" }}
+      >
         {STEPS.map((key, idx) => {
           const isActive = idx === currentStep;
           const isCompleted = idx < currentStep;
@@ -94,19 +103,35 @@ export function BotWizard() {
             <button
               key={key}
               onClick={() => goToStep(idx)}
-              className={cn(
-                "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors whitespace-nowrap",
-                isActive
-                  ? "bg-brand-100 text-brand-700 dark:bg-brand-900/40 dark:text-brand-300"
+              className="flex items-center gap-2 px-3 py-2 text-[13px] font-medium transition-colors whitespace-nowrap"
+              style={{
+                borderBottom: isActive ? "2px solid var(--brand-primary)" : "2px solid transparent",
+                color: isActive
+                  ? "var(--text-primary)"
                   : isCompleted
-                    ? "text-brand-600 dark:text-brand-400 hover:bg-gray-100 dark:hover:bg-gray-800"
-                    : "text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800",
-              )}
+                    ? "var(--text-secondary)"
+                    : "var(--text-disabled)",
+                cursor: "pointer",
+              }}
             >
-              {isCompleted && <Check size={12} />}
-              <span>
-                {idx + 1}. {t(`bot.wizard.step${idx + 1}`)}
+              <span
+                className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold"
+                style={{
+                  background: isActive
+                    ? "var(--brand-primary)"
+                    : isCompleted
+                      ? "var(--brand-primary-tint)"
+                      : "var(--surface-sunken)",
+                  color: isActive
+                    ? "var(--text-on-brand)"
+                    : isCompleted
+                      ? "var(--green-700)"
+                      : "var(--text-tertiary)",
+                }}
+              >
+                {isCompleted ? "\u2713" : idx + 1}
               </span>
+              {t(`bot.wizard.step${idx + 1}`)}
             </button>
           );
         })}
@@ -125,7 +150,10 @@ export function BotWizard() {
       </div>
 
       {/* Footer navigation */}
-      <div className="flex items-center justify-between px-6 py-3 border-t border-gray-200 dark:border-gray-800">
+      <div
+        className="flex items-center justify-between px-6 py-3"
+        style={{ borderTop: "1px solid var(--border-subtle)" }}
+      >
         <Button
           variant="ghost"
           size="sm"

@@ -19,6 +19,8 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from loko.api.bot_admin import router as bot_admin_router
 from loko.api.bot_dashboard import router as bot_dashboard_router
 from loko.api.bot_public import router as bot_public_router
+from loko.api.user_auth import router as user_auth_router
+from loko.api.ops import router as ops_router
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +61,8 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             response.headers["Content-Security-Policy"] = (
                 "default-src 'self'; "
                 "script-src 'self'; "
-                "style-src 'self' 'unsafe-inline'; "
+                "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+                "font-src 'self' https://fonts.gstatic.com; "
                 "img-src 'self' data:; "
                 "connect-src 'self'"
             )
@@ -176,8 +179,8 @@ def create_app() -> FastAPI:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=origins,
-        allow_credentials=False,  # Auth via Bearer header, not cookies
-        allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        allow_credentials=True,
+        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
         allow_headers=["Authorization", "Content-Type", "X-API-Key", "X-Admin-Token"],
     )
 
@@ -217,6 +220,13 @@ def create_app() -> FastAPI:
         app.include_router(bot_dashboard_router)
 
     app.include_router(bot_public_router)
+
+    # --- User auth (always mounted) ---
+    app.include_router(user_auth_router)
+
+    # --- Ops (super-admin, guarded by LOKO_ADMIN_TOKEN) ---
+    if mode == "server" and admin_token:
+        app.include_router(ops_router)
 
     # --- API key management routes (mounted under admin) ---
     _mount_api_key_routes(app, mode, admin_token)

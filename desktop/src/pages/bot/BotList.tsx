@@ -40,7 +40,7 @@ export function BotList() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <p className="text-sm text-gray-500">{t("common.loading")}</p>
+        <p className="text-sm" style={{ color: "var(--text-tertiary)" }}>{t("common.loading")}</p>
       </div>
     );
   }
@@ -50,7 +50,7 @@ export function BotList() {
       <div className="max-w-3xl mx-auto px-6 py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-lg font-semibold">{t("nav.bots")}</h1>
+          <h1 className="text-lg font-semibold" style={{ color: "var(--text-primary)", letterSpacing: "var(--tracking-tight)" }}>{t("nav.bots")}</h1>
           <Button size="sm" onClick={() => setShowCreate(true)}>
             <Plus size={14} />
             {t("bot.create")}
@@ -59,14 +59,29 @@ export function BotList() {
 
         {/* List error */}
         {listError && (
-          <div className="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 text-sm text-red-700 dark:text-red-400">
+          <div
+            className="mb-4 p-3 text-sm"
+            style={{
+              borderRadius: "var(--radius-sm)",
+              background: "var(--error-bg)",
+              color: "var(--error-fg)",
+              border: "1px solid var(--error-border)",
+            }}
+          >
             {listError}
           </div>
         )}
 
         {/* Create form */}
         {showCreate && (
-          <div className="mb-6 p-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+          <div
+            className="mb-6 p-4"
+            style={{
+              borderRadius: "var(--radius-lg)",
+              border: "1px solid var(--border-default)",
+              background: "var(--surface-card)",
+            }}
+          >
             <div className="flex gap-3">
               <div className="flex-1">
                 <Input
@@ -93,7 +108,7 @@ export function BotList() {
               </Button>
             </div>
             {createError && (
-              <p className="mt-2 text-xs text-red-600 dark:text-red-400">{createError}</p>
+              <p className="mt-2 text-xs" style={{ color: "var(--error-fg)" }}>{createError}</p>
             )}
           </div>
         )}
@@ -101,9 +116,9 @@ export function BotList() {
         {/* Bot list */}
         {bots.length === 0 ? (
           <div className="text-center py-16">
-            <Bot size={40} className="mx-auto mb-3 text-gray-300 dark:text-gray-600" />
-            <p className="text-sm font-medium text-gray-500">{t("bot.noBot")}</p>
-            <p className="text-xs text-gray-400 mt-1">{t("bot.noBotDesc")}</p>
+            <Bot size={40} className="mx-auto mb-3" style={{ color: "var(--text-disabled)" }} />
+            <p className="text-sm font-medium" style={{ color: "var(--text-tertiary)" }}>{t("bot.noBot")}</p>
+            <p className="text-xs mt-1" style={{ color: "var(--text-disabled)" }}>{t("bot.noBotDesc")}</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -111,15 +126,26 @@ export function BotList() {
               <div
                 key={bot.bot_id}
                 onClick={() => navigate(`/bot/${bot.bot_id}/wizard`)}
-                className="flex items-center justify-between p-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 hover:border-brand-300 dark:hover:border-brand-700 cursor-pointer transition-colors"
+                className="flex items-center justify-between p-4 cursor-pointer transition-colors"
+                style={{
+                  borderRadius: "var(--radius-lg)",
+                  border: "1px solid var(--border-subtle)",
+                  background: "var(--surface-card)",
+                }}
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-brand-100 dark:bg-brand-900/40 flex items-center justify-center">
-                    <Bot size={16} className="text-brand-600 dark:text-brand-400" />
+                  <div
+                    className="w-8 h-8 flex items-center justify-center"
+                    style={{
+                      borderRadius: "var(--radius-sm)",
+                      background: "var(--brand-primary-tint)",
+                    }}
+                  >
+                    <Bot size={16} style={{ color: "var(--brand-primary)" }} />
                   </div>
                   <div>
-                    <p className="text-sm font-medium">{bot.name}</p>
-                    <p className="text-xs text-gray-400">
+                    <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{bot.name}</p>
+                    <p className="text-xs" style={{ color: "var(--text-tertiary)" }}>
                       {bot.status === "published"
                         ? t("bot.status.published")
                         : t("bot.status.draft")}
@@ -128,7 +154,8 @@ export function BotList() {
                 </div>
                 <button
                   onClick={(e) => handleDelete(e, bot.bot_id)}
-                  className="p-1.5 rounded text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                  className="p-1.5 rounded transition-colors hover:text-red-500"
+                  style={{ color: "var(--text-tertiary)" }}
                 >
                   <Trash2 size={14} />
                 </button>
