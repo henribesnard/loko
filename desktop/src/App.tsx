@@ -7,6 +7,7 @@ import { BotDashboard } from "@/pages/bot/BotDashboard";
 import { LoginPage } from "@/pages/LoginPage";
 import { SignupPage } from "@/pages/auth/SignupPage";
 import { ResetPasswordPage } from "@/pages/auth/ResetPasswordPage";
+import { LandingPage } from "@/pages/public/LandingPage";
 import { useAuth } from "@/hooks/useAuth";
 
 export default function App() {
@@ -24,9 +25,11 @@ export default function App() {
   if (!authenticated) {
     return (
       <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/login" element={<LoginPage onLogin={login} />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/reset" element={<ResetPasswordPage />} />
-        <Route path="*" element={<LoginPage onLogin={login} />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     );
   }
