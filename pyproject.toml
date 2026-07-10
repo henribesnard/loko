@@ -17,6 +17,7 @@ server = [
     "slowapi>=0.1",
     "python-dotenv>=1.0",
     "httpx>=0.25",
+    "argon2-cffi>=23.1",
 ]
 ml = [
     "setfit>=1.1.3,<1.2",

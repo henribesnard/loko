@@ -1,19 +1,11 @@
 /**
  * LOKO — Authentication hook.
  *
- * Supports two modes:
- * 1. Session cookie (new): POST /api/auth/login, GET /api/auth/me
- * 2. Admin token (legacy): Bearer token in sessionStorage for ops or when
- *    the backend has LOKO_ADMIN_TOKEN but no user accounts yet.
+ * T3: Session cookie is the sole auth mechanism for regular users.
+ * Legacy admin token login removed — ops-only token flow is on /ops page.
  */
 import { useCallback, useEffect, useState } from "react";
-import {
-  api,
-  ApiError,
-  clearAdminToken,
-  getAdminToken,
-  setAdminToken,
-} from "@/lib/api";
+import { api, ApiError } from "@/lib/api";
 
 export interface UserInfo {
   id: string;
@@ -34,7 +26,7 @@ interface AuthState {
   error: string | null;
   user: UserInfo | null;
   account: AccountInfo | null;
-  login: (emailOrToken: string, password?: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
 }
 
@@ -51,73 +43,40 @@ export function useAuth(): AuthState {
   }, []);
 
   async function checkSession() {
-    // 1. Try session cookie first (GET /api/auth/me)
     try {
       const data = await api<{ user: UserInfo; account: AccountInfo }>("/api/auth/me");
       setUser(data.user);
       setAccount(data.account);
       setAuthenticated(true);
-      setLoading(false);
-      return;
-    } catch (err) {
-      // No valid session cookie — fall through to legacy token
+    } catch {
+      // No valid session — user must log in
     }
-
-    // 2. Try legacy admin token
-    const token = getAdminToken();
-    if (token) {
-      try {
-        await api("/api/bot/");
-        setAuthenticated(true);
-        setLoading(false);
-        return;
-      } catch {
-        clearAdminToken();
-      }
-    }
-
     setLoading(false);
   }
 
-  const login = useCallback(async (emailOrToken: string, password?: string): Promise<boolean> => {
+  const login = useCallback(async (email: string, password: string): Promise<boolean> => {
     setError(null);
-
-    if (password) {
-      // Session cookie auth (email + password)
-      try {
-        const data = await api<{ user: UserInfo; account: AccountInfo }>("/api/auth/login", {
-          method: "POST",
-          body: JSON.stringify({ email: emailOrToken, password }),
-        });
-        setUser(data.user);
-        setAccount(data.account);
-        setAuthenticated(true);
-        return true;
-      } catch (err) {
-        if (err instanceof ApiError) {
-          try {
-            const body = JSON.parse(err.body);
-            setError(body.detail || "auth.error");
-          } catch {
-            setError("auth.error");
-          }
-        } else {
+    try {
+      const data = await api<{ user: UserInfo; account: AccountInfo }>("/api/auth/login", {
+        method: "POST",
+        body: JSON.stringify({ email, password }),
+      });
+      setUser(data.user);
+      setAccount(data.account);
+      setAuthenticated(true);
+      return true;
+    } catch (err) {
+      if (err instanceof ApiError) {
+        try {
+          const body = JSON.parse(err.body);
+          setError(body.detail || "auth.error");
+        } catch {
           setError("auth.error");
         }
-        return false;
-      }
-    } else {
-      // Legacy admin token auth
-      setAdminToken(emailOrToken);
-      try {
-        await api("/api/bot/");
-        setAuthenticated(true);
-        return true;
-      } catch {
-        clearAdminToken();
+      } else {
         setError("auth.error");
-        return false;
       }
+      return false;
     }
   }, []);
 
@@ -127,7 +86,6 @@ export function useAuth(): AuthState {
     } catch {
       // Ignore logout errors
     }
-    clearAdminToken();
     setUser(null);
     setAccount(null);
     setAuthenticated(false);

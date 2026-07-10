@@ -88,21 +88,39 @@ def _init_schema(conn: sqlite3.Connection) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Password hashing (PBKDF2-HMAC-SHA256, 600k iterations)
+# Password hashing — S3: argon2id preferred, PBKDF2 fallback (AR-2)
 # ---------------------------------------------------------------------------
 
 _HASH_ITERATIONS = 600_000
 
 
 def hash_password(password: str) -> str:
-    """Hash a password with PBKDF2-HMAC-SHA256 + random salt."""
-    salt = secrets.token_hex(16)
-    dk = hashlib.pbkdf2_hmac("sha256", password.encode(), salt.encode(), _HASH_ITERATIONS)
-    return f"pbkdf2:sha256:{_HASH_ITERATIONS}:{salt}:{dk.hex()}"
+    """S3: Hash with argon2id if available, else PBKDF2-HMAC-SHA256 (AR-2)."""
+    try:
+        from argon2 import PasswordHasher
+        ph = PasswordHasher(time_cost=3, memory_cost=65536, parallelism=4)
+        return ph.hash(password)
+    except ImportError:
+        salt = secrets.token_hex(16)
+        dk = hashlib.pbkdf2_hmac("sha256", password.encode(), salt.encode(), _HASH_ITERATIONS)
+        return f"pbkdf2:sha256:{_HASH_ITERATIONS}:{salt}:{dk.hex()}"
 
 
 def verify_password(password: str, stored_hash: str) -> bool:
-    """Verify a password against a stored PBKDF2 hash."""
+    """S3: Verify password — supports both argon2id and PBKDF2 hashes."""
+    # Argon2id hashes start with $argon2id$
+    if stored_hash.startswith("$argon2"):
+        try:
+            from argon2 import PasswordHasher
+            from argon2.exceptions import VerifyMismatchError
+            ph = PasswordHasher()
+            return ph.verify(stored_hash, password)
+        except (ImportError, VerifyMismatchError):
+            return False
+        except Exception:
+            return False
+
+    # Legacy PBKDF2
     try:
         parts = stored_hash.split(":")
         iterations = int(parts[2])
@@ -112,6 +130,24 @@ def verify_password(password: str, stored_hash: str) -> bool:
         return secrets.compare_digest(dk.hex(), expected)
     except (IndexError, ValueError):
         return False
+
+
+# ---------------------------------------------------------------------------
+# H3: Column allowlists (prevent SQL injection via kwargs keys)
+# ---------------------------------------------------------------------------
+
+_ACCOUNT_FIELDS = frozenset({"org_name", "plan", "quotas", "status"})
+_USER_FIELDS = frozenset({
+    "email", "password_hash", "email_verified_at", "last_login_at", "role",
+    "terms_accepted_version", "terms_accepted_at",
+})
+
+
+def _validate_fields(kwargs: dict, allowed: frozenset[str], table: str) -> None:
+    """Raise ValueError if any key is not in the allowlist."""
+    bad = set(kwargs.keys()) - allowed
+    if bad:
+        raise ValueError(f"Invalid {table} field(s): {bad}")
 
 
 # ---------------------------------------------------------------------------
@@ -146,7 +182,8 @@ def list_accounts() -> list[dict[str, Any]]:
 
 
 def update_account(account_id: str, **kwargs: Any) -> bool:
-    """Update account fields."""
+    """Update account fields (H3: column allowlist enforced)."""
+    _validate_fields(kwargs, _ACCOUNT_FIELDS, "accounts")
     db = get_db()
     sets = ", ".join(f"{k} = ?" for k in kwargs)
     vals = list(kwargs.values()) + [account_id]
@@ -188,7 +225,8 @@ def get_user_by_id(user_id: str) -> dict[str, Any] | None:
 
 
 def update_user(user_id: str, **kwargs: Any) -> bool:
-    """Update user fields."""
+    """Update user fields (H3: column allowlist enforced)."""
+    _validate_fields(kwargs, _USER_FIELDS, "users")
     db = get_db()
     sets = ", ".join(f"{k} = ?" for k in kwargs)
     vals = list(kwargs.values()) + [user_id]
@@ -233,7 +271,8 @@ def validate_session(session_id: str) -> dict[str, Any] | None:
     """Validate a session token. Returns user + account info if valid, None otherwise."""
     db = get_db()
     row = db.execute(
-        """SELECT s.*, u.email, u.account_id, u.role, a.org_name, a.plan, a.status AS account_status
+        """SELECT s.*, u.email, u.account_id, u.role, u.email_verified_at,
+                  a.org_name, a.plan, a.status AS account_status
            FROM sessions s
            JOIN users u ON s.user_id = u.id
            JOIN accounts a ON u.account_id = a.id

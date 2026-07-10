@@ -21,6 +21,8 @@ RATE_SESSIONS = os.environ.get("LOKO_RATE_SESSIONS", "10/minute")
 RATE_MESSAGES = os.environ.get("LOKO_RATE_MESSAGES", "30/minute")
 RATE_FEEDBACK = os.environ.get("LOKO_RATE_FEEDBACK", "30/minute")
 RATE_READ = os.environ.get("LOKO_RATE_READ", "60/minute")
+# Q5: dedicated demo bot rate limit (tighter than regular)
+RATE_DEMO = os.environ.get("LOKO_RATE_DEMO", "20/hour")
 
 
 def _composite_key_func(request) -> str:  # noqa: ANN001

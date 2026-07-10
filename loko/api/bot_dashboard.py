@@ -9,20 +9,20 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 
-from loko.api.auth import require_admin
+from loko.api.session_middleware import require_tenant_or_ops
 from loko.bot.config_store import load_bot_config, save_bot_config
 from loko.bot.metrics import compute_metrics, get_misclassified_turns, get_session_replay
 from loko.bot.session_store import get_bot_dir
 
 logger = logging.getLogger(__name__)
 
+# T2: router no longer has a global require_admin dependency.
 router = APIRouter(
     prefix="/api/bot",
     tags=["bot-dashboard"],
-    dependencies=[Depends(require_admin)],
 )
 
 
@@ -48,7 +48,9 @@ class RetriggerTrainRequest(BaseModel):
 # ---------------------------------------------------------------------------
 
 @router.get("/{bot_id}/dashboard/metrics")
-async def get_metrics(bot_id: str) -> dict[str, Any]:
+async def get_metrics(
+    bot_id: str, request: Request = None, _auth=Depends(require_tenant_or_ops),
+) -> dict[str, Any]:
     """Get aggregated dashboard metrics for a bot."""
     bot_dir = get_bot_dir(bot_id)
     db_path = bot_dir / "sessions.db"
@@ -65,6 +67,8 @@ async def list_recent_sessions(
     bot_id: str,
     limit: int = Query(default=20, le=100),
     offset: int = 0,
+    request: Request = None,
+    _auth=Depends(require_tenant_or_ops),
 ) -> list[dict[str, Any]]:
     """List recent sessions for the dashboard."""
     from loko.bot.session_store import get_session_store
@@ -74,7 +78,10 @@ async def list_recent_sessions(
 
 
 @router.get("/{bot_id}/dashboard/sessions/{session_id}/replay")
-async def replay_session(bot_id: str, session_id: str) -> dict[str, Any]:
+async def replay_session(
+    bot_id: str, session_id: str, request: Request = None,
+    _auth=Depends(require_tenant_or_ops),
+) -> dict[str, Any]:
     """Get full session replay (transcript + traces + feedback)."""
     bot_dir = get_bot_dir(bot_id)
     db_path = bot_dir / "sessions.db"
@@ -92,6 +99,8 @@ async def replay_session(bot_id: str, session_id: str) -> dict[str, Any]:
 async def list_misclassified(
     bot_id: str,
     limit: int = 50,
+    request: Request = None,
+    _auth=Depends(require_tenant_or_ops),
 ) -> list[dict[str, Any]]:
     """List turns with negative feedback — candidates for re-training."""
     bot_dir = get_bot_dir(bot_id)
@@ -103,6 +112,8 @@ async def list_misclassified(
 async def add_training_example(
     bot_id: str,
     req: AddTrainingExampleRequest,
+    request: Request = None,
+    _auth=Depends(require_tenant_or_ops),
 ) -> dict[str, Any]:
     """Add a misclassified turn as a training example for an intent.
 
@@ -115,6 +126,10 @@ async def add_training_example(
     config = load_bot_config(bot_id)
     if not config:
         raise HTTPException(404, f"Bot {bot_id} not found")
+
+    # Q5: demo bots are read-only
+    if config.demo:
+        raise HTTPException(403, f"Bot '{bot_id}' is a demo bot (read-only).")
 
     # Find the target intent
     intent_idx = None
@@ -149,6 +164,8 @@ async def retrain_from_dashboard(
     bot_id: str,
     req: RetriggerTrainRequest,
     background_tasks: BackgroundTasks,
+    request: Request = None,
+    _auth=Depends(require_tenant_or_ops),
 ) -> dict[str, Any]:
     """Re-trigger training after adding production examples.
 
@@ -157,6 +174,10 @@ async def retrain_from_dashboard(
     config = load_bot_config(bot_id)
     if not config:
         raise HTTPException(404, f"Bot {bot_id} not found")
+
+    # Q5: demo bots are read-only
+    if config.demo:
+        raise HTTPException(403, f"Bot '{bot_id}' is a demo bot (read-only).")
 
     # Delegate to the admin training endpoint logic
     from loko.api.bot_admin import _TRAINING_STATE, _run_training_background
@@ -181,7 +202,9 @@ async def retrain_from_dashboard(
 # ---------------------------------------------------------------------------
 
 @router.get("/{bot_id}/dashboard/suggestions")
-async def get_improvement_suggestions(bot_id: str) -> list[dict[str, Any]]:
+async def get_improvement_suggestions(
+    bot_id: str, request: Request = None, _auth=Depends(require_tenant_or_ops),
+) -> list[dict[str, Any]]:
     """Analyze feedback and retrieval data to suggest improvements.
 
     Suggestions include:

@@ -13,10 +13,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 
-from loko.api.auth import require_admin
+from loko.api.session_middleware import require_session_or_ops, require_tenant_or_ops
 from loko.bot.config_store import (
     delete_bot,
     list_bots,
@@ -26,12 +26,19 @@ from loko.bot.config_store import (
 from loko.bot.models import BotConfig, Intent, JourneyParams, MessageTemplate, TemplateKey
 from loko.bot.session_store import get_bot_dir, get_bots_dir
 
+
+def _reject_demo_mutation(config: BotConfig | None, bot_id: str) -> None:
+    """Q5: demo bots are read-only — refuse any mutation."""
+    if config and config.demo:
+        raise HTTPException(403, f"Bot '{bot_id}' is a demo bot (read-only).")
+
 logger = logging.getLogger(__name__)
 
+# T2: router no longer has a global require_admin dependency.
+# Each route uses require_session_or_ops or require_tenant_or_ops.
 router = APIRouter(
     prefix="/api/bot",
     tags=["bot-admin"],
-    dependencies=[Depends(require_admin)],
 )
 
 # ---------------------------------------------------------------------------
@@ -156,35 +163,59 @@ class TrainRequest(BaseModel):
 # ---------------------------------------------------------------------------
 
 @router.get("/")
-async def list_all_bots() -> list[dict[str, str]]:
-    return list_bots()
+async def list_all_bots(request: Request, _auth=Depends(require_session_or_ops)) -> list[dict[str, str]]:
+    """T2: list bots filtered by tenant (ops sees all)."""
+    is_ops = getattr(request.state, "is_ops", False)
+    if is_ops:
+        return list_bots()
+    return list_bots(account_id=request.state.account_id)
 
 
 @router.post("/", status_code=201)
-async def create_bot(req: BotCreateRequest) -> dict[str, Any]:
+async def create_bot(
+    req: BotCreateRequest,
+    request: Request,
+    _auth=Depends(require_session_or_ops),
+) -> dict[str, Any]:
+    """T2: new bot bound to the session's account_id. Q1: quota check."""
+    is_ops = getattr(request.state, "is_ops", False)
+    account_id = "" if is_ops else request.state.account_id
+
+    # Q1: check bot creation quota
+    if account_id:
+        from loko.api.quotas import check_bot_creation_quota
+        check_bot_creation_quota(account_id)
+
     config = BotConfig(
         name=req.name,
         channel=req.channel,
         language=req.language,
         tone_profile=req.tone_profile,
+        account_id=account_id,
     )
     save_bot_config(config)
     return config.model_dump(mode="json")
 
 
 @router.get("/{bot_id}")
-async def get_bot(bot_id: str) -> dict[str, Any]:
+async def get_bot(
+    bot_id: str, request: Request, _auth=Depends(require_tenant_or_ops),
+) -> dict[str, Any]:
     config = load_bot_config(bot_id)
     if not config:
-        raise HTTPException(404, f"Bot {bot_id} not found")
+        raise HTTPException(404, "Not found")
     return config.model_dump(mode="json")
 
 
 @router.put("/{bot_id}")
-async def update_bot(bot_id: str, req: BotUpdateRequest) -> dict[str, Any]:
+async def update_bot(
+    bot_id: str, req: BotUpdateRequest, request: Request,
+    _auth=Depends(require_tenant_or_ops),
+) -> dict[str, Any]:
     config = load_bot_config(bot_id)
     if not config:
-        raise HTTPException(404, f"Bot {bot_id} not found")
+        raise HTTPException(404, "Not found")
+    _reject_demo_mutation(config, bot_id)
 
     updates = req.model_dump(exclude_none=True)
     updated = config.model_copy(update=updates)
@@ -198,9 +229,13 @@ async def update_bot(bot_id: str, req: BotUpdateRequest) -> dict[str, Any]:
 
 
 @router.delete("/{bot_id}")
-async def delete_bot_endpoint(bot_id: str) -> dict[str, str]:
+async def delete_bot_endpoint(
+    bot_id: str, request: Request, _auth=Depends(require_tenant_or_ops),
+) -> dict[str, str]:
+    config = load_bot_config(bot_id)
+    _reject_demo_mutation(config, bot_id)
     if not delete_bot(bot_id):
-        raise HTTPException(404, f"Bot {bot_id} not found")
+        raise HTTPException(404, "Not found")
     return {"status": "deleted", "bot_id": bot_id}
 
 
@@ -209,10 +244,13 @@ async def delete_bot_endpoint(bot_id: str) -> dict[str, str]:
 # ---------------------------------------------------------------------------
 
 @router.post("/{bot_id}/publish")
-async def publish_bot(bot_id: str) -> dict[str, Any]:
+async def publish_bot(
+    bot_id: str, request: Request, _auth=Depends(require_tenant_or_ops),
+) -> dict[str, Any]:
     config = load_bot_config(bot_id)
     if not config:
         raise HTTPException(404, f"Bot {bot_id} not found")
+    _reject_demo_mutation(config, bot_id)
 
     # Validation checks
     errors: list[str] = []
@@ -302,11 +340,15 @@ async def publish_bot(bot_id: str) -> dict[str, Any]:
 async def train_bot(
     bot_id: str,
     req: TrainRequest,
+    request: Request,
     background_tasks: BackgroundTasks,
+    _auth=Depends(require_tenant_or_ops),
 ) -> dict[str, Any]:
     config = load_bot_config(bot_id)
     if not config:
         raise HTTPException(404, f"Bot {bot_id} not found")
+
+    _reject_demo_mutation(config, bot_id)
 
     # R2-a: LOKO_ML guard — refuse training when ML is explicitly disabled
     import os
@@ -339,7 +381,9 @@ async def train_bot(
 
 
 @router.get("/{bot_id}/train/status")
-async def get_training_status(bot_id: str) -> dict[str, Any]:
+async def get_training_status(
+    bot_id: str, request: Request, _auth=Depends(require_tenant_or_ops),
+) -> dict[str, Any]:
     state = _TRAINING_STATE.get(bot_id)
     if not state:
         # L4: check disk for persisted state (e.g. after restart)
@@ -351,7 +395,9 @@ async def get_training_status(bot_id: str) -> dict[str, Any]:
 
 
 @router.get("/{bot_id}/evaluation")
-async def get_evaluation(bot_id: str) -> dict[str, Any]:
+async def get_evaluation(
+    bot_id: str, request: Request, _auth=Depends(require_tenant_or_ops),
+) -> dict[str, Any]:
     state = _TRAINING_STATE.get(bot_id)
     if not state or not state.get("result"):
         raise HTTPException(404, "No evaluation available. Train the bot first.")
@@ -363,7 +409,9 @@ async def get_evaluation(bot_id: str) -> dict[str, Any]:
 
 
 @router.get("/{bot_id}/train/report")
-async def get_training_report(bot_id: str) -> dict[str, Any]:
+async def get_training_report(
+    bot_id: str, request: Request, _auth=Depends(require_tenant_or_ops),
+) -> dict[str, Any]:
     """Full training report (B2): confusion matrix, F1, advice, latency, manifest."""
     state = _TRAINING_STATE.get(bot_id)
     if not state or not state.get("result"):
@@ -419,11 +467,19 @@ class UpdateTagsRequest(BaseModel):
 async def ingest_document(
     bot_id: str,
     req: IngestDocumentRequest,
+    request: Request,
+    _auth=Depends(require_tenant_or_ops),
 ) -> dict[str, Any]:
     """Ingest a document into the knowledge base."""
     config = load_bot_config(bot_id)
     if not config:
         raise HTTPException(404, f"Bot {bot_id} not found")
+    _reject_demo_mutation(config, bot_id)
+
+    # Q1: check document quota
+    if config.account_id:
+        from loko.api.quotas import check_document_quota
+        check_document_quota(config.account_id, bot_id)
 
     from loko.bot.knowledge_store import get_knowledge_store
 
@@ -444,6 +500,8 @@ async def ingest_document(
 async def list_documents(
     bot_id: str,
     intent: str | None = None,
+    request: Request = None,
+    _auth=Depends(require_tenant_or_ops),
 ) -> list[dict[str, Any]]:
     """List documents in the knowledge base, optionally filtered by intent."""
     config = load_bot_config(bot_id)
@@ -457,11 +515,15 @@ async def list_documents(
 
 
 @router.delete("/{bot_id}/documents/{doc_id}")
-async def delete_document(bot_id: str, doc_id: str) -> dict[str, str]:
+async def delete_document(
+    bot_id: str, doc_id: str, request: Request = None,
+    _auth=Depends(require_tenant_or_ops),
+) -> dict[str, str]:
     """Delete a document from the knowledge base."""
     config = load_bot_config(bot_id)
     if not config:
         raise HTTPException(404, f"Bot {bot_id} not found")
+    _reject_demo_mutation(config, bot_id)
 
     from loko.bot.knowledge_store import get_knowledge_store
 
@@ -476,11 +538,14 @@ async def delete_document(bot_id: str, doc_id: str) -> dict[str, str]:
 async def update_document_tags(
     bot_id: str,
     req: UpdateTagsRequest,
+    request: Request = None,
+    _auth=Depends(require_tenant_or_ops),
 ) -> dict[str, Any]:
     """Bulk-update intent/sub-motif tags on documents."""
     config = load_bot_config(bot_id)
     if not config:
         raise HTTPException(404, f"Bot {bot_id} not found")
+    _reject_demo_mutation(config, bot_id)
 
     from loko.bot.knowledge_store import get_knowledge_store
 
@@ -495,7 +560,9 @@ async def update_document_tags(
 
 
 @router.get("/{bot_id}/knowledge/coverage")
-async def get_knowledge_coverage(bot_id: str) -> dict[str, Any]:
+async def get_knowledge_coverage(
+    bot_id: str, request: Request = None, _auth=Depends(require_tenant_or_ops),
+) -> dict[str, Any]:
     """Return document count per intent (for publication readiness checks)."""
     config = load_bot_config(bot_id)
     if not config:

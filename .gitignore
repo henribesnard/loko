@@ -63,6 +63,11 @@ eval/campagne-*/
 # Training checkpoints (regenerable)
 checkpoints/
 
+# H4: Sensitive data under data/ (never tracked)
+data/**/api_keys.json
+data/**/sessions*
+data/**/*.transcript*
+
 # Model binary files (regenerable from training data)
 data/bots/*/models/level1/model.safetensors
 data/bots/*/models/level1/model_head.pkl

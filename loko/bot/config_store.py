@@ -29,20 +29,60 @@ def save_bot_config(config: BotConfig) -> Path:
 
 
 def load_bot_config(bot_id: str) -> BotConfig | None:
-    """Load a bot config from disk.  Returns None if not found."""
+    """Load a bot config from disk.  Returns None if not found.
+
+    T1: lazy migration — if schema_version < 2 or account_id missing,
+    the bot is assigned to the internal account and persisted.
+    """
     config_path = get_bot_dir(bot_id, create=False) / "config.json"
     if not config_path.exists():
         return None
     try:
         data = json.loads(config_path.read_text(encoding="utf-8"))
-        return BotConfig.model_validate(data)
+        config = BotConfig.model_validate(data)
+        # T1: lazy migration for schema v1 → v2
+        if data.get("schema_version", 1) < 2 or not config.account_id:
+            config = config.model_copy(update={
+                "schema_version": 2,
+                "account_id": config.account_id or _get_internal_account_id(),
+            })
+            save_bot_config(config)
+            logger.info("Bot %s migrated to schema v2 (account_id=%s)", bot_id, config.account_id)
+        return config
     except Exception:
         logger.exception("Failed to load bot config %s", config_path)
         return None
 
 
-def list_bots() -> list[dict[str, str]]:
-    """List all bots (id + name) found on disk."""
+# T1: Internal account for legacy bots
+_INTERNAL_ACCOUNT_ID = "wezon-internal"
+
+
+def _get_internal_account_id() -> str:
+    """Return the internal account ID, creating it if needed."""
+    from loko.db.accounts import get_account, create_account, get_db
+    try:
+        account = get_account(_INTERNAL_ACCOUNT_ID)
+        if account:
+            return _INTERNAL_ACCOUNT_ID
+        # Create with fixed ID
+        db = get_db()
+        from datetime import datetime, timezone
+        now = datetime.now(timezone.utc).isoformat()
+        db.execute(
+            "INSERT OR IGNORE INTO accounts (id, org_name, plan, quotas, status, created_at) "
+            "VALUES (?, ?, 'internal', '{}', 'active', ?)",
+            (_INTERNAL_ACCOUNT_ID, "Wezon interne", now),
+        )
+        db.commit()
+        return _INTERNAL_ACCOUNT_ID
+    except Exception:
+        logger.warning("Could not create internal account, using fallback ID")
+        return _INTERNAL_ACCOUNT_ID
+
+
+def list_bots(account_id: str | None = None) -> list[dict[str, str]]:
+    """List all bots found on disk. If account_id given, filter by tenant."""
     bots_dir = get_bots_dir()
     result = []
     for bot_dir in sorted(bots_dir.iterdir()):
@@ -50,10 +90,14 @@ def list_bots() -> list[dict[str, str]]:
         if config_path.exists():
             try:
                 data = json.loads(config_path.read_text(encoding="utf-8"))
+                bot_account = data.get("account_id", "")
+                if account_id and bot_account != account_id:
+                    continue
                 result.append({
                     "bot_id": data.get("bot_id", bot_dir.name),
                     "name": data.get("name", ""),
                     "status": data.get("status", "draft"),
+                    "account_id": bot_account,
                 })
             except Exception:
                 continue

@@ -27,6 +27,9 @@ from loko.api.rate_limit import (
     RATE_SESSIONS,
     get_limiter,
 )
+import os
+import time
+from collections import defaultdict
 from loko.bot.classifier.loader import load_classifier, load_search_backend
 from loko.bot.config_store import load_bot_config
 from loko.bot.errors import ComponentUnavailableError
@@ -53,6 +56,26 @@ def _apply_limit(rate: str):
     def _noop(func):
         return func
     return _noop
+
+
+# ---------------------------------------------------------------------------
+# Q5: Demo bot rate limiter (in-memory, per IP, separate from regular limits)
+# ---------------------------------------------------------------------------
+
+_DEMO_ATTEMPTS: dict[str, list[float]] = defaultdict(list)
+_DEMO_WINDOW_SECONDS = 3600  # 1 hour
+_DEMO_MAX_MESSAGES = int(os.environ.get("LOKO_RATE_DEMO_MAX", "20"))
+
+
+def _check_demo_rate(request: Request) -> None:
+    """Q5: enforce tighter rate limit on demo bot messages."""
+    ip = request.client.host if request.client else "unknown"
+    now = time.time()
+    attempts = _DEMO_ATTEMPTS[ip]
+    _DEMO_ATTEMPTS[ip] = [t for t in attempts if now - t < _DEMO_WINDOW_SECONDS]
+    if len(_DEMO_ATTEMPTS[ip]) >= _DEMO_MAX_MESSAGES:
+        raise HTTPException(429, "Rate limit exceeded for demo bot.")
+    _DEMO_ATTEMPTS[ip].append(now)
 
 
 # ---------------------------------------------------------------------------
@@ -227,6 +250,10 @@ async def create_session(
     if not config:
         raise HTTPException(404, "Not found")
 
+    # Q5: demo bot rate limit
+    if config.demo:
+        _check_demo_rate(request)
+
     # Fail-closed: draft bots cannot serve runtime (P0-6)
     if config.status != "published":
         raise HTTPException(409, "Bot is not published")
@@ -268,6 +295,10 @@ async def send_message(
     config = load_bot_config(bot_id)
     if not config:
         raise HTTPException(404, "Not found")
+
+    # Q5: demo bot rate limit
+    if config.demo:
+        _check_demo_rate(request)
 
     store = get_session_store(bot_id)
     session = store.get_session(session_id)

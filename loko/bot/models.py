@@ -220,9 +220,11 @@ class TrainingParams(BaseModel):
 
 class BotConfig(BaseModel):
     """Full bot configuration, persisted as config.json."""
-    schema_version: int = 1
+    schema_version: int = 2
     bot_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     name: str
+    account_id: str = ""  # T1: tenant isolation — empty = legacy (migrated to internal)
+    demo: bool = False  # Q5: demo bot flag
     channel: Literal["widget", "api", "both"] = "both"
     language: Literal["fr", "en", "auto"] = "fr"
     tone_profile: ToneProfile = ToneProfile.NEUTRE

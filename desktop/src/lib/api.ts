@@ -1,14 +1,14 @@
 /**
  * LOKO — HTTP API client.
  *
- * Wraps fetch() for the FastAPI backend.
- * Authentication: session cookie (HttpOnly, set by /api/auth/login).
- * For ops super-admin: Bearer token via sessionStorage.
+ * T3: Session cookie is the primary auth for /api/bot and /api/auth.
+ * S6: CSRF double-submit cookie for mutating requests.
+ * Ops admin token (Bearer) is used only for /api/ops routes.
  */
 
 const BASE = "";
 
-// -- Ops admin token (super-admin only, /ops routes) --
+// -- Ops admin token (super-admin only, /api/ops routes) --
 const OPS_STORAGE_KEY = "loko_ops_auth";
 
 export function getOpsToken(): string | null {
@@ -23,38 +23,41 @@ export function clearOpsToken(): void {
   sessionStorage.removeItem(OPS_STORAGE_KEY);
 }
 
-// -- Legacy admin token compatibility (kept for backward compat during migration) --
-const STORAGE_KEY = "loko_auth";
-
-export function getAdminToken(): string | null {
-  return sessionStorage.getItem(STORAGE_KEY);
+// S6: Read CSRF token from cookie
+function getCsrfToken(): string | null {
+  const match = document.cookie.match(/(?:^|; )csrf_token=([^;]*)/);
+  return match ? decodeURIComponent(match[1]) : null;
 }
 
-export function setAdminToken(token: string): void {
-  sessionStorage.setItem(STORAGE_KEY, token);
-}
+function buildHeaders(path: string, method: string): Record<string, string> {
+  const headers: Record<string, string> = {};
 
-export function clearAdminToken(): void {
-  sessionStorage.removeItem(STORAGE_KEY);
-}
+  // T3: Only send ops token for /api/ops routes
+  if (path.startsWith("/api/ops")) {
+    const ops = getOpsToken();
+    if (ops) headers["Authorization"] = `Bearer ${ops}`;
+  }
 
-function authHeaders(): Record<string, string> {
-  // Try ops token first (for /api/ops routes), then legacy admin token
-  const ops = getOpsToken();
-  if (ops) return { Authorization: `Bearer ${ops}` };
-  const admin = getAdminToken();
-  return admin ? { Authorization: `Bearer ${admin}` } : {};
+  // S6: Add CSRF header for mutating requests
+  const safeMethods = ["GET", "HEAD", "OPTIONS"];
+  if (!safeMethods.includes(method.toUpperCase())) {
+    const csrf = getCsrfToken();
+    if (csrf) headers["X-CSRF-Token"] = csrf;
+  }
+
+  return headers;
 }
 
 export async function api<T = unknown>(
   path: string,
   options: RequestInit = {},
 ): Promise<T> {
+  const method = (options.method || "GET").toUpperCase();
   const res = await fetch(`${BASE}${path}`, {
     credentials: "include",
     headers: {
       "Content-Type": "application/json",
-      ...authHeaders(),
+      ...buildHeaders(path, method),
       ...options.headers,
     },
     ...options,
@@ -73,7 +76,10 @@ export async function apiStream(
   const res = await fetch(`${BASE}${path}`, {
     method: "POST",
     credentials: "include",
-    headers: { "Content-Type": "application/json", ...authHeaders() },
+    headers: {
+      "Content-Type": "application/json",
+      ...buildHeaders(path, "POST"),
+    },
     body: JSON.stringify(body),
   });
   if (!res.ok) {

@@ -109,17 +109,23 @@ def _setup_rate_limiting(app: FastAPI) -> None:
 async def _session_purge_task() -> None:
     """Periodically purge expired sessions (RGPD compliance) and orphan locks (R4)."""
     retention_days = int(os.environ.get("LOKO_SESSION_RETENTION_DAYS", "30"))
+    demo_retention_hours = 24  # Q5: demo bot sessions purged after 24h
     interval_minutes = 60  # Check every hour
 
     while True:
         try:
             await asyncio.sleep(interval_minutes * 60)
 
-            from loko.bot.config_store import list_bots
+            from loko.bot.config_store import list_bots, load_bot_config
             from loko.bot.session_store import get_session_store
 
             cutoff = (
                 datetime.now(timezone.utc) - timedelta(days=retention_days)
+            ).isoformat()
+
+            # Q5: tighter cutoff for demo bots
+            demo_cutoff = (
+                datetime.now(timezone.utc) - timedelta(hours=demo_retention_hours)
             ).isoformat()
 
             # Collect active session IDs across all bots (R4)
@@ -128,16 +134,23 @@ async def _session_purge_task() -> None:
             bots = list_bots()
             for bot_info in bots:
                 try:
-                    store = get_session_store(bot_info["bot_id"])
-                    purged = store.purge_expired(bot_info["bot_id"], cutoff)
+                    bot_id = bot_info["bot_id"]
+                    store = get_session_store(bot_id)
+
+                    # Q5: use tighter cutoff for demo bots
+                    config = load_bot_config(bot_id)
+                    effective_cutoff = demo_cutoff if (config and config.demo) else cutoff
+
+                    purged = store.purge_expired(bot_id, effective_cutoff)
                     if purged:
                         logger.info(
-                            "Purged %d expired sessions for bot %s",
+                            "Purged %d expired sessions for bot %s%s",
                             purged,
-                            bot_info["bot_id"],
+                            bot_id,
+                            " (demo)" if (config and config.demo) else "",
                         )
                     # Gather surviving session IDs for lock cleanup
-                    for s in store.list_sessions(bot_info["bot_id"], limit=100_000):
+                    for s in store.list_sessions(bot_id, limit=100_000):
                         active_session_ids.add(s["session_id"])
                 except Exception:
                     logger.exception(
@@ -169,20 +182,33 @@ def create_app() -> FastAPI:
         description="Deterministic chatbot platform for customer service.",
     )
 
-    # --- CORS (P0-3) ---
+    # --- CORS (P0-3 + H2: credentials guard) ---
     cors_env = os.environ.get("RAGKIT_CORS_ORIGINS", "")
     if cors_env:
         origins = [o.strip() for o in cors_env.split(",") if o.strip()]
     else:
         origins = _DEFAULT_CORS_ORIGINS
 
+    # H2: fail-closed — refuse to boot if credentials + wildcard origin
+    mode = os.environ.get("RAGKIT_MODE", "desktop")
+    if mode == "server" and ("*" in origins or not origins):
+        raise RuntimeError(
+            "CORS misconfiguration: allow_credentials=True requires an explicit "
+            "origin list (RAGKIT_CORS_ORIGINS). Wildcard '*' or empty origins "
+            "are not allowed in server mode with credentials."
+        )
+
     app.add_middleware(
         CORSMiddleware,
         allow_origins=origins,
         allow_credentials=True,
         allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-        allow_headers=["Authorization", "Content-Type", "X-API-Key", "X-Admin-Token"],
+        allow_headers=["Authorization", "Content-Type", "X-API-Key", "X-Admin-Token", "X-CSRF-Token"],
     )
+
+    # --- S6: CSRF double-submit cookie ---
+    from loko.api.csrf import CSRFMiddleware
+    app.add_middleware(CSRFMiddleware)
 
     # --- Security headers (P0-3) ---
     app.add_middleware(SecurityHeadersMiddleware)
@@ -206,18 +232,12 @@ def create_app() -> FastAPI:
         )
 
     # --- Routers ---
-    mode = os.environ.get("RAGKIT_MODE", "desktop")
     admin_token = os.environ.get("LOKO_ADMIN_TOKEN")
 
-    # In server mode without admin token: refuse to mount admin routers (fail-closed)
-    if mode == "server" and not admin_token:
-        logger.warning(
-            "RAGKIT_MODE=server but LOKO_ADMIN_TOKEN not set — "
-            "admin and dashboard routers will NOT be mounted"
-        )
-    else:
-        app.include_router(bot_admin_router)
-        app.include_router(bot_dashboard_router)
+    # T2: admin/dashboard routes are always mounted — auth is per-route
+    # (require_tenant_or_ops does session-based tenant check or ops token)
+    app.include_router(bot_admin_router)
+    app.include_router(bot_dashboard_router)
 
     app.include_router(bot_public_router)
 
@@ -227,8 +247,11 @@ def create_app() -> FastAPI:
     # --- Ops (super-admin, guarded by LOKO_ADMIN_TOKEN) ---
     if mode == "server" and admin_token:
         app.include_router(ops_router)
+    elif mode != "server":
+        # Desktop mode: mount ops without mandatory token
+        app.include_router(ops_router)
 
-    # --- API key management routes (mounted under admin) ---
+    # --- API key management routes ---
     _mount_api_key_routes(app, mode, admin_token)
 
     # --- Widget static files ---
@@ -360,7 +383,7 @@ def create_app() -> FastAPI:
 
 
 def _mount_api_key_routes(app: FastAPI, mode: str, admin_token: str | None) -> None:
-    """Mount API key management routes under the admin prefix."""
+    """Mount API key management routes — T2: guarded by require_tenant_or_ops."""
     from fastapi import APIRouter, Depends, HTTPException
     from pydantic import BaseModel, Field
 
@@ -369,15 +392,11 @@ def _mount_api_key_routes(app: FastAPI, mode: str, admin_token: str | None) -> N
         list_api_keys,
         revoke_api_key,
     )
-    from loko.api.auth import require_admin
-
-    if mode == "server" and not admin_token:
-        return  # Admin not mounted in this config
+    from loko.api.session_middleware import require_tenant_or_ops
 
     keys_router = APIRouter(
         prefix="/api/bot",
         tags=["bot-api-keys"],
-        dependencies=[Depends(require_admin)],
     )
 
     class CreateKeyRequest(BaseModel):
@@ -385,18 +404,26 @@ def _mount_api_key_routes(app: FastAPI, mode: str, admin_token: str | None) -> N
         allowed_origins: list[str] = Field(default_factory=list)
 
     @keys_router.post("/{bot_id}/api-keys", status_code=201)
-    async def create_api_key(bot_id: str, req: CreateKeyRequest) -> dict:
+    async def create_api_key(
+        bot_id: str, req: CreateKeyRequest, request: Request = None,
+        _auth=Depends(require_tenant_or_ops),
+    ) -> dict:
         raw_key, key_id = generate_api_key(
             bot_id, label=req.label, allowed_origins=req.allowed_origins,
         )
         return {"raw_key": raw_key, "key_id": key_id}
 
     @keys_router.get("/{bot_id}/api-keys")
-    async def list_keys(bot_id: str) -> list[dict]:
+    async def list_keys(
+        bot_id: str, request: Request = None, _auth=Depends(require_tenant_or_ops),
+    ) -> list[dict]:
         return list_api_keys(bot_id)
 
     @keys_router.delete("/{bot_id}/api-keys/{key_id}")
-    async def revoke_key(bot_id: str, key_id: str) -> dict:
+    async def revoke_key(
+        bot_id: str, key_id: str, request: Request = None,
+        _auth=Depends(require_tenant_or_ops),
+    ) -> dict:
         if not revoke_api_key(bot_id, key_id):
             raise HTTPException(404, "Key not found")
         return {"status": "revoked", "key_id": key_id}
