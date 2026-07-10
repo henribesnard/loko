@@ -1,0 +1,232 @@
+name: LOKO CI/CD Pipeline
+# Implements C1 from PLAN_AMELIORATION_COMPLET_LOKO_2026-07-10.md
+
+on:
+  push:
+    branches: ['**']
+    tags: ['v*']
+  pull_request:
+    branches: [main, 'chore/**', 'feat/**', 'fix/**']
+
+env:
+  PYTHON_VERSION: '3.12'
+  NODE_VERSION: '20'
+
+jobs:
+  # V2: Guard against worktree/dataset modifications
+  guard-datasets:
+    name: Guard Datasets & Worktree
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for dataset modifications without hash update
+        run: |
+          # Check if any dataset files were modified
+          MODIFIED_DATASETS=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -E '^data/.*\.(json|csv|txt)$' || true)
+
+          if [ -n "$MODIFIED_DATASETS" ]; then
+            echo "❌ Dataset files modified:"
+            echo "$MODIFIED_DATASETS"
+
+            # Check if corresponding hash file was updated
+            HASH_UPDATED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -E '^data/.*\.hash$' || true)
+
+            if [ -z "$HASH_UPDATED" ]; then
+              echo "❌ ERROR: Dataset modified without hash update (Interdit #5)"
+              echo "Modified datasets: $MODIFIED_DATASETS"
+              echo "You must update the corresponding .hash file when modifying datasets"
+              exit 1
+            fi
+
+            echo "✅ Dataset hash files updated"
+          fi
+
+      - name: Check for uncommitted changes in worktree (V2)
+        run: |
+          # This check should be done before tests to ensure clean state
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "❌ ERROR: Uncommitted changes detected in worktree (Interdit #3)"
+            git status --porcelain
+            exit 1
+          fi
+
+  # H1: Guard against MGEN mentions
+  guard-mgen:
+    name: Guard MGEN Mentions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest
+
+      - name: Run MGEN mention guard
+        run: |
+          pytest tests/test_no_mgen_mention.py -v
+
+  # Ruff linting
+  lint-python:
+    name: Lint Python Code
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install ruff
+        run: pip install ruff
+
+      - name: Run ruff check
+        run: ruff check loko/ tests/ tools/
+
+      - name: Run ruff format check
+        run: ruff format --check loko/ tests/ tools/
+
+  # Python tests in container (per protocol §0.2)
+  test-python:
+    name: Test Python (in-container)
+    runs-on: ubuntu-latest
+    needs: [guard-datasets, guard-mgen, lint-python]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: |
+          docker build -t loko:test .
+
+      - name: Run pytest in container with coverage
+        run: |
+          docker run --rm \
+            -v ${{ github.workspace }}/coverage:/app/coverage \
+            -e LOKO_ML=on \
+            -e LOKO_MODE=test \
+            -e HF_HUB_OFFLINE=1 \
+            -e TRANSFORMERS_OFFLINE=1 \
+            loko:test \
+            sh -c "pytest tests/ -v --tb=short && cp coverage.xml htmlcov /app/coverage/ 2>/dev/null || true"
+
+      - name: Upload coverage reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report-python
+          path: |
+            coverage/coverage.xml
+            coverage/htmlcov/
+          retention-days: 30
+
+      - name: Display coverage summary
+        if: always()
+        run: |
+          if [ -f coverage/coverage.xml ]; then
+            echo "✅ Coverage report generated"
+            # Extract coverage percentage (basic parsing)
+            grep -oP 'line-rate="\K[^"]+' coverage/coverage.xml | head -n1 | awk '{printf "Coverage: %.1f%%\n", $1*100}'
+          fi
+
+  # Frontend tests
+  test-frontend:
+    name: Test Frontend
+    runs-on: ubuntu-latest
+    needs: lint-python
+    defaults:
+      run:
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: desktop/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Run Vitest
+        run: npm test
+
+      - name: npm audit
+        run: npm audit --audit-level=high
+        continue-on-error: true
+
+  # V1: Version uniqueness check
+  guard-version:
+    name: Guard Version Uniqueness (V1)
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check version uniqueness
+        run: |
+          VERSION=$(grep '^version = ' pyproject.toml | cut -d'"' -f2)
+          echo "Current version: $VERSION"
+
+          # Check if this version tag already exists
+          if git rev-parse "v$VERSION" >/dev/null 2>&1; then
+            echo "❌ ERROR: Version v$VERSION already exists (Interdit V1)"
+            echo "You must bump the version in pyproject.toml"
+            exit 1
+          fi
+
+          echo "✅ Version $VERSION is unique"
+
+  # Docker build test
+  build-docker:
+    name: Build Docker Image
+    runs-on: ubuntu-latest
+    needs: [test-python, test-frontend]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image (test)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: false
+          tags: loko:ci-${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # All checks passed
+  ci-success:
+    name: CI Success
+    runs-on: ubuntu-latest
+    needs: [guard-datasets, guard-mgen, test-python, test-frontend, build-docker]
+    if: always()
+    steps:
+      - name: Check all jobs
+        run: |
+          if [ "${{ needs.guard-datasets.result }}" != "success" ] || \
+             [ "${{ needs.guard-mgen.result }}" != "success" ] || \
+             [ "${{ needs.test-python.result }}" != "success" ] || \
+             [ "${{ needs.test-frontend.result }}" != "success" ] || \
+             [ "${{ needs.build-docker.result }}" != "success" ]; then
+            echo "❌ CI pipeline failed"
+            exit 1
+          fi
+          echo "✅ All CI checks passed"

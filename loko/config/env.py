@@ -3,6 +3,9 @@
 All LOKO configuration reads should go through `get_env()`.
 Legacy `RAGKIT_*` variables are still accepted with a deprecation warning.
 Support will be removed in 0.5.0.
+
+K1: For sensitive values (tokens, passwords, API keys), use `get_secret()` instead,
+which supports Docker secrets via *_FILE environment variables.
 """
 
 from __future__ import annotations
@@ -25,6 +28,11 @@ def get_env(name: str, default: str | None = None) -> str | None:
     -------
     str | None
         The environment value, or *default*.
+
+    Notes
+    -----
+    For sensitive values (passwords, tokens, API keys), prefer using
+    `loko.config.secrets.get_secret()` which supports Docker secrets.
     """
     val = os.environ.get(f"LOKO_{name}")
     if val is not None:

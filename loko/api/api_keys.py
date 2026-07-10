@@ -38,6 +38,8 @@ class APIKeyRecord:
         label: str = "",
         allowed_origins: list[str] | None = None,
         created_at: str = "",
+        expires_at: str | None = None,  # K3: for rotation grace period
+        superseded_by: str | None = None,  # K3: key_id that replaced this one
     ):
         self.key_id = key_id
         self.key_hash = key_hash
@@ -45,6 +47,8 @@ class APIKeyRecord:
         self.label = label
         self.allowed_origins = allowed_origins or []
         self.created_at = created_at
+        self.expires_at = expires_at
+        self.superseded_by = superseded_by
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -54,11 +58,23 @@ class APIKeyRecord:
             "label": self.label,
             "allowed_origins": self.allowed_origins,
             "created_at": self.created_at,
+            "expires_at": self.expires_at,
+            "superseded_by": self.superseded_by,
         }
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> APIKeyRecord:
         return cls(**data)
+
+    def is_expired(self) -> bool:
+        """Check if this key is expired (K3)."""
+        if not self.expires_at:
+            return False
+
+        from datetime import datetime, timezone
+        expires = datetime.fromisoformat(self.expires_at)
+        now = datetime.now(timezone.utc)
+        return now > expires
 
 
 # ---------------------------------------------------------------------------
@@ -130,7 +146,7 @@ def generate_api_key(
 def validate_api_key(raw_key: str) -> APIKeyRecord | None:
     """Validate a raw API key and return the associated record.
 
-    Searches across all bots.  Returns None if invalid.
+    Searches across all bots.  Returns None if invalid or expired (K3).
     """
     key_hash = _hash_key(raw_key)
     bots_dir = get_bots_dir()
@@ -144,18 +160,29 @@ def validate_api_key(raw_key: str) -> APIKeyRecord | None:
         keys = _load_keys(bot_dir.name)
         for record in keys:
             if _hmac.compare_digest(record.key_hash, key_hash):
+                # K3: Reject expired keys
+                if record.is_expired():
+                    logger.warning("API key %s is expired", record.key_id)
+                    return None
                 return record
 
     return None
 
 
 def validate_api_key_for_bot(raw_key: str, bot_id: str) -> APIKeyRecord | None:
-    """Validate a raw API key for a specific bot."""
+    """Validate a raw API key for a specific bot.
+
+    Returns None if key is invalid or expired (K3).
+    """
     key_hash = _hash_key(raw_key)
     keys = _load_keys(bot_id)
 
     for record in keys:
         if _hmac.compare_digest(record.key_hash, key_hash):
+            # K3: Reject expired keys
+            if record.is_expired():
+                logger.warning("API key %s is expired for bot %s", record.key_id, bot_id)
+                return None
             return record
 
     return None
@@ -171,6 +198,9 @@ def list_api_keys(bot_id: str) -> list[dict[str, Any]]:
             "label": r.label,
             "allowed_origins": r.allowed_origins,
             "created_at": r.created_at,
+            "expires_at": r.expires_at,  # K3: expose expiration
+            "superseded_by": r.superseded_by,  # K3: show if rotated
+            "is_expired": r.is_expired(),  # K3: computed flag
         }
         for r in keys
     ]
@@ -188,6 +218,108 @@ def revoke_api_key(bot_id: str, key_id: str) -> bool:
         return True
 
     return False
+
+
+def rotate_api_key(
+    bot_id: str,
+    old_key_id: str,
+    grace_period_hours: int = 24,
+) -> tuple[str, str] | None:
+    """Rotate an API key (K3).
+
+    Creates a new key and marks the old one to expire after grace period.
+    During grace period, both keys are valid.
+
+    Args:
+        bot_id: Bot ID
+        old_key_id: Key ID to rotate
+        grace_period_hours: Hours before old key expires (default 24)
+
+    Returns:
+        (new_raw_key, new_key_id) or None if old key not found
+    """
+    from datetime import datetime, timezone, timedelta
+
+    keys = _load_keys(bot_id)
+
+    # Find old key
+    old_key = None
+    for k in keys:
+        if k.key_id == old_key_id:
+            old_key = k
+            break
+
+    if not old_key:
+        return None
+
+    # Generate new key (inherit label and origins)
+    new_raw_key, new_key_id = generate_api_key(
+        bot_id=bot_id,
+        label=old_key.label,
+        allowed_origins=old_key.allowed_origins,
+    )
+
+    # Mark old key as expiring
+    expires_at = datetime.now(timezone.utc) + timedelta(hours=grace_period_hours)
+    old_key.expires_at = expires_at.isoformat()
+    old_key.superseded_by = new_key_id
+
+    # Save updated old key
+    keys = _load_keys(bot_id)  # Reload to include new key
+    for k in keys:
+        if k.key_id == old_key_id:
+            k.expires_at = old_key.expires_at
+            k.superseded_by = old_key.superseded_by
+            break
+
+    _save_keys(bot_id, keys)
+
+    logger.info(
+        "Rotated API key %s for bot %s → new key %s (old expires in %dh)",
+        old_key_id,
+        bot_id,
+        new_key_id,
+        grace_period_hours,
+    )
+
+    return new_raw_key, new_key_id
+
+
+def cleanup_expired_keys(bot_id: str | None = None) -> int:
+    """Remove expired API keys (K3).
+
+    Args:
+        bot_id: If specified, only clean keys for this bot.
+                If None, clean all bots.
+
+    Returns:
+        Number of keys deleted
+    """
+    deleted_count = 0
+
+    if bot_id:
+        bot_ids = [bot_id]
+    else:
+        # Clean all bots
+        bots_dir = get_bots_dir()
+        if not bots_dir.exists():
+            return 0
+        bot_ids = [d.name for d in bots_dir.iterdir() if d.is_dir()]
+
+    for bid in bot_ids:
+        keys = _load_keys(bid)
+        initial_count = len(keys)
+
+        # Filter out expired keys
+        keys = [k for k in keys if not k.is_expired()]
+
+        deleted = initial_count - len(keys)
+        if deleted > 0:
+            _save_keys(bid, keys)
+            logger.info("Cleaned up %d expired keys for bot %s", deleted, bid)
+            deleted_count += deleted
+
+    return deleted_count
 
 
 def check_origin(record: APIKeyRecord, origin: str | None) -> bool:

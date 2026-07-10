@@ -32,6 +32,7 @@ crawler = [
 dev = [
     "pytest>=7.0",
     "pytest-asyncio>=0.21",
+    "pytest-cov>=4.1",
     "ruff>=0.1",
 ]
 
@@ -45,4 +46,13 @@ include = ["loko*"]
 asyncio_mode = "auto"
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+]
+
+# C2: Coverage measurement (PLAN_AMELIORATION_COMPLET_LOKO_2026-07-10.md)
+# Note: No --cov-fail-under in first iteration, just measure
+addopts = [
+    "--cov=loko",
+    "--cov-report=term-missing",
+    "--cov-report=html:htmlcov",
+    "--cov-report=xml:coverage.xml",
 ]

@@ -7,16 +7,19 @@ import { BotDashboard } from "@/pages/bot/BotDashboard";
 import { LoginPage } from "@/pages/LoginPage";
 import { SignupPage } from "@/pages/auth/SignupPage";
 import { ResetPasswordPage } from "@/pages/auth/ResetPasswordPage";
+import { VerifyEmailPage } from "@/pages/auth/VerifyEmailPage";
 import { LandingPage } from "@/pages/public/LandingPage";
 import { LegalPage } from "@/pages/public/LegalPage";
 import { useAuth } from "@/hooks/useAuth";
+import ErrorBoundary from "@/components/ErrorBoundary";
+import PageErrorBoundary from "@/components/PageErrorBoundary";
 
 /** F3: redirect to /login?next={current_path} for protected routes. */
 function RequireAuth() {
   const location = useLocation();
   const path = location.pathname;
   // Public paths don't need redirect — just go to landing
-  if (path === "/" || path === "/login" || path === "/signup" || path === "/reset"
+  if (path === "/" || path === "/login" || path === "/signup" || path === "/verify" || path === "/reset"
       || path === "/cgu" || path === "/confidentialite" || path === "/mentions" || path === "/contact") {
     return <Navigate to="/" replace />;
   }
@@ -37,34 +40,39 @@ export default function App() {
   // Public routes (accessible without auth)
   if (!authenticated) {
     return (
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/login" element={<LoginPage onLogin={login} />} />
-        <Route path="/signup" element={<SignupPage />} />
-        <Route path="/reset" element={<ResetPasswordPage />} />
-        <Route path="/cgu" element={<LegalPage page="cgu" />} />
-        <Route path="/confidentialite" element={<LegalPage page="confidentialite" />} />
-        <Route path="/mentions" element={<LegalPage page="mentions" />} />
-        <Route path="/contact" element={<LegalPage page="contact" />} />
-        <Route path="*" element={<RequireAuth />} />
-      </Routes>
+      <ErrorBoundary name="Public Routes">
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/login" element={<PageErrorBoundary name="Login"><LoginPage onLogin={login} /></PageErrorBoundary>} />
+          <Route path="/signup" element={<PageErrorBoundary name="Signup"><SignupPage /></PageErrorBoundary>} />
+          <Route path="/verify" element={<PageErrorBoundary name="VerifyEmail"><VerifyEmailPage /></PageErrorBoundary>} />
+          <Route path="/reset" element={<PageErrorBoundary name="ResetPassword"><ResetPasswordPage /></PageErrorBoundary>} />
+          <Route path="/cgu" element={<LegalPage page="cgu" />} />
+          <Route path="/confidentialite" element={<LegalPage page="confidentialite" />} />
+          <Route path="/mentions" element={<LegalPage page="mentions" />} />
+          <Route path="/contact" element={<LegalPage page="contact" />} />
+          <Route path="*" element={<RequireAuth />} />
+        </Routes>
+      </ErrorBoundary>
     );
   }
 
   // Authenticated routes
   return (
-    <div className="flex h-screen bg-surface-page text-loko-primary">
-      <Sidebar onLogout={logout} />
-      <main className="flex-1 overflow-hidden">
-        <Routes>
-          <Route path="/bot" element={<BotList />} />
-          <Route path="/bot/:id/wizard" element={<BotWizard />} />
-          <Route path="/bot/:id/wizard/:step" element={<BotWizard />} />
-          <Route path="/bot/:id/playground" element={<BotPlayground />} />
-          <Route path="/bot/:id/dashboard" element={<BotDashboard />} />
-          <Route path="*" element={<Navigate to="/bot" replace />} />
-        </Routes>
-      </main>
-    </div>
+    <ErrorBoundary name="App Root">
+      <div className="flex h-screen bg-surface-page text-loko-primary">
+        <Sidebar onLogout={logout} />
+        <main className="flex-1 overflow-hidden">
+          <Routes>
+            <Route path="/bot" element={<PageErrorBoundary name="BotList"><BotList /></PageErrorBoundary>} />
+            <Route path="/bot/:id/wizard" element={<PageErrorBoundary name="BotWizard"><BotWizard /></PageErrorBoundary>} />
+            <Route path="/bot/:id/wizard/:step" element={<PageErrorBoundary name="BotWizard"><BotWizard /></PageErrorBoundary>} />
+            <Route path="/bot/:id/playground" element={<PageErrorBoundary name="BotPlayground"><BotPlayground /></PageErrorBoundary>} />
+            <Route path="/bot/:id/dashboard" element={<PageErrorBoundary name="BotDashboard"><BotDashboard /></PageErrorBoundary>} />
+            <Route path="*" element={<Navigate to="/bot" replace />} />
+          </Routes>
+        </main>
+      </div>
+    </ErrorBoundary>
   );
 }
