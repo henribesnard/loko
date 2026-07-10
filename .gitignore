@@ -54,11 +54,9 @@ loko-handoff/
 
 # desktop/package-lock.json — tracked for reproducible Docker builds (npm ci)
 
-# Client dataset (sensitive, not tracked — only eval/datasets/ frozen sets)
+# Client datasets (not tracked)
 dataset.csv
-
-# Campaign artifacts (archived outside git)
-eval/campagne-*/
+*.dataset.csv
 
 # Training checkpoints (regenerable)
 checkpoints/
