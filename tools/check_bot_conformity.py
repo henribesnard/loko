@@ -5,7 +5,7 @@ Verifies that a bot config meets the postulat requirements BEFORE V2:
   - 9 intentions (7 métier + hors_perimetre + demande_conseiller)
   - ≥ 8 examples per non-system intent
   - hors_perimetre and demande_conseiller marked is_system=true
-  - L2 services_en_ligne declared with ≥ 5 sub-motif labels
+  - L2 help_account declared with ≥ 5 sub-motif labels
   - Each sub-motif has ≥ 3 examples
 
 Produces a machine-readable JSON conformity report (CE-9 artifact).
@@ -29,9 +29,9 @@ from pathlib import Path
 
 REQUIRED_INTENTS = {
     "hors_perimetre", "demande_conseiller",
-    "arret_travail", "changement_coordonnees", "cotisations",
-    "justificatif_droits", "resiliation", "services_en_ligne",
-    "teletransmission_noemie",
+    "help_leave", "help_contact", "help_billing",
+    "help_documents", "help_cancellation", "help_account",
+    "help_transfer",
 }
 
 SYSTEM_INTENTS = {"hors_perimetre", "demande_conseiller"}
@@ -123,15 +123,15 @@ def check_conformity(config: dict) -> dict:
             if not is_marked:
                 report["errors"].append(f"Intent '{sys_id}' not marked is_system=true")
 
-    # ── Check 4: L2 services_en_ligne ≥ 5 labels ──
-    sel = next((i for i in intents if i["id"] == "services_en_ligne"), None)
+    # ── Check 4: L2 help_account ≥ 5 labels ──
+    sel = next((i for i in intents if i["id"] == "help_account"), None)
     if sel:
         subs = sel.get("sub_motifs", [])
         sub_ids = [s["id"] for s in subs]
 
         check_l2 = {
             "id": "CE-9.4",
-            "name": "L2 services_en_ligne",
+            "name": "L2 help_account",
             "pass": len(subs) >= MIN_L2_LABELS,
             "detail": {
                 "n_labels": len(subs),
@@ -142,7 +142,7 @@ def check_conformity(config: dict) -> dict:
         report["checks"].append(check_l2)
         if not check_l2["pass"]:
             report["errors"].append(
-                f"services_en_ligne L2 has {len(subs)} labels (need ≥ {MIN_L2_LABELS})"
+                f"help_account L2 has {len(subs)} labels (need ≥ {MIN_L2_LABELS})"
             )
 
         # ── Check 5: Each sub-motif has ≥ 3 examples ──
@@ -162,11 +162,11 @@ def check_conformity(config: dict) -> dict:
     else:
         report["checks"].append({
             "id": "CE-9.4",
-            "name": "L2 services_en_ligne",
+            "name": "L2 help_account",
             "pass": False,
             "detail": {"error": "intent not found"},
         })
-        report["errors"].append("services_en_ligne intent not found")
+        report["errors"].append("help_account intent not found")
 
     # ── Final verdict ──
     all_pass = all(c["pass"] for c in report["checks"])

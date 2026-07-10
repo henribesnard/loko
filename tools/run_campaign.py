@@ -149,7 +149,7 @@ def build_protocol_lines() -> list[TestLine]:
 
         # ── V2: Training R1.a (G-2) ──
         TestLine("V2-1", "Training time <= 300s", "G-2", "V2"),
-        TestLine("V2-2", "L2 coverage (services_en_ligne 5 labels)", "G-2", "V2"),
+        TestLine("V2-2", "L2 coverage (help_account 5 labels)", "G-2", "V2"),
         TestLine("V2-3", "Atomicity (train -> publish -> restart -> identical)", "G-2", "V2"),
         TestLine("V2-4", "Improvement cycle: pair detected + re-train", "G-2", "V2"),
         TestLine("V2-5", "Improvement cycle: verify pair resolved", "G-2", "V2"),
@@ -409,7 +409,7 @@ def exec_ce9(line: TestLine, campaign_dir: Path, **ctx: Any) -> None:
     Verifies:
     - 9 intentions (7 metier + hors_perimetre + demande_conseiller)
     - >= 8 examples per intent
-    - L2 services_en_ligne declared with 5 labels
+    - L2 help_account declared with 5 labels
     """
     bot_dir = ctx.get("bot_dir")
     if not bot_dir:
@@ -436,9 +436,9 @@ def exec_ce9(line: TestLine, campaign_dir: Path, **ctx: Any) -> None:
     # Check 9 intents
     required_intents = {
         "hors_perimetre", "demande_conseiller",
-        "arret_travail", "changement_coordonnees", "cotisations",
-        "justificatif_droits", "resiliation", "services_en_ligne",
-        "teletransmission_noemie",
+        "help_leave", "help_contact", "help_billing",
+        "help_documents", "help_cancellation", "help_account",
+        "help_transfer",
     }
     missing_intents = required_intents - intent_ids
     if missing_intents:
@@ -464,22 +464,22 @@ def exec_ce9(line: TestLine, campaign_dir: Path, **ctx: Any) -> None:
             "detail": f"{n_ex} examples" + (" (system)" if is_sys else ""),
         })
 
-    # Check L2 services_en_ligne
-    sel_intent = next((i for i in intents if i["id"] == "services_en_ligne"), None)
+    # Check L2 help_account
+    sel_intent = next((i for i in intents if i["id"] == "help_account"), None)
     if sel_intent:
         sub_motifs = sel_intent.get("sub_motifs", [])
         n_labels = len(sub_motifs)
         conformity["checks"].append({
-            "check": "l2_services_en_ligne",
+            "check": "l2_help_account",
             "pass": n_labels >= 5,
             "detail": f"{n_labels} sub-motifs: {[s['id'] for s in sub_motifs]}",
         })
         if n_labels < 5:
-            errors.append(f"services_en_ligne L2 has {n_labels} labels (need >= 5)")
+            errors.append(f"help_account L2 has {n_labels} labels (need >= 5)")
     else:
-        errors.append("services_en_ligne intent not found")
+        errors.append("help_account intent not found")
         conformity["checks"].append({
-            "check": "l2_services_en_ligne",
+            "check": "l2_help_account",
             "pass": False,
             "detail": "intent not found",
         })
