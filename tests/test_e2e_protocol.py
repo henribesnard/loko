@@ -49,7 +49,7 @@ def load_mgen_intents() -> list[dict]:
 def app(tmp_path, monkeypatch):
     """Create a test FastAPI app with temp data dir."""
     monkeypatch.setenv("LOKO_DATA_DIR", str(tmp_path))
-    monkeypatch.setenv("RAGKIT_ENV", "test")
+    monkeypatch.setenv("LOKO_ENV", "test")
     monkeypatch.setenv("LOKO_ADMIN_TOKEN", "e2e-admin-token-xyz")
 
     from loko.api.bot_public import clear_orchestrators

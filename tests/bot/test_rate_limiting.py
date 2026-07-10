@@ -41,7 +41,7 @@ def test_composite_key_same_key_same_identity():
 
 def test_require_limiter_in_server_mode_raises(monkeypatch):
     """In server mode without slowapi, startup must fail."""
-    monkeypatch.setenv("RAGKIT_MODE", "server")
+    monkeypatch.setenv("LOKO_MODE", "server")
     # Simulate slowapi not importable
     import sys
     saved = sys.modules.get("slowapi")
@@ -59,7 +59,7 @@ def test_require_limiter_in_server_mode_raises(monkeypatch):
 
 def test_require_limiter_desktop_mode_ok(monkeypatch):
     """In desktop mode, missing slowapi is not fatal."""
-    monkeypatch.setenv("RAGKIT_MODE", "desktop")
+    monkeypatch.setenv("LOKO_MODE", "desktop")
     from loko.api.rate_limit import require_limiter_in_server_mode
     # Should not raise
     require_limiter_in_server_mode()

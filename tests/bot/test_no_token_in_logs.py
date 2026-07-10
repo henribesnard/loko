@@ -29,7 +29,7 @@ def test_signup_no_token_in_logs(caplog):
     import asyncio
 
     # Set up env — no debug tokens
-    env = {"RAGKIT_MODE": "desktop"}
+    env = {"LOKO_MODE": "desktop"}
     with mock.patch.dict(os.environ, env, clear=False):
         os.environ.pop("LOKO_AUTH_DEBUG_TOKENS", None)
 

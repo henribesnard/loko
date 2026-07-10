@@ -23,7 +23,7 @@ from loko.bot.session_store import get_bot_dir
 @pytest.fixture
 def app(tmp_path, monkeypatch):
     monkeypatch.setenv("LOKO_DATA_DIR", str(tmp_path))
-    monkeypatch.setenv("RAGKIT_ENV", "test")
+    monkeypatch.setenv("LOKO_ENV", "test")
     monkeypatch.setenv("LOKO_ADMIN_TOKEN", "test-admin-token-12345")
 
     from loko.api.bot_admin import _TRAINING_STATE

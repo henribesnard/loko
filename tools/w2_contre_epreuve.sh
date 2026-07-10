@@ -53,7 +53,7 @@ ADMIN_TOKEN=$(openssl rand -hex 24)
 docker run -d \
   --name ${CONTAINER} \
   -e LOKO_ADMIN_TOKEN="${ADMIN_TOKEN}" \
-  -e RAGKIT_MODE=server \
+  -e LOKO_MODE=server \
   -e LOKO_DATA_DIR=/data \
   -v ${VOLUME}:/data \
   -p 127.0.0.1:${PORT}:8000 \

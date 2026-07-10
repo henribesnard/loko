@@ -64,7 +64,7 @@ Le fichier `/opt/loko/.env` sur le VPS contient :
 
 ```env
 LOKO_ADMIN_TOKEN=<valeur de loko_Admin_token du .env local>
-RAGKIT_CORS_ORIGINS=https://loko.wezon.fr
+LOKO_CORS_ORIGINS=https://loko.wezon.fr
 ```
 
 Pour modifier le token : mettre a jour les deux `.env` (local et VPS) puis `docker compose up -d`.

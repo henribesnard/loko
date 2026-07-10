@@ -117,9 +117,10 @@ def _get_admin_token() -> str | None:
     return os.environ.get("LOKO_ADMIN_TOKEN")
 
 
-def _get_ragkit_mode() -> str:
-    """Read RAGKIT_MODE from environment (default: desktop)."""
-    return os.environ.get("RAGKIT_MODE", "desktop")
+def _get_mode() -> str:
+    """Read LOKO_MODE from environment (default: desktop)."""
+    from loko.config.env import get_env
+    return get_env("MODE", "desktop")
 
 
 async def require_admin(request: Request) -> None:
@@ -129,7 +130,7 @@ async def require_admin(request: Request) -> None:
     In desktop mode: token is optional (Tauri passes ephemeral token).
     """
     admin_token = _get_admin_token()
-    mode = _get_ragkit_mode()
+    mode = _get_mode()
 
     # In server mode, admin token is mandatory
     if mode == "server" and not admin_token:

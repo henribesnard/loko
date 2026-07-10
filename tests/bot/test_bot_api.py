@@ -14,7 +14,7 @@ from loko.bot.models import BotConfig, Intent
 def app(tmp_path, monkeypatch):
     """Create a test FastAPI app with temp data dir."""
     monkeypatch.setenv("LOKO_DATA_DIR", str(tmp_path))
-    monkeypatch.setenv("RAGKIT_ENV", "test")
+    monkeypatch.setenv("LOKO_ENV", "test")
     # Set admin token for test admin access
     monkeypatch.setenv("LOKO_ADMIN_TOKEN", "test-admin-token-12345")
 

@@ -72,12 +72,13 @@ def get_limiter():
 
 
 def require_limiter_in_server_mode() -> None:
-    """In RAGKIT_MODE=server, refuse to start without slowapi (fail-closed).
+    """In LOKO_MODE=server, refuse to start without slowapi (fail-closed).
 
     Call this during app startup. In desktop mode, missing slowapi is
     a warning only.
     """
-    mode = os.environ.get("RAGKIT_MODE", "desktop")
+    from loko.config.env import get_env
+    mode = get_env("MODE", "desktop")
     if mode != "server":
         return
 
@@ -85,6 +86,6 @@ def require_limiter_in_server_mode() -> None:
         import slowapi  # noqa: F401
     except ImportError:
         raise RuntimeError(
-            "RAGKIT_MODE=server requires slowapi for rate limiting. "
+            "LOKO_MODE=server requires slowapi for rate limiting. "
             "Install it with: pip install slowapi"
         ) from None

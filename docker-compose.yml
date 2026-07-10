@@ -7,9 +7,9 @@ services:
       - loko-data:/root/.loko
     environment:
       - PYTHONUNBUFFERED=1
-      - RAGKIT_MODE=server
+      - LOKO_MODE=server
       - LOKO_ADMIN_TOKEN=${LOKO_ADMIN_TOKEN:?Set LOKO_ADMIN_TOKEN in .env}
-      - RAGKIT_CORS_ORIGINS=${RAGKIT_CORS_ORIGINS:-}
+      - LOKO_CORS_ORIGINS=${LOKO_CORS_ORIGINS:-}
       - LOKO_SESSION_RETENTION_DAYS=${LOKO_SESSION_RETENTION_DAYS:-30}
       # Rate limiting (R1) — values are slowapi rate strings
       - LOKO_RATE_SESSIONS=${LOKO_RATE_SESSIONS:-10/minute}

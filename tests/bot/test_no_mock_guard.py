@@ -1,6 +1,6 @@
 """Tests for R2-a / C7 — Anti-mock guards.
 
-Mock classes must raise RuntimeError when RAGKIT_ENV != 'test'.
+Mock classes must raise RuntimeError when LOKO_ENV != 'test'.
 All mocks are imported from loko.testing.mocks (C7).
 """
 
@@ -10,7 +10,7 @@ import pytest
 
 
 def test_mock_llm_provider_blocked_outside_test(monkeypatch):
-    monkeypatch.delenv("RAGKIT_ENV", raising=False)
+    monkeypatch.delenv("LOKO_ENV", raising=False)
     from loko.testing.mocks import MockLLMProvider
 
     with pytest.raises(RuntimeError, match="MockLLMProvider"):
@@ -18,7 +18,7 @@ def test_mock_llm_provider_blocked_outside_test(monkeypatch):
 
 
 def test_mock_llm_provider_allowed_in_test(monkeypatch):
-    monkeypatch.setenv("RAGKIT_ENV", "test")
+    monkeypatch.setenv("LOKO_ENV", "test")
     from loko.testing.mocks import MockLLMProvider
 
     provider = MockLLMProvider(response="ok")
@@ -26,7 +26,7 @@ def test_mock_llm_provider_allowed_in_test(monkeypatch):
 
 
 def test_in_memory_backend_blocked_outside_test(monkeypatch):
-    monkeypatch.delenv("RAGKIT_ENV", raising=False)
+    monkeypatch.delenv("LOKO_ENV", raising=False)
     from loko.testing.mocks import InMemorySearchBackend
 
     with pytest.raises(RuntimeError, match="InMemorySearchBackend"):
@@ -34,7 +34,7 @@ def test_in_memory_backend_blocked_outside_test(monkeypatch):
 
 
 def test_in_memory_backend_allowed_in_test(monkeypatch):
-    monkeypatch.setenv("RAGKIT_ENV", "test")
+    monkeypatch.setenv("LOKO_ENV", "test")
     from loko.testing.mocks import InMemorySearchBackend
 
     backend = InMemorySearchBackend()
@@ -42,7 +42,7 @@ def test_in_memory_backend_allowed_in_test(monkeypatch):
 
 
 def test_mock_escalation_blocked_outside_test(monkeypatch):
-    monkeypatch.delenv("RAGKIT_ENV", raising=False)
+    monkeypatch.delenv("LOKO_ENV", raising=False)
     monkeypatch.delenv("LOKO_ESCALATION_PROVIDER", raising=False)
     from loko.testing.mocks import MockEscalationProvider
 
@@ -51,7 +51,7 @@ def test_mock_escalation_blocked_outside_test(monkeypatch):
 
 
 def test_mock_escalation_allowed_in_test(monkeypatch):
-    monkeypatch.setenv("RAGKIT_ENV", "test")
+    monkeypatch.setenv("LOKO_ENV", "test")
     from loko.testing.mocks import MockEscalationProvider
 
     provider = MockEscalationProvider()
@@ -59,7 +59,7 @@ def test_mock_escalation_allowed_in_test(monkeypatch):
 
 
 def test_mock_escalation_allowed_with_explicit_provider(monkeypatch):
-    monkeypatch.delenv("RAGKIT_ENV", raising=False)
+    monkeypatch.delenv("LOKO_ENV", raising=False)
     monkeypatch.setenv("LOKO_ESCALATION_PROVIDER", "mock")
     from loko.testing.mocks import MockEscalationProvider
 
@@ -68,7 +68,7 @@ def test_mock_escalation_allowed_with_explicit_provider(monkeypatch):
 
 
 def test_mock_classifier_blocked_outside_test(monkeypatch):
-    monkeypatch.delenv("RAGKIT_ENV", raising=False)
+    monkeypatch.delenv("LOKO_ENV", raising=False)
     from loko.testing.mocks import _MockClassifier
 
     with pytest.raises(RuntimeError, match="_MockClassifier"):
@@ -76,7 +76,7 @@ def test_mock_classifier_blocked_outside_test(monkeypatch):
 
 
 def test_mock_classifier_allowed_in_test(monkeypatch):
-    monkeypatch.setenv("RAGKIT_ENV", "test")
+    monkeypatch.setenv("LOKO_ENV", "test")
     from loko.testing.mocks import _MockClassifier
 
     clf = _MockClassifier()

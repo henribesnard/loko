@@ -39,7 +39,8 @@ class CSRFMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next) -> Response:
         # Only enforce in server mode
-        if os.environ.get("RAGKIT_MODE", "desktop") != "server":
+        from loko.config.env import get_env
+        if get_env("MODE", "desktop") != "server":
             return await call_next(request)
 
         # Safe methods and exempt paths skip CSRF

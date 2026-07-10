@@ -68,13 +68,13 @@ VOLUME /root/.loko
 #   HF_HUB_OFFLINE=1 — block all Hugging Face hub network access
 #   TRANSFORMERS_OFFLINE=1 — block transformers library network access
 # Server:
-#   RAGKIT_MODE=server — enables server mode (requires LOKO_ADMIN_TOKEN)
-#   RAGKIT_CORS_ORIGINS — comma-separated list of allowed CORS origins
+#   LOKO_MODE=server — enables server mode (requires LOKO_ADMIN_TOKEN)
+#   LOKO_CORS_ORIGINS — comma-separated list of allowed CORS origins
 #   LOKO_SESSION_RETENTION_DAYS=30 — session data retention (RGPD)
 #   LOKO_DATA_DIR — custom data directory (default: ~/.loko)
 #   LOKO_ESCALATION_PROVIDER — set to "mock" to allow MockEscalationProvider
 
-ENV RAGKIT_MODE=server
+ENV LOKO_MODE=server
 ENV LOKO_ML=on
 ENV LOKO_BASE_MODEL_PATH=/app/models/base/minilm
 ENV HF_HUB_OFFLINE=1

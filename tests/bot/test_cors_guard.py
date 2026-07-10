@@ -20,10 +20,10 @@ def _fresh_create_app():
 
 
 def test_cors_wildcard_server_mode_refused():
-    """Boot in server mode with RAGKIT_CORS_ORIGINS='*' must raise RuntimeError."""
+    """Boot in server mode with LOKO_CORS_ORIGINS='*' must raise RuntimeError."""
     env = {
-        "RAGKIT_MODE": "server",
-        "RAGKIT_CORS_ORIGINS": "*",
+        "LOKO_MODE": "server",
+        "LOKO_CORS_ORIGINS": "*",
         "LOKO_ADMIN_TOKEN": "test-token",
     }
     with mock.patch.dict(os.environ, env, clear=False):
@@ -33,10 +33,10 @@ def test_cors_wildcard_server_mode_refused():
 
 def test_cors_explicit_origins_desktop_mode_ok():
     """Boot in desktop mode with default origins must succeed (no CORS guard)."""
-    env = {"RAGKIT_MODE": "desktop"}
+    env = {"LOKO_MODE": "desktop"}
     with mock.patch.dict(os.environ, env, clear=False):
-        # Remove RAGKIT_CORS_ORIGINS to use defaults
-        os.environ.pop("RAGKIT_CORS_ORIGINS", None)
+        # Remove LOKO_CORS_ORIGINS to use defaults
+        os.environ.pop("LOKO_CORS_ORIGINS", None)
         create_app = _fresh_create_app()
         app = create_app()
         assert app is not None

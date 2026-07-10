@@ -184,18 +184,19 @@ def create_app() -> FastAPI:
     )
 
     # --- CORS (P0-3 + H2: credentials guard) ---
-    cors_env = os.environ.get("RAGKIT_CORS_ORIGINS", "")
+    from loko.config.env import get_env
+    cors_env = get_env("CORS_ORIGINS", "")
     if cors_env:
         origins = [o.strip() for o in cors_env.split(",") if o.strip()]
     else:
         origins = _DEFAULT_CORS_ORIGINS
 
     # H2: fail-closed — refuse to boot if credentials + wildcard origin
-    mode = os.environ.get("RAGKIT_MODE", "desktop")
+    mode = get_env("MODE", "desktop")
     if mode == "server" and ("*" in origins or not origins):
         raise RuntimeError(
             "CORS misconfiguration: allow_credentials=True requires an explicit "
-            "origin list (RAGKIT_CORS_ORIGINS). Wildcard '*' or empty origins "
+            "origin list (LOKO_CORS_ORIGINS). Wildcard '*' or empty origins "
             "are not allowed in server mode with credentials."
         )
 

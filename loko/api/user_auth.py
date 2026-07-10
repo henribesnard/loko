@@ -213,7 +213,8 @@ async def signup(req: SignupRequest, request: Request) -> dict[str, Any]:
         "message": "Compte cree. Verifiez votre email.",
     }
     # S1: debug mode only — never in production
-    if os.environ.get("LOKO_AUTH_DEBUG_TOKENS") == "on" and os.environ.get("RAGKIT_ENV") != "production":
+    from loko.config.env import get_env
+    if os.environ.get("LOKO_AUTH_DEBUG_TOKENS") == "on" and get_env("ENV") != "production":
         result["_debug_verify_token"] = token
         result["user_id"] = user["id"]
         result["account_id"] = account["id"]
@@ -243,6 +244,13 @@ async def login(req: LoginRequest, request: Request, response: Response) -> dict
     account = get_account(user["account_id"])
     if account and account.get("status") == "suspended":
         raise HTTPException(403, "Compte suspendu. Contactez le support.")
+
+    # ACC-4: email verification is mandatory before any session is issued
+    if user.get("email_verified_at") is None:
+        raise HTTPException(
+            status_code=403,
+            detail="Email non verifie. Verifiez votre boite mail ou demandez un nouveau lien.",
+        )
 
     # Create session
     session_id = create_session(user["id"])
@@ -330,6 +338,29 @@ async def verify_email(req: VerifyEmailRequest) -> dict[str, str]:
     update_user(data["user_id"], email_verified_at=datetime.now(timezone.utc).isoformat())
 
     return {"status": "ok", "message": "Email verifie."}
+
+
+class ResendVerificationRequest(BaseModel):
+    email: str
+
+
+@router.post("/resend-verification")
+async def resend_verification(req: ResendVerificationRequest, request: Request) -> dict[str, str]:
+    """ACC-4: resend verification email. Anti-enumeration: always same response."""
+    ip = request.client.host if request.client else "unknown"
+    _check_rate_limit(ip)
+
+    email = req.email.strip().lower()
+    user = get_user_by_email(email)
+
+    if user and user.get("email_verified_at") is None:
+        token = create_email_token(user["id"], "verify")
+        logger.info("Resend verification: user=%s verify_token created", user["id"])
+        from loko.email import send_verification_email
+        send_verification_email(email, token)
+
+    # Anti-enumeration: identical response whether user exists, is verified, or not
+    return {"status": "ok", "message": "Si un compte non verifie existe avec cet email, un nouveau lien a ete envoye."}
 
 
 @router.post("/request-reset")

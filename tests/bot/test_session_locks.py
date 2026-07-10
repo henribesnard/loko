@@ -9,7 +9,7 @@ import pytest
 
 def test_purge_removes_orphan_locks(monkeypatch):
     """Locks for sessions not in the active set are removed."""
-    monkeypatch.setenv("RAGKIT_ENV", "test")
+    monkeypatch.setenv("LOKO_ENV", "test")
 
     from loko.api.bot_public import _SESSION_LOCKS, purge_session_locks
 
@@ -31,7 +31,7 @@ def test_purge_removes_orphan_locks(monkeypatch):
 
 def test_purge_keeps_locked_entries(monkeypatch):
     """Locks that are currently held must not be removed."""
-    monkeypatch.setenv("RAGKIT_ENV", "test")
+    monkeypatch.setenv("LOKO_ENV", "test")
 
     from loko.api.bot_public import _SESSION_LOCKS, purge_session_locks
 
@@ -52,7 +52,7 @@ def test_purge_keeps_locked_entries(monkeypatch):
 
 def test_purge_respects_max_size(monkeypatch):
     """When over the max limit, unlocked entries are evicted."""
-    monkeypatch.setenv("RAGKIT_ENV", "test")
+    monkeypatch.setenv("LOKO_ENV", "test")
 
     import loko.api.bot_public as bp
 

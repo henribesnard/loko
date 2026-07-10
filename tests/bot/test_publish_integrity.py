@@ -15,7 +15,7 @@ from loko.bot.models import BotConfig, Intent
 @pytest.fixture
 def app(tmp_path, monkeypatch):
     monkeypatch.setenv("LOKO_DATA_DIR", str(tmp_path))
-    monkeypatch.setenv("RAGKIT_ENV", "test")
+    monkeypatch.setenv("LOKO_ENV", "test")
     monkeypatch.setenv("LOKO_ADMIN_TOKEN", "test-admin-token")
     from loko.api.bot_public import clear_orchestrators
     clear_orchestrators()

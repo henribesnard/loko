@@ -1,6 +1,6 @@
 """LOKO — Mock providers for testing (C7).
 
-All 4 mock classes are centralized here.  Each class has an RAGKIT_ENV
+All 4 mock classes are centralized here.  Each class has a LOKO_ENV
 guard that raises RuntimeError outside test mode (defense in depth).
 
 Production code (loko/ excluding loko/testing/) MUST NOT import this
@@ -19,7 +19,8 @@ logger = logging.getLogger(__name__)
 
 def _check_test_env(class_name: str) -> None:
     """Guard: raise RuntimeError if not in test environment."""
-    is_test = os.environ.get("RAGKIT_ENV") == "test"
+    from loko.config.env import get_env
+    is_test = get_env("ENV") == "test"
     is_explicit_mock = os.environ.get("LOKO_ESCALATION_PROVIDER") == "mock"
     # MockEscalationProvider is the only one allowed with explicit LOKO_ESCALATION_PROVIDER=mock
     if class_name == "MockEscalationProvider" and (is_test or is_explicit_mock):
@@ -28,14 +29,14 @@ def _check_test_env(class_name: str) -> None:
         return
     raise RuntimeError(
         f"{class_name} cannot be used outside test environment. "
-        f"Set RAGKIT_ENV=test or configure a real provider."
+        f"Set LOKO_ENV=test or configure a real provider."
     )
 
 
 class _MockClassifier:
     """Fallback classifier when no model is trained.
 
-    Guard (R2-a): raises RuntimeError outside RAGKIT_ENV=test.
+    Guard (R2-a): raises RuntimeError outside LOKO_ENV=test.
     """
 
     def __init__(self) -> None:
@@ -51,7 +52,7 @@ class _MockClassifier:
 class MockLLMProvider:
     """Mock LLM provider that returns a fixed response token by token.
 
-    Guard (R2-a): raises RuntimeError outside RAGKIT_ENV=test.
+    Guard (R2-a): raises RuntimeError outside LOKO_ENV=test.
     """
 
     def __init__(self, response: str = ""):
@@ -77,7 +78,7 @@ class MockLLMProvider:
 class InMemorySearchBackend:
     """Simple in-memory search backend for testing.
 
-    Guard (R2-a): raises RuntimeError outside RAGKIT_ENV=test.
+    Guard (R2-a): raises RuntimeError outside LOKO_ENV=test.
     """
 
     def __init__(self, chunks: list[Any] | None = None):
@@ -148,7 +149,7 @@ class MockEscalationProvider:
 
     Returns a configurable estimated wait time and logs the payload.
 
-    Guard (A3/GNG-10): raises RuntimeError outside RAGKIT_ENV=test.
+    Guard (A3/GNG-10): raises RuntimeError outside LOKO_ENV=test.
     Exception: allowed when LOKO_ESCALATION_PROVIDER=mock is explicitly set.
     """
 
