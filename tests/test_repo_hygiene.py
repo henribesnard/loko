@@ -152,17 +152,7 @@ def test_openapi_version():
 
 
 # ---------------------------------------------------------------------------
-# V2 — eval/datasets/ integrity
+# V2 — eval/datasets/ integrity — REMOVED (MGEN-specific)
 # ---------------------------------------------------------------------------
-
-_EVAL_DIR = REPO_ROOT / "eval" / "datasets"
-
-
-@pytest.mark.skipif(not _EVAL_DIR.is_dir(), reason="eval/datasets/ not present")
-def test_eval_datasets_present():
-    """V2: eval/datasets/ must contain HASHES.sha256 and at least one CSV."""
-    hashes = _EVAL_DIR / "HASHES.sha256"
-    assert hashes.is_file(), "eval/datasets/HASHES.sha256 is missing"
-
-    csvs = list(_EVAL_DIR.glob("*.csv"))
-    assert len(csvs) >= 1, "eval/datasets/ must contain at least one CSV file"
+# The frozen datasets were specific to the MGEN case study and have been purged.
+# Generic evaluation tools remain in loko/eval/.
