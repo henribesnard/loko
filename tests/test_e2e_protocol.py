@@ -1,7 +1,7 @@
 """LOKO Bot — E2E Protocol Tests.
 
 Implements the test protocol from POSTULAT_TEST_E2E_LOKO.md phases P0-P9.
-Uses the MGEN Assistant configuration from tests/e2e_intents.json.
+Uses the demo assistant configuration from tests/e2e_intents.json.
 
 Covers:
 - P0: Bot creation (wizard step 1)
@@ -29,12 +29,12 @@ from loko.api.api_keys import generate_api_key
 from loko.bot.config_store import save_bot_config
 from loko.bot.models import BotConfig, Chunk, Intent, RetrievalResult, SubMotif
 
-# Load MGEN intents config
+# Load E2E test intents config
 E2E_INTENTS_FILE = Path(__file__).parent / "e2e_intents.json"
 
 
 def load_e2e_intents() -> list[dict]:
-    """Load the MGEN test intents from JSON."""
+    """Load the E2E test intents from JSON."""
     with open(E2E_INTENTS_FILE) as f:
         data = json.load(f)
     return data["intents"]
@@ -71,7 +71,7 @@ def admin_headers():
 
 @pytest.fixture
 def e2e_config(tmp_path, monkeypatch) -> BotConfig:
-    """Create the MGEN bot configuration as per the protocol."""
+    """Create the E2E test bot configuration."""
     monkeypatch.setenv("LOKO_DATA_DIR", str(tmp_path))
 
     raw_intents = load_e2e_intents()
@@ -107,7 +107,7 @@ def e2e_config(tmp_path, monkeypatch) -> BotConfig:
     ))
 
     config = BotConfig(
-        name="Assistant MGEN",
+        name="Demo Assistant",
         intents=intents,
         status="published",
         language="fr",
@@ -119,7 +119,7 @@ def e2e_config(tmp_path, monkeypatch) -> BotConfig:
 
 @pytest.fixture
 def api_key(e2e_config, tmp_path, monkeypatch) -> str:
-    """Generate an API key for the MGEN bot."""
+    """Generate an API key for the demo bot."""
     monkeypatch.setenv("LOKO_DATA_DIR", str(tmp_path))
     raw_key, _ = generate_api_key(
         e2e_config.bot_id,
@@ -145,7 +145,7 @@ class ControlledClassifier:
                  l2_responses: dict[str, list[tuple[str, float]]] | None = None):
         self._l1 = l1_responses or {}
         self._l2 = l2_responses or {}
-        self._default_l1 = [("hors_perimetre", 0.5)]
+        self._default_l1 = [("out_of_scope", 0.5)]
         self._calls: list[dict] = []
 
     def classify_l1(self, text: str) -> list[tuple[str, float]]:
@@ -169,13 +169,13 @@ class MockSuccessRetriever:
                     chunk_id="mock-1",
                     text=f"Reponse FAQ pour {intent}: {query}",
                     score=0.85,
-                    metadata={"source_url": "https://www.mgen.fr/aide-et-contact/"},
+                    metadata={"source_url": "https://example.com/help"},
                 ),
                 Chunk(
                     chunk_id="mock-2",
                     text=f"Information complementaire sur {intent}.",
                     score=0.72,
-                    metadata={"source_url": "https://www.mgen.fr/aide-et-contact/detail"},
+                    metadata={"source_url": "https://example.com/helpdetail"},
                 ),
             ],
             success=True,
@@ -198,7 +198,7 @@ def _register_controlled_orchestrator(
         classifier=classifier,
         retriever=MockSuccessRetriever(),
         generator=BotGenerator(MockLLMProvider(
-            response="[FAQ] Voici la reponse a votre question. Pour plus de details consultez https://www.mgen.fr/aide.",
+            response="[FAQ] Voici la reponse a votre question. Pour plus de details consultez https://example.com/help.",
         )),
         escalation=MockEscalationProvider(),
     )
@@ -241,13 +241,13 @@ class TestP0_BotCreation:
     """P0: Bot creation via admin API."""
 
     def test_create_demo_bot(self, client, admin_headers):
-        """P0: Create the 'Assistant MGEN' bot via wizard step 1."""
+        """P0: Create the 'Demo Assistant' bot via wizard step 1."""
         res = client.post("/api/bot/", json={
-            "name": "Assistant MGEN",
+            "name": "Demo Assistant",
         }, headers=admin_headers)
         assert res.status_code == 201
         data = res.json()
-        assert data["name"] == "Assistant MGEN"
+        assert data["name"] == "Demo Assistant"
         assert "bot_id" in data
         assert data["status"] == "draft"
 
@@ -278,7 +278,7 @@ class TestP1_Intents:
         # Try to update with insufficient examples (5 < min 8)
         res = client.put(f"/api/bot/{bot_id}", json={
             "intents": [{
-                "id": "resiliation",
+                "id": "help_cancellation",
                 "label": "Resiliation",
                 "definition": "Resiliation du contrat",
                 "examples": ["ex1", "ex2", "ex3", "ex4", "ex5"],
@@ -289,7 +289,7 @@ class TestP1_Intents:
         assert res.status_code in (422, 400)
 
     def test_e2e_config_has_9_intents(self, e2e_config):
-        """P1: MGEN config has 7 business + 2 system intents."""
+        """P1: E2E config has 7 business + 2 system intents."""
         assert len(e2e_config.intents) == 9
         system_intents = [i for i in e2e_config.intents if i.is_system]
         business_intents = [i for i in e2e_config.intents if not i.is_system]
@@ -297,13 +297,13 @@ class TestP1_Intents:
         assert len(business_intents) == 7
 
     def test_services_en_ligne_has_sub_motifs(self, e2e_config):
-        """P1: services_en_ligne has 5 sub-motifs."""
-        sel = next(i for i in e2e_config.intents if i.id == "services_en_ligne")
+        """P1: help_account has 5 sub-motifs."""
+        sel = next(i for i in e2e_config.intents if i.id == "help_account")
         assert len(sel.sub_motifs) == 5
         sub_ids = {sm.id for sm in sel.sub_motifs}
         assert sub_ids == {
-            "mot_de_passe_oublie", "identifiants_perdus",
-            "compte_bloque", "premiere_connexion", "probleme_technique",
+            "password_forgotten", "login_help",
+            "account_locked", "account_creation", "password_reset",
         }
 
     def test_all_intents_have_min_examples(self, e2e_config):
@@ -321,18 +321,18 @@ class TestP3_ConversationalPaths:
     """P3: Conversational paths through the state machine."""
 
     def test_T01_compte_bloque_direct(self, client, e2e_config, auth_headers):
-        """T01: 'je souhaiterais debloquer mon compte Ameli' → services_en_ligne/compte_bloque."""
+        """T01: unlock account → help_account/account_locked."""
         classifier = ControlledClassifier(
             l1_responses={
-                "je souhaiterais debloquer mon compte Ameli": [
-                    ("services_en_ligne", 0.92),
-                    ("hors_perimetre", 0.03),
+                "I would like to unlock my account": [
+                    ("help_account", 0.92),
+                    ("out_of_scope", 0.03),
                 ],
             },
             l2_responses={
-                "services_en_ligne:je souhaiterais debloquer mon compte Ameli": [
-                    ("compte_bloque", 0.88),
-                    ("probleme_technique", 0.05),
+                "services_en_ligne:I would like to unlock my account": [
+                    ("account_locked", 0.88),
+                    ("password_reset", 0.05),
                 ],
             },
         )
@@ -350,7 +350,7 @@ class TestP3_ConversationalPaths:
         with client.stream(
             "POST",
             f"/api/v1/bot/{e2e_config.bot_id}/sessions/{session_id}/messages",
-            json={"text": "je souhaiterais debloquer mon compte Ameli", "type": "text"},
+            json={"text": "I would like to unlock my account", "type": "text"},
             headers=auth_headers,
         ) as response:
             assert response.status_code == 200
@@ -366,25 +366,25 @@ class TestP3_ConversationalPaths:
         if template_events:
             last_template = template_events[-1]
             assert last_template["data"].get("template_key") in (
-                "enquete_satisfaction", "hors_perimetre", "mise_en_relation",
+                "enquete_satisfaction", "out_of_scope", "mise_en_relation",
             )
 
     def test_T03_clarification_intra(self, client, e2e_config, auth_headers):
-        """T03: 'acces a mon compte mutuelle MGEN' → services_en_ligne → clarification intra."""
+        """T03: account access → help_account → clarification intra."""
         classifier = ControlledClassifier(
             l1_responses={
-                "acces a mon compte mutuelle MGEN": [
-                    ("services_en_ligne", 0.90),
-                    ("hors_perimetre", 0.02),
+                "access to my account": [
+                    ("help_account", 0.90),
+                    ("out_of_scope", 0.02),
                 ],
             },
             l2_responses={
-                "services_en_ligne:acces a mon compte mutuelle MGEN": [
-                    ("mot_de_passe_oublie", 0.30),
-                    ("premiere_connexion", 0.28),
-                    ("compte_bloque", 0.20),
-                    ("identifiants_perdus", 0.15),
-                    ("probleme_technique", 0.07),
+                "services_en_ligne:access to my account": [
+                    ("password_forgotten", 0.30),
+                    ("account_creation", 0.28),
+                    ("account_locked", 0.20),
+                    ("login_help", 0.15),
+                    ("password_reset", 0.07),
                 ],
             },
         )
@@ -399,7 +399,7 @@ class TestP3_ConversationalPaths:
         with client.stream(
             "POST",
             f"/api/v1/bot/{e2e_config.bot_id}/sessions/{session_id}/messages",
-            json={"text": "acces a mon compte mutuelle MGEN", "type": "text"},
+            json={"text": "access to my account", "type": "text"},
             headers=auth_headers,
         ) as response:
             content = response.read().decode()
@@ -423,9 +423,9 @@ class TestP3_ConversationalPaths:
         classifier = ControlledClassifier(
             l1_responses={
                 "RIB coordonnees bancaires": [
-                    ("changement_coordonnees", 0.55),
-                    ("cotisations", 0.50),
-                    ("hors_perimetre", 0.05),
+                    ("help_contact", 0.55),
+                    ("help_billing", 0.50),
+                    ("out_of_scope", 0.05),
                 ],
             },
         )
@@ -455,12 +455,12 @@ class TestP3_ConversationalPaths:
         assert has_clarification, f"Expected clarification_inter, got: {template_events}"
 
     def test_T07_justificatif_droits_direct(self, client, e2e_config, auth_headers):
-        """T07: 'attestation de droits MGEN' → justificatif_droits direct."""
+        """T07: coverage certificate → help_documents direct."""
         classifier = ControlledClassifier(
             l1_responses={
-                "attestation de droits MGEN": [
-                    ("justificatif_droits", 0.95),
-                    ("arret_travail", 0.02),
+                "coverage certificate": [
+                    ("help_documents", 0.95),
+                    ("help_leave", 0.02),
                 ],
             },
         )
@@ -475,7 +475,7 @@ class TestP3_ConversationalPaths:
         with client.stream(
             "POST",
             f"/api/v1/bot/{e2e_config.bot_id}/sessions/{session_id}/messages",
-            json={"text": "attestation de droits MGEN", "type": "text"},
+            json={"text": "coverage certificate", "type": "text"},
             headers=auth_headers,
         ) as response:
             content = response.read().decode()
@@ -489,12 +489,12 @@ class TestP3_ConversationalPaths:
         ]
 
     def test_T09_teletransmission_direct(self, client, e2e_config, auth_headers):
-        """T09: 'est-ce qu il y a une teletransmission...' → teletransmission_noemie direct."""
+        """T09: data transmission → help_transfer direct."""
         classifier = ControlledClassifier(
             l1_responses={
-                "est-ce qu il y a une teletransmission entre vous et la mutuelle": [
-                    ("teletransmission_noemie", 0.97),
-                    ("hors_perimetre", 0.01),
+                "is there automatic data transmission": [
+                    ("help_transfer", 0.97),
+                    ("out_of_scope", 0.01),
                 ],
             },
         )
@@ -509,7 +509,7 @@ class TestP3_ConversationalPaths:
         with client.stream(
             "POST",
             f"/api/v1/bot/{e2e_config.bot_id}/sessions/{session_id}/messages",
-            json={"text": "est-ce qu il y a une teletransmission entre vous et la mutuelle", "type": "text"},
+            json={"text": "is there automatic data transmission", "type": "text"},
             headers=auth_headers,
         ) as response:
             content = response.read().decode()
@@ -524,7 +524,7 @@ class TestP3_ConversationalPaths:
             l1_responses={
                 "Je prefere parler a un humain": [
                     ("demande_conseiller", 0.95),
-                    ("hors_perimetre", 0.02),
+                    ("out_of_scope", 0.02),
                 ],
             },
         )
@@ -558,8 +558,8 @@ class TestP3_ConversationalPaths:
         classifier = ControlledClassifier(
             l1_responses={
                 "declarer un accident de ski": [
-                    ("hors_perimetre", 0.85),
-                    ("arret_travail", 0.08),
+                    ("out_of_scope", 0.85),
+                    ("help_leave", 0.08),
                 ],
             },
         )
@@ -583,18 +583,18 @@ class TestP3_ConversationalPaths:
         # Should get hors_perimetre template OR escalation
         template_events = [e for e in events if e["event"] == "template"]
         hp_or_esc = any(
-            te["data"].get("template_key") in ("hors_perimetre", "mise_en_relation")
+            te["data"].get("template_key") in ("out_of_scope", "mise_en_relation")
             for te in template_events
         )
         assert hp_or_esc, f"Expected hors_perimetre or escalation, got: {template_events}"
 
     def test_T14_single_word_noemie(self, client, e2e_config, auth_headers):
-        """T14: 'Noemie' (single word) → teletransmission_noemie — robustness test."""
+        """T14: single word transfer → help_transfer — robustness test."""
         classifier = ControlledClassifier(
             l1_responses={
-                "Noemie": [
-                    ("teletransmission_noemie", 0.82),
-                    ("services_en_ligne", 0.05),
+                "transfer": [
+                    ("help_transfer", 0.82),
+                    ("help_account", 0.05),
                 ],
             },
         )
@@ -609,7 +609,7 @@ class TestP3_ConversationalPaths:
         with client.stream(
             "POST",
             f"/api/v1/bot/{e2e_config.bot_id}/sessions/{session_id}/messages",
-            json={"text": "Noemie", "type": "text"},
+            json={"text": "transfer", "type": "text"},
             headers=auth_headers,
         ) as response:
             content = response.read().decode()
@@ -632,15 +632,15 @@ class TestP3_Scenarios:
         """S1: Query → generation with source → satisfaction 'Oui' → autre demande → 'Non' → FIN."""
         classifier = ControlledClassifier(
             l1_responses={
-                "modification mot de passe": [
-                    ("services_en_ligne", 0.93),
-                    ("hors_perimetre", 0.02),
+                "password reset": [
+                    ("help_account", 0.93),
+                    ("out_of_scope", 0.02),
                 ],
             },
             l2_responses={
-                "services_en_ligne:modification mot de passe": [
-                    ("mot_de_passe_oublie", 0.91),
-                    ("identifiants_perdus", 0.04),
+                "services_en_ligne:password reset": [
+                    ("password_forgotten", 0.91),
+                    ("login_help", 0.04),
                 ],
             },
         )
@@ -659,7 +659,7 @@ class TestP3_Scenarios:
         with client.stream(
             "POST",
             f"/api/v1/bot/{e2e_config.bot_id}/sessions/{session_id}/messages",
-            json={"text": "modification mot de passe", "type": "text"},
+            json={"text": "password reset", "type": "text"},
             headers=auth_headers,
         ) as response:
             content = response.read().decode()
@@ -723,14 +723,14 @@ class TestP3_Scenarios:
         classifier = ControlledClassifier(
             l1_responses={
                 "attestation de paiement": [
-                    ("arret_travail", 0.55),
-                    ("cotisations", 0.52),
-                    ("justificatif_droits", 0.48),
+                    ("help_leave", 0.55),
+                    ("help_billing", 0.52),
+                    ("help_documents", 0.48),
                 ],
                 # After clarification, user clicks and we get high confidence
-                "cotisations": [
-                    ("cotisations", 0.95),
-                    ("hors_perimetre", 0.02),
+                "help_billing": [
+                    ("help_billing", 0.95),
+                    ("out_of_scope", 0.02),
                 ],
             },
             l2_responses={},
@@ -765,15 +765,15 @@ class TestP3_Scenarios:
         """S5: User unsatisfied → escalation, no retry loop."""
         classifier = ControlledClassifier(
             l1_responses={
-                "modification mot de passe": [
-                    ("services_en_ligne", 0.93),
-                    ("hors_perimetre", 0.02),
+                "password reset": [
+                    ("help_account", 0.93),
+                    ("out_of_scope", 0.02),
                 ],
             },
             l2_responses={
-                "services_en_ligne:modification mot de passe": [
-                    ("mot_de_passe_oublie", 0.91),
-                    ("identifiants_perdus", 0.04),
+                "services_en_ligne:password reset": [
+                    ("password_forgotten", 0.91),
+                    ("login_help", 0.04),
                 ],
             },
         )
@@ -789,7 +789,7 @@ class TestP3_Scenarios:
         with client.stream(
             "POST",
             f"/api/v1/bot/{e2e_config.bot_id}/sessions/{session_id}/messages",
-            json={"text": "modification mot de passe", "type": "text"},
+            json={"text": "password reset", "type": "text"},
             headers=auth_headers,
         ) as response:
             response.read()
@@ -824,12 +824,12 @@ class TestP3_Scenarios:
         classifier = ControlledClassifier(
             l1_responses={
                 "question": [
-                    ("teletransmission_noemie", 0.95),
-                    ("hors_perimetre", 0.02),
+                    ("help_transfer", 0.95),
+                    ("out_of_scope", 0.02),
                 ],
                 "Oui": [
-                    ("teletransmission_noemie", 0.95),
-                    ("hors_perimetre", 0.02),
+                    ("help_transfer", 0.95),
+                    ("out_of_scope", 0.02),
                 ],
             },
         )
@@ -917,7 +917,7 @@ class TestP4_Escalation:
             l1_responses={
                 "je veux parler a un agent": [
                     ("demande_conseiller", 0.96),
-                    ("hors_perimetre", 0.01),
+                    ("out_of_scope", 0.01),
                 ],
             },
         )
@@ -950,8 +950,8 @@ class TestP4_Escalation:
         classifier = ControlledClassifier(
             l1_responses={
                 "remboursement prothese dentaire": [
-                    ("hors_perimetre", 0.92),
-                    ("cotisations", 0.03),
+                    ("out_of_scope", 0.92),
+                    ("help_billing", 0.03),
                 ],
             },
         )
@@ -975,7 +975,7 @@ class TestP4_Escalation:
         template_events = [e for e in events if e["event"] == "template"]
         # Should get hors_perimetre or escalation
         assert any(
-            te["data"].get("template_key") in ("hors_perimetre", "mise_en_relation")
+            te["data"].get("template_key") in ("out_of_scope", "mise_en_relation")
             for te in template_events
         )
 
@@ -984,8 +984,8 @@ class TestP4_Escalation:
         classifier = ControlledClassifier(
             l1_responses={
                 "question simple": [
-                    ("teletransmission_noemie", 0.95),
-                    ("hors_perimetre", 0.02),
+                    ("help_transfer", 0.95),
+                    ("out_of_scope", 0.02),
                 ],
             },
         )
@@ -1034,9 +1034,9 @@ class TestP5_Determinism:
         """P5: Two identical sessions produce identical state sequences."""
         classifier = ControlledClassifier(
             l1_responses={
-                "comment resilier la MGEN": [
-                    ("resiliation", 0.94),
-                    ("hors_perimetre", 0.02),
+                "how to cancel membership": [
+                    ("help_cancellation", 0.94),
+                    ("out_of_scope", 0.02),
                 ],
             },
         )
@@ -1055,7 +1055,7 @@ class TestP5_Determinism:
             with client.stream(
                 "POST",
                 f"/api/v1/bot/{e2e_config.bot_id}/sessions/{session_id}/messages",
-                json={"text": "comment resilier la MGEN", "type": "text"},
+                json={"text": "how to cancel membership", "type": "text"},
                 headers=auth_headers,
             ) as response:
                 content = response.read().decode()
@@ -1098,7 +1098,7 @@ class TestP7_Runtime:
             intents=[
                 Intent(id="test", label="Test", definition="Test",
                        examples=[f"ex{i}" for i in range(10)]),
-                Intent(id="hors_perimetre", label="HP", definition="HP",
+                Intent(id="out_of_scope", label="HP", definition="HP",
                        examples=[f"hp{i}" for i in range(10)], is_system=True),
                 Intent(id="demande_conseiller", label="DC", definition="DC",
                        examples=[f"dc{i}" for i in range(10)], is_system=True),
@@ -1139,7 +1139,7 @@ class TestP7_Runtime:
         """P7: SSE events have correct format (event: / data: lines)."""
         classifier = ControlledClassifier(
             l1_responses={
-                "test": [("teletransmission_noemie", 0.95), ("hors_perimetre", 0.02)],
+                "test": [("help_transfer", 0.95), ("out_of_scope", 0.02)],
             },
         )
         _register_controlled_orchestrator(e2e_config.bot_id, e2e_config, classifier)
@@ -1219,7 +1219,7 @@ class TestP7_Runtime:
         """P7: Ended session rejects new messages with 400."""
         classifier = ControlledClassifier(
             l1_responses={
-                "parler a un humain": [("demande_conseiller", 0.98), ("hors_perimetre", 0.01)],
+                "parler a un humain": [("demande_conseiller", 0.98), ("out_of_scope", 0.01)],
             },
         )
         _register_controlled_orchestrator(e2e_config.bot_id, e2e_config, classifier)
@@ -1259,7 +1259,7 @@ class TestP9_Metrics:
         """P9: Positive feedback is recorded."""
         classifier = ControlledClassifier(
             l1_responses={
-                "test": [("teletransmission_noemie", 0.95), ("hors_perimetre", 0.02)],
+                "test": [("help_transfer", 0.95), ("out_of_scope", 0.02)],
             },
         )
         _register_controlled_orchestrator(e2e_config.bot_id, e2e_config, classifier)
@@ -1292,7 +1292,7 @@ class TestP9_Metrics:
         """P9: Negative feedback is recorded."""
         classifier = ControlledClassifier(
             l1_responses={
-                "test": [("teletransmission_noemie", 0.95), ("hors_perimetre", 0.02)],
+                "test": [("help_transfer", 0.95), ("out_of_scope", 0.02)],
             },
         )
         _register_controlled_orchestrator(e2e_config.bot_id, e2e_config, classifier)
@@ -1341,7 +1341,7 @@ class TestP9_Metrics:
         """P9: Session transcript can be retrieved for replay."""
         classifier = ControlledClassifier(
             l1_responses={
-                "bonjour": [("teletransmission_noemie", 0.95), ("hors_perimetre", 0.02)],
+                "hello": [("help_transfer", 0.95), ("out_of_scope", 0.02)],
             },
         )
         _register_controlled_orchestrator(e2e_config.bot_id, e2e_config, classifier)
@@ -1355,7 +1355,7 @@ class TestP9_Metrics:
         with client.stream(
             "POST",
             f"/api/v1/bot/{e2e_config.bot_id}/sessions/{session_id}/messages",
-            json={"text": "bonjour", "type": "text"},
+            json={"text": "hello", "type": "text"},
             headers=auth_headers,
         ) as response:
             response.read()
