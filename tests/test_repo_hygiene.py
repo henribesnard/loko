@@ -152,7 +152,7 @@ def test_openapi_version():
 
 
 # ---------------------------------------------------------------------------
-# V2 — eval/datasets/ integrity — REMOVED (MGEN-specific)
+# V2 — eval/datasets/ integrity — REMOVED (client-specific)
 # ---------------------------------------------------------------------------
-# The frozen datasets were specific to the MGEN case study and have been purged.
+# The frozen datasets were specific to a client case study and have been purged.
 # Generic evaluation tools remain in loko/eval/.
