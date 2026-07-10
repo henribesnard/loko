@@ -9,8 +9,8 @@ for offline use during campaign preparation.
 
 Usage:
     python tools/train_bot_offline.py --bot-dir data/bots/<uuid>
-    python tools/train_bot_offline.py --bot-dir data/bots/<uuid> --enrich eval/datasets/enrichment_w42.csv
-    python tools/train_bot_offline.py --bot-dir data/bots/<uuid> --train-csv eval/datasets/train_enriched_v038.csv
+    python tools/train_bot_offline.py --bot-dir data/bots/<uuid> --enrich enrichment.csv
+    python tools/train_bot_offline.py --bot-dir data/bots/<uuid> --train-csv train.csv
 
 Exit code:
     0 - training completed, manifest written
