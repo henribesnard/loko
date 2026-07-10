@@ -33,7 +33,7 @@ from loko.bot.models import BotConfig, Chunk, Intent, RetrievalResult, SubMotif
 E2E_INTENTS_FILE = Path(__file__).parent / "e2e_intents.json"
 
 
-def load_mgen_intents() -> list[dict]:
+def load_e2e_intents() -> list[dict]:
     """Load the MGEN test intents from JSON."""
     with open(E2E_INTENTS_FILE) as f:
         data = json.load(f)
@@ -70,11 +70,11 @@ def admin_headers():
 
 
 @pytest.fixture
-def mgen_config(tmp_path, monkeypatch) -> BotConfig:
+def e2e_config(tmp_path, monkeypatch) -> BotConfig:
     """Create the MGEN bot configuration as per the protocol."""
     monkeypatch.setenv("LOKO_DATA_DIR", str(tmp_path))
 
-    raw_intents = load_mgen_intents()
+    raw_intents = load_e2e_intents()
     intents = []
     for ri in raw_intents:
         sub_motifs = []
@@ -118,11 +118,11 @@ def mgen_config(tmp_path, monkeypatch) -> BotConfig:
 
 
 @pytest.fixture
-def api_key(mgen_config, tmp_path, monkeypatch) -> str:
+def api_key(e2e_config, tmp_path, monkeypatch) -> str:
     """Generate an API key for the MGEN bot."""
     monkeypatch.setenv("LOKO_DATA_DIR", str(tmp_path))
     raw_key, _ = generate_api_key(
-        mgen_config.bot_id,
+        e2e_config.bot_id,
         label="e2e-test-key",
         allowed_origins=["*"],
     )
@@ -240,7 +240,7 @@ def parse_sse_events(content: str) -> list[dict]:
 class TestP0_BotCreation:
     """P0: Bot creation via admin API."""
 
-    def test_create_mgen_bot(self, client, admin_headers):
+    def test_create_demo_bot(self, client, admin_headers):
         """P0: Create the 'Assistant MGEN' bot via wizard step 1."""
         res = client.post("/api/bot/", json={
             "name": "Assistant MGEN",
@@ -288,17 +288,17 @@ class TestP1_Intents:
         # Should be rejected (422) due to insufficient examples
         assert res.status_code in (422, 400)
 
-    def test_mgen_config_has_9_intents(self, mgen_config):
+    def test_e2e_config_has_9_intents(self, e2e_config):
         """P1: MGEN config has 7 business + 2 system intents."""
-        assert len(mgen_config.intents) == 9
-        system_intents = [i for i in mgen_config.intents if i.is_system]
-        business_intents = [i for i in mgen_config.intents if not i.is_system]
+        assert len(e2e_config.intents) == 9
+        system_intents = [i for i in e2e_config.intents if i.is_system]
+        business_intents = [i for i in e2e_config.intents if not i.is_system]
         assert len(system_intents) == 2
         assert len(business_intents) == 7
 
-    def test_services_en_ligne_has_sub_motifs(self, mgen_config):
+    def test_services_en_ligne_has_sub_motifs(self, e2e_config):
         """P1: services_en_ligne has 5 sub-motifs."""
-        sel = next(i for i in mgen_config.intents if i.id == "services_en_ligne")
+        sel = next(i for i in e2e_config.intents if i.id == "services_en_ligne")
         assert len(sel.sub_motifs) == 5
         sub_ids = {sm.id for sm in sel.sub_motifs}
         assert sub_ids == {
@@ -306,9 +306,9 @@ class TestP1_Intents:
             "compte_bloque", "premiere_connexion", "probleme_technique",
         }
 
-    def test_all_intents_have_min_examples(self, mgen_config):
+    def test_all_intents_have_min_examples(self, e2e_config):
         """P1: All intents have >= 8 examples (validation threshold)."""
-        for intent in mgen_config.intents:
+        for intent in e2e_config.intents:
             assert len(intent.examples) >= 8, \
                 f"Intent {intent.id} has only {len(intent.examples)} examples"
 
@@ -320,7 +320,7 @@ class TestP1_Intents:
 class TestP3_ConversationalPaths:
     """P3: Conversational paths through the state machine."""
 
-    def test_T01_compte_bloque_direct(self, client, mgen_config, auth_headers):
+    def test_T01_compte_bloque_direct(self, client, e2e_config, auth_headers):
         """T01: 'je souhaiterais debloquer mon compte Ameli' → services_en_ligne/compte_bloque."""
         classifier = ControlledClassifier(
             l1_responses={
@@ -336,11 +336,11 @@ class TestP3_ConversationalPaths:
                 ],
             },
         )
-        _register_controlled_orchestrator(mgen_config.bot_id, mgen_config, classifier)
+        _register_controlled_orchestrator(e2e_config.bot_id, e2e_config, classifier)
 
         # Create session
         res = client.post(
-            f"/api/v1/bot/{mgen_config.bot_id}/sessions",
+            f"/api/v1/bot/{e2e_config.bot_id}/sessions",
             headers=auth_headers,
         )
         assert res.status_code == 201
@@ -349,7 +349,7 @@ class TestP3_ConversationalPaths:
         # Send message
         with client.stream(
             "POST",
-            f"/api/v1/bot/{mgen_config.bot_id}/sessions/{session_id}/messages",
+            f"/api/v1/bot/{e2e_config.bot_id}/sessions/{session_id}/messages",
             json={"text": "je souhaiterais debloquer mon compte Ameli", "type": "text"},
             headers=auth_headers,
         ) as response:
@@ -369,7 +369,7 @@ class TestP3_ConversationalPaths:
                 "enquete_satisfaction", "hors_perimetre", "mise_en_relation",
             )
 
-    def test_T03_clarification_intra(self, client, mgen_config, auth_headers):
+    def test_T03_clarification_intra(self, client, e2e_config, auth_headers):
         """T03: 'acces a mon compte mutuelle MGEN' → services_en_ligne → clarification intra."""
         classifier = ControlledClassifier(
             l1_responses={
@@ -388,17 +388,17 @@ class TestP3_ConversationalPaths:
                 ],
             },
         )
-        _register_controlled_orchestrator(mgen_config.bot_id, mgen_config, classifier)
+        _register_controlled_orchestrator(e2e_config.bot_id, e2e_config, classifier)
 
         res = client.post(
-            f"/api/v1/bot/{mgen_config.bot_id}/sessions",
+            f"/api/v1/bot/{e2e_config.bot_id}/sessions",
             headers=auth_headers,
         )
         session_id = res.json()["session_id"]
 
         with client.stream(
             "POST",
-            f"/api/v1/bot/{mgen_config.bot_id}/sessions/{session_id}/messages",
+            f"/api/v1/bot/{e2e_config.bot_id}/sessions/{session_id}/messages",
             json={"text": "acces a mon compte mutuelle MGEN", "type": "text"},
             headers=auth_headers,
         ) as response:
@@ -418,7 +418,7 @@ class TestP3_ConversationalPaths:
 
         assert clarification_found, f"Expected clarification, got events: {[e['event'] for e in events]}"
 
-    def test_T04_clarification_inter(self, client, mgen_config, auth_headers):
+    def test_T04_clarification_inter(self, client, e2e_config, auth_headers):
         """T04: 'RIB coordonnees bancaires' → ambiguous → clarification inter."""
         classifier = ControlledClassifier(
             l1_responses={
@@ -429,17 +429,17 @@ class TestP3_ConversationalPaths:
                 ],
             },
         )
-        _register_controlled_orchestrator(mgen_config.bot_id, mgen_config, classifier)
+        _register_controlled_orchestrator(e2e_config.bot_id, e2e_config, classifier)
 
         res = client.post(
-            f"/api/v1/bot/{mgen_config.bot_id}/sessions",
+            f"/api/v1/bot/{e2e_config.bot_id}/sessions",
             headers=auth_headers,
         )
         session_id = res.json()["session_id"]
 
         with client.stream(
             "POST",
-            f"/api/v1/bot/{mgen_config.bot_id}/sessions/{session_id}/messages",
+            f"/api/v1/bot/{e2e_config.bot_id}/sessions/{session_id}/messages",
             json={"text": "RIB coordonnees bancaires", "type": "text"},
             headers=auth_headers,
         ) as response:
@@ -454,7 +454,7 @@ class TestP3_ConversationalPaths:
         )
         assert has_clarification, f"Expected clarification_inter, got: {template_events}"
 
-    def test_T07_justificatif_droits_direct(self, client, mgen_config, auth_headers):
+    def test_T07_justificatif_droits_direct(self, client, e2e_config, auth_headers):
         """T07: 'attestation de droits MGEN' → justificatif_droits direct."""
         classifier = ControlledClassifier(
             l1_responses={
@@ -464,17 +464,17 @@ class TestP3_ConversationalPaths:
                 ],
             },
         )
-        _register_controlled_orchestrator(mgen_config.bot_id, mgen_config, classifier)
+        _register_controlled_orchestrator(e2e_config.bot_id, e2e_config, classifier)
 
         res = client.post(
-            f"/api/v1/bot/{mgen_config.bot_id}/sessions",
+            f"/api/v1/bot/{e2e_config.bot_id}/sessions",
             headers=auth_headers,
         )
         session_id = res.json()["session_id"]
 
         with client.stream(
             "POST",
-            f"/api/v1/bot/{mgen_config.bot_id}/sessions/{session_id}/messages",
+            f"/api/v1/bot/{e2e_config.bot_id}/sessions/{session_id}/messages",
             json={"text": "attestation de droits MGEN", "type": "text"},
             headers=auth_headers,
         ) as response:
@@ -488,7 +488,7 @@ class TestP3_ConversationalPaths:
             e.get("data", {}).get("template_key") for e in events if e["event"] == "template"
         ]
 
-    def test_T09_teletransmission_direct(self, client, mgen_config, auth_headers):
+    def test_T09_teletransmission_direct(self, client, e2e_config, auth_headers):
         """T09: 'est-ce qu il y a une teletransmission...' → teletransmission_noemie direct."""
         classifier = ControlledClassifier(
             l1_responses={
@@ -498,17 +498,17 @@ class TestP3_ConversationalPaths:
                 ],
             },
         )
-        _register_controlled_orchestrator(mgen_config.bot_id, mgen_config, classifier)
+        _register_controlled_orchestrator(e2e_config.bot_id, e2e_config, classifier)
 
         res = client.post(
-            f"/api/v1/bot/{mgen_config.bot_id}/sessions",
+            f"/api/v1/bot/{e2e_config.bot_id}/sessions",
             headers=auth_headers,
         )
         session_id = res.json()["session_id"]
 
         with client.stream(
             "POST",
-            f"/api/v1/bot/{mgen_config.bot_id}/sessions/{session_id}/messages",
+            f"/api/v1/bot/{e2e_config.bot_id}/sessions/{session_id}/messages",
             json={"text": "est-ce qu il y a une teletransmission entre vous et la mutuelle", "type": "text"},
             headers=auth_headers,
         ) as response:
@@ -518,7 +518,7 @@ class TestP3_ConversationalPaths:
         event_types = [e["event"] for e in events]
         assert "generation_delta" in event_types
 
-    def test_T11_escalade_demande_explicite(self, client, mgen_config, auth_headers):
+    def test_T11_escalade_demande_explicite(self, client, e2e_config, auth_headers):
         """T11: 'Je prefere parler a un humain' → ESCALADE motif demande_explicite."""
         classifier = ControlledClassifier(
             l1_responses={
@@ -528,17 +528,17 @@ class TestP3_ConversationalPaths:
                 ],
             },
         )
-        _register_controlled_orchestrator(mgen_config.bot_id, mgen_config, classifier)
+        _register_controlled_orchestrator(e2e_config.bot_id, e2e_config, classifier)
 
         res = client.post(
-            f"/api/v1/bot/{mgen_config.bot_id}/sessions",
+            f"/api/v1/bot/{e2e_config.bot_id}/sessions",
             headers=auth_headers,
         )
         session_id = res.json()["session_id"]
 
         with client.stream(
             "POST",
-            f"/api/v1/bot/{mgen_config.bot_id}/sessions/{session_id}/messages",
+            f"/api/v1/bot/{e2e_config.bot_id}/sessions/{session_id}/messages",
             json={"text": "Je prefere parler a un humain", "type": "text"},
             headers=auth_headers,
         ) as response:
@@ -553,7 +553,7 @@ class TestP3_ConversationalPaths:
         )
         assert escalation_found, f"Expected escalation, got: {[e['event'] for e in events]}"
 
-    def test_T12_hors_perimetre(self, client, mgen_config, auth_headers):
+    def test_T12_hors_perimetre(self, client, e2e_config, auth_headers):
         """T12: 'declarer un accident de ski' → hors_perimetre → template hors perimetre."""
         classifier = ControlledClassifier(
             l1_responses={
@@ -563,17 +563,17 @@ class TestP3_ConversationalPaths:
                 ],
             },
         )
-        _register_controlled_orchestrator(mgen_config.bot_id, mgen_config, classifier)
+        _register_controlled_orchestrator(e2e_config.bot_id, e2e_config, classifier)
 
         res = client.post(
-            f"/api/v1/bot/{mgen_config.bot_id}/sessions",
+            f"/api/v1/bot/{e2e_config.bot_id}/sessions",
             headers=auth_headers,
         )
         session_id = res.json()["session_id"]
 
         with client.stream(
             "POST",
-            f"/api/v1/bot/{mgen_config.bot_id}/sessions/{session_id}/messages",
+            f"/api/v1/bot/{e2e_config.bot_id}/sessions/{session_id}/messages",
             json={"text": "declarer un accident de ski", "type": "text"},
             headers=auth_headers,
         ) as response:
@@ -588,7 +588,7 @@ class TestP3_ConversationalPaths:
         )
         assert hp_or_esc, f"Expected hors_perimetre or escalation, got: {template_events}"
 
-    def test_T14_single_word_noemie(self, client, mgen_config, auth_headers):
+    def test_T14_single_word_noemie(self, client, e2e_config, auth_headers):
         """T14: 'Noemie' (single word) → teletransmission_noemie — robustness test."""
         classifier = ControlledClassifier(
             l1_responses={
@@ -598,17 +598,17 @@ class TestP3_ConversationalPaths:
                 ],
             },
         )
-        _register_controlled_orchestrator(mgen_config.bot_id, mgen_config, classifier)
+        _register_controlled_orchestrator(e2e_config.bot_id, e2e_config, classifier)
 
         res = client.post(
-            f"/api/v1/bot/{mgen_config.bot_id}/sessions",
+            f"/api/v1/bot/{e2e_config.bot_id}/sessions",
             headers=auth_headers,
         )
         session_id = res.json()["session_id"]
 
         with client.stream(
             "POST",
-            f"/api/v1/bot/{mgen_config.bot_id}/sessions/{session_id}/messages",
+            f"/api/v1/bot/{e2e_config.bot_id}/sessions/{session_id}/messages",
             json={"text": "Noemie", "type": "text"},
             headers=auth_headers,
         ) as response:
@@ -628,7 +628,7 @@ class TestP3_ConversationalPaths:
 class TestP3_Scenarios:
     """P3: Full conversational scenarios."""
 
-    def test_S1_nominal_flow(self, client, mgen_config, auth_headers):
+    def test_S1_nominal_flow(self, client, e2e_config, auth_headers):
         """S1: Query → generation with source → satisfaction 'Oui' → autre demande → 'Non' → FIN."""
         classifier = ControlledClassifier(
             l1_responses={
@@ -644,11 +644,11 @@ class TestP3_Scenarios:
                 ],
             },
         )
-        _register_controlled_orchestrator(mgen_config.bot_id, mgen_config, classifier)
+        _register_controlled_orchestrator(e2e_config.bot_id, e2e_config, classifier)
 
         # Step 1: Create session
         res = client.post(
-            f"/api/v1/bot/{mgen_config.bot_id}/sessions",
+            f"/api/v1/bot/{e2e_config.bot_id}/sessions",
             headers=auth_headers,
         )
         assert res.status_code == 201
@@ -658,7 +658,7 @@ class TestP3_Scenarios:
         # Step 2: Send query → expect generation + satisfaction survey
         with client.stream(
             "POST",
-            f"/api/v1/bot/{mgen_config.bot_id}/sessions/{session_id}/messages",
+            f"/api/v1/bot/{e2e_config.bot_id}/sessions/{session_id}/messages",
             json={"text": "modification mot de passe", "type": "text"},
             headers=auth_headers,
         ) as response:
@@ -678,7 +678,7 @@ class TestP3_Scenarios:
         # Step 3: Click "Oui" (satisfied) → expect autre_demande
         with client.stream(
             "POST",
-            f"/api/v1/bot/{mgen_config.bot_id}/sessions/{session_id}/messages",
+            f"/api/v1/bot/{e2e_config.bot_id}/sessions/{session_id}/messages",
             json={"text": "Oui", "type": "button_click"},
             headers=auth_headers,
         ) as response:
@@ -695,7 +695,7 @@ class TestP3_Scenarios:
         # Step 4: Click "Non" (no more questions) → expect FIN
         with client.stream(
             "POST",
-            f"/api/v1/bot/{mgen_config.bot_id}/sessions/{session_id}/messages",
+            f"/api/v1/bot/{e2e_config.bot_id}/sessions/{session_id}/messages",
             json={"text": "Non", "type": "button_click"},
             headers=auth_headers,
         ) as response:
@@ -712,12 +712,12 @@ class TestP3_Scenarios:
 
         # Verify session state is FIN
         res = client.get(
-            f"/api/v1/bot/{mgen_config.bot_id}/sessions/{session_id}",
+            f"/api/v1/bot/{e2e_config.bot_id}/sessions/{session_id}",
             headers=auth_headers,
         )
         assert res.json()["state"] == "fin"
 
-    def test_S4_max_one_clarification_per_demande(self, client, mgen_config, auth_headers):
+    def test_S4_max_one_clarification_per_demande(self, client, e2e_config, auth_headers):
         """S4: Max 1 clarification per demande (regle d'or)."""
         # First message triggers clarification inter
         classifier = ControlledClassifier(
@@ -735,10 +735,10 @@ class TestP3_Scenarios:
             },
             l2_responses={},
         )
-        _register_controlled_orchestrator(mgen_config.bot_id, mgen_config, classifier)
+        _register_controlled_orchestrator(e2e_config.bot_id, e2e_config, classifier)
 
         res = client.post(
-            f"/api/v1/bot/{mgen_config.bot_id}/sessions",
+            f"/api/v1/bot/{e2e_config.bot_id}/sessions",
             headers=auth_headers,
         )
         session_id = res.json()["session_id"]
@@ -746,7 +746,7 @@ class TestP3_Scenarios:
         # Send ambiguous message → should get clarification inter
         with client.stream(
             "POST",
-            f"/api/v1/bot/{mgen_config.bot_id}/sessions/{session_id}/messages",
+            f"/api/v1/bot/{e2e_config.bot_id}/sessions/{session_id}/messages",
             json={"text": "attestation de paiement", "type": "text"},
             headers=auth_headers,
         ) as response:
@@ -761,7 +761,7 @@ class TestP3_Scenarios:
         # Should get at most one clarification
         assert len(clarification_inter) <= 1
 
-    def test_S5_insatisfaction_escalade(self, client, mgen_config, auth_headers):
+    def test_S5_insatisfaction_escalade(self, client, e2e_config, auth_headers):
         """S5: User unsatisfied → escalation, no retry loop."""
         classifier = ControlledClassifier(
             l1_responses={
@@ -777,10 +777,10 @@ class TestP3_Scenarios:
                 ],
             },
         )
-        _register_controlled_orchestrator(mgen_config.bot_id, mgen_config, classifier)
+        _register_controlled_orchestrator(e2e_config.bot_id, e2e_config, classifier)
 
         res = client.post(
-            f"/api/v1/bot/{mgen_config.bot_id}/sessions",
+            f"/api/v1/bot/{e2e_config.bot_id}/sessions",
             headers=auth_headers,
         )
         session_id = res.json()["session_id"]
@@ -788,7 +788,7 @@ class TestP3_Scenarios:
         # Send query → generation → satisfaction survey
         with client.stream(
             "POST",
-            f"/api/v1/bot/{mgen_config.bot_id}/sessions/{session_id}/messages",
+            f"/api/v1/bot/{e2e_config.bot_id}/sessions/{session_id}/messages",
             json={"text": "modification mot de passe", "type": "text"},
             headers=auth_headers,
         ) as response:
@@ -797,7 +797,7 @@ class TestP3_Scenarios:
         # Click "Non" (not satisfied) → expect ESCALADE
         with client.stream(
             "POST",
-            f"/api/v1/bot/{mgen_config.bot_id}/sessions/{session_id}/messages",
+            f"/api/v1/bot/{e2e_config.bot_id}/sessions/{session_id}/messages",
             json={"text": "Non", "type": "button_click"},
             headers=auth_headers,
         ) as response:
@@ -814,12 +814,12 @@ class TestP3_Scenarios:
 
         # Verify session ends (FIN after escalation)
         res = client.get(
-            f"/api/v1/bot/{mgen_config.bot_id}/sessions/{session_id}",
+            f"/api/v1/bot/{e2e_config.bot_id}/sessions/{session_id}",
             headers=auth_headers,
         )
         assert res.json()["state"] == "fin"
 
-    def test_S6_max_demandes(self, client, mgen_config, auth_headers):
+    def test_S6_max_demandes(self, client, e2e_config, auth_headers):
         """S6: After max_demandes (5), session ends."""
         classifier = ControlledClassifier(
             l1_responses={
@@ -833,10 +833,10 @@ class TestP3_Scenarios:
                 ],
             },
         )
-        _register_controlled_orchestrator(mgen_config.bot_id, mgen_config, classifier)
+        _register_controlled_orchestrator(e2e_config.bot_id, e2e_config, classifier)
 
         res = client.post(
-            f"/api/v1/bot/{mgen_config.bot_id}/sessions",
+            f"/api/v1/bot/{e2e_config.bot_id}/sessions",
             headers=auth_headers,
         )
         session_id = res.json()["session_id"]
@@ -846,7 +846,7 @@ class TestP3_Scenarios:
             # Send question
             with client.stream(
                 "POST",
-                f"/api/v1/bot/{mgen_config.bot_id}/sessions/{session_id}/messages",
+                f"/api/v1/bot/{e2e_config.bot_id}/sessions/{session_id}/messages",
                 json={"text": "question", "type": "text"},
                 headers=auth_headers,
             ) as response:
@@ -855,7 +855,7 @@ class TestP3_Scenarios:
 
             # Check if session ended
             session_res = client.get(
-                f"/api/v1/bot/{mgen_config.bot_id}/sessions/{session_id}",
+                f"/api/v1/bot/{e2e_config.bot_id}/sessions/{session_id}",
                 headers=auth_headers,
             )
             state = session_res.json()["state"]
@@ -868,7 +868,7 @@ class TestP3_Scenarios:
             if state == "enquete_satisfaction":
                 with client.stream(
                     "POST",
-                    f"/api/v1/bot/{mgen_config.bot_id}/sessions/{session_id}/messages",
+                    f"/api/v1/bot/{e2e_config.bot_id}/sessions/{session_id}/messages",
                     json={"text": "Oui", "type": "button_click"},
                     headers=auth_headers,
                 ) as response:
@@ -876,7 +876,7 @@ class TestP3_Scenarios:
 
                 # Check state after Oui
                 session_res = client.get(
-                    f"/api/v1/bot/{mgen_config.bot_id}/sessions/{session_id}",
+                    f"/api/v1/bot/{e2e_config.bot_id}/sessions/{session_id}",
                     headers=auth_headers,
                 )
                 state = session_res.json()["state"]
@@ -888,14 +888,14 @@ class TestP3_Scenarios:
                 if state == "autre_demande":
                     with client.stream(
                         "POST",
-                        f"/api/v1/bot/{mgen_config.bot_id}/sessions/{session_id}/messages",
+                        f"/api/v1/bot/{e2e_config.bot_id}/sessions/{session_id}/messages",
                         json={"text": "Oui", "type": "button_click"},
                         headers=auth_headers,
                     ) as response:
                         response.read()
 
                     session_res = client.get(
-                        f"/api/v1/bot/{mgen_config.bot_id}/sessions/{session_id}",
+                        f"/api/v1/bot/{e2e_config.bot_id}/sessions/{session_id}",
                         headers=auth_headers,
                     )
                     state = session_res.json()["state"]
@@ -911,7 +911,7 @@ class TestP3_Scenarios:
 class TestP4_Escalation:
     """P4: Escalation with all 4 motifs."""
 
-    def test_escalation_demande_explicite(self, client, mgen_config, auth_headers):
+    def test_escalation_demande_explicite(self, client, e2e_config, auth_headers):
         """P4: demande_explicite motif via demande_conseiller intent."""
         classifier = ControlledClassifier(
             l1_responses={
@@ -921,17 +921,17 @@ class TestP4_Escalation:
                 ],
             },
         )
-        _register_controlled_orchestrator(mgen_config.bot_id, mgen_config, classifier)
+        _register_controlled_orchestrator(e2e_config.bot_id, e2e_config, classifier)
 
         res = client.post(
-            f"/api/v1/bot/{mgen_config.bot_id}/sessions",
+            f"/api/v1/bot/{e2e_config.bot_id}/sessions",
             headers=auth_headers,
         )
         session_id = res.json()["session_id"]
 
         with client.stream(
             "POST",
-            f"/api/v1/bot/{mgen_config.bot_id}/sessions/{session_id}/messages",
+            f"/api/v1/bot/{e2e_config.bot_id}/sessions/{session_id}/messages",
             json={"text": "je veux parler a un agent", "type": "text"},
             headers=auth_headers,
         ) as response:
@@ -945,7 +945,7 @@ class TestP4_Escalation:
             for te in template_events
         )
 
-    def test_escalation_hors_perimetre(self, client, mgen_config, auth_headers):
+    def test_escalation_hors_perimetre(self, client, e2e_config, auth_headers):
         """P4: hors_perimetre motif via out-of-scope classification."""
         classifier = ControlledClassifier(
             l1_responses={
@@ -955,17 +955,17 @@ class TestP4_Escalation:
                 ],
             },
         )
-        _register_controlled_orchestrator(mgen_config.bot_id, mgen_config, classifier)
+        _register_controlled_orchestrator(e2e_config.bot_id, e2e_config, classifier)
 
         res = client.post(
-            f"/api/v1/bot/{mgen_config.bot_id}/sessions",
+            f"/api/v1/bot/{e2e_config.bot_id}/sessions",
             headers=auth_headers,
         )
         session_id = res.json()["session_id"]
 
         with client.stream(
             "POST",
-            f"/api/v1/bot/{mgen_config.bot_id}/sessions/{session_id}/messages",
+            f"/api/v1/bot/{e2e_config.bot_id}/sessions/{session_id}/messages",
             json={"text": "remboursement prothese dentaire", "type": "text"},
             headers=auth_headers,
         ) as response:
@@ -979,7 +979,7 @@ class TestP4_Escalation:
             for te in template_events
         )
 
-    def test_escalation_insatisfaction(self, client, mgen_config, auth_headers):
+    def test_escalation_insatisfaction(self, client, e2e_config, auth_headers):
         """P4: insatisfaction motif via 'Non' at satisfaction survey."""
         classifier = ControlledClassifier(
             l1_responses={
@@ -989,10 +989,10 @@ class TestP4_Escalation:
                 ],
             },
         )
-        _register_controlled_orchestrator(mgen_config.bot_id, mgen_config, classifier)
+        _register_controlled_orchestrator(e2e_config.bot_id, e2e_config, classifier)
 
         res = client.post(
-            f"/api/v1/bot/{mgen_config.bot_id}/sessions",
+            f"/api/v1/bot/{e2e_config.bot_id}/sessions",
             headers=auth_headers,
         )
         session_id = res.json()["session_id"]
@@ -1000,7 +1000,7 @@ class TestP4_Escalation:
         # Generate answer
         with client.stream(
             "POST",
-            f"/api/v1/bot/{mgen_config.bot_id}/sessions/{session_id}/messages",
+            f"/api/v1/bot/{e2e_config.bot_id}/sessions/{session_id}/messages",
             json={"text": "question simple", "type": "text"},
             headers=auth_headers,
         ) as response:
@@ -1009,7 +1009,7 @@ class TestP4_Escalation:
         # Click Non (unsatisfied)
         with client.stream(
             "POST",
-            f"/api/v1/bot/{mgen_config.bot_id}/sessions/{session_id}/messages",
+            f"/api/v1/bot/{e2e_config.bot_id}/sessions/{session_id}/messages",
             json={"text": "Non", "type": "button_click"},
             headers=auth_headers,
         ) as response:
@@ -1030,7 +1030,7 @@ class TestP4_Escalation:
 class TestP5_Determinism:
     """P5: Deterministic replay — same inputs → same state transitions."""
 
-    def test_deterministic_replay(self, client, mgen_config, auth_headers):
+    def test_deterministic_replay(self, client, e2e_config, auth_headers):
         """P5: Two identical sessions produce identical state sequences."""
         classifier = ControlledClassifier(
             l1_responses={
@@ -1044,17 +1044,17 @@ class TestP5_Determinism:
         results = []
         for _ in range(2):
             # Fresh orchestrator each time
-            _register_controlled_orchestrator(mgen_config.bot_id, mgen_config, classifier)
+            _register_controlled_orchestrator(e2e_config.bot_id, e2e_config, classifier)
 
             res = client.post(
-                f"/api/v1/bot/{mgen_config.bot_id}/sessions",
+                f"/api/v1/bot/{e2e_config.bot_id}/sessions",
                 headers=auth_headers,
             )
             session_id = res.json()["session_id"]
 
             with client.stream(
                 "POST",
-                f"/api/v1/bot/{mgen_config.bot_id}/sessions/{session_id}/messages",
+                f"/api/v1/bot/{e2e_config.bot_id}/sessions/{session_id}/messages",
                 json={"text": "comment resilier la MGEN", "type": "text"},
                 headers=auth_headers,
             ) as response:
@@ -1114,13 +1114,13 @@ class TestP7_Runtime:
         )
         assert res.status_code == 409
 
-    def test_session_creation_returns_welcome(self, client, mgen_config, auth_headers):
+    def test_session_creation_returns_welcome(self, client, e2e_config, auth_headers):
         """P7: Session creation returns welcome message with state."""
         classifier = ControlledClassifier()
-        _register_controlled_orchestrator(mgen_config.bot_id, mgen_config, classifier)
+        _register_controlled_orchestrator(e2e_config.bot_id, e2e_config, classifier)
 
         res = client.post(
-            f"/api/v1/bot/{mgen_config.bot_id}/sessions",
+            f"/api/v1/bot/{e2e_config.bot_id}/sessions",
             headers=auth_headers,
         )
         assert res.status_code == 201
@@ -1135,24 +1135,24 @@ class TestP7_Runtime:
         assert len(template_events) >= 1
         assert template_events[0]["data"]["template_key"] == "presentation"
 
-    def test_sse_event_format(self, client, mgen_config, auth_headers):
+    def test_sse_event_format(self, client, e2e_config, auth_headers):
         """P7: SSE events have correct format (event: / data: lines)."""
         classifier = ControlledClassifier(
             l1_responses={
                 "test": [("teletransmission_noemie", 0.95), ("hors_perimetre", 0.02)],
             },
         )
-        _register_controlled_orchestrator(mgen_config.bot_id, mgen_config, classifier)
+        _register_controlled_orchestrator(e2e_config.bot_id, e2e_config, classifier)
 
         res = client.post(
-            f"/api/v1/bot/{mgen_config.bot_id}/sessions",
+            f"/api/v1/bot/{e2e_config.bot_id}/sessions",
             headers=auth_headers,
         )
         session_id = res.json()["session_id"]
 
         with client.stream(
             "POST",
-            f"/api/v1/bot/{mgen_config.bot_id}/sessions/{session_id}/messages",
+            f"/api/v1/bot/{e2e_config.bot_id}/sessions/{session_id}/messages",
             json={"text": "test", "type": "text"},
             headers=auth_headers,
         ) as response:
@@ -1168,40 +1168,40 @@ class TestP7_Runtime:
         for e in events:
             assert e["event"] in valid_types, f"Unknown event type: {e['event']}"
 
-    def test_message_too_long_rejected(self, client, mgen_config, auth_headers):
+    def test_message_too_long_rejected(self, client, e2e_config, auth_headers):
         """P7-P0-5: Messages > 2000 chars are rejected."""
         classifier = ControlledClassifier()
-        _register_controlled_orchestrator(mgen_config.bot_id, mgen_config, classifier)
+        _register_controlled_orchestrator(e2e_config.bot_id, e2e_config, classifier)
 
         res = client.post(
-            f"/api/v1/bot/{mgen_config.bot_id}/sessions",
+            f"/api/v1/bot/{e2e_config.bot_id}/sessions",
             headers=auth_headers,
         )
         session_id = res.json()["session_id"]
 
         res = client.post(
-            f"/api/v1/bot/{mgen_config.bot_id}/sessions/{session_id}/messages",
+            f"/api/v1/bot/{e2e_config.bot_id}/sessions/{session_id}/messages",
             json={"text": "x" * 5000, "type": "text"},
             headers=auth_headers,
         )
         assert res.status_code == 422
 
-    def test_security_no_api_key_rejected(self, client, mgen_config):
+    def test_security_no_api_key_rejected(self, client, e2e_config):
         """P7: No API key → 401."""
-        res = client.post(f"/api/v1/bot/{mgen_config.bot_id}/sessions")
+        res = client.post(f"/api/v1/bot/{e2e_config.bot_id}/sessions")
         assert res.status_code == 401
 
-    def test_security_wrong_origin_rejected(self, client, mgen_config, tmp_path, monkeypatch):
+    def test_security_wrong_origin_rejected(self, client, e2e_config, tmp_path, monkeypatch):
         """P7: Wrong origin → 403."""
         monkeypatch.setenv("LOKO_DATA_DIR", str(tmp_path))
         raw_key, _ = generate_api_key(
-            mgen_config.bot_id,
+            e2e_config.bot_id,
             label="restricted",
             allowed_origins=["https://allowed.example.com"],
         )
 
         res = client.post(
-            f"/api/v1/bot/{mgen_config.bot_id}/sessions",
+            f"/api/v1/bot/{e2e_config.bot_id}/sessions",
             headers={
                 "Authorization": f"Bearer {raw_key}",
                 "Origin": "https://evil.example.com",
@@ -1215,17 +1215,17 @@ class TestP7_Runtime:
         assert res.headers.get("x-content-type-options") == "nosniff"
         assert res.headers.get("x-frame-options") == "DENY"
 
-    def test_ended_session_rejects_messages(self, client, mgen_config, auth_headers):
+    def test_ended_session_rejects_messages(self, client, e2e_config, auth_headers):
         """P7: Ended session rejects new messages with 400."""
         classifier = ControlledClassifier(
             l1_responses={
                 "parler a un humain": [("demande_conseiller", 0.98), ("hors_perimetre", 0.01)],
             },
         )
-        _register_controlled_orchestrator(mgen_config.bot_id, mgen_config, classifier)
+        _register_controlled_orchestrator(e2e_config.bot_id, e2e_config, classifier)
 
         res = client.post(
-            f"/api/v1/bot/{mgen_config.bot_id}/sessions",
+            f"/api/v1/bot/{e2e_config.bot_id}/sessions",
             headers=auth_headers,
         )
         session_id = res.json()["session_id"]
@@ -1233,7 +1233,7 @@ class TestP7_Runtime:
         # Trigger escalation → FIN
         with client.stream(
             "POST",
-            f"/api/v1/bot/{mgen_config.bot_id}/sessions/{session_id}/messages",
+            f"/api/v1/bot/{e2e_config.bot_id}/sessions/{session_id}/messages",
             json={"text": "parler a un humain", "type": "text"},
             headers=auth_headers,
         ) as response:
@@ -1241,7 +1241,7 @@ class TestP7_Runtime:
 
         # Try to send another message
         res = client.post(
-            f"/api/v1/bot/{mgen_config.bot_id}/sessions/{session_id}/messages",
+            f"/api/v1/bot/{e2e_config.bot_id}/sessions/{session_id}/messages",
             json={"text": "encore une question", "type": "text"},
             headers=auth_headers,
         )
@@ -1255,17 +1255,17 @@ class TestP7_Runtime:
 class TestP9_Metrics:
     """P9: Feedback recording and session replay."""
 
-    def test_feedback_positive(self, client, mgen_config, auth_headers):
+    def test_feedback_positive(self, client, e2e_config, auth_headers):
         """P9: Positive feedback is recorded."""
         classifier = ControlledClassifier(
             l1_responses={
                 "test": [("teletransmission_noemie", 0.95), ("hors_perimetre", 0.02)],
             },
         )
-        _register_controlled_orchestrator(mgen_config.bot_id, mgen_config, classifier)
+        _register_controlled_orchestrator(e2e_config.bot_id, e2e_config, classifier)
 
         res = client.post(
-            f"/api/v1/bot/{mgen_config.bot_id}/sessions",
+            f"/api/v1/bot/{e2e_config.bot_id}/sessions",
             headers=auth_headers,
         )
         session_id = res.json()["session_id"]
@@ -1273,7 +1273,7 @@ class TestP9_Metrics:
         # Send a message to get a turn
         with client.stream(
             "POST",
-            f"/api/v1/bot/{mgen_config.bot_id}/sessions/{session_id}/messages",
+            f"/api/v1/bot/{e2e_config.bot_id}/sessions/{session_id}/messages",
             json={"text": "test", "type": "text"},
             headers=auth_headers,
         ) as response:
@@ -1281,80 +1281,80 @@ class TestP9_Metrics:
 
         # Submit feedback
         res = client.post(
-            f"/api/v1/bot/{mgen_config.bot_id}/sessions/{session_id}/feedback",
+            f"/api/v1/bot/{e2e_config.bot_id}/sessions/{session_id}/feedback",
             json={"turn_id": "t1", "rating": "positive", "comment": "tres utile"},
             headers=auth_headers,
         )
         assert res.status_code == 200
         assert res.json()["status"] == "recorded"
 
-    def test_feedback_negative(self, client, mgen_config, auth_headers):
+    def test_feedback_negative(self, client, e2e_config, auth_headers):
         """P9: Negative feedback is recorded."""
         classifier = ControlledClassifier(
             l1_responses={
                 "test": [("teletransmission_noemie", 0.95), ("hors_perimetre", 0.02)],
             },
         )
-        _register_controlled_orchestrator(mgen_config.bot_id, mgen_config, classifier)
+        _register_controlled_orchestrator(e2e_config.bot_id, e2e_config, classifier)
 
         res = client.post(
-            f"/api/v1/bot/{mgen_config.bot_id}/sessions",
+            f"/api/v1/bot/{e2e_config.bot_id}/sessions",
             headers=auth_headers,
         )
         session_id = res.json()["session_id"]
 
         with client.stream(
             "POST",
-            f"/api/v1/bot/{mgen_config.bot_id}/sessions/{session_id}/messages",
+            f"/api/v1/bot/{e2e_config.bot_id}/sessions/{session_id}/messages",
             json={"text": "test", "type": "text"},
             headers=auth_headers,
         ) as response:
             response.read()
 
         res = client.post(
-            f"/api/v1/bot/{mgen_config.bot_id}/sessions/{session_id}/feedback",
+            f"/api/v1/bot/{e2e_config.bot_id}/sessions/{session_id}/feedback",
             json={"turn_id": "t1", "rating": "negative", "comment": "pas clair"},
             headers=auth_headers,
         )
         assert res.status_code == 200
         assert res.json()["status"] == "recorded"
 
-    def test_feedback_invalid_rating_rejected(self, client, mgen_config, auth_headers):
+    def test_feedback_invalid_rating_rejected(self, client, e2e_config, auth_headers):
         """P9-P2-7: Invalid rating ('neutral') is rejected."""
         classifier = ControlledClassifier()
-        _register_controlled_orchestrator(mgen_config.bot_id, mgen_config, classifier)
+        _register_controlled_orchestrator(e2e_config.bot_id, e2e_config, classifier)
 
         res = client.post(
-            f"/api/v1/bot/{mgen_config.bot_id}/sessions",
+            f"/api/v1/bot/{e2e_config.bot_id}/sessions",
             headers=auth_headers,
         )
         session_id = res.json()["session_id"]
 
         res = client.post(
-            f"/api/v1/bot/{mgen_config.bot_id}/sessions/{session_id}/feedback",
+            f"/api/v1/bot/{e2e_config.bot_id}/sessions/{session_id}/feedback",
             json={"turn_id": "t1", "rating": "neutral"},
             headers=auth_headers,
         )
         assert res.status_code == 422
 
-    def test_session_transcript_replay(self, client, mgen_config, auth_headers):
+    def test_session_transcript_replay(self, client, e2e_config, auth_headers):
         """P9: Session transcript can be retrieved for replay."""
         classifier = ControlledClassifier(
             l1_responses={
                 "bonjour": [("teletransmission_noemie", 0.95), ("hors_perimetre", 0.02)],
             },
         )
-        _register_controlled_orchestrator(mgen_config.bot_id, mgen_config, classifier)
+        _register_controlled_orchestrator(e2e_config.bot_id, e2e_config, classifier)
 
         res = client.post(
-            f"/api/v1/bot/{mgen_config.bot_id}/sessions",
+            f"/api/v1/bot/{e2e_config.bot_id}/sessions",
             headers=auth_headers,
         )
         session_id = res.json()["session_id"]
 
         with client.stream(
             "POST",
-            f"/api/v1/bot/{mgen_config.bot_id}/sessions/{session_id}/messages",
+            f"/api/v1/bot/{e2e_config.bot_id}/sessions/{session_id}/messages",
             json={"text": "bonjour", "type": "text"},
             headers=auth_headers,
         ) as response:
@@ -1362,7 +1362,7 @@ class TestP9_Metrics:
 
         # Get full session
         res = client.get(
-            f"/api/v1/bot/{mgen_config.bot_id}/sessions/{session_id}",
+            f"/api/v1/bot/{e2e_config.bot_id}/sessions/{session_id}",
             headers=auth_headers,
         )
         assert res.status_code == 200
@@ -1382,36 +1382,36 @@ class TestP9_Metrics:
 class TestSecurity:
     """Cross-cutting security tests."""
 
-    def test_traces_not_public(self, client, mgen_config, auth_headers):
+    def test_traces_not_public(self, client, e2e_config, auth_headers):
         """P1-2: /traces endpoint not available on public API."""
         classifier = ControlledClassifier()
-        _register_controlled_orchestrator(mgen_config.bot_id, mgen_config, classifier)
+        _register_controlled_orchestrator(e2e_config.bot_id, e2e_config, classifier)
 
         res = client.post(
-            f"/api/v1/bot/{mgen_config.bot_id}/sessions",
+            f"/api/v1/bot/{e2e_config.bot_id}/sessions",
             headers=auth_headers,
         )
         session_id = res.json()["session_id"]
 
         res = client.get(
-            f"/api/v1/bot/{mgen_config.bot_id}/sessions/{session_id}/traces",
+            f"/api/v1/bot/{e2e_config.bot_id}/sessions/{session_id}/traces",
             headers=auth_headers,
         )
         assert res.status_code in (404, 405)
 
-    def test_extra_fields_rejected(self, client, mgen_config, auth_headers):
+    def test_extra_fields_rejected(self, client, e2e_config, auth_headers):
         """P2-7: Extra fields in request body are rejected."""
         classifier = ControlledClassifier()
-        _register_controlled_orchestrator(mgen_config.bot_id, mgen_config, classifier)
+        _register_controlled_orchestrator(e2e_config.bot_id, e2e_config, classifier)
 
         res = client.post(
-            f"/api/v1/bot/{mgen_config.bot_id}/sessions",
+            f"/api/v1/bot/{e2e_config.bot_id}/sessions",
             headers=auth_headers,
         )
         session_id = res.json()["session_id"]
 
         res = client.post(
-            f"/api/v1/bot/{mgen_config.bot_id}/sessions/{session_id}/messages",
+            f"/api/v1/bot/{e2e_config.bot_id}/sessions/{session_id}/messages",
             json={"text": "test", "type": "text", "malicious_field": "injected"},
             headers=auth_headers,
         )
