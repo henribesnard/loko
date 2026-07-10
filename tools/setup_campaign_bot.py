@@ -63,7 +63,7 @@ SERVICES_EN_LIGNE_SUB_MOTIFS = [
         "definition": "Compte ou espace personnel bloqué/verrouillé",
         "examples": [
             "compte bloqué",
-            "compte MGEN bloqué",
+            "account locked",
             "débloquer mon compte personnel",
             "espace adhérent bloqué",
             "connexion espace personnel bloqué",
@@ -74,7 +74,7 @@ SERVICES_EN_LIGNE_SUB_MOTIFS = [
         "label": "Première connexion",
         "definition": "Création ou activation initiale du compte",
         "examples": [
-            "activer mon compte MGEN",
+            "activate my account",
             "création d'un compte en ligne",
             "comment créer un compte Ameli",
             "activation de mon espace client",
@@ -122,14 +122,14 @@ DEMANDE_CONSEILLER_EXAMPLES = [
 # ──────────────────────────────────────────────────────────────────────
 
 INTENT_DEFINITIONS = {
-    "arret_travail": "L'adhérent a une question liée à un arrêt de travail, maladie, indemnités journalières.",
-    "changement_coordonnees": "L'adhérent veut modifier ses coordonnées (adresse, RIB, email).",
-    "cotisations": "L'adhérent a une question sur ses cotisations (montant, calcul, paiement).",
+    "help_leave": "L'adhérent a une question liée à un arrêt de travail, maladie, indemnités journalières.",
+    "help_contact": "L'adhérent veut modifier ses coordonnées (adresse, RIB, email).",
+    "help_billing": "L'adhérent a une question sur ses cotisations (montant, calcul, paiement).",
     "hors_perimetre": "Demande hors du périmètre des intentions gérées par le bot.",
-    "justificatif_droits": "L'adhérent demande un document attestant de ses droits ou de sa couverture.",
-    "resiliation": "L'adhérent veut résilier son contrat mutuelle.",
-    "services_en_ligne": "L'adhérent rencontre un besoin lié à son espace personnel en ligne ou à l'application MGEN/Ameli.",
-    "teletransmission_noemie": "L'adhérent a une question sur la télétransmission Noemie entre mutuelle et sécurité sociale.",
+    "help_documents": "L'adhérent demande un document attestant de ses droits ou de sa couverture.",
+    "help_cancellation": "L'adhérent veut résilier son contrat mutuelle.",
+    "help_account": "L'adhérent rencontre un besoin lié à son espace personnel en ligne ou à l'mobile app.",
+    "help_transfer": "L'adhérent a une question sur la télétransmission Noemie entre mutuelle et sécurité sociale.",
     "demande_conseiller": "L'adhérent demande explicitement à parler à un conseiller ou à un humain.",
 }
 
@@ -168,7 +168,7 @@ def build_intents_from_train(train_csv: Path) -> list[dict]:
         }
 
         # Add L2 sub-motifs for services_en_ligne
-        if intent_name == "services_en_ligne":
+        if intent_name == "help_account":
             intent["sub_motifs"] = SERVICES_EN_LIGNE_SUB_MOTIFS
             print(f"  + services_en_ligne: {len(SERVICES_EN_LIGNE_SUB_MOTIFS)} L2 sub-motifs added")
 
@@ -197,9 +197,9 @@ def verify_conformity(intents: list[dict]) -> list[str]:
 
     required = {
         "hors_perimetre", "demande_conseiller",
-        "arret_travail", "changement_coordonnees", "cotisations",
-        "justificatif_droits", "resiliation", "services_en_ligne",
-        "teletransmission_noemie",
+        "help_leave", "help_contact", "help_billing",
+        "help_documents", "help_cancellation", "help_account",
+        "help_transfer",
     }
     missing = required - intent_ids
     if missing:
@@ -212,7 +212,7 @@ def verify_conformity(intents: list[dict]) -> list[str]:
         if n_ex < 8:
             errors.append(f"Intent '{intent['id']}' has {n_ex} examples (min 8)")
 
-    sel = next((i for i in intents if i["id"] == "services_en_ligne"), None)
+    sel = next((i for i in intents if i["id"] == "help_account"), None)
     if sel:
         subs = sel.get("sub_motifs", [])
         if len(subs) < 5:
@@ -281,7 +281,7 @@ def main():
             config = {
                 "schema_version": 1,
                 "bot_id": args.bot_id,
-                "name": f"MGEN Campaign v2.2",
+                "name": f"Demo Campaign v2.2",
                 "channel": "both",
                 "language": "fr",
                 "tone_profile": "neutre",

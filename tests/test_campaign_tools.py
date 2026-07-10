@@ -197,9 +197,9 @@ class TestCE9Executor:
         """Create a valid bot config with 9 intents + L2."""
         intents = []
         for intent_id in [
-            "arret_travail", "changement_coordonnees", "cotisations",
-            "justificatif_droits", "resiliation", "services_en_ligne",
-            "teletransmission_noemie",
+            "help_leave", "help_contact", "help_billing",
+            "help_documents", "help_cancellation", "help_account",
+            "help_transfer",
         ]:
             intents.append({
                 "id": intent_id,
@@ -210,14 +210,14 @@ class TestCE9Executor:
                 "is_system": False,
             })
         # Add services_en_ligne L2 sub-motifs
-        sel = next(i for i in intents if i["id"] == "services_en_ligne")
+        sel = next(i for i in intents if i["id"] == "help_account")
         sel["sub_motifs"] = [
             {"id": f"sub_{j}", "label": f"Sub {j}", "examples": [f"ex{k}" for k in range(3)]}
             for j in range(5)
         ]
         # System intents
         intents.append({
-            "id": "hors_perimetre",
+            "id": "out_of_scope",
             "label": "Hors perimetre",
             "definition": "OOS",
             "examples": [f"oos{i}" for i in range(10)],
@@ -283,9 +283,9 @@ class TestSetupCampaignBot:
         csv_path = tmp_path / "train.csv"
         rows = []
         for intent in [
-            "arret_travail", "changement_coordonnees", "cotisations",
-            "hors_perimetre", "justificatif_droits", "resiliation",
-            "services_en_ligne", "teletransmission_noemie",
+            "help_leave", "help_contact", "help_billing",
+            "out_of_scope", "help_documents", "help_cancellation",
+            "help_account", "help_transfer",
         ]:
             for i in range(10):
                 rows.append({"text": f"example {i} for {intent}", "intent": intent})
@@ -316,7 +316,7 @@ class TestSetupCampaignBot:
     def test_services_en_ligne_has_l2(self, tmp_path):
         csv_path = self._make_train_csv(tmp_path)
         intents = build_intents_from_train(csv_path)
-        sel = next(i for i in intents if i["id"] == "services_en_ligne")
+        sel = next(i for i in intents if i["id"] == "help_account")
         assert len(sel["sub_motifs"]) >= 5
 
     def test_conformity_passes(self, tmp_path):
@@ -335,19 +335,19 @@ class TestConformityDetection:
 
     def test_missing_intent_detected(self):
         intents = [
-            {"id": "arret_travail", "examples": list(range(10)), "is_system": False},
+            {"id": "help_leave", "examples": list(range(10)), "is_system": False},
         ]
         errors = verify_conformity(intents)
         assert any("Missing intents" in e for e in errors)
 
     def test_too_few_examples_detected(self):
         intents = [
-            {"id": name, "examples": list(range(10)), "is_system": name in ("hors_perimetre", "demande_conseiller"),
-             "sub_motifs": [{"id": f"s{i}"} for i in range(5)] if name == "services_en_ligne" else []}
+            {"id": name, "examples": list(range(10)), "is_system": name in ("out_of_scope", "demande_conseiller"),
+             "sub_motifs": [{"id": f"s{i}"} for i in range(5)] if name == "help_account" else []}
             for name in [
-                "arret_travail", "changement_coordonnees", "cotisations",
-                "hors_perimetre", "justificatif_droits", "resiliation",
-                "services_en_ligne", "teletransmission_noemie", "demande_conseiller",
+                "help_leave", "help_contact", "help_billing",
+                "out_of_scope", "help_documents", "help_cancellation",
+                "help_account", "help_transfer", "demande_conseiller",
             ]
         ]
         # Make one intent have too few examples
@@ -357,12 +357,12 @@ class TestConformityDetection:
 
     def test_missing_l2_detected(self):
         intents = [
-            {"id": name, "examples": list(range(10)), "is_system": name in ("hors_perimetre", "demande_conseiller"),
+            {"id": name, "examples": list(range(10)), "is_system": name in ("out_of_scope", "demande_conseiller"),
              "sub_motifs": []}
             for name in [
-                "arret_travail", "changement_coordonnees", "cotisations",
-                "hors_perimetre", "justificatif_droits", "resiliation",
-                "services_en_ligne", "teletransmission_noemie", "demande_conseiller",
+                "help_leave", "help_contact", "help_billing",
+                "out_of_scope", "help_documents", "help_cancellation",
+                "help_account", "help_transfer", "demande_conseiller",
             ]
         ]
         errors = verify_conformity(intents)
