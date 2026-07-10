@@ -23,31 +23,61 @@
           "id": "account_locked",
           "label": "Account Locked",
           "definition": "User's account is blocked or locked",
-          "examples": ["account locked", "account blocked", "unlock my account", "member area blocked", "personal space blocked"]
+          "examples": [
+            "account locked",
+            "account blocked",
+            "unlock my account",
+            "member area blocked",
+            "personal space blocked"
+          ]
         },
         {
           "id": "password_reset",
           "label": "Password Reset",
           "definition": "User needs to reset or change password",
-          "examples": ["activate my account", "create an account", "how to create an account", "activate my space", "account activation"]
+          "examples": [
+            "activate my account",
+            "create an account",
+            "how to create an account",
+            "activate my space",
+            "account activation"
+          ]
         },
         {
           "id": "password_forgotten",
           "label": "Forgotten Password",
           "definition": "User forgot their password",
-          "examples": ["forgot password", "password reset", "lost password", "cannot remember password", "reset my password"]
+          "examples": [
+            "forgot password",
+            "password reset",
+            "lost password",
+            "cannot remember password",
+            "reset my password"
+          ]
         },
         {
           "id": "account_creation",
           "label": "Account Creation",
           "definition": "User wants to create a new account",
-          "examples": ["create account", "sign up", "new account", "register", "account setup"]
+          "examples": [
+            "create account",
+            "sign up",
+            "new account",
+            "register",
+            "account setup"
+          ]
         },
         {
           "id": "login_help",
           "label": "Login Help",
           "definition": "General login assistance",
-          "examples": ["how to login", "login issues", "cannot login", "login help", "access problems"]
+          "examples": [
+            "how to login",
+            "login issues",
+            "cannot login",
+            "login help",
+            "access problems"
+          ]
         }
       ],
       "is_system": false
@@ -201,7 +231,7 @@
       "is_system": false
     },
     {
-      "id": "out_of_scope",
+      "id": "hors_perimetre",
       "label": "Out of Scope",
       "definition": "Request is outside the system's capabilities.",
       "examples": [
@@ -226,7 +256,7 @@
       "is_system": true
     },
     {
-      "id": "escalate",
+      "id": "demande_conseiller",
       "label": "Escalate to Human",
       "definition": "User explicitly requests human assistance.",
       "examples": [

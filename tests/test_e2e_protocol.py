@@ -94,17 +94,7 @@ def e2e_config(tmp_path, monkeypatch) -> BotConfig:
             is_system=ri.get("is_system", False),
         ))
 
-    # Add demande_conseiller system intent
-    intents.append(Intent(
-        id="demande_conseiller",
-        label="Demande conseiller",
-        definition="L'utilisateur demande explicitement a parler a un humain.",
-        examples=["parler a un conseiller", "je veux un humain",
-                  "un agent svp", "je prefere parler a quelqu un",
-                  "transferez-moi", "je ne veux pas parler a un robot",
-                  "je veux avoir un interlocuteur", "besoin d un humain"],
-        is_system=True,
-    ))
+    # System intents (hors_perimetre, demande_conseiller) are already in e2e_intents.json
 
     config = BotConfig(
         name="Demo Assistant",
@@ -145,7 +135,7 @@ class ControlledClassifier:
                  l2_responses: dict[str, list[tuple[str, float]]] | None = None):
         self._l1 = l1_responses or {}
         self._l2 = l2_responses or {}
-        self._default_l1 = [("out_of_scope", 0.5)]
+        self._default_l1 = [("hors_perimetre", 0.5)]
         self._calls: list[dict] = []
 
     def classify_l1(self, text: str) -> list[tuple[str, float]]:
@@ -326,11 +316,11 @@ class TestP3_ConversationalPaths:
             l1_responses={
                 "I would like to unlock my account": [
                     ("help_account", 0.92),
-                    ("out_of_scope", 0.03),
+                    ("hors_perimetre", 0.03),
                 ],
             },
             l2_responses={
-                "services_en_ligne:I would like to unlock my account": [
+                "help_account:I would like to unlock my account": [
                     ("account_locked", 0.88),
                     ("password_reset", 0.05),
                 ],
@@ -366,7 +356,7 @@ class TestP3_ConversationalPaths:
         if template_events:
             last_template = template_events[-1]
             assert last_template["data"].get("template_key") in (
-                "enquete_satisfaction", "out_of_scope", "mise_en_relation",
+                "enquete_satisfaction", "hors_perimetre", "mise_en_relation",
             )
 
     def test_T03_clarification_intra(self, client, e2e_config, auth_headers):
@@ -375,11 +365,11 @@ class TestP3_ConversationalPaths:
             l1_responses={
                 "access to my account": [
                     ("help_account", 0.90),
-                    ("out_of_scope", 0.02),
+                    ("hors_perimetre", 0.02),
                 ],
             },
             l2_responses={
-                "services_en_ligne:access to my account": [
+                "help_account:access to my account": [
                     ("password_forgotten", 0.30),
                     ("account_creation", 0.28),
                     ("account_locked", 0.20),
@@ -425,7 +415,7 @@ class TestP3_ConversationalPaths:
                 "RIB coordonnees bancaires": [
                     ("help_contact", 0.55),
                     ("help_billing", 0.50),
-                    ("out_of_scope", 0.05),
+                    ("hors_perimetre", 0.05),
                 ],
             },
         )
@@ -494,7 +484,7 @@ class TestP3_ConversationalPaths:
             l1_responses={
                 "is there automatic data transmission": [
                     ("help_transfer", 0.97),
-                    ("out_of_scope", 0.01),
+                    ("hors_perimetre", 0.01),
                 ],
             },
         )
@@ -524,7 +514,7 @@ class TestP3_ConversationalPaths:
             l1_responses={
                 "Je prefere parler a un humain": [
                     ("demande_conseiller", 0.95),
-                    ("out_of_scope", 0.02),
+                    ("hors_perimetre", 0.02),
                 ],
             },
         )
@@ -558,7 +548,7 @@ class TestP3_ConversationalPaths:
         classifier = ControlledClassifier(
             l1_responses={
                 "declarer un accident de ski": [
-                    ("out_of_scope", 0.85),
+                    ("hors_perimetre", 0.85),
                     ("help_leave", 0.08),
                 ],
             },
@@ -583,7 +573,7 @@ class TestP3_ConversationalPaths:
         # Should get hors_perimetre template OR escalation
         template_events = [e for e in events if e["event"] == "template"]
         hp_or_esc = any(
-            te["data"].get("template_key") in ("out_of_scope", "mise_en_relation")
+            te["data"].get("template_key") in ("hors_perimetre", "mise_en_relation")
             for te in template_events
         )
         assert hp_or_esc, f"Expected hors_perimetre or escalation, got: {template_events}"
@@ -634,11 +624,11 @@ class TestP3_Scenarios:
             l1_responses={
                 "password reset": [
                     ("help_account", 0.93),
-                    ("out_of_scope", 0.02),
+                    ("hors_perimetre", 0.02),
                 ],
             },
             l2_responses={
-                "services_en_ligne:password reset": [
+                "help_account:password reset": [
                     ("password_forgotten", 0.91),
                     ("login_help", 0.04),
                 ],
@@ -730,7 +720,7 @@ class TestP3_Scenarios:
                 # After clarification, user clicks and we get high confidence
                 "help_billing": [
                     ("help_billing", 0.95),
-                    ("out_of_scope", 0.02),
+                    ("hors_perimetre", 0.02),
                 ],
             },
             l2_responses={},
@@ -767,11 +757,11 @@ class TestP3_Scenarios:
             l1_responses={
                 "password reset": [
                     ("help_account", 0.93),
-                    ("out_of_scope", 0.02),
+                    ("hors_perimetre", 0.02),
                 ],
             },
             l2_responses={
-                "services_en_ligne:password reset": [
+                "help_account:password reset": [
                     ("password_forgotten", 0.91),
                     ("login_help", 0.04),
                 ],
@@ -825,11 +815,11 @@ class TestP3_Scenarios:
             l1_responses={
                 "question": [
                     ("help_transfer", 0.95),
-                    ("out_of_scope", 0.02),
+                    ("hors_perimetre", 0.02),
                 ],
                 "Oui": [
                     ("help_transfer", 0.95),
-                    ("out_of_scope", 0.02),
+                    ("hors_perimetre", 0.02),
                 ],
             },
         )
@@ -917,7 +907,7 @@ class TestP4_Escalation:
             l1_responses={
                 "je veux parler a un agent": [
                     ("demande_conseiller", 0.96),
-                    ("out_of_scope", 0.01),
+                    ("hors_perimetre", 0.01),
                 ],
             },
         )
@@ -950,7 +940,7 @@ class TestP4_Escalation:
         classifier = ControlledClassifier(
             l1_responses={
                 "remboursement prothese dentaire": [
-                    ("out_of_scope", 0.92),
+                    ("hors_perimetre", 0.92),
                     ("help_billing", 0.03),
                 ],
             },
@@ -975,7 +965,7 @@ class TestP4_Escalation:
         template_events = [e for e in events if e["event"] == "template"]
         # Should get hors_perimetre or escalation
         assert any(
-            te["data"].get("template_key") in ("out_of_scope", "mise_en_relation")
+            te["data"].get("template_key") in ("hors_perimetre", "mise_en_relation")
             for te in template_events
         )
 
@@ -985,7 +975,7 @@ class TestP4_Escalation:
             l1_responses={
                 "question simple": [
                     ("help_transfer", 0.95),
-                    ("out_of_scope", 0.02),
+                    ("hors_perimetre", 0.02),
                 ],
             },
         )
@@ -1036,7 +1026,7 @@ class TestP5_Determinism:
             l1_responses={
                 "how to cancel membership": [
                     ("help_cancellation", 0.94),
-                    ("out_of_scope", 0.02),
+                    ("hors_perimetre", 0.02),
                 ],
             },
         )
@@ -1098,7 +1088,7 @@ class TestP7_Runtime:
             intents=[
                 Intent(id="test", label="Test", definition="Test",
                        examples=[f"ex{i}" for i in range(10)]),
-                Intent(id="out_of_scope", label="HP", definition="HP",
+                Intent(id="hors_perimetre", label="HP", definition="HP",
                        examples=[f"hp{i}" for i in range(10)], is_system=True),
                 Intent(id="demande_conseiller", label="DC", definition="DC",
                        examples=[f"dc{i}" for i in range(10)], is_system=True),
@@ -1139,7 +1129,7 @@ class TestP7_Runtime:
         """P7: SSE events have correct format (event: / data: lines)."""
         classifier = ControlledClassifier(
             l1_responses={
-                "test": [("help_transfer", 0.95), ("out_of_scope", 0.02)],
+                "test": [("help_transfer", 0.95), ("hors_perimetre", 0.02)],
             },
         )
         _register_controlled_orchestrator(e2e_config.bot_id, e2e_config, classifier)
@@ -1219,7 +1209,7 @@ class TestP7_Runtime:
         """P7: Ended session rejects new messages with 400."""
         classifier = ControlledClassifier(
             l1_responses={
-                "parler a un humain": [("demande_conseiller", 0.98), ("out_of_scope", 0.01)],
+                "parler a un humain": [("demande_conseiller", 0.98), ("hors_perimetre", 0.01)],
             },
         )
         _register_controlled_orchestrator(e2e_config.bot_id, e2e_config, classifier)
@@ -1259,7 +1249,7 @@ class TestP9_Metrics:
         """P9: Positive feedback is recorded."""
         classifier = ControlledClassifier(
             l1_responses={
-                "test": [("help_transfer", 0.95), ("out_of_scope", 0.02)],
+                "test": [("help_transfer", 0.95), ("hors_perimetre", 0.02)],
             },
         )
         _register_controlled_orchestrator(e2e_config.bot_id, e2e_config, classifier)
@@ -1292,7 +1282,7 @@ class TestP9_Metrics:
         """P9: Negative feedback is recorded."""
         classifier = ControlledClassifier(
             l1_responses={
-                "test": [("help_transfer", 0.95), ("out_of_scope", 0.02)],
+                "test": [("help_transfer", 0.95), ("hors_perimetre", 0.02)],
             },
         )
         _register_controlled_orchestrator(e2e_config.bot_id, e2e_config, classifier)
@@ -1341,7 +1331,7 @@ class TestP9_Metrics:
         """P9: Session transcript can be retrieved for replay."""
         classifier = ControlledClassifier(
             l1_responses={
-                "hello": [("help_transfer", 0.95), ("out_of_scope", 0.02)],
+                "hello": [("help_transfer", 0.95), ("hors_perimetre", 0.02)],
             },
         )
         _register_controlled_orchestrator(e2e_config.bot_id, e2e_config, classifier)

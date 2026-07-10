@@ -217,7 +217,7 @@ class TestCE9Executor:
         ]
         # System intents
         intents.append({
-            "id": "out_of_scope",
+            "id": "hors_perimetre",
             "label": "Hors perimetre",
             "definition": "OOS",
             "examples": [f"oos{i}" for i in range(10)],
@@ -284,7 +284,7 @@ class TestSetupCampaignBot:
         rows = []
         for intent in [
             "help_leave", "help_contact", "help_billing",
-            "out_of_scope", "help_documents", "help_cancellation",
+            "hors_perimetre", "help_documents", "help_cancellation",
             "help_account", "help_transfer",
         ]:
             for i in range(10):
@@ -342,11 +342,11 @@ class TestConformityDetection:
 
     def test_too_few_examples_detected(self):
         intents = [
-            {"id": name, "examples": list(range(10)), "is_system": name in ("out_of_scope", "demande_conseiller"),
+            {"id": name, "examples": list(range(10)), "is_system": name in ("hors_perimetre", "demande_conseiller"),
              "sub_motifs": [{"id": f"s{i}"} for i in range(5)] if name == "help_account" else []}
             for name in [
                 "help_leave", "help_contact", "help_billing",
-                "out_of_scope", "help_documents", "help_cancellation",
+                "hors_perimetre", "help_documents", "help_cancellation",
                 "help_account", "help_transfer", "demande_conseiller",
             ]
         ]
@@ -357,11 +357,11 @@ class TestConformityDetection:
 
     def test_missing_l2_detected(self):
         intents = [
-            {"id": name, "examples": list(range(10)), "is_system": name in ("out_of_scope", "demande_conseiller"),
+            {"id": name, "examples": list(range(10)), "is_system": name in ("hors_perimetre", "demande_conseiller"),
              "sub_motifs": []}
             for name in [
                 "help_leave", "help_contact", "help_billing",
-                "out_of_scope", "help_documents", "help_cancellation",
+                "hors_perimetre", "help_documents", "help_cancellation",
                 "help_account", "help_transfer", "demande_conseiller",
             ]
         ]
