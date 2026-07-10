@@ -1,72 +1,65 @@
-import { useState, useCallback } from "react";
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { LokoLockup } from "@/components/ui/LokoLockup";
 
-const DEMO_REPLIES: Record<string, string> = {
-  "Résiliation": "Votre résiliation est enregistrée. Confirmation par e-mail sous 24h.",
-  "Cotisations": "Le montant de votre cotisation dépend de votre formule, consultable dans votre espace personnel.",
-  "Horaires": "Notre service client est disponible du lundi au vendredi, 9h–18h.",
-};
-
-interface DemoMessage {
-  from: "bot" | "user";
-  text: string;
-}
-
 // ---------------------------------------------------------------------------
-// Demo widget (interactive)
+// F5: Demo widget — loads the real widget when a demo bot is configured.
+// Set VITE_DEMO_BOT_ID (and optionally VITE_DEMO_API_KEY) to enable.
 // ---------------------------------------------------------------------------
+
+const DEMO_BOT_ID = (
+  typeof import.meta !== "undefined" && import.meta.env?.VITE_DEMO_BOT_ID
+) as string | undefined;
+const DEMO_API_KEY = (
+  typeof import.meta !== "undefined" && import.meta.env?.VITE_DEMO_API_KEY
+) as string | undefined;
 
 function DemoWidget() {
-  const [messages, setMessages] = useState<DemoMessage[]>([
-    { from: "bot", text: "Bonjour, je peux vous renseigner sur : résiliation, cotisations, horaires." },
-  ]);
-  const [choicesShown, setChoicesShown] = useState(true);
-  const [streaming, setStreaming] = useState(false);
+  useEffect(() => {
+    if (!DEMO_BOT_ID) return;
 
-  const choose = useCallback((label: string) => {
-    setMessages((prev) => [...prev, { from: "user", text: label }]);
-    setChoicesShown(false);
-    setStreaming(true);
-    setTimeout(() => {
-      setMessages((prev) => [...prev, { from: "bot", text: DEMO_REPLIES[label] }]);
-      setStreaming(false);
-    }, 800);
+    const script = document.createElement("script");
+    script.src = "/widget/loko-widget.js";
+    script.setAttribute("data-bot-id", DEMO_BOT_ID);
+    script.setAttribute("data-api-url", window.location.origin);
+    if (DEMO_API_KEY) script.setAttribute("data-api-key", DEMO_API_KEY);
+    document.body.appendChild(script);
+
+    return () => {
+      script.remove();
+      document.querySelectorAll("loko-widget").forEach((el) => el.remove());
+    };
   }, []);
 
+  if (DEMO_BOT_ID) {
+    return (
+      <div style={{ maxWidth: 400, margin: "0 auto", textAlign: "center", padding: "40px 20px" }}>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: "12px", color: "var(--text-tertiary)", marginBottom: 12 }}>
+          Le widget LOKO apparait en bas a droite de cette page.
+        </div>
+        <div style={{ fontSize: "14px", color: "var(--text-secondary)" }}>
+          Cliquez dessus pour discuter avec le bot de demonstration en conditions reelles.
+        </div>
+      </div>
+    );
+  }
+
+  // Fallback: static demo when no demo bot is configured
   return (
     <div style={{ maxWidth: 400, margin: "0 auto", border: "2px solid var(--brand-primary-border)", borderRadius: "var(--radius-xl)", padding: 6, position: "relative" }}>
-      <div style={{ position: "absolute", top: -11, left: "50%", transform: "translateX(-50%)", background: "var(--brand-primary)", color: "var(--text-on-brand)", fontFamily: "var(--font-mono)", fontSize: "10px", fontWeight: 600, padding: "3px 10px", borderRadius: 999 }}>EN DIRECT — LECTURE SEULE</div>
+      <div style={{ position: "absolute", top: -11, left: "50%", transform: "translateX(-50%)", background: "var(--brand-primary)", color: "var(--text-on-brand)", fontFamily: "var(--font-mono)", fontSize: "10px", fontWeight: 600, padding: "3px 10px", borderRadius: 999 }}>DEMO</div>
       <div style={{ background: "var(--surface-page)", borderRadius: "var(--radius-lg)", overflow: "hidden", display: "flex", flexDirection: "column", height: 400 }}>
-        {/* Header */}
         <div style={{ display: "flex", alignItems: "center", gap: 9, padding: "13px 14px", borderBottom: "1px solid var(--border-subtle)", background: "var(--surface-card)" }}>
           <svg width="24" height="24" viewBox="0 0 64 64"><rect x="1" y="1" width="62" height="62" rx="14" fill="var(--brand-primary)" /><circle cx="32" cy="25" r="10" fill="none" stroke="#fff" strokeWidth="4" /><path d="M32 33 L32 44" stroke="#fff" strokeWidth="4" strokeLinecap="round" /></svg>
-          <div style={{ fontSize: "13px", fontWeight: 600 }}>Assistant démo</div>
+          <div style={{ fontSize: "13px", fontWeight: 600 }}>Assistant demo</div>
         </div>
-        {/* Messages */}
-        <div style={{ flex: 1, padding: 14, display: "flex", flexDirection: "column", gap: 12, background: "var(--surface-sunken)", overflowY: "auto" }}>
-          {messages.map((m, i) => {
-            const isBot = m.from === "bot";
-            return (
-              <div key={i} style={{ display: "flex", justifyContent: isBot ? "flex-start" : "flex-end" }}>
-                <div style={{ maxWidth: "80%", padding: "9px 13px", borderRadius: isBot ? "4px 14px 14px 14px" : "14px 4px 14px 14px", background: isBot ? "var(--surface-card)" : "var(--brand-primary)", color: isBot ? "var(--text-primary)" : "#fff", fontSize: "13px" }}>{m.text}</div>
-              </div>
-            );
-          })}
-          {choicesShown && (
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
-              {Object.keys(DEMO_REPLIES).map((label) => (
-                <button key={label} onClick={() => choose(label)} style={{ padding: "8px 14px", borderRadius: "var(--radius-pill)", border: "1px solid var(--border-default)", background: "var(--surface-card)", color: "var(--text-primary)", fontSize: "12.5px", fontWeight: 500, cursor: "pointer" }}>{label}</button>
-              ))}
-            </div>
-          )}
-          {streaming && (
-            <div style={{ alignSelf: "flex-start", display: "inline-flex", gap: 5, padding: "10px 13px", borderRadius: "4px 14px 14px 14px", background: "var(--surface-card)", border: "1px solid var(--border-subtle)" }}>
-              <span style={{ width: 5, height: 5, borderRadius: "50%", background: "var(--text-tertiary)", opacity: 0.4 }} />
-              <span style={{ width: 5, height: 5, borderRadius: "50%", background: "var(--text-tertiary)", opacity: 0.7 }} />
-              <span style={{ width: 5, height: 5, borderRadius: "50%", background: "var(--text-tertiary)", opacity: 0.4 }} />
-            </div>
-          )}
+        <div style={{ flex: 1, padding: 14, display: "flex", flexDirection: "column", gap: 12, background: "var(--surface-sunken)", justifyContent: "center", alignItems: "center" }}>
+          <div style={{ fontSize: "13px", color: "var(--text-tertiary)", textAlign: "center", maxWidth: 280 }}>
+            Le widget de demonstration sera disponible une fois le bot demo configure.
+          </div>
+          <Link to="/signup" style={{ padding: "8px 16px", borderRadius: "var(--radius-md)", background: "var(--brand-primary)", color: "var(--text-on-brand)", fontSize: "13px", fontWeight: 600, textDecoration: "none" }}>
+            Creer un compte pour essayer
+          </Link>
         </div>
       </div>
     </div>
@@ -307,10 +300,10 @@ export function LandingPage() {
       <div style={{ padding: "32px 40px", maxWidth: 1180, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ fontSize: 12, color: "var(--text-tertiary)" }}>© 2026 LOKO. Tous droits réservés.</div>
         <div style={{ display: "flex", gap: 22, fontSize: 12, color: "var(--text-tertiary)" }}>
-          <a href="#" style={{ color: "inherit", textDecoration: "none" }}>CGU</a>
-          <a href="#" style={{ color: "inherit", textDecoration: "none" }}>Confidentialité</a>
-          <a href="#" style={{ color: "inherit", textDecoration: "none" }}>Mentions légales</a>
-          <a href="#" style={{ color: "inherit", textDecoration: "none" }}>Contact</a>
+          <Link to="/cgu" style={{ color: "inherit", textDecoration: "none" }}>CGU</Link>
+          <Link to="/confidentialite" style={{ color: "inherit", textDecoration: "none" }}>Confidentialite</Link>
+          <Link to="/mentions" style={{ color: "inherit", textDecoration: "none" }}>Mentions legales</Link>
+          <Link to="/contact" style={{ color: "inherit", textDecoration: "none" }}>Contact</Link>
         </div>
       </div>
     </div>

@@ -20,6 +20,7 @@ from loko.api.bot_admin import router as bot_admin_router
 from loko.api.bot_dashboard import router as bot_dashboard_router
 from loko.api.bot_public import router as bot_public_router
 from loko.api.user_auth import router as user_auth_router
+from loko import __version__
 from loko.api.ops import router as ops_router
 
 logger = logging.getLogger(__name__)
@@ -178,7 +179,7 @@ def create_app() -> FastAPI:
     """Create and configure the FastAPI application."""
     app = FastAPI(
         title="LOKO Bot Service",
-        version="0.3.6",
+        version=__version__,
         description="Deterministic chatbot platform for customer service.",
     )
 

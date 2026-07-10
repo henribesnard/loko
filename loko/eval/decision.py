@@ -1,36 +1,17 @@
-"""C2 — Pure decision logic for evaluation, extracted from states.py.
+"""C2 — Pure decision logic for evaluation.
 
-This module replicates the same routing decisions as the FSM
-(on_classification_l1_done) but in a stateless, testable function
-suitable for offline evaluation.
-
-The decide() function is the single entry point:
-    decision = decide(l1_scores, config)
+R1: This module delegates to loko.bot.decision.decide_l1() — the single
+source of truth for L1 routing decisions. The `decide()` wrapper is kept
+for backward compatibility with existing eval code.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any, Literal
+from loko.bot.decision import Decision, DecisionType, decide_l1
+from loko.bot.models import BotConfig
 
-from loko.bot.models import BotConfig, JourneyParams
-
-
-DecisionType = Literal[
-    "route",            # high-confidence → direct routing
-    "clarify_inter",    # medium-confidence → propose 2 options
-    "reject",           # hors_perimetre or below seuil_bas
-    "escalate",         # demande_conseiller detected
-]
-
-
-@dataclass
-class Decision:
-    """Result of the decide() function."""
-    type: DecisionType
-    intent: str | None = None
-    score: float = 0.0
-    candidates: list[tuple[str, float]] = field(default_factory=list)
+# Re-export for backward compatibility
+__all__ = ["Decision", "DecisionType", "decide"]
 
 
 def decide(
@@ -39,9 +20,7 @@ def decide(
     *,
     is_reformulation: bool = False,
 ) -> Decision:
-    """Apply the same routing logic as on_classification_l1_done().
-
-    This is a PURE function: no side effects, no session state.
+    """Apply L1 routing logic — delegates to loko.bot.decision.decide_l1().
 
     Parameters
     ----------
@@ -50,65 +29,10 @@ def decide(
     config : BotConfig
         Bot configuration with thresholds in config.journey.
     is_reformulation : bool
-        If True, a previous attempt was already hors_perimetre (2nd chance
-        used up).
+        If True, a previous attempt was already hors_perimetre.
 
     Returns
     -------
     Decision
-        With type, intent, score, candidates.
     """
-    journey = config.journey
-
-    if not l1_scores:
-        return Decision(
-            type="escalate" if is_reformulation else "reject",
-            intent="hors_perimetre",
-        )
-
-    best_id, best_score = l1_scores[0]
-
-    # Transverse: demande_conseiller → escalate
-    if best_id == "demande_conseiller":
-        return Decision(type="escalate", intent="demande_conseiller", score=best_score)
-
-    # hors_perimetre class → reject
-    if best_id == "hors_perimetre":
-        if is_reformulation:
-            return Decision(type="escalate", intent="hors_perimetre", score=best_score)
-        return Decision(type="reject", intent="hors_perimetre", score=best_score)
-
-    # Below seuil_bas → reject
-    if best_score < journey.seuil_bas:
-        if is_reformulation:
-            return Decision(type="escalate", intent=best_id, score=best_score)
-        return Decision(type="reject", intent=best_id, score=best_score)
-
-    # Above seuil_haut → route directly (unless ecart too small — M2)
-    if best_score >= journey.seuil_haut:
-        seuil_ecart = journey.seuil_ecart_clarification
-        if seuil_ecart > 0 and len(l1_scores) >= 2:
-            second_id, second_score = l1_scores[1]
-            ecart = round(best_score - second_score, 9)
-            if ecart < seuil_ecart:
-                # Gap too small → clarify instead of routing
-                return Decision(
-                    type="clarify_inter",
-                    intent=best_id,
-                    score=best_score,
-                    candidates=[(best_id, best_score), (second_id, second_score)],
-                )
-        return Decision(type="route", intent=best_id, score=best_score)
-
-    # Medium confidence → clarification
-    if len(l1_scores) >= 2:
-        second_id, second_score = l1_scores[1]
-        return Decision(
-            type="clarify_inter",
-            intent=best_id,
-            score=best_score,
-            candidates=[(best_id, best_score), (second_id, second_score)],
-        )
-
-    # Single score in medium range → route
-    return Decision(type="route", intent=best_id, score=best_score)
+    return decide_l1(l1_scores, config.journey, is_reformulation=is_reformulation)

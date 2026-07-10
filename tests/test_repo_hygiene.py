@@ -1,11 +1,14 @@
-"""H4 — Guard: no sensitive data committed under data/.
+"""H4 + V1 — Repository hygiene guards.
 
-CI test ensuring api_keys.json, sessions.db, transcripts, and
-oversized unlisted files are never committed to the repository.
+CI tests ensuring:
+- No sensitive data committed under data/ (H4)
+- Version consistency across pyproject.toml, loko/__init__.py, main.py (V1)
+- eval/datasets/ integrity (V2)
 """
 
 from __future__ import annotations
 
+import json
 import re
 from pathlib import Path
 
@@ -95,3 +98,71 @@ def test_no_secrets_in_loko_source():
         f"Potential secret leaks in log statements:\n" +
         "\n".join(f"  {v}" for v in violations)
     )
+
+
+# ---------------------------------------------------------------------------
+# V1 — Version consistency
+# ---------------------------------------------------------------------------
+
+def _read_pyproject_version() -> str:
+    """Read version from pyproject.toml."""
+    pyproject = REPO_ROOT / "pyproject.toml"
+    for line in pyproject.read_text(encoding="utf-8").splitlines():
+        if line.strip().startswith("version"):
+            # version = "0.3.7"
+            return line.split("=", 1)[1].strip().strip('"').strip("'")
+    raise ValueError("version not found in pyproject.toml")
+
+
+def test_version_consistency():
+    """V1: pyproject.toml, loko.__version__, and main.py FastAPI version must match."""
+    pyproject_version = _read_pyproject_version()
+
+    # loko.__version__
+    from loko import __version__
+    assert __version__ == pyproject_version, (
+        f"loko.__version__={__version__!r} != pyproject.toml={pyproject_version!r}"
+    )
+
+    # main.py FastAPI version (read from app instance)
+    import sys
+    # Avoid side effects from existing imports
+    if "loko.main" in sys.modules:
+        del sys.modules["loko.main"]
+    from loko.main import create_app
+    app = create_app()
+    assert app.version == pyproject_version, (
+        f"FastAPI app.version={app.version!r} != pyproject.toml={pyproject_version!r}"
+    )
+
+
+def test_openapi_version():
+    """V1: openapi_w2.json version must match pyproject.toml."""
+    openapi_path = REPO_ROOT / "openapi_w2.json"
+    if not openapi_path.exists():
+        pytest.skip("openapi_w2.json not present")
+
+    spec = json.loads(openapi_path.read_text(encoding="utf-8"))
+    openapi_version = spec.get("info", {}).get("version", "")
+    pyproject_version = _read_pyproject_version()
+
+    assert openapi_version == pyproject_version, (
+        f"openapi_w2.json version={openapi_version!r} != pyproject.toml={pyproject_version!r}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# V2 — eval/datasets/ integrity
+# ---------------------------------------------------------------------------
+
+_EVAL_DIR = REPO_ROOT / "eval" / "datasets"
+
+
+@pytest.mark.skipif(not _EVAL_DIR.is_dir(), reason="eval/datasets/ not present")
+def test_eval_datasets_present():
+    """V2: eval/datasets/ must contain HASHES.sha256 and at least one CSV."""
+    hashes = _EVAL_DIR / "HASHES.sha256"
+    assert hashes.is_file(), "eval/datasets/HASHES.sha256 is missing"
+
+    csvs = list(_EVAL_DIR.glob("*.csv"))
+    assert len(csvs) >= 1, "eval/datasets/ must contain at least one CSV file"

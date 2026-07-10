@@ -1,9 +1,0 @@
-text,intent
-bilan bucco-dentaire prise en charge,hors_perimetre
-bucco-dentaire remboursement mutuelle,hors_perimetre
-la teletransmission entre ma mutuelle et la securite sociale,teletransmission_noemie
-teletransmission avec votre mutuelle comment ca fonctionne,teletransmission_noemie
-coordonnees bancaires pour le prelevement des cotisations,cotisations
-RIB pour le paiement de ma cotisation,cotisations
-debloquer mon espace personnel Ameli,services_en_ligne
-mon compte en ligne est bloque que faire,services_en_ligne

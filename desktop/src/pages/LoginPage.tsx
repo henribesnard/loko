@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { LokoLockup } from "@/components/ui/LokoLockup";
@@ -11,6 +11,8 @@ interface LoginPageProps {
 
 export function LoginPage({ onLogin }: LoginPageProps) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -23,7 +25,14 @@ export function LoginPage({ onLogin }: LoginPageProps) {
     setError(null);
 
     const ok = await onLogin(email.trim(), password);
-    if (!ok) setError(t("auth.error"));
+    if (ok) {
+      // F3: honour ?next= redirect after login
+      const next = searchParams.get("next") || "/bot";
+      const safe = next.startsWith("/") && !next.startsWith("//") ? next : "/bot";
+      navigate(safe, { replace: true });
+    } else {
+      setError(t("auth.error"));
+    }
     setLoading(false);
   };
 

@@ -13,6 +13,7 @@ from __future__ import annotations
 import enum
 from typing import Any
 
+from loko.bot.decision import decide_l1
 from loko.bot.models import (
     Action,
     BotConfig,
@@ -110,43 +111,32 @@ def on_user_message_attente(
 def on_classification_l1_done(
     session: BotSession, event: Event, config: BotConfig,
 ) -> TransitionResult:
-    """Handle L1 classification result — route based on scores & thresholds."""
+    """Handle L1 classification result — delegates to decide_l1() (R1)."""
     scores: list[tuple[str, float]] = event.data.get("scores", [])
-    journey = config.journey
 
-    if not scores:
-        return _handle_hors_perimetre(session, config)
+    is_reformulation = session.reformulation_count_current_demande > 0
+    decision = decide_l1(scores, config.journey, is_reformulation=is_reformulation)
 
-    best_id, best_score = scores[0]
-
-    # Transverse exit: demande_conseiller (any score)
-    if best_id == "demande_conseiller":
+    # Map Decision -> FSM actions
+    if decision.type == "escalate":
+        motif = (
+            EscalationMotif.DEMANDE_EXPLICITE
+            if decision.intent == "demande_conseiller"
+            else EscalationMotif.HORS_PERIMETRE
+        )
         new = _update(session, state=BotState.ESCALADE)
-        return new, [CallEscalation(motif=EscalationMotif.DEMANDE_EXPLICITE)]
+        return new, [CallEscalation(motif=motif)]
 
-    # hors_perimetre class → out-of-scope handling (any score)
-    if best_id == "hors_perimetre":
+    if decision.type == "reject":
         return _handle_hors_perimetre(session, config)
 
-    # Low confidence → out-of-scope
-    if best_score < journey.seuil_bas:
-        return _handle_hors_perimetre(session, config)
+    if decision.type == "clarify_inter":
+        if session.clarifications_count_current_demande >= config.journey.max_clarifications:
+            return _route_after_l1(session, config, decision.intent or scores[0][0])
 
-    # High confidence
-    if best_score >= journey.seuil_haut:
-        return _route_after_l1(session, config, best_id)
-
-    # Medium confidence — clarification between top 2
-    if len(scores) >= 2:
-        if session.clarifications_count_current_demande >= journey.max_clarifications:
-            # Max clarifications reached, take the best
-            return _route_after_l1(session, config, best_id)
-
-        second_id, _ = scores[1]
-        # Find labels
+        candidates = decision.candidates or [(scores[0][0], scores[0][1]), (scores[1][0], scores[1][1])]
         intent_map = {i.id: i.label for i in config.intents}
-        options = [intent_map.get(best_id, best_id), intent_map.get(second_id, second_id)]
-        candidates = [(best_id, best_score), (second_id, scores[1][1])]
+        options = [intent_map.get(c[0], c[0]) for c in candidates]
 
         new = _update(
             session,
@@ -164,8 +154,8 @@ def on_classification_l1_done(
             ),
         ]
 
-    # Single score in medium range — take it
-    return _route_after_l1(session, config, best_id)
+    # decision.type == "route"
+    return _route_after_l1(session, config, decision.intent or scores[0][0])
 
 
 def _handle_hors_perimetre(
