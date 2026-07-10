@@ -12,7 +12,7 @@ Produces a machine-readable JSON conformity report (CE-9 artifact).
 
 Usage:
     python tools/check_bot_conformity.py <bot_dir>
-    python tools/check_bot_conformity.py data/bots/db0ee079-... --output eval/campagne-R0R1/test/CE-9.json
+    python tools/check_bot_conformity.py data/bots/<uuid> --output campaign/CE-9.json
 
 Exit code:
     0 — conformity PASS
