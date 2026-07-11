@@ -38,7 +38,15 @@ from loko.bot.models import (
     EscalationMotif,
     EscalationPayload,
     RetrievalResult,
+    TemplateKey,
     TraceEvent,
+)
+from loko.bot.guardrails import (
+    GuardrailEngine,
+    GuardrailsConfig,
+    check_grounding,
+    check_response_leaks,
+    default_ruleset,
 )
 from loko.bot.retrieval_filter import FilteredRetriever
 from loko.bot.states import Event, EventType
@@ -105,11 +113,16 @@ class BotOrchestrator:
         retriever: FilteredRetriever,
         generator: BotGenerator,
         escalation: EscalationProtocol,
+        guardrails_config: GuardrailsConfig | None = None,
     ):
         self.classifier = classifier
         self.retriever = retriever
         self.generator = generator
         self.escalation = escalation
+        # GF: guardrail engine (default rules if no config)
+        gc = guardrails_config or GuardrailsConfig(rules=default_ruleset())
+        self._guardrail_engine = GuardrailEngine(gc)
+        self._guardrails_config = gc
 
     async def create_and_start_session(
         self,
@@ -146,6 +159,78 @@ class BotOrchestrator:
 
         return session, events
 
+    def _check_session_budgets(
+        self,
+        session: BotSession,
+        config: BotConfig,
+    ) -> tuple[BotSession, list[SSEEvent]] | None:
+        """ORC: check duration and token budgets before processing.
+
+        Returns (session, events) to emit if budget exceeded, None otherwise.
+        Budget is checked BEFORE the LLM call — a stream already started
+        is never cut for budget reasons.
+        """
+        from datetime import datetime, timezone
+
+        journey = config.journey
+
+        # ORC-2: duration budget
+        try:
+            created = datetime.fromisoformat(session.created_at)
+            now = datetime.now(timezone.utc)
+            elapsed_s = (now - created).total_seconds()
+        except (ValueError, TypeError):
+            elapsed_s = 0
+
+        if elapsed_s > journey.max_duree_session_s:
+            return self._build_cloture_douce(session, config, "budget_duree")
+
+        # ORC-3: token budget
+        if session.tokens_llm_cumul >= journey.max_tokens_llm_session:
+            return self._build_cloture_douce(session, config, "budget_tokens")
+
+        return None
+
+    def _build_cloture_douce(
+        self,
+        session: BotSession,
+        config: BotConfig,
+        reason: str,
+    ) -> tuple[BotSession, list[SSEEvent]]:
+        """Build the CLOTURE_DOUCE response."""
+        resume = ", ".join(session.resolved_intents) if session.resolved_intents else ""
+
+        new_session = session.model_copy(update={"state": BotState.CLOTURE_DOUCE})
+
+        text = self._render_action_template(
+            EmitTemplate(
+                key=TemplateKey.CLOTURE_DOUCE,
+                variables={
+                    "nom_bot": config.name,
+                    "resume_demandes": resume,
+                    "lien_escalade": "",
+                },
+            ),
+            config,
+        )
+        new_session = add_turn_to_session(
+            new_session, role="bot", content=text,
+            template_key=TemplateKey.CLOTURE_DOUCE,
+        )
+
+        events = [
+            SSEEvent(event="state", data={"state": new_session.state.value}),
+            SSEEvent(
+                event="template",
+                data={
+                    "content": text,
+                    "template_key": TemplateKey.CLOTURE_DOUCE.value,
+                },
+            ),
+            SSEEvent(event="end_of_turn", data={"reason": reason}),
+        ]
+        return new_session, events
+
     async def process_message(
         self,
         session: BotSession,
@@ -158,6 +243,7 @@ class BotOrchestrator:
         The caller must always use the latest session from the last yield.
 
         The pipeline:
+        0. ORC: check duration/token budgets
         1. Record user turn
         2. FSM step (USER_MESSAGE) → may trigger CLASSIFICATION_L1
         3. Run SetFit L1 → feed result back → may trigger L2
@@ -165,8 +251,98 @@ class BotOrchestrator:
         5. Retrieval → check sufficiency → generation or escalation
         6. Emit satisfaction survey
         """
+        # ORC: check session budgets before processing
+        budget_result = self._check_session_budgets(session, config)
+        if budget_result is not None:
+            session, events = budget_result
+            for sse_event in events:
+                yield session, sse_event
+            return
+
         turn_id = str(uuid.uuid4())
         traces = TraceCollector(turn_id)
+
+        # --- GF Layer 1: deterministic pre-filter (before classification) ---
+        guardrail_result = self._guardrail_engine.check(user_text)
+        if guardrail_result.blocked:
+            traces.add("guardrail_prefilter", detail={
+                "blocked_by": guardrail_result.rule_id,
+                "category": guardrail_result.category,
+            })
+
+            # Record user message
+            session = add_turn_to_session(session, role="user", content=user_text)
+
+            # Increment infraction counter if action requires it
+            if guardrail_result.action in ("refuser_et_compter", "escalader"):
+                session = session.model_copy(
+                    update={"infractions": session.infractions + 1}
+                )
+
+            # Check if max infractions reached
+            if session.infractions >= self._guardrails_config.max_infractions:
+                if self._guardrails_config.action_apres_max == "escalade":
+                    session = session.model_copy(update={"state": BotState.ESCALADE})
+                    yield session, SSEEvent(event="state", data={"state": session.state.value})
+                    async for session, sse_event in self._handle_escalation(
+                        session,
+                        CallEscalation(motif=EscalationMotif.INFRACTIONS),
+                        config, traces,
+                    ):
+                        yield session, sse_event
+                else:
+                    # FIN_FERME
+                    intent_labels = ", ".join(
+                        i.label for i in config.intents if not i.is_system
+                    )
+                    session = session.model_copy(update={"state": BotState.FIN_FERME})
+                    text = self._render_action_template(
+                        EmitTemplate(
+                            key=TemplateKey.FIN_FERME,
+                            variables={"intentions_gerees": intent_labels},
+                        ),
+                        config,
+                    )
+                    session = add_turn_to_session(
+                        session, role="bot", content=text,
+                        template_key=TemplateKey.FIN_FERME,
+                    )
+                    yield session, SSEEvent(event="state", data={"state": session.state.value})
+                    yield session, SSEEvent(
+                        event="template",
+                        data={"content": text, "template_key": TemplateKey.FIN_FERME.value},
+                    )
+                    yield session, SSEEvent(event="end_of_turn", data={"reason": "fin_ferme"})
+            else:
+                # Emit refusal template (no LLM, no retrieval)
+                intent_labels = ", ".join(
+                    i.label for i in config.intents if not i.is_system
+                )
+                text = self._render_action_template(
+                    EmitTemplate(
+                        key=TemplateKey.DEMANDE_INAPPROPRIEE,
+                        variables={
+                            "nom_bot": config.name,
+                            "intentions_gerees": intent_labels,
+                        },
+                    ),
+                    config,
+                )
+                session = add_turn_to_session(
+                    session, role="bot", content=text,
+                    template_key=TemplateKey.DEMANDE_INAPPROPRIEE,
+                )
+                yield session, SSEEvent(
+                    event="template",
+                    data={"content": text, "template_key": TemplateKey.DEMANDE_INAPPROPRIEE.value},
+                )
+
+            # Emit traces
+            yield session, SSEEvent(
+                event="traces",
+                data={"turn_id": turn_id, "traces": traces.to_list()},
+            )
+            return
 
         # Record user message
         session = add_turn_to_session(session, role="user", content=user_text)
@@ -183,10 +359,18 @@ class BotOrchestrator:
         ):
             yield session, sse_event
 
-        # Emit traces
+        # Emit traces with ORC counters
         yield session, SSEEvent(
             event="traces",
-            data={"turn_id": turn_id, "traces": traces.to_list()},
+            data={
+                "turn_id": turn_id,
+                "traces": traces.to_list(),
+                "counters": {
+                    "demandes": session.demandes_count,
+                    "tours_demande": session.tours_demande,
+                    "tokens_llm": session.tokens_llm_cumul,
+                },
+            },
         )
 
     async def process_button_click(
@@ -421,6 +605,32 @@ class BotOrchestrator:
                 yield session, sse_event
             return
 
+        # ORC-3: check token budget before starting generation
+        if session.tokens_llm_cumul >= config.journey.max_tokens_llm_session:
+            session = session.model_copy(update={"state": BotState.CLOTURE_DOUCE})
+            yield session, SSEEvent(event="state", data={"state": session.state.value})
+
+            resume = ", ".join(session.resolved_intents) if session.resolved_intents else ""
+            cloture_action = EmitTemplate(
+                key=TemplateKey.CLOTURE_DOUCE,
+                variables={
+                    "nom_bot": config.name,
+                    "resume_demandes": resume,
+                    "lien_escalade": "",
+                },
+            )
+            text = self._render_action_template(cloture_action, config)
+            session = add_turn_to_session(
+                session, role="bot", content=text,
+                template_key=TemplateKey.CLOTURE_DOUCE,
+            )
+            yield session, SSEEvent(
+                event="template",
+                data={"content": text, "template_key": TemplateKey.CLOTURE_DOUCE.value},
+            )
+            yield session, SSEEvent(event="end_of_turn", data={"reason": "budget_tokens"})
+            return
+
         # --- Generation (streaming) ---
         tokens: list[str] = []
         with traces.measure("generation") as ctx:
@@ -439,6 +649,37 @@ class BotOrchestrator:
 
             full_response = "".join(tokens)
             ctx["response_length"] = len(full_response)
+            ctx["token_count"] = len(tokens)
+
+        # ORC-3: update cumulative token count (prefer provider-reported usage)
+        provider_usage = (
+            self.generator.provider.get_last_usage()
+            if hasattr(self.generator.provider, "get_last_usage")
+            else None
+        )
+        token_increment = (
+            provider_usage.get("completion_tokens", len(tokens))
+            if provider_usage
+            else len(tokens)
+        )
+        session = session.model_copy(
+            update={"tokens_llm_cumul": session.tokens_llm_cumul + token_increment}
+        )
+
+        # --- GF Layer 3b: output validation (leak detection, always blocking) ---
+        leak = check_response_leaks(full_response)
+        if leak:
+            logger.critical("Leak detected in LLM response: %s", leak)
+            traces.add("guardrail_leak", detail={"leak_pattern": leak})
+            # Replace response with apology template
+            full_response = self._render_action_template(
+                EmitTemplate(key=TemplateKey.HORS_PERIMETRE), config,
+            )
+
+        # GF Layer 3b: grounding check (V1 = marking only)
+        is_grounded = check_grounding(full_response, result.chunks)
+        if not is_grounded:
+            traces.add("guardrail_grounding", detail={"low_grounding": True})
 
         # Extract sources
         sources = self.generator.extract_sources(result.chunks)
@@ -500,6 +741,14 @@ class BotOrchestrator:
         EscalationPayload
             Payload ready to send to escalation provider
         """
+        # PRO-4: build deterministic structured summary (never LLM-generated)
+        resume: dict[str, Any] = {
+            "demandes_count": session.demandes_count,
+            "resolved_intents": list(session.resolved_intents) if session.resolved_intents else [],
+            "infractions": session.infractions,
+            "motif": action.motif.value if hasattr(action.motif, "value") else str(action.motif),
+        }
+
         return EscalationPayload(
             conversation_id=session.session_id,
             transcript=[
@@ -509,6 +758,7 @@ class BotOrchestrator:
             intention=session.current_intent,
             sous_motif=session.current_sub_motif,
             motif_escalade=action.motif,
+            resume=resume,
         )
 
     @staticmethod

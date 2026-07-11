@@ -6,6 +6,7 @@ import { cn } from "@/lib/cn";
 import type { WizardStepProps } from "../BotWizard";
 import type { MessageTemplate } from "@/types/bot";
 import { TEMPLATE_KEYS, TEMPLATE_VARIABLES } from "@/types/bot";
+import { BotGuardrails } from "./BotGuardrails";
 
 const TEMPLATE_LABEL: Record<string, string> = {
   presentation: "Présentation",
@@ -17,9 +18,15 @@ const TEMPLATE_LABEL: Record<string, string> = {
   fin: "Fin de conversation",
   mise_en_relation: "Mise en relation",
   timeout: "Timeout",
+  // ORC/GF/PRO new templates
+  avant_derniere_demande: "Avant-dernière demande",
+  cloture_douce: "Clôture douce",
+  demande_inappropriee: "Demande inappropriée",
+  fin_ferme: "Clôture ferme",
+  maintenance: "Maintenance",
 };
 
-export function BotMessages({ config, updateConfig, saving }: WizardStepProps) {
+export function BotMessages({ botId, config, updateConfig, saving }: WizardStepProps) {
   const { t } = useTranslation();
   const [selectedKey, setSelectedKey] = useState<string>(TEMPLATE_KEYS[0]);
   const [templates, setTemplates] = useState<Record<string, MessageTemplate>>(
@@ -58,7 +65,8 @@ export function BotMessages({ config, updateConfig, saving }: WizardStepProps) {
       .replace("{intentions_gerees}", config.intents.map((i) => i.label).join(", "))
       .replace("{temps_attente}", "~4 min")
       .replace("{lien_escalade}", "#")
-      .replace("{options}", "...");
+      .replace("{options}", "...")
+      .replace("{resume_demandes}", "Demande 1, Demande 2");
   };
 
   return (
@@ -153,6 +161,13 @@ export function BotMessages({ config, updateConfig, saving }: WizardStepProps) {
           {t("bot.wizard.save")}
         </Button>
       )}
+
+      {/* Guardrails configuration (GF lot) */}
+      <BotGuardrails
+        botId={botId}
+        onSave={updateConfig}
+        saving={saving}
+      />
     </div>
   );
 }

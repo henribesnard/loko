@@ -10,6 +10,7 @@ Temperature is hardcoded to 0 (protocol determinism requirement).
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import time
@@ -40,10 +41,18 @@ class OpenAICompatProvider:
         Default model identifier.
     """
 
-    def __init__(self, base_url: str, api_key: str, model: str) -> None:
+    def __init__(
+        self,
+        base_url: str,
+        api_key: str,
+        model: str,
+        host_header: str | None = None,
+    ) -> None:
         self.base_url = base_url.rstrip("/")
         self.api_key = api_key
         self.default_model = model
+        # DNS rebinding protection: override Host header when URL is IP-pinned
+        self._host_header = host_header
 
     async def stream_chat(
         self,
@@ -76,10 +85,18 @@ class OpenAICompatProvider:
             "Content-Type": "application/json",
             "Accept": "text/event-stream",
         }
+        # DNS rebinding protection: set original Host header when IP-pinned
+        if self._host_header:
+            headers["Host"] = self._host_header
+
+        # Request usage info from providers that support it (OpenAI, etc.)
+        payload["stream_options"] = {"include_usage": True}
 
         t0 = time.perf_counter()
         first_token_time: float | None = None
         token_count = 0
+        # Track provider-reported usage (populated from final chunk if available)
+        self._last_usage: dict[str, int] | None = None
 
         transport_timeout = httpx.Timeout(
             connect=_DEFAULT_CONNECT_TIMEOUT,
@@ -133,6 +150,11 @@ class OpenAICompatProvider:
                             logger.debug("Skipping non-JSON SSE line: %s", data_str[:100])
                             continue
 
+                        # Capture usage from final chunk if provider includes it
+                        usage = chunk.get("usage")
+                        if usage and isinstance(usage, dict):
+                            self._last_usage = usage
+
                         choices = chunk.get("choices", [])
                         if not choices:
                             continue
@@ -145,6 +167,14 @@ class OpenAICompatProvider:
                             token_count += 1
                             yield content
 
+            except asyncio.CancelledError:
+                # INT: cooperative cancellation — log and propagate cleanly
+                elapsed = time.perf_counter() - t0
+                logger.info(
+                    "LLM generation interrupted: model=%s tokens=%d elapsed=%.2fs",
+                    effective_model, token_count, elapsed,
+                )
+                raise
             except httpx.TimeoutException:
                 elapsed = time.perf_counter() - t0
                 logger.error(
@@ -170,6 +200,14 @@ class OpenAICompatProvider:
             "LLM generation done: model=%s tokens=%d ttft=%.2fs total=%.2fs",
             effective_model, token_count, ttft, elapsed,
         )
+
+    def get_last_usage(self) -> dict[str, int] | None:
+        """Return provider-reported usage from the last generation, if available.
+
+        Returns a dict with keys like ``completion_tokens``, ``prompt_tokens``,
+        ``total_tokens``, or None if the provider didn't report usage.
+        """
+        return getattr(self, "_last_usage", None)
 
 
 class LLMProviderError(Exception):

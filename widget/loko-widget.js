@@ -44,6 +44,8 @@
       assistant: "Assistant",
       error_start: "Impossible de d\u00E9marrer la conversation.",
       error_message: "Une erreur est survenue.",
+      stop: "Arr\u00EAter",
+      maintenance: "Le service est momentan\u00E9ment indisponible.",
     },
     en: {
       open_chat: "Open chat",
@@ -56,6 +58,8 @@
       assistant: "Assistant",
       error_start: "Unable to start the conversation.",
       error_message: "An error occurred.",
+      stop: "Stop",
+      maintenance: "The service is temporarily unavailable.",
     },
   };
   const t = I18N[LANG] || I18N.fr;
@@ -339,6 +343,8 @@
   display: flex; align-items: center; justify-content: center;
 }
 .loko-send:disabled { opacity: 0.5; cursor: default; }
+.loko-stop { background: var(--loko-gray-400); }
+.loko-stop:hover { background: var(--loko-gray-500); }
 
 /* Sources */
 .loko-sources {
@@ -365,6 +371,7 @@
       this._messages = [];
       this._streaming = false;
       this._streamBuffer = "";
+      this._abortController = null;
     }
 
     connectedCallback() {
@@ -381,6 +388,13 @@
           method: "POST",
         });
         const data = await res.json();
+        // PRO-7: maintenance mode — show maintenance message instead of session
+        if (data.maintenance) {
+          this._addBotMessage(data.message || t.maintenance);
+          this._renderMessages();
+          return;
+        }
+
         this._session = {
           id: data.session_id,
           botId: data.bot_id,
@@ -398,12 +412,42 @@
       }
     }
 
+    // INT: send interrupt request to cancel active generation
+    async _sendInterrupt() {
+      if (!this._session || !this._streaming) return;
+      // Abort the current fetch stream
+      if (this._abortController) {
+        this._abortController.abort();
+      }
+      // Send interrupt to backend
+      try {
+        await this._fetch(
+          `/api/v1/bot/${BOT_ID}/sessions/${this._session.id}/messages`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text: "", type: "interrupt" }),
+          }
+        );
+      } catch (e) {
+        /* interrupt is best-effort */
+      }
+      this._streaming = false;
+      // Finalize any partial bubble
+      if (this._streamBuffer) {
+        this._addBotMessage(this._streamBuffer, { streaming: false, interrupted: true });
+        this._streamBuffer = "";
+      }
+      this._renderMessages();
+    }
+
     async _sendMessage(text, type = "text") {
       if (!this._session || this._streaming) return;
 
       this._addUserMessage(text);
       this._streaming = true;
       this._streamBuffer = "";
+      this._abortController = new AbortController();
       this._renderMessages();
 
       try {
@@ -413,6 +457,7 @@
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ text, type }),
+            signal: this._abortController.signal,
           }
         );
 
@@ -635,6 +680,15 @@
       send.setAttribute("aria-label", t.send);
       this._sendBtn = send;
 
+      // INT: stop button (visible during streaming)
+      const stop = document.createElement("button");
+      stop.className = "loko-send loko-stop";
+      stop.innerHTML = "&#9632;";
+      stop.setAttribute("aria-label", t.stop);
+      stop.style.display = "none";
+      stop.addEventListener("click", () => this._sendInterrupt());
+      this._stopBtn = stop;
+
       input.addEventListener("keydown", (e) => {
         if (e.key === "Enter" && !e.shiftKey) {
           e.preventDefault();
@@ -645,6 +699,7 @@
 
       inputArea.appendChild(input);
       inputArea.appendChild(send);
+      inputArea.appendChild(stop);
       win.appendChild(inputArea);
 
       container.appendChild(win);
@@ -789,6 +844,12 @@
         dots.className = "loko-dots";
         dots.innerHTML = "<span></span><span></span><span></span>";
         el.appendChild(dots);
+      }
+
+      // INT: toggle stop/send button visibility
+      if (this._stopBtn && this._sendBtn) {
+        this._stopBtn.style.display = this._streaming ? "" : "none";
+        this._sendBtn.style.display = this._streaming ? "none" : "";
       }
 
       // Auto-scroll

@@ -25,6 +25,7 @@ from loko.bot.models import (
     EmitTemplate,
     EscalationMotif,
     TemplateKey,
+    JourneyParams,
 )
 
 
@@ -111,7 +112,10 @@ def on_user_message_attente(
 def on_classification_l1_done(
     session: BotSession, event: Event, config: BotConfig,
 ) -> TransitionResult:
-    """Handle L1 classification result — delegates to decide_l1() (R1)."""
+    """Handle L1 classification result — delegates to decide_l1() (R1).
+
+    ORC: detects same-intent loops via tours_demande counter.
+    """
     scores: list[tuple[str, float]] = event.data.get("scores", [])
 
     is_reformulation = session.reformulation_count_current_demande > 0
@@ -155,7 +159,25 @@ def on_classification_l1_done(
         ]
 
     # decision.type == "route"
-    return _route_after_l1(session, config, decision.intent or scores[0][0])
+    resolved_intent = decision.intent or scores[0][0]
+
+    # ORC: same-intent loop detection
+    if resolved_intent == session.current_intent:
+        new_tours = session.tours_demande + 1
+        if new_tours >= config.journey.max_tours_par_demande:
+            new = _update(
+                session,
+                state=BotState.ESCALADE,
+                current_intent=resolved_intent,
+                tours_demande=new_tours,
+            )
+            return new, [CallEscalation(motif=EscalationMotif.BOUCLE_SANS_ISSUE)]
+        session = _update(session, tours_demande=new_tours)
+    else:
+        # Intent changed — reset counter
+        session = _update(session, tours_demande=0)
+
+    return _route_after_l1(session, config, resolved_intent)
 
 
 def _handle_hors_perimetre(
@@ -373,8 +395,62 @@ def on_retrieval_generation_done(
 def on_satisfaction_positive(
     session: BotSession, event: Event, config: BotConfig,
 ) -> TransitionResult:
-    """User satisfied — ask if they have another question."""
-    new = _update(session, state=BotState.AUTRE_DEMANDE)
+    """User satisfied — ask if they have another question.
+
+    ORC: record resolved intent and reset tours_demande counter.
+    ORC-4: at demande == max_demandes - 1, use avant_derniere_demande template.
+    ORC: at demande == max_demandes, route to CLOTURE_DOUCE.
+    """
+    journey = config.journey
+
+    # Record the resolved intent for resume_demandes
+    resolved = list(session.resolved_intents)
+    if session.current_intent:
+        intent_label = session.current_intent
+        for i in config.intents:
+            if i.id == session.current_intent:
+                intent_label = i.label
+                break
+        resolved.append(intent_label)
+
+    # Reset tours_demande on satisfied outcome
+    new = _update(session, tours_demande=0, resolved_intents=resolved)
+
+    new_count = new.demandes_count + 1
+
+    # ORC: at max_demandes, go to CLOTURE_DOUCE
+    if new_count >= journey.max_demandes:
+        resume = ", ".join(resolved) if resolved else ""
+        intent_labels = ", ".join(
+            i.label for i in config.intents if not i.is_system
+        )
+        new = _update(
+            new, state=BotState.CLOTURE_DOUCE, demandes_count=new_count,
+        )
+        return new, [
+            EmitTemplate(
+                key=TemplateKey.CLOTURE_DOUCE,
+                variables={
+                    "nom_bot": config.name,
+                    "resume_demandes": resume,
+                    "lien_escalade": "",
+                },
+            ),
+            CloseSession(reason="cloture_douce"),
+        ]
+
+    # ORC-4: at max_demandes - 1, use avant_derniere_demande template
+    if journey.prevenir_avant_derniere_demande and new_count == journey.max_demandes - 1:
+        new = _update(new, state=BotState.AUTRE_DEMANDE, demandes_count=new_count)
+        return new, [
+            EmitTemplate(
+                key=TemplateKey.AVANT_DERNIERE_DEMANDE,
+                variables={"nom_bot": config.name},
+                buttons=["Oui", "Non"],
+            ),
+        ]
+
+    new = _update(new, state=BotState.AUTRE_DEMANDE, demandes_count=new_count)
     return new, [
         EmitTemplate(
             key=TemplateKey.AUTRE_DEMANDE,
@@ -394,22 +470,20 @@ def on_satisfaction_negative(
 def on_autre_demande_oui(
     session: BotSession, event: Event, config: BotConfig,
 ) -> TransitionResult:
-    """User has another question — loop back if under max_demandes."""
-    new_count = session.demandes_count + 1
-    if new_count >= config.journey.max_demandes:
-        new = _update(session, state=BotState.FIN, demandes_count=new_count)
-        return new, [EmitTemplate(key=TemplateKey.FIN), CloseSession(reason="max_demandes")]
+    """User has another question — loop back.
 
+    Note: demandes_count is already incremented in on_satisfaction_positive.
+    """
     new = _update(
         session,
         state=BotState.ATTENTE_DEMANDE,
-        demandes_count=new_count,
         current_intent=None,
         current_sub_motif=None,
         pending_candidates=[],
         original_query=None,
         clarifications_count_current_demande=0,
         reformulation_count_current_demande=0,
+        tours_demande=0,
     )
     return new, []
 
@@ -443,6 +517,31 @@ def on_timeout(
     """Inactivity timeout — close with timeout template."""
     new = _update(session, state=BotState.TIMEOUT)
     return new, [EmitTemplate(key=TemplateKey.TIMEOUT), CloseSession(reason="timeout")]
+
+
+def on_cloture_douce_done(
+    session: BotSession, event: Event, config: BotConfig,
+) -> TransitionResult:
+    """CLOTURE_DOUCE -> FIN: graceful close has been rendered."""
+    new = _update(session, state=BotState.FIN)
+    return new, [CloseSession(reason="cloture_douce")]
+
+
+def on_fin_ferme(
+    session: BotSession, event: Event, config: BotConfig,
+) -> TransitionResult:
+    """GF: firm close due to infractions — emit template and close."""
+    intent_labels = ", ".join(
+        i.label for i in config.intents if not i.is_system
+    )
+    new = _update(session, state=BotState.FIN_FERME)
+    return new, [
+        EmitTemplate(
+            key=TemplateKey.FIN_FERME,
+            variables={"intentions_gerees": intent_labels},
+        ),
+        CloseSession(reason="fin_ferme"),
+    ]
 
 
 # ---------------------------------------------------------------------------
@@ -481,6 +580,8 @@ TRANSITIONS: dict[tuple[BotState, EventType], TransitionHandler] = {
         on_autre_demande_oui(s, e, c) if e.data.get("selected", e.data.get("button")) == "Oui"
         else on_autre_demande_non(s, e, c)
     ),
+    # ORC: CLOTURE_DOUCE is terminal (template already rendered by satisfaction handler)
+    # GF: FIN_FERME is terminal (handled by guardrails or infraction threshold)
 }
 
 # Transverse transitions (checked before the table)

@@ -47,6 +47,9 @@ class BotState(str, enum.Enum):
     ESCALADE = "escalade"
     FIN = "fin"
     TIMEOUT = "timeout"
+    # ORC/GF: graceful wind-down and firm close
+    CLOTURE_DOUCE = "cloture_douce"
+    FIN_FERME = "fin_ferme"
 
 
 class TemplateKey(str, enum.Enum):
@@ -60,6 +63,14 @@ class TemplateKey(str, enum.Enum):
     FIN = "fin"
     MISE_EN_RELATION = "mise_en_relation"
     TIMEOUT = "timeout"
+    # ORC: graceful wind-down
+    AVANT_DERNIERE_DEMANDE = "avant_derniere_demande"
+    CLOTURE_DOUCE = "cloture_douce"
+    # GF: guardrail refusal and firm close
+    DEMANDE_INAPPROPRIEE = "demande_inappropriee"
+    FIN_FERME = "fin_ferme"
+    # PRO: maintenance mode
+    MAINTENANCE = "maintenance"
 
 
 class EscalationMotif(str, enum.Enum):
@@ -68,6 +79,10 @@ class EscalationMotif(str, enum.Enum):
     DEMANDE_EXPLICITE = "demande_explicite"
     HORS_PERIMETRE = "hors_perimetre"
     RETRIEVAL_INSUFFISANT = "retrieval_insuffisant"
+    # ORC: loop without resolution
+    BOUCLE_SANS_ISSUE = "boucle_sans_issue"
+    # GF: infraction limit reached
+    INFRACTIONS = "infractions"
 
 
 class ToneProfile(str, enum.Enum):
@@ -154,6 +169,38 @@ class JourneyParams(BaseModel):
     retrieval_min_score: float = Field(default=0.35, ge=0.0, le=1.0)
     retrieval_min_chunks: int = Field(default=1, ge=1, le=20)
 
+    # --- ORC: fine-grained conversation control ---
+    max_tours_par_demande: int = Field(
+        default=3, ge=1, le=10,
+        description=(
+            "ORC-1: maximum user turns on the SAME intent within one demande "
+            "before forced escalation. Counted when the resolved intent equals "
+            "the previous demande's intent after an unsatisfied survey or a "
+            "free reformulation."
+        ),
+    )
+    max_duree_session_s: int = Field(
+        default=1800, ge=120, le=14400,
+        description=(
+            "ORC-2: hard session duration budget (seconds). When exceeded at "
+            "the next user turn, the FSM routes to CLOTURE_DOUCE."
+        ),
+    )
+    max_tokens_llm_session: int = Field(
+        default=8000, ge=500, le=100000,
+        description=(
+            "ORC-3: cumulative LLM output-token budget per session. When "
+            "exhausted, next generation request routes to CLOTURE_DOUCE."
+        ),
+    )
+    prevenir_avant_derniere_demande: bool = Field(
+        default=True,
+        description=(
+            "ORC-4: when True, at demande n° (max_demandes - 1) the "
+            "'autre_demande' prompt is replaced by 'avant_derniere_demande'."
+        ),
+    )
+
     @model_validator(mode="after")
     def thresholds_coherent(self) -> JourneyParams:
         if self.seuil_bas >= self.seuil_haut:
@@ -174,6 +221,8 @@ ALLOWED_TEMPLATE_VARIABLES = frozenset({
     "temps_attente",
     "lien_escalade",
     "options",
+    # ORC: graceful wind-down
+    "resume_demandes",
 })
 
 
@@ -206,6 +255,14 @@ class BotLLMConfig(BaseModel):
     temperature: float = Field(default=0.0, ge=0.0, le=0.0)
     timeout: int = Field(default=60, ge=10, le=300)
 
+    # --- LLM lot: BYO provider per bot ---
+    provider_source: Literal["platform", "custom"] = "platform"
+    provider_type: Literal["openai_compat"] = "openai_compat"
+    preset: Literal["openai", "mistral", "deepseek", "ollama", "vllm", "autre"] | None = None
+    base_url: str = ""
+    api_key_ref: str = ""
+    api_key_hint: str = ""
+
 
 class TrainingParams(BaseModel):
     """L2: configurable training hyperparameters."""
@@ -220,7 +277,7 @@ class TrainingParams(BaseModel):
 
 class BotConfig(BaseModel):
     """Full bot configuration, persisted as config.json."""
-    schema_version: int = 2
+    schema_version: int = 3
     bot_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     name: str
     account_id: str = ""  # T1: tenant isolation — empty = legacy (migrated to internal)
@@ -268,6 +325,9 @@ class Turn(BaseModel):
     intent: str | None = None
     sub_motif: str | None = None
     sources: list[dict[str, Any]] | None = None
+    # INT: interrupted generation
+    interrupted: bool = False
+    tokens_emitted: int | None = None
 
 
 class BotSession(BaseModel):
@@ -289,6 +349,14 @@ class BotSession(BaseModel):
     pending_candidates: list[tuple[str, float]] = Field(default_factory=list)
     original_query: str | None = None
     transcript: list[Turn] = Field(default_factory=list)
+    # ORC: per-demande turn counter (same intent loop detection)
+    tours_demande: int = 0
+    # ORC: cumulative LLM output tokens for session budget
+    tokens_llm_cumul: int = 0
+    # ORC: resolved intents for resume_demandes (deterministic)
+    resolved_intents: list[str] = Field(default_factory=list)
+    # GF: infraction counter
+    infractions: int = 0
 
 
 # ---------------------------------------------------------------------------
@@ -301,6 +369,8 @@ class TraceEvent(BaseModel):
     step: str  # classification_l1 | classification_l2 | retrieval | generation | template
     detail: dict[str, Any] = Field(default_factory=dict)
     latency_ms: float = 0.0
+    # ORC: session counters snapshot (included in deterministic replay diff)
+    counters: dict[str, Any] | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -317,6 +387,8 @@ class EscalationPayload(BaseModel):
     horodatage: str = Field(
         default_factory=lambda: datetime.now(timezone.utc).isoformat()
     )
+    # PRO-4: deterministic structured summary (never LLM-generated)
+    resume: dict[str, Any] | None = None
 
 
 class EscalationResult(BaseModel):

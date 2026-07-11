@@ -322,6 +322,22 @@ async def publish_bot(
     updated = config.model_copy(update={"status": "published"})
     save_bot_config(updated)
 
+    # PRO-2: create release snapshot
+    try:
+        from loko.bot.versioning import get_release_store
+        release_store = get_release_store()
+        model_hash = ""
+        if manifest:
+            model_hash = manifest.get("model_hash", "")
+        release = release_store.create_release(
+            bot_id=bot_id,
+            config_dict=updated.model_dump(mode="json"),
+            model_hash=model_hash,
+        )
+        logger.info("Created release v%d for bot %s", release.version, bot_id)
+    except Exception as exc:
+        logger.warning("Could not create release snapshot: %s", exc)
+
     # Invalidate cached orchestrator so runtime picks up new status
     from loko.api.bot_public import invalidate_orchestrator
     invalidate_orchestrator(bot_id)
@@ -722,3 +738,496 @@ def _run_training_background(
         _TRAINING_STATE[bot_id]["status"] = "failed"
         _TRAINING_STATE[bot_id]["error"] = str(exc)
         _persist_train_state(bot_id)
+
+
+# ---------------------------------------------------------------------------
+# LLM configuration (Lot LLM §6.4) — BYO key per bot
+# ---------------------------------------------------------------------------
+
+class LLMConfigRequest(BaseModel):
+    """Request body for PUT /api/bot/{bot_id}/llm."""
+    provider_source: str = "custom"
+    preset: str | None = None
+    base_url: str = ""
+    model: str = ""
+    api_key: str | None = None  # write-only, never returned
+
+
+class LLMTestRequest(BaseModel):
+    """Request body for POST /api/bot/{bot_id}/llm/test."""
+    base_url: str
+    model: str
+    api_key: str
+
+
+@router.put("/{bot_id}/llm")
+async def update_llm_config(
+    bot_id: str,
+    req: LLMConfigRequest,
+    _auth: Any = Depends(require_tenant_or_ops),
+) -> dict[str, Any]:
+    """Update the LLM configuration for a bot (write-only key)."""
+    config = load_bot_config(bot_id)
+    if not config:
+        raise HTTPException(404, "Not found")
+    _reject_demo_mutation(config, bot_id)
+
+    # Validate base_url with SSRF check
+    if req.provider_source == "custom" and req.base_url:
+        from loko.security.ssrf import validate_url, SSRFError
+        try:
+            validate_url(req.base_url)
+        except SSRFError as exc:
+            raise HTTPException(422, f"base_url blocked: {exc.reason}")
+
+    # Store API key in secret store if provided
+    api_key_ref = config.llm.api_key_ref
+    api_key_hint = config.llm.api_key_hint
+    if req.api_key:
+        from loko.security.secret_store import get_secret_store
+        store = get_secret_store()
+        # Delete old key if exists
+        if api_key_ref:
+            store.delete(api_key_ref)
+        api_key_ref = store.put(req.api_key)
+        api_key_hint = req.api_key[-4:] if len(req.api_key) >= 4 else "****"
+
+    # Update config
+    llm = config.llm.model_copy(update={
+        "provider_source": req.provider_source,
+        "preset": req.preset,
+        "base_url": req.base_url,
+        "model": req.model or config.llm.model,
+        "api_key_ref": api_key_ref,
+        "api_key_hint": api_key_hint,
+        "api_key_set": bool(api_key_ref),
+    })
+    config = config.model_copy(update={"llm": llm})
+    save_bot_config(config)
+
+    # Invalidate orchestrator cache
+    from loko.api.bot_public import invalidate_orchestrator
+    invalidate_orchestrator(bot_id)
+
+    return {
+        "status": "updated",
+        "provider_source": llm.provider_source,
+        "base_url": llm.base_url,
+        "model": llm.model,
+        "api_key_hint": llm.api_key_hint,
+    }
+
+
+@router.get("/{bot_id}/llm")
+async def get_llm_config(
+    bot_id: str,
+    _auth: Any = Depends(require_tenant_or_ops),
+) -> dict[str, Any]:
+    """Get LLM config (without the key — only hint)."""
+    config = load_bot_config(bot_id)
+    if not config:
+        raise HTTPException(404, "Not found")
+
+    llm = config.llm
+    return {
+        "provider_source": llm.provider_source,
+        "provider_type": llm.provider_type,
+        "preset": llm.preset,
+        "base_url": llm.base_url,
+        "model": llm.model,
+        "api_key_set": llm.api_key_set,
+        "api_key_hint": llm.api_key_hint,
+        "max_tokens": llm.max_tokens,
+        "timeout": llm.timeout,
+    }
+
+
+# LLM-§6.6: rate limit for test endpoint (5 per minute per account)
+_LLM_TEST_ATTEMPTS: dict[str, list[float]] = {}
+_LLM_TEST_WINDOW = 60  # seconds
+_LLM_TEST_MAX = 5
+
+
+def _check_llm_test_rate(request: Request) -> None:
+    """Enforce rate limit on LLM test endpoint (5/min per account)."""
+    import time as _t
+    account_id = getattr(request.state, "account_id", None) or (
+        request.client.host if request.client else "unknown"
+    )
+    now = _t.time()
+    attempts = _LLM_TEST_ATTEMPTS.get(account_id, [])
+    _LLM_TEST_ATTEMPTS[account_id] = [t for t in attempts if now - t < _LLM_TEST_WINDOW]
+    if len(_LLM_TEST_ATTEMPTS[account_id]) >= _LLM_TEST_MAX:
+        raise HTTPException(429, "LLM test rate limit exceeded (5/min)")
+    _LLM_TEST_ATTEMPTS[account_id].append(now)
+
+
+@router.post("/{bot_id}/llm/test")
+async def test_llm_connection(
+    bot_id: str,
+    req: LLMTestRequest,
+    request: Request,
+    _auth: Any = Depends(require_tenant_or_ops),
+) -> dict[str, Any]:
+    """Test LLM connection with a minimal request (5 tokens, temp=0)."""
+    import time
+
+    _check_llm_test_rate(request)
+
+    # SSRF validation
+    from loko.security.ssrf import validate_url, SSRFError
+    try:
+        validate_url(req.base_url)
+    except SSRFError as exc:
+        return {"ok": False, "error_code": "ssrf_blocked", "detail": exc.reason}
+
+    from loko.bot.llm.openai_compat import OpenAICompatProvider, LLMProviderError
+
+    provider = OpenAICompatProvider(
+        base_url=req.base_url,
+        api_key=req.api_key,
+        model=req.model,
+    )
+
+    t0 = time.perf_counter()
+    ttfb: float | None = None
+
+    try:
+        tokens = []
+        async for token in provider.stream_chat(
+            messages=[{"role": "user", "content": "Say hello."}],
+            model=req.model,
+            temperature=0.0,
+            max_tokens=5,
+            timeout=15,
+        ):
+            if ttfb is None:
+                ttfb = (time.perf_counter() - t0) * 1000
+            tokens.append(token)
+
+        total_ms = (time.perf_counter() - t0) * 1000
+        return {
+            "ok": True,
+            "model": req.model,
+            "ttfb_ms": round(ttfb or total_ms),
+            "total_ms": round(total_ms),
+        }
+
+    except LLMProviderError as exc:
+        code = "timeout"
+        if exc.status_code == 401:
+            code = "auth_failed"
+        elif exc.status_code == 404:
+            code = "model_unknown"
+        elif exc.status_code == 429:
+            code = "rate_limited"
+        elif exc.status_code >= 400:
+            code = "provider_error"
+        return {"ok": False, "error_code": code, "detail": str(exc)}
+    except Exception as exc:
+        return {"ok": False, "error_code": "unreachable", "detail": str(exc)}
+
+
+# ---------------------------------------------------------------------------
+# PRO-2: Versioning and rollback (§7.2)
+# ---------------------------------------------------------------------------
+
+@router.get("/{bot_id}/releases")
+async def list_releases(
+    bot_id: str,
+    _auth: Any = Depends(require_tenant_or_ops),
+) -> list[dict[str, Any]]:
+    """List all releases for a bot, newest first."""
+    config = load_bot_config(bot_id)
+    if not config:
+        raise HTTPException(404, "Not found")
+
+    from loko.bot.versioning import get_release_store
+    store = get_release_store()
+    releases = store.list_releases(bot_id)
+    return [r.model_dump(mode="json") for r in releases]
+
+
+@router.post("/{bot_id}/rollback/{version}")
+async def rollback_release(
+    bot_id: str,
+    version: int,
+    _auth: Any = Depends(require_tenant_or_ops),
+) -> dict[str, Any]:
+    """Rollback to a previous release version."""
+    config = load_bot_config(bot_id)
+    if not config:
+        raise HTTPException(404, "Not found")
+    _reject_demo_mutation(config, bot_id)
+
+    from loko.bot.versioning import get_release_store
+    store = get_release_store()
+
+    # Get release config
+    release_config = store.get_release_config(bot_id, version)
+    if release_config is None:
+        raise HTTPException(404, f"Release v{version} not found or corrupted")
+
+    # Check model integrity for the release
+    releases = store.list_releases(bot_id)
+    target_release = next((r for r in releases if r.version == version), None)
+    if not target_release:
+        raise HTTPException(404, f"Release v{version} not found")
+
+    if target_release.model_hash:
+        from loko.bot.classifier.manifest import read_manifest
+        manifest = read_manifest(bot_id)
+        if not manifest:
+            raise HTTPException(
+                422,
+                {"error": "retrain_required", "detail": "Model manifest missing. Retrain before rollback."},
+            )
+        if manifest.get("model_hash", "") != target_release.model_hash:
+            raise HTTPException(
+                422,
+                {"error": "retrain_required", "detail": "Model has changed since this release. Retrain required."},
+            )
+
+    # Activate the release
+    if not store.activate_release(bot_id, version):
+        raise HTTPException(404, f"Release v{version} not found")
+
+    # Restore config from release
+    restored = BotConfig(**release_config)
+    save_bot_config(restored)
+
+    # Invalidate orchestrator cache
+    from loko.api.bot_public import invalidate_orchestrator
+    invalidate_orchestrator(bot_id)
+
+    return {
+        "status": "rolled_back",
+        "bot_id": bot_id,
+        "version": version,
+    }
+
+
+# ---------------------------------------------------------------------------
+# PRO-7: Maintenance mode (§7.7)
+# ---------------------------------------------------------------------------
+
+class MaintenanceRequest(BaseModel):
+    enabled: bool
+    message_override: str | None = None
+
+
+@router.post("/{bot_id}/maintenance")
+async def set_maintenance_mode(
+    bot_id: str,
+    req: MaintenanceRequest,
+    _auth: Any = Depends(require_tenant_or_ops),
+) -> dict[str, Any]:
+    """Enable or disable maintenance mode for a bot."""
+    config = load_bot_config(bot_id)
+    if not config:
+        raise HTTPException(404, "Not found")
+
+    from loko.bot.maintenance import set_maintenance
+    state = set_maintenance(bot_id, req.enabled, req.message_override)
+
+    return {
+        "bot_id": bot_id,
+        "maintenance": state["enabled"],
+        "message_override": state.get("message_override") or None,
+    }
+
+
+@router.get("/{bot_id}/maintenance")
+async def get_maintenance_mode(
+    bot_id: str,
+    _auth: Any = Depends(require_tenant_or_ops),
+) -> dict[str, Any]:
+    """Get maintenance mode status for a bot."""
+    config = load_bot_config(bot_id)
+    if not config:
+        raise HTTPException(404, "Not found")
+
+    from loko.bot.maintenance import is_maintenance, get_maintenance_message
+    return {
+        "bot_id": bot_id,
+        "maintenance": is_maintenance(bot_id),
+        "message_override": get_maintenance_message(bot_id),
+    }
+
+
+# ---------------------------------------------------------------------------
+# PRO-6: Quota management (§7.6)
+# ---------------------------------------------------------------------------
+
+class QuotaConfigRequest(BaseModel):
+    sessions_mois: int = Field(default=0, ge=0)
+    messages_mois: int = Field(default=0, ge=0)
+    tokens_llm_mois: int = Field(default=0, ge=0)
+
+
+@router.put("/{bot_id}/quotas")
+async def set_quotas(
+    bot_id: str,
+    req: QuotaConfigRequest,
+    _auth: Any = Depends(require_tenant_or_ops),
+) -> dict[str, Any]:
+    """Set monthly quotas for a bot's API keys."""
+    config = load_bot_config(bot_id)
+    if not config:
+        raise HTTPException(404, "Not found")
+
+    import os
+    quota_dir = Path(os.environ.get("LOKO_DATA_DIR", "data")) / "quota_configs"
+    quota_dir.mkdir(parents=True, exist_ok=True)
+    quota_path = quota_dir / f"{bot_id}.json"
+    quota_path.write_text(
+        json.dumps(req.model_dump(), ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+
+    return {
+        "bot_id": bot_id,
+        "quotas": req.model_dump(),
+    }
+
+
+@router.get("/{bot_id}/quotas/usage")
+async def get_quota_usage(
+    bot_id: str,
+    _auth: Any = Depends(require_tenant_or_ops),
+) -> dict[str, Any]:
+    """Get current quota usage for all keys of a bot."""
+    config = load_bot_config(bot_id)
+    if not config:
+        raise HTTPException(404, "Not found")
+
+    from loko.api.api_keys import list_api_keys
+    from loko.bot.quota_usage import get_quota_usage_store
+
+    store = get_quota_usage_store()
+    keys = list_api_keys(bot_id)
+    usage = {}
+    for key in keys:
+        key_id = key["key_id"]
+        usage[key_id] = {
+            "label": key.get("label", ""),
+            **store.get_usage(key_id),
+        }
+
+    return {
+        "bot_id": bot_id,
+        "usage": usage,
+    }
+
+
+@router.delete("/{bot_id}/llm/key")
+async def delete_llm_key(
+    bot_id: str,
+    _auth: Any = Depends(require_tenant_or_ops),
+) -> dict[str, str]:
+    """Revoke the custom LLM API key."""
+    config = load_bot_config(bot_id)
+    if not config:
+        raise HTTPException(404, "Not found")
+    _reject_demo_mutation(config, bot_id)
+
+    if config.llm.api_key_ref:
+        from loko.security.secret_store import get_secret_store
+        get_secret_store().delete(config.llm.api_key_ref)
+
+    llm = config.llm.model_copy(update={
+        "api_key_ref": "",
+        "api_key_hint": "",
+        "api_key_set": False,
+    })
+    config = config.model_copy(update={"llm": llm})
+    save_bot_config(config)
+
+    from loko.api.bot_public import invalidate_orchestrator
+    invalidate_orchestrator(bot_id)
+
+    return {"status": "key_revoked"}
+
+
+# ---------------------------------------------------------------------------
+# GF-A8: Guardrails config (§4.8)
+# ---------------------------------------------------------------------------
+
+class GuardrailsConfigRequest(BaseModel):
+    enabled: bool = True
+    rules: list[dict[str, Any]] = Field(default_factory=list)
+    max_infractions: int = Field(default=2, ge=1, le=5)
+    action_apres_max: str = "fin_ferme"
+    seuil_rejet_fort: float = Field(default=0.85, ge=0.0, le=1.0)
+    block_low_grounding: bool = False
+
+
+@router.put("/{bot_id}/guardrails")
+async def update_guardrails(
+    bot_id: str,
+    req: GuardrailsConfigRequest,
+    _auth: Any = Depends(require_tenant_or_ops),
+) -> dict[str, Any]:
+    """Update guardrails config with server-side is_system validation (GF-A8)."""
+    config = load_bot_config(bot_id)
+    if not config:
+        raise HTTPException(404, "Not found")
+    _reject_demo_mutation(config, bot_id)
+
+    from loko.bot.guardrails import default_ruleset
+
+    # GF-A8: ensure all system rules are present and unmodified
+    system_rules = {r["id"]: r for r in default_ruleset()}
+    submitted_system_ids = set()
+
+    for rule in req.rules:
+        rule_id = rule.get("id", "")
+        if rule.get("is_system"):
+            submitted_system_ids.add(rule_id)
+            if rule_id not in system_rules:
+                raise HTTPException(
+                    422, f"Unknown system rule '{rule_id}' cannot have is_system=true"
+                )
+
+    # Check that no system rule was removed
+    missing_system = set(system_rules.keys()) - submitted_system_ids
+    if missing_system:
+        raise HTTPException(
+            422,
+            f"System rules cannot be removed: {', '.join(sorted(missing_system))}",
+        )
+
+    # Persist guardrails config to bot directory
+    guardrails_path = get_bot_dir(bot_id) / "guardrails.json"
+    guardrails_path.write_text(
+        json.dumps(req.model_dump(), ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+
+    # Invalidate orchestrator so it picks up new guardrails
+    from loko.api.bot_public import invalidate_orchestrator
+    invalidate_orchestrator(bot_id)
+
+    return {"status": "updated", "bot_id": bot_id}
+
+
+@router.get("/{bot_id}/guardrails")
+async def get_guardrails(
+    bot_id: str,
+    _auth: Any = Depends(require_tenant_or_ops),
+) -> dict[str, Any]:
+    """Get current guardrails config for a bot."""
+    config = load_bot_config(bot_id)
+    if not config:
+        raise HTTPException(404, "Not found")
+
+    guardrails_path = get_bot_dir(bot_id) / "guardrails.json"
+    if guardrails_path.is_file():
+        return json.loads(guardrails_path.read_text(encoding="utf-8"))
+
+    # Return defaults
+    from loko.bot.guardrails import default_ruleset, GuardrailsConfig, GuardrailRule
+    default_config = GuardrailsConfig(rules=[
+        GuardrailRule(**r) for r in default_ruleset()
+    ])
+    return default_config.model_dump(mode="json")

@@ -312,11 +312,24 @@ class TestAutreDemande:
         assert s2.state == BotState.FIN
         assert any(isinstance(a, CloseSession) for a in actions)
 
-    def test_max_demandes_closes(self, fresh_session, sample_config):
-        s = self._go_to_autre_demande(fresh_session, sample_config)
+    def test_max_demandes_triggers_cloture_douce(self, fresh_session, sample_config):
+        """ORC: when on_satisfaction_positive increments demandes_count to
+        max_demandes, the session transitions to CLOTURE_DOUCE (not via
+        on_autre_demande_oui, which doesn't check max_demandes).
+        """
+        s, _ = start_session(fresh_session, sample_config)
+        s, _ = step(s, Event(EventType.USER_MESSAGE, {"text": "facture"}), sample_config)
+        s, _ = step(
+            s,
+            Event(EventType.CLASSIFICATION_L1_DONE, {"scores": [("facturation", 0.90)]}),
+            sample_config,
+        )
+        # Set demandes_count to max - 1 before the satisfaction step
         s = s.model_copy(update={"demandes_count": sample_config.journey.max_demandes - 1})
+        # RETRIEVAL_GENERATION_DONE → on_satisfaction → Oui path
+        s, _ = step(s, Event(EventType.RETRIEVAL_GENERATION_DONE, {}), sample_config)
         s2, actions = step(s, Event(EventType.BUTTON_CLICK, {"button": "Oui"}), sample_config)
-        assert s2.state == BotState.FIN
+        assert s2.state == BotState.CLOTURE_DOUCE
         assert any(isinstance(a, CloseSession) for a in actions)
 
 

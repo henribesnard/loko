@@ -138,6 +138,11 @@ class SessionStore:
     # ------------------------------------------------------------------
 
     def add_turn(self, session_id: str, turn: Turn) -> None:
+        # PRO-1: mask PII at persistence (never in-flight)
+        from loko.bot.pii import mask_pii
+
+        content = mask_pii(turn.content) if turn.role == "user" else turn.content
+
         with self._connect() as conn:
             conn.execute(
                 """INSERT INTO turns
@@ -149,7 +154,7 @@ class SessionStore:
                     turn.turn_id,
                     session_id,
                     turn.role,
-                    turn.content,
+                    content,
                     turn.timestamp,
                     turn.template_key.value if turn.template_key else None,
                     json.dumps(turn.buttons) if turn.buttons else None,

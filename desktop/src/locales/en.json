@@ -76,7 +76,52 @@
       "maxDemandes": "Max requests per session",
       "timeoutInactivite": "Inactivity timeout (sec)",
       "retrievalMinScore": "Min retrieval score",
-      "retrievalMinChunks": "Min retrieval chunks"
+      "retrievalMinChunks": "Min retrieval chunks",
+      "orcTitle": "Fine orchestration",
+      "maxToursParDemande": "Max turns per request (same intent)",
+      "maxDureeSession": "Max session duration (sec)",
+      "maxTokensLLM": "LLM token budget per session",
+      "prevenirAvantDerniere": "Warn user before the last request"
+    },
+    "llm": {
+      "title": "LLM configuration",
+      "providerSource": "Provider source",
+      "platform": "Platform (default)",
+      "custom": "Custom provider",
+      "preset": "Preset",
+      "baseUrl": "Base URL",
+      "baseUrlPlaceholder": "https://api.openai.com/v1",
+      "model": "Model",
+      "modelPlaceholder": "gpt-4o-mini",
+      "apiKey": "API key",
+      "apiKeyPlaceholder": "sk-...",
+      "apiKeyHint": "Key saved (****{{hint}})",
+      "testConnection": "Test connection",
+      "testSuccess": "Connection successful",
+      "testFailed": "Connection failed",
+      "ttfb": "TTFB"
+    },
+    "guardrails": {
+      "title": "Guardrails",
+      "enabled": "Enable guardrails",
+      "rules": "Rules",
+      "addRule": "Add rule",
+      "systemRule": "System rule",
+      "pattern": "Pattern (regex)",
+      "category": "Category",
+      "action": "Action",
+      "maxInfractions": "Max infractions before action",
+      "actionApresMax": "Action after max infractions",
+      "finFerme": "Firm close",
+      "escalade": "Escalation"
+    },
+    "maintenance": {
+      "title": "Maintenance mode",
+      "enable": "Enable maintenance",
+      "disable": "Disable maintenance",
+      "messageOverride": "Custom message (optional)",
+      "active": "Under maintenance",
+      "inactive": "Operational"
     },
     "messages": {
       "title": "Messages and templates",

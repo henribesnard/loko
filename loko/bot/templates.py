@@ -110,6 +110,34 @@ _DEFAULTS: dict[ToneProfile, dict[TemplateKey, tuple[str, str, list[str]]]] = {
             "Your session has expired due to inactivity. Feel free to come back if you need help.",
             [],
         ),
+        # ORC: graceful wind-down
+        TemplateKey.AVANT_DERNIERE_DEMANDE: (
+            "Je peux traiter encore une demande. Avez-vous une derniere question ?",
+            "I can handle one more request. Do you have a last question?",
+            ["nom_bot"],
+        ),
+        TemplateKey.CLOTURE_DOUCE: (
+            "Nous avons traite ensemble : {resume_demandes}. Pour toute autre demande, un conseiller reste disponible : {lien_escalade}. Bonne journee !",
+            "We have covered together: {resume_demandes}. For any other request, an advisor is available: {lien_escalade}. Have a good day!",
+            ["nom_bot", "resume_demandes", "lien_escalade"],
+        ),
+        # GF: guardrail refusal and firm close
+        TemplateKey.DEMANDE_INAPPROPRIEE: (
+            "Je ne peux pas repondre a cette demande. Je peux vous aider sur : {intentions_gerees}.",
+            "I cannot respond to this request. I can help you with: {intentions_gerees}.",
+            ["nom_bot", "intentions_gerees"],
+        ),
+        TemplateKey.FIN_FERME: (
+            "Cette conversation ne peut pas se poursuivre. Pour toute demande concernant {intentions_gerees}, vous pouvez me recontacter.",
+            "This conversation cannot continue. For any request regarding {intentions_gerees}, you can contact me again.",
+            ["intentions_gerees"],
+        ),
+        # PRO: maintenance mode
+        TemplateKey.MAINTENANCE: (
+            "{nom_bot} est momentanement indisponible. Veuillez reessayer plus tard.",
+            "{nom_bot} is temporarily unavailable. Please try again later.",
+            ["nom_bot"],
+        ),
     },
 
     ToneProfile.FORMEL: {
@@ -158,6 +186,31 @@ _DEFAULTS: dict[ToneProfile, dict[TemplateKey, tuple[str, str, list[str]]]] = {
             "Your session has expired due to prolonged inactivity. Please do not hesitate to contact us again.",
             [],
         ),
+        TemplateKey.AVANT_DERNIERE_DEMANDE: (
+            "Je suis en mesure de traiter une derniere demande. Souhaitez-vous poser une question supplementaire ?",
+            "I am able to handle one last request. Would you like to ask an additional question?",
+            ["nom_bot"],
+        ),
+        TemplateKey.CLOTURE_DOUCE: (
+            "Nous avons aborde ensemble les sujets suivants : {resume_demandes}. Pour toute autre demande, un conseiller reste a votre disposition : {lien_escalade}. Bonne journee.",
+            "We have covered the following topics together: {resume_demandes}. For any other request, an advisor remains at your disposal: {lien_escalade}. Good day.",
+            ["nom_bot", "resume_demandes", "lien_escalade"],
+        ),
+        TemplateKey.DEMANDE_INAPPROPRIEE: (
+            "Je ne suis pas en mesure de traiter cette demande. Mon perimetre de competence couvre : {intentions_gerees}.",
+            "I am not able to process this request. My area of competence covers: {intentions_gerees}.",
+            ["nom_bot", "intentions_gerees"],
+        ),
+        TemplateKey.FIN_FERME: (
+            "Cette conversation ne peut pas se poursuivre. Pour toute demande relevant de {intentions_gerees}, je vous invite a me recontacter.",
+            "This conversation cannot continue. For any request regarding {intentions_gerees}, I invite you to contact me again.",
+            ["intentions_gerees"],
+        ),
+        TemplateKey.MAINTENANCE: (
+            "{nom_bot} est actuellement en maintenance. Nous vous prions de bien vouloir reessayer ulterieurement.",
+            "{nom_bot} is currently under maintenance. We kindly ask you to try again later.",
+            ["nom_bot"],
+        ),
     },
 
     ToneProfile.CHALEUREUX: {
@@ -205,6 +258,31 @@ _DEFAULTS: dict[ToneProfile, dict[TemplateKey, tuple[str, str, list[str]]]] = {
             "On dirait que vous etes parti. Revenez quand vous voulez, je serai la !",
             "Looks like you've left. Come back anytime, I'll be here!",
             [],
+        ),
+        TemplateKey.AVANT_DERNIERE_DEMANDE: (
+            "Je peux encore vous aider sur une derniere question. Qu'est-ce que je peux faire pour vous ?",
+            "I can still help you with one last question. What can I do for you?",
+            ["nom_bot"],
+        ),
+        TemplateKey.CLOTURE_DOUCE: (
+            "On a bien avance ensemble ! Voici ce qu'on a couvert : {resume_demandes}. Si vous avez besoin d'autre chose, un conseiller est disponible : {lien_escalade}. A bientot !",
+            "We made good progress together! Here's what we covered: {resume_demandes}. If you need anything else, an advisor is available: {lien_escalade}. See you soon!",
+            ["nom_bot", "resume_demandes", "lien_escalade"],
+        ),
+        TemplateKey.DEMANDE_INAPPROPRIEE: (
+            "Je ne peux malheureusement pas vous aider la-dessus. En revanche, je suis la pour : {intentions_gerees}.",
+            "Unfortunately I can't help with that. However, I'm here for: {intentions_gerees}.",
+            ["nom_bot", "intentions_gerees"],
+        ),
+        TemplateKey.FIN_FERME: (
+            "Je suis desole, mais cette conversation doit s'arreter ici. Pour vos questions sur {intentions_gerees}, n'hesitez pas a revenir !",
+            "I'm sorry, but this conversation has to end here. For your questions about {intentions_gerees}, don't hesitate to come back!",
+            ["intentions_gerees"],
+        ),
+        TemplateKey.MAINTENANCE: (
+            "{nom_bot} fait une petite pause. Revenez vite, je serai de retour !",
+            "{nom_bot} is taking a short break. Come back soon, I'll be back!",
+            ["nom_bot"],
         ),
     },
 }

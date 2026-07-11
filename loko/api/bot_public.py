@@ -12,6 +12,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+from dataclasses import dataclass
 from typing import Any, AsyncIterator, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -30,15 +31,17 @@ from loko.api.rate_limit import (
 import os
 import time
 from collections import defaultdict
+from pathlib import Path
 from loko.bot.classifier.loader import load_classifier, load_search_backend
 from loko.bot.config_store import load_bot_config
 from loko.bot.errors import ComponentUnavailableError
 from loko.bot.timeout import check_and_apply_timeout
 from loko.bot.generation import BotGenerator
+from loko.bot.maintenance import is_maintenance, get_maintenance_message
 from loko.bot.models import BotConfig, BotState
 from loko.bot.orchestrator import BotOrchestrator, SSEEvent
 from loko.bot.retrieval_filter import FilteredRetriever
-from loko.bot.session_store import SessionStore, get_session_store
+from loko.bot.session_store import SessionStore, get_bot_dir, get_session_store
 
 logger = logging.getLogger(__name__)
 
@@ -83,11 +86,16 @@ def _check_demo_rate(request: Request) -> None:
 # ---------------------------------------------------------------------------
 
 class MessageRequest(BaseModel):
-    """User message sent to the bot."""
+    """User message sent to the bot.
+
+    INT: type="interrupt" cancels any active generation.
+    If text is non-empty with interrupt, the text is processed
+    as a new message immediately after cancellation.
+    """
     model_config = ConfigDict(extra="forbid")
 
-    text: str = Field(..., max_length=2000)
-    type: Literal["text", "button_click"] = "text"
+    text: str = Field(default="", max_length=2000)
+    type: Literal["text", "button_click", "interrupt"] = "text"
 
 
 class FeedbackRequest(BaseModel):
@@ -115,6 +123,17 @@ _ORCHESTRATORS: dict[str, BotOrchestrator] = {}
 _SESSION_LOCKS: dict[str, asyncio.Lock] = {}
 _SESSION_LOCKS_MAX = 10_000  # R4: bounded size to prevent unbounded memory growth
 
+# INT: active generation tracking per session for interrupt support
+
+@dataclass
+class _ActiveGeneration:
+    """Tracks an in-flight generation for interrupt support (INT)."""
+    cancel: asyncio.Event
+    turn_id: str = ""
+    tokens_emitted: int = 0
+
+_ACTIVE_GENERATIONS: dict[str, _ActiveGeneration] = {}  # session_id → generation state
+
 
 def _get_orchestrator(bot_id: str, config: BotConfig) -> BotOrchestrator:
     """Get or create the orchestrator for a bot.
@@ -136,24 +155,37 @@ def _get_orchestrator(bot_id: str, config: BotConfig) -> BotOrchestrator:
         backend = load_search_backend(bot_id)
         retriever = FilteredRetriever(backend)
 
-        # K2: LLM provider from env vars (openai_compat)
+        # K2/LLM: provider from env vars or per-bot config (BYO key)
         from loko.bot.llm import build_llm_provider
 
-        llm_provider = build_llm_provider(bot_id)
+        llm_provider = build_llm_provider(bot_id, config.llm)
         generator = BotGenerator(llm_provider, config.llm)
 
-        # Escalation: MockEscalationProvider allowed when explicitly configured
-        import os
-        escalation_provider_name = os.environ.get("LOKO_ESCALATION_PROVIDER", "")
-        if escalation_provider_name == "mock":
+        # PRO-4: real escalation providers (webhook, email, mock)
+        from loko.bot.escalation import EscalationConfig, build_escalation_provider
+
+        escalation_provider_name = os.environ.get("LOKO_ESCALATION_PROVIDER", "mock")
+        try:
+            esc_config = EscalationConfig(provider=escalation_provider_name)
+            # Load per-bot escalation config if available
+            esc_config_path = get_bot_dir(bot_id) / "escalation.json" if hasattr(config, 'bot_id') else None
+            if esc_config_path and esc_config_path.is_file():
+                import json as _esc_json
+                esc_data = _esc_json.loads(esc_config_path.read_text(encoding="utf-8"))
+                esc_config = EscalationConfig(**esc_data)
+
+            secret_store = None
+            try:
+                from loko.security.secret_store import get_secret_store
+                secret_store = get_secret_store()
+            except Exception:
+                pass
+
+            escalation = build_escalation_provider(esc_config, secret_store)
+        except Exception as exc:
+            logger.warning("Could not build escalation provider: %s — using mock", exc)
             from loko.testing.mocks import MockEscalationProvider
             escalation = MockEscalationProvider()
-        else:
-            raise ComponentUnavailableError(
-                "escalation", bot_id,
-                "No escalation provider configured. "
-                "Set LOKO_ESCALATION_PROVIDER=mock for testing.",
-            )
 
         orchestrator = BotOrchestrator(
             classifier=classifier,
@@ -254,9 +286,16 @@ async def create_session(
     if config.demo:
         _check_demo_rate(request)
 
+    # PRO-7: maintenance mode — return template, not an error
+    if is_maintenance(bot_id):
+        return _maintenance_response(bot_id, config)
+
     # Fail-closed: draft bots cannot serve runtime (P0-6)
     if config.status != "published":
         raise HTTPException(409, "Bot is not published")
+
+    # PRO-6: quota check on session creation
+    _check_api_key_quota(_key, "sessions")
 
     # A5: ComponentUnavailableError → 503 (no session created)
     try:
@@ -273,6 +312,9 @@ async def create_session(
     # Record welcome turns
     for turn in session.transcript:
         store.add_turn(session.session_id, turn)
+
+    # PRO-6: increment session counter
+    _increment_api_key_quota(_key, "sessions")
 
     return {
         "session_id": session.session_id,
@@ -299,6 +341,13 @@ async def send_message(
     # Q5: demo bot rate limit
     if config.demo:
         _check_demo_rate(request)
+
+    # PRO-7: maintenance mode — close session gracefully
+    if is_maintenance(bot_id):
+        return _maintenance_message_response(bot_id, config, session_id)
+
+    # PRO-6: quota check on message send
+    _check_api_key_quota(_key, "messages")
 
     store = get_session_store(bot_id)
     session = store.get_session(session_id)
@@ -348,8 +397,12 @@ async def send_message(
             },
         )
 
-    if session.state in (BotState.FIN, BotState.TIMEOUT):
+    if session.state in (BotState.FIN, BotState.TIMEOUT, BotState.CLOTURE_DOUCE, BotState.FIN_FERME):
         raise HTTPException(400, "Session has ended")
+
+    # --- INT: handle interrupt type ---
+    if req.type == "interrupt":
+        return await _handle_interrupt(session_id, session, req, bot_id, config, store)
 
     # Concurrency guard: reject if another message is being processed (P1-5)
     lock = _SESSION_LOCKS.setdefault(session_id, asyncio.Lock())
@@ -362,6 +415,10 @@ async def send_message(
     except ComponentUnavailableError as exc:
         logger.error("Bot %s unavailable: %s", bot_id, exc)
         raise HTTPException(503, {"error": "bot_unavailable", "detail": exc.reason})
+
+    # INT: register active generation for interrupt support
+    active_gen = _ActiveGeneration(cancel=asyncio.Event())
+    _ACTIVE_GENERATIONS[session_id] = active_gen
 
     async def event_stream() -> AsyncIterator[str]:
         current_session = session
@@ -378,6 +435,12 @@ async def send_message(
                     )
 
                 async for current_session, sse_event in event_iter:
+                    # INT: check cancellation signal
+                    if active_gen.cancel.is_set():
+                        break
+                    # INT: track tokens for interrupt metadata
+                    if sse_event.event == "generation_delta":
+                        active_gen.tokens_emitted += 1
                     yield _sse_encode(sse_event)
             finally:
                 # Persist session state even on client disconnect (P1-5)
@@ -386,8 +449,10 @@ async def send_message(
                     store.add_turn(current_session.session_id, turn)
 
                 # R4: release session lock when session reaches terminal state
-                if current_session.state in (BotState.FIN, BotState.TIMEOUT):
+                if current_session.state in (BotState.FIN, BotState.TIMEOUT, BotState.CLOTURE_DOUCE, BotState.FIN_FERME):
                     _SESSION_LOCKS.pop(session_id, None)
+                # INT: clean up active generation reference
+                _ACTIVE_GENERATIONS.pop(session_id, None)
 
     return StreamingResponse(
         event_stream(),
@@ -467,5 +532,246 @@ async def add_feedback(
     return {"status": "recorded"}
 
 
+# ---------------------------------------------------------------------------
+# INT: Interrupt handler (§3.2)
+# ---------------------------------------------------------------------------
+
+async def _handle_interrupt(
+    session_id: str,
+    session: Any,
+    req: MessageRequest,
+    bot_id: str,
+    config: BotConfig,
+    store: SessionStore,
+) -> StreamingResponse:
+    """Handle an interrupt request (INT lot).
+
+    - Cancel any active generation task for this session
+    - If text is empty: return to listening state
+    - If text is non-empty: cancel then process the new text
+    - If no active generation: no-op (idempotent)
+    """
+    active_gen = _ACTIVE_GENERATIONS.get(session_id)
+
+    if active_gen is None or active_gen.cancel.is_set():
+        # No active generation — idempotent no-op (INT-A4)
+        async def _noop_stream() -> AsyncIterator[str]:
+            yield _sse_encode(SSEEvent(
+                event="noop",
+                data={"reason": "no_active_generation"},
+            ))
+
+        return StreamingResponse(
+            _noop_stream(),
+            media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+                "X-Accel-Buffering": "no",
+            },
+        )
+
+    # Signal cancellation to the active generation
+    tokens_emitted = active_gen.tokens_emitted
+    active_gen.cancel.set()
+    # Give the generator a moment to notice and exit
+    await asyncio.sleep(0.1)
+    _ACTIVE_GENERATIONS.pop(session_id, None)
+
+    async def _interrupt_stream() -> AsyncIterator[str]:
+        # Emit generation_interrupted event with actual metadata
+        yield _sse_encode(SSEEvent(
+            event="generation_interrupted",
+            data={"tokens_emitted": tokens_emitted},
+        ))
+
+        # If text is provided, process it as a new message
+        if req.text.strip():
+            try:
+                orchestrator = _get_orchestrator(bot_id, config)
+            except ComponentUnavailableError:
+                return
+
+            # Reload session (may have been updated by the cancelled task)
+            current_session = store.get_session(session_id)
+            if current_session is None:
+                return
+
+            # Reset to listening state for new classification
+            current_session = current_session.model_copy(
+                update={"state": BotState.ATTENTE_DEMANDE}
+            )
+
+            async for current_session, sse_event in orchestrator.process_message(
+                current_session, req.text, config,
+            ):
+                yield _sse_encode(sse_event)
+
+            store.update_session(current_session)
+
+    return StreamingResponse(
+        _interrupt_stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
+
+
     # Note: /traces endpoint removed from public API (P1-2).
     # Traces are accessible via the admin dashboard API only.
+
+
+# ---------------------------------------------------------------------------
+# PRO-6: API key quota helpers
+# ---------------------------------------------------------------------------
+
+def _check_api_key_quota(
+    key: APIKeyRecord,
+    metric: str,
+) -> None:
+    """Check monthly quota for an API key. Raises 429 if exceeded.
+
+    Test keys (PRO-3) are excluded from quota counting.
+    """
+    # PRO-3: test keys excluded from quota counting
+    if getattr(key, "is_test", False) or getattr(key, "environment", "live") == "test":
+        return
+
+    # Check if quota config exists for this key
+    from loko.bot.quota_usage import get_quota_usage_store, get_quota_reset_header
+
+    store = get_quota_usage_store()
+
+    # Load quota config for this key's bot
+    config = load_bot_config(key.bot_id)
+    if not config:
+        return
+
+    # Get quota config from bot config (if attached)
+    quota_config = _get_quota_config(key.bot_id)
+    if not quota_config:
+        return  # No quotas configured
+
+    if store.is_exceeded(key.key_id, quota_config, metric):
+        raise HTTPException(
+            429,
+            {
+                "error": "quota_exceeded",
+                "metric": metric,
+                "reset": get_quota_reset_header(),
+            },
+            headers={"X-Quota-Reset": get_quota_reset_header()},
+        )
+
+
+def _increment_api_key_quota(
+    key: APIKeyRecord,
+    metric: str,
+    amount: int = 1,
+) -> None:
+    """Increment a quota counter for an API key.
+
+    PRO-3: test keys are excluded from counting.
+    """
+    if getattr(key, "is_test", False) or getattr(key, "environment", "live") == "test":
+        return
+
+    from loko.bot.quota_usage import get_quota_usage_store
+    store = get_quota_usage_store()
+    store.increment(key.key_id, metric, amount)
+
+
+def _get_quota_config(bot_id: str) -> Any:
+    """Load quota config for a bot (from quota_configs directory)."""
+    from loko.bot.quota_usage import QuotaConfig
+    try:
+        config_path = Path(os.environ.get("LOKO_DATA_DIR", "data")) / "quota_configs" / f"{bot_id}.json"
+        if config_path.is_file():
+            data = json.loads(config_path.read_text(encoding="utf-8"))
+            return QuotaConfig(**data)
+    except Exception:
+        pass
+    return None
+
+
+# ---------------------------------------------------------------------------
+# PRO-7: Maintenance mode helpers
+# ---------------------------------------------------------------------------
+
+def _maintenance_response(bot_id: str, config: BotConfig) -> dict[str, Any]:
+    """Return a maintenance response for session creation (200, not error)."""
+    from loko.bot.templates import render_template, resolve_template
+    from loko.bot.models import TemplateKey
+
+    custom_msg = get_maintenance_message(bot_id)
+
+    if custom_msg:
+        text = custom_msg
+    else:
+        template = resolve_template(
+            config.templates, TemplateKey.MAINTENANCE, config.tone_profile,
+        )
+        lang = config.language if config.language != "auto" else "fr"
+        text = render_template(template, lang, {"nom_bot": config.name})
+
+    return {
+        "maintenance": True,
+        "message": text,
+        "bot_id": bot_id,
+    }
+
+
+def _maintenance_message_response(
+    bot_id: str,
+    config: BotConfig,
+    session_id: str,
+) -> StreamingResponse:
+    """Stream maintenance template + close for existing session message."""
+    from loko.bot.templates import render_template, resolve_template
+    from loko.bot.models import TemplateKey
+
+    custom_msg = get_maintenance_message(bot_id)
+
+    if custom_msg:
+        text = custom_msg
+    else:
+        template = resolve_template(
+            config.templates, TemplateKey.MAINTENANCE, config.tone_profile,
+        )
+        lang = config.language if config.language != "auto" else "fr"
+        text = render_template(template, lang, {"nom_bot": config.name})
+
+    async def _maint_stream() -> AsyncIterator[str]:
+        yield _sse_encode(SSEEvent(
+            event="template",
+            data={
+                "content": text,
+                "template_key": "maintenance",
+                "buttons": None,
+            },
+        ))
+        yield _sse_encode(SSEEvent(
+            event="end_of_turn",
+            data={"reason": "maintenance"},
+        ))
+
+        # Close the session
+        store = get_session_store(bot_id)
+        session = store.get_session(session_id)
+        if session and session.state not in (BotState.FIN, BotState.TIMEOUT, BotState.CLOTURE_DOUCE, BotState.FIN_FERME):
+            session = session.model_copy(update={"state": BotState.FIN})
+            store.update_session(session)
+        _SESSION_LOCKS.pop(session_id, None)
+
+    return StreamingResponse(
+        _maint_stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )

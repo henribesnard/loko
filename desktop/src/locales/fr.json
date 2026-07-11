@@ -76,7 +76,52 @@
       "maxDemandes": "Demandes max par session",
       "timeoutInactivite": "Timeout d'inactivité (sec)",
       "retrievalMinScore": "Score minimum retrieval",
-      "retrievalMinChunks": "Chunks minimum retrieval"
+      "retrievalMinChunks": "Chunks minimum retrieval",
+      "orcTitle": "Orchestration fine",
+      "maxToursParDemande": "Tours max par demande (même intention)",
+      "maxDureeSession": "Durée max session (sec)",
+      "maxTokensLLM": "Budget tokens LLM par session",
+      "prevenirAvantDerniere": "Prévenir l'utilisateur avant la dernière demande"
+    },
+    "llm": {
+      "title": "Configuration LLM",
+      "providerSource": "Source du fournisseur",
+      "platform": "Plateforme (par défaut)",
+      "custom": "Fournisseur personnalisé",
+      "preset": "Preset",
+      "baseUrl": "URL de base",
+      "baseUrlPlaceholder": "https://api.openai.com/v1",
+      "model": "Modèle",
+      "modelPlaceholder": "gpt-4o-mini",
+      "apiKey": "Clé API",
+      "apiKeyPlaceholder": "sk-...",
+      "apiKeyHint": "Clé enregistrée (****{{hint}})",
+      "testConnection": "Tester la connexion",
+      "testSuccess": "Connexion réussie",
+      "testFailed": "Échec de connexion",
+      "ttfb": "TTFB"
+    },
+    "guardrails": {
+      "title": "Garde-fous",
+      "enabled": "Activer les garde-fous",
+      "rules": "Règles",
+      "addRule": "Ajouter une règle",
+      "systemRule": "Règle système",
+      "pattern": "Pattern (regex)",
+      "category": "Catégorie",
+      "action": "Action",
+      "maxInfractions": "Infractions max avant action",
+      "actionApresMax": "Action après max infractions",
+      "finFerme": "Clôture ferme",
+      "escalade": "Escalade"
+    },
+    "maintenance": {
+      "title": "Mode maintenance",
+      "enable": "Activer la maintenance",
+      "disable": "Désactiver la maintenance",
+      "messageOverride": "Message personnalisé (optionnel)",
+      "active": "En maintenance",
+      "inactive": "Opérationnel"
     },
     "messages": {
       "title": "Messages et templates",

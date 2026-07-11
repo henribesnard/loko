@@ -32,6 +32,11 @@ export interface JourneyParams {
   timeout_inactivite_s: number;
   retrieval_min_score: number;
   retrieval_min_chunks: number;
+  // ORC: fine-grained conversation control
+  max_tours_par_demande: number;
+  max_duree_session_s: number;
+  max_tokens_llm_session: number;
+  prevenir_avant_derniere_demande: boolean;
 }
 
 export interface MessageTemplate {
@@ -48,6 +53,13 @@ export interface BotLLMConfig {
   max_tokens: number;
   temperature: number;
   timeout: number;
+  // LLM lot: BYO provider per bot
+  provider_source: "platform" | "custom";
+  provider_type: "openai_compat";
+  preset: "openai" | "mistral" | "deepseek" | "ollama" | "vllm" | "autre" | null;
+  base_url: string;
+  api_key_ref: string;
+  api_key_hint: string;
 }
 
 export interface BotConfig {
@@ -104,6 +116,9 @@ export interface Turn {
   intent?: string;
   sub_motif?: string;
   sources?: Array<Record<string, unknown>>;
+  // INT: interrupted generation
+  interrupted?: boolean;
+  tokens_emitted?: number;
 }
 
 export interface SSEEvent {
@@ -137,6 +152,12 @@ export const TEMPLATE_KEYS = [
   "fin",
   "mise_en_relation",
   "timeout",
+  // ORC/GF/PRO new templates
+  "avant_derniere_demande",
+  "cloture_douce",
+  "demande_inappropriee",
+  "fin_ferme",
+  "maintenance",
 ] as const;
 
 export const TEMPLATE_VARIABLES = [
@@ -145,6 +166,8 @@ export const TEMPLATE_VARIABLES = [
   "temps_attente",
   "lien_escalade",
   "options",
+  // ORC: graceful wind-down
+  "resume_demandes",
 ] as const;
 
 export const JOURNEY_DEFAULTS: JourneyParams = {
@@ -156,4 +179,86 @@ export const JOURNEY_DEFAULTS: JourneyParams = {
   timeout_inactivite_s: 300,
   retrieval_min_score: 0.35,
   retrieval_min_chunks: 1,
+  // ORC defaults
+  max_tours_par_demande: 3,
+  max_duree_session_s: 1800,
+  max_tokens_llm_session: 8000,
+  prevenir_avant_derniere_demande: true,
 };
+
+// ---------------------------------------------------------------------------
+// Guardrails (GF lot)
+// ---------------------------------------------------------------------------
+
+export interface GuardrailRule {
+  id: string;
+  category: "dangereux" | "donnees_tiers" | "injection" | "juridique_medical" | "custom";
+  pattern: string;
+  action: "refuser" | "refuser_et_compter" | "escalader";
+  enabled: boolean;
+  is_system: boolean;
+}
+
+export interface GuardrailsConfig {
+  enabled: boolean;
+  rules: GuardrailRule[];
+  max_infractions: number;
+  action_apres_max: "fin_ferme" | "escalade";
+  seuil_rejet_fort: number;
+  block_low_grounding: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// Escalation (PRO-4)
+// ---------------------------------------------------------------------------
+
+export interface EscalationConfig {
+  provider: "mock" | "webhook" | "email";
+  webhook_url: string;
+  webhook_secret_ref: string;
+  email_to: string;
+  smtp_host: string;
+  smtp_port: number;
+  smtp_user: string;
+  smtp_password_ref: string;
+  temps_attente_defaut_min: number;
+}
+
+// ---------------------------------------------------------------------------
+// Quota (PRO-6)
+// ---------------------------------------------------------------------------
+
+export interface QuotaConfig {
+  sessions_mois: number;
+  messages_mois: number;
+  tokens_llm_mois: number;
+}
+
+// ---------------------------------------------------------------------------
+// Release (PRO-2)
+// ---------------------------------------------------------------------------
+
+export interface Release {
+  bot_id: string;
+  version: number;
+  created_at: string;
+  config_hash: string;
+  model_hash: string;
+  index_hash: string;
+  active: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// Alert (PRO-5)
+// ---------------------------------------------------------------------------
+
+export interface AlertRule {
+  id: string;
+  metric: string;
+  window_min: number;
+  threshold: number;
+  direction: "above" | "below";
+  channel: "email" | "webhook";
+  enabled: boolean;
+  silence_min: number;
+}

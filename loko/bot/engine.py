@@ -79,7 +79,7 @@ def step(
         return new_session, actions
 
     # --- Terminal states ---
-    if session.state in (BotState.FIN, BotState.TIMEOUT):
+    if session.state in (BotState.FIN, BotState.TIMEOUT, BotState.CLOTURE_DOUCE, BotState.FIN_FERME):
         logger.debug("Session %s already in terminal state %s", session.session_id, session.state)
         return session, []
 

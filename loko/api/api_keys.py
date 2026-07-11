@@ -40,6 +40,7 @@ class APIKeyRecord:
         created_at: str = "",
         expires_at: str | None = None,  # K3: for rotation grace period
         superseded_by: str | None = None,  # K3: key_id that replaced this one
+        environment: str = "live",  # PRO-3: "test" or "live"
     ):
         self.key_id = key_id
         self.key_hash = key_hash
@@ -49,6 +50,7 @@ class APIKeyRecord:
         self.created_at = created_at
         self.expires_at = expires_at
         self.superseded_by = superseded_by
+        self.environment = environment
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -60,7 +62,13 @@ class APIKeyRecord:
             "created_at": self.created_at,
             "expires_at": self.expires_at,
             "superseded_by": self.superseded_by,
+            "environment": self.environment,
         }
+
+    @property
+    def is_test(self) -> bool:
+        """PRO-3: check if this is a test key."""
+        return self.environment == "test"
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> APIKeyRecord:
@@ -112,8 +120,20 @@ def generate_api_key(
     bot_id: str,
     label: str = "",
     allowed_origins: list[str] | None = None,
+    environment: str = "live",
 ) -> tuple[str, str]:
     """Generate a new API key for a bot.
+
+    Parameters
+    ----------
+    bot_id : str
+        Bot identifier.
+    label : str
+        Human-readable label.
+    allowed_origins : list[str] | None
+        CORS-allowed origins for this key.
+    environment : str
+        PRO-3: "test" or "live" — determines key prefix.
 
     Returns
     -------
@@ -122,7 +142,9 @@ def generate_api_key(
     """
     from datetime import datetime, timezone
 
-    raw_key = f"loko_{secrets.token_urlsafe(32)}"
+    # PRO-3: use distinct prefix for test vs live keys
+    prefix = "loko_test_" if environment == "test" else "loko_live_"
+    raw_key = f"{prefix}{secrets.token_urlsafe(32)}"
     key_id = str(uuid.uuid4())
     key_hash = _hash_key(raw_key)
 
@@ -133,13 +155,14 @@ def generate_api_key(
         label=label,
         allowed_origins=allowed_origins or [],
         created_at=datetime.now(timezone.utc).isoformat(),
+        environment=environment,
     )
 
     keys = _load_keys(bot_id)
     keys.append(record)
     _save_keys(bot_id, keys)
 
-    logger.info("Generated API key %s for bot %s", key_id, bot_id)
+    logger.info("Generated %s API key %s for bot %s", environment, key_id, bot_id)
     return raw_key, key_id
 
 

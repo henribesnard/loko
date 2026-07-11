@@ -216,6 +216,73 @@ async def _session_purge_task() -> None:
             logger.exception("Session purge task error")
 
 
+async def _alert_evaluation_task() -> None:
+    """PRO-5: Periodically evaluate alert rules against bot metrics."""
+    interval_minutes = int(os.environ.get("LOKO_ALERT_INTERVAL_MIN", "5"))
+
+    while True:
+        try:
+            await asyncio.sleep(interval_minutes * 60)
+
+            from loko.bot.config_store import list_bots
+            from loko.bot.session_store import get_bot_dir
+
+            bots = list_bots()
+            for bot_info in bots:
+                bot_id = bot_info["bot_id"]
+                try:
+                    # Load alert rules for this bot
+                    alert_config_path = get_bot_dir(bot_id) / "alerts.json"
+                    if not alert_config_path.is_file():
+                        continue
+
+                    import json as _json
+                    alert_data = _json.loads(
+                        alert_config_path.read_text(encoding="utf-8")
+                    )
+                    rules_data = alert_data.get("rules", [])
+                    if not rules_data:
+                        continue
+
+                    from loko.bot.alerting import AlertEngine, AlertRule
+
+                    rules = [AlertRule(**r) for r in rules_data]
+                    engine = AlertEngine(rules)
+
+                    # Gather current metrics (best-effort from available data)
+                    metrics: dict[str, float] = {}
+                    try:
+                        from loko.bot.session_store import get_session_store
+                        store = get_session_store(bot_id)
+                        stats = store.get_session_stats(bot_id) if hasattr(store, "get_session_stats") else {}
+                        metrics.update(stats)
+                    except Exception:
+                        pass
+
+                    events = engine.evaluate(metrics)
+                    for event in events:
+                        if event.resolved:
+                            logger.info(
+                                "Alert resolved: bot=%s rule=%s metric=%s value=%.2f",
+                                bot_id, event.rule_id, event.metric, event.value,
+                            )
+                        else:
+                            logger.warning(
+                                "Alert triggered: bot=%s rule=%s metric=%s "
+                                "value=%.2f threshold=%.2f",
+                                bot_id, event.rule_id, event.metric,
+                                event.value, event.threshold,
+                            )
+
+                except Exception:
+                    logger.debug("Alert evaluation skipped for bot %s", bot_id)
+
+        except asyncio.CancelledError:
+            break
+        except Exception:
+            logger.exception("Alert evaluation task error")
+
+
 # ---------------------------------------------------------------------------
 # App factory
 # ---------------------------------------------------------------------------
@@ -403,6 +470,11 @@ def create_app() -> FastAPI:
     @app.on_event("startup")
     async def start_purge_task():
         asyncio.create_task(_session_purge_task())
+
+    # --- PRO-5: Alert evaluation background task ---
+    @app.on_event("startup")
+    async def start_alert_task():
+        asyncio.create_task(_alert_evaluation_task())
 
     # --- SPA fallback (C4) ---
     if FRONTEND_DIR.exists():
