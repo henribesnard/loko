@@ -207,6 +207,28 @@ function MessageBubble({
           </div>
         )}
 
+        {turn.sources && turn.sources.length > 0 && (
+          <div className="mt-2 space-y-1 text-[11px] opacity-80">
+            {turn.sources.map((source, idx) => {
+              const url = String(source.url || source.source_url || "");
+              const title = String(source.title || source.source_title || url || `Source ${idx + 1}`);
+              return url ? (
+                <a
+                  key={`${url}-${idx}`}
+                  href={url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="block underline"
+                >
+                  {title}
+                </a>
+              ) : (
+                <span key={idx} className="block">{title}</span>
+              );
+            })}
+          </div>
+        )}
+
         {/* Feedback (bot messages only) */}
         {!isUser && (
           <div className="mt-1.5 flex items-center gap-1">

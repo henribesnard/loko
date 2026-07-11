@@ -68,25 +68,27 @@ export function BotPublish({ botId, config, updateConfig }: WizardStepProps) {
 
   const handleGenerateKey = async () => {
     try {
-      const res = await api<{ api_key: string; key_id: string }>(
-        `/api/bot/${botId}/keys`,
+      const res = await api<{ raw_key: string; key_id: string }>(
+        `/api/bot/${botId}/api-keys`,
         {
           method: "POST",
           body: JSON.stringify({ label: "default", allowed_origins: ["*"] }),
         },
       );
-      setApiKey(res.api_key);
-    } catch {
-      // Key generation endpoint may not exist yet
-      setApiKey(`loko_${botId.slice(0, 8)}_demo`);
+      sessionStorage.setItem(`loko_api_key_${botId}`, res.raw_key);
+      setApiKey(res.raw_key);
+    } catch (err) {
+      if (err instanceof Error) {
+        setPublishError(err.message);
+      }
     }
   };
 
-  const widgetSnippet = `<script src="${window.location.origin}/widget/loko-widget.js"></script>
-<loko-widget
+  const widgetSnippet = `<script
+  src="${window.location.origin}/widget/loko-widget.js"
   data-bot-id="${botId}"
   data-api-url="${window.location.origin}"${apiKey ? `\n  data-api-key="${apiKey}"` : ""}
-></loko-widget>`;
+></script>`;
 
   const copySnippet = () => {
     navigator.clipboard.writeText(widgetSnippet);

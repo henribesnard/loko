@@ -152,7 +152,7 @@ class JourneyParams(BaseModel):
     max_demandes: int = Field(default=5, ge=1, le=20)
     timeout_inactivite_s: int = Field(default=300, ge=30, le=3600)
     retrieval_min_score: float = Field(default=0.35, ge=0.0, le=1.0)
-    retrieval_min_chunks: int = Field(default=2, ge=1, le=20)
+    retrieval_min_chunks: int = Field(default=1, ge=1, le=20)
 
     @model_validator(mode="after")
     def thresholds_coherent(self) -> JourneyParams:

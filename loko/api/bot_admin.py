@@ -463,6 +463,20 @@ class UpdateTagsRequest(BaseModel):
     bot_sub_motifs: list[str] | None = None
 
 
+class CrawlFAQRequest(BaseModel):
+    """Request body for FAQ web crawl + optional ingestion."""
+    start_url: str = Field(..., min_length=1)
+    max_depth: int = Field(default=3, ge=1, le=10)
+    max_pages: int = Field(default=200, ge=1, le=5000)
+    follow_iframes: bool = True
+    use_playwright: bool = True
+    allow_private_networks: bool = False
+    min_content_length: int = Field(default=50, ge=10)
+    ingest: bool = True
+    document_url_patterns: list[str] = Field(default_factory=list)
+    confidentiality: str = "public"
+
+
 @router.post("/{bot_id}/documents", status_code=201)
 async def ingest_document(
     bot_id: str,
@@ -492,8 +506,105 @@ async def ingest_document(
         bot_sub_motifs=req.bot_sub_motifs,
         confidentiality=req.confidentiality,
     )
+    if not config.knowledge_collection:
+        config.knowledge_collection = bot_id
+        save_bot_config(config)
 
     return {"doc_id": doc_id, "bot_id": bot_id}
+
+
+@router.post("/{bot_id}/knowledge/crawl")
+async def crawl_faq_web(
+    bot_id: str,
+    req: CrawlFAQRequest,
+    request: Request,
+    _auth=Depends(require_tenant_or_ops),
+) -> dict[str, Any]:
+    """Crawl a FAQ/help-center URL and optionally ingest discovered documents."""
+    config = load_bot_config(bot_id)
+    if not config:
+        raise HTTPException(404, f"Bot {bot_id} not found")
+    _reject_demo_mutation(config, bot_id)
+
+    import re
+    from urllib.parse import urlparse
+
+    from loko.connectors.faq_web_crawler import CrawlConfig, FAQWebCrawler
+    from loko.connectors.playwright_fetcher import get_page_fetcher
+
+    parsed = urlparse(req.start_url)
+    allowed_netloc = parsed.netloc
+    allowed_hostname = parsed.hostname or allowed_netloc
+
+    fetcher = get_page_fetcher(
+        prefer_playwright=req.use_playwright,
+        allowed_domains=[allowed_hostname],
+        allow_private_networks=req.allow_private_networks,
+    )
+    crawler = FAQWebCrawler(
+        CrawlConfig(
+            start_url=req.start_url,
+            max_depth=req.max_depth,
+            max_pages=req.max_pages,
+            allowed_domains=[allowed_netloc] if allowed_netloc else [],
+            follow_iframes=req.follow_iframes,
+            min_content_length=req.min_content_length,
+            confidentiality=req.confidentiality,
+        ),
+        fetcher=fetcher,
+    )
+    result = crawler.crawl()
+
+    documents = result.documents
+    if req.document_url_patterns:
+        patterns = [re.compile(pattern) for pattern in req.document_url_patterns]
+        documents = [
+            doc for doc in documents
+            if any(pattern.search(doc.url) for pattern in patterns)
+        ]
+
+    ingested: list[dict[str, str]] = []
+    if req.ingest and documents:
+        from loko.bot.knowledge_store import get_knowledge_store
+
+        store = get_knowledge_store(bot_id)
+        for doc in documents:
+            doc_id = store.ingest_document(
+                doc.content,
+                source_url=doc.url,
+                source_title=doc.title,
+                confidentiality=req.confidentiality,
+                doc_id=doc.doc_id,
+            )
+            ingested.append({
+                "doc_id": doc_id,
+                "url": doc.url,
+                "title": doc.title,
+            })
+        if ingested and not config.knowledge_collection:
+            config.knowledge_collection = bot_id
+            save_bot_config(config)
+
+    return {
+        "bot_id": bot_id,
+        "urls_visited": result.urls_visited,
+        "urls_skipped": result.urls_skipped,
+        "errors": result.errors,
+        "documents_discovered": len(result.documents),
+        "documents_selected": len(documents),
+        "documents_ingested": len(ingested),
+        "documents": [
+            {
+                "doc_id": doc.doc_id,
+                "url": doc.url,
+                "title": doc.title,
+                "content_hash": doc.content_hash,
+                "content_preview": doc.content[:500],
+            }
+            for doc in documents
+        ],
+        "ingested": ingested,
+    }
 
 
 @router.get("/{bot_id}/documents")

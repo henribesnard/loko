@@ -181,6 +181,36 @@ class PlaywrightPageFetcher:
             return "", 0
 
 
+class SyncPlaywrightPageFetcher:
+    """Sync adapter matching FAQWebCrawler's PageFetcher protocol."""
+
+    def __init__(
+        self,
+        *,
+        timeout_ms: int = PlaywrightPageFetcher.DEFAULT_TIMEOUT_MS,
+        allowed_domains: list[str] | None = None,
+        allow_private_networks: bool = False,
+        user_agent: str | None = None,
+    ):
+        self._renderer = PlaywrightPageFetcher(
+            timeout_ms=timeout_ms,
+            allowed_domains=allowed_domains,
+            allow_private_networks=allow_private_networks,
+            user_agent=user_agent,
+        )
+        self._allow_private_networks = allow_private_networks
+
+    def fetch(self, url: str) -> tuple[str, int]:
+        return self._renderer.fetch_sync(url)
+
+    def fetch_sitemap(self, url: str) -> list[str]:
+        from loko.connectors.faq_web_crawler import SimplePageFetcher
+
+        return SimplePageFetcher(
+            allow_private_networks=self._allow_private_networks,
+        ).fetch_sitemap(url)
+
+
 def get_page_fetcher(
     *,
     prefer_playwright: bool = True,
@@ -195,7 +225,7 @@ def get_page_fetcher(
     if prefer_playwright:
         try:
             import playwright  # noqa: F401
-            return PlaywrightPageFetcher(
+            return SyncPlaywrightPageFetcher(
                 allowed_domains=allowed_domains,
                 allow_private_networks=allow_private_networks,
             )

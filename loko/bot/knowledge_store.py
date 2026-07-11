@@ -354,14 +354,16 @@ class KnowledgeStore:
 
             # FTS5 BM25 search with pre-filtering
             # Use MATCH on the FTS table, JOIN with chunks for filtering
-            fts_query = " ".join(
-                word for word in query.split() if word.strip()
-            )
-            if not fts_query:
-                return []
+            import re
 
-            # Escape FTS5 special characters
-            fts_query = fts_query.replace('"', '""')
+            terms = [
+                term.replace('"', '""')
+                for term in re.findall(r"\w+", query.lower())[:12]
+                if len(term) > 2
+            ]
+            if not terms:
+                return []
+            fts_query = " OR ".join(f'"{term}"' for term in terms)
 
             sql = f"""
                 SELECT c.chunk_id, c.text, c.source_url, c.source_title,
@@ -374,7 +376,7 @@ class KnowledgeStore:
                 ORDER BY rank
                 LIMIT ?
             """
-            params_full = [f'"{fts_query}"'] + params + [top_k]
+            params_full = [fts_query] + params + [top_k]
 
             try:
                 rows = conn.execute(sql, params_full).fetchall()
@@ -454,11 +456,12 @@ class KnowledgeStore:
     @staticmethod
     def _rank_to_score(rank: float) -> float:
         """Convert FTS5 rank (negative BM25) to a 0-1 score."""
-        # FTS5 rank is negative (lower = better match)
-        # We convert to a positive score where higher = better
+        # FTS5 rank is negative; stronger matches have a larger absolute BM25
+        # magnitude. Convert that to a bounded score where higher is better.
         if rank >= 0:
             return 0.0
-        return min(1.0, abs(rank) / 10.0)
+        magnitude = abs(rank)
+        return max(0.0, min(1.0, magnitude / (1.0 + magnitude)))
 
 
 # ---------------------------------------------------------------------------

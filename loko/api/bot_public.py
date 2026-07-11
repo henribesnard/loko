@@ -453,7 +453,17 @@ async def add_feedback(
     if not session:
         raise HTTPException(404, "Not found")
 
-    store.add_feedback(session_id, req.turn_id, req.rating, req.comment)
+    turn_id = req.turn_id
+    known_turn_ids = {turn.turn_id for turn in session.transcript}
+    if turn_id not in known_turn_ids:
+        latest_bot_turn = next(
+            (turn for turn in reversed(session.transcript) if turn.role == "bot"),
+            None,
+        )
+        if latest_bot_turn:
+            turn_id = latest_bot_turn.turn_id
+
+    store.add_feedback(session_id, turn_id, req.rating, req.comment)
     return {"status": "recorded"}
 
 

@@ -11,6 +11,7 @@ export function SignupPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [orgName, setOrgName] = useState("");
+  const [acceptTerms, setAcceptTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -27,6 +28,7 @@ export function SignupPage() {
           email: email.trim(),
           password,
           org_name: orgName.trim(),
+          accept_terms: acceptTerms,
         }),
       });
       setSuccess(true);
@@ -94,9 +96,24 @@ export function SignupPage() {
             onChange={(e) => setPassword(e.target.value)}
           />
 
+          <label className="flex items-start gap-2 text-xs" style={{ color: "var(--text-secondary)" }}>
+            <input
+              type="checkbox"
+              checked={acceptTerms}
+              onChange={(e) => setAcceptTerms(e.target.checked)}
+              className="mt-0.5"
+            />
+            <span>
+              {t("auth.acceptTerms")}{" "}
+              <Link to="/cgu" style={{ color: "var(--text-link)" }}>
+                {t("auth.termsLink")}
+              </Link>
+            </span>
+          </label>
+
           {error && <p className="text-xs" style={{ color: "var(--error-fg)" }}>{error}</p>}
 
-          <Button type="submit" size="md" className="w-full" disabled={loading || !email.trim() || !password || !orgName.trim()}>
+          <Button type="submit" size="md" className="w-full" disabled={loading || !email.trim() || !password || !orgName.trim() || !acceptTerms}>
             {t("auth.signup")}
           </Button>
         </form>

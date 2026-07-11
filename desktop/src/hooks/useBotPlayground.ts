@@ -1,10 +1,11 @@
 /**
- * LOKO — Hook for the bot playground (session + SSE messaging + traces).
+ * LOKO - Hook for the bot playground (session + SSE messaging + traces).
  */
 import { useCallback, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import type {
   SessionCreateResponse,
+  SSEEvent,
   TraceEvent,
   Turn,
 } from "@/types/bot";
@@ -15,6 +16,54 @@ interface PlaygroundState {
   traces: TraceEvent[];
   streaming: boolean;
   state: string;
+  apiKey: string | null;
+}
+
+function readApiKey(botId: string | undefined): string | null {
+  if (!botId) return null;
+  return sessionStorage.getItem(`loko_api_key_${botId}`);
+}
+
+function authHeaders(apiKey: string): Record<string, string> {
+  return { Authorization: `Bearer ${apiKey}` };
+}
+
+function parseSSEBlock(block: string): { event: string; data: Record<string, unknown> } | null {
+  let event = "message";
+  const dataLines: string[] = [];
+
+  for (const rawLine of block.split("\n")) {
+    const line = rawLine.replace(/\r$/, "");
+    if (line.startsWith("event: ")) {
+      event = line.slice(7).trim();
+    } else if (line.startsWith("data: ")) {
+      dataLines.push(line.slice(6));
+    }
+  }
+
+  if (!dataLines.length) return null;
+
+  try {
+    return { event, data: JSON.parse(dataLines.join("\n")) };
+  } catch {
+    return null;
+  }
+}
+
+function makeBotTurn(content: string, buttons?: string[], sources?: Array<Record<string, unknown>>): Turn {
+  return {
+    turn_id: crypto.randomUUID(),
+    role: "bot",
+    content,
+    timestamp: new Date().toISOString(),
+    buttons,
+    sources,
+  };
+}
+
+interface PendingGeneration {
+  text: string;
+  sources?: Array<Record<string, unknown>>;
 }
 
 export function useBotPlayground(botId: string | undefined) {
@@ -24,6 +73,7 @@ export function useBotPlayground(botId: string | undefined) {
     traces: [],
     streaming: false,
     state: "",
+    apiKey: readApiKey(botId),
   });
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -31,23 +81,32 @@ export function useBotPlayground(botId: string | undefined) {
   const createSession = useCallback(async () => {
     if (!botId) return;
     setError(null);
+
+    const apiKey = readApiKey(botId);
+    if (!apiKey) {
+      setError("Aucune cle API runtime. Generez une cle dans l'etape Publication.");
+      return;
+    }
+
     try {
       const data = await api<SessionCreateResponse>(
         `/api/v1/bot/${botId}/sessions`,
-        { method: "POST" },
+        { method: "POST", headers: authHeaders(apiKey) },
       );
 
-      // Extract turns from welcome events
       const welcomeTurns: Turn[] = [];
-      for (const evt of data.events) {
-        if (evt.event === "template" || evt.event === "generation_delta") {
-          welcomeTurns.push({
-            turn_id: (evt.data.turn_id as string) || "",
-            role: "bot",
-            content: (evt.data.text as string) || "",
-            timestamp: new Date().toISOString(),
-            buttons: evt.data.buttons as string[] | undefined,
-          });
+      let state = data.state;
+      for (const evt of data.events as SSEEvent[]) {
+        if (evt.event === "state" && typeof evt.data.state === "string") {
+          state = evt.data.state;
+        }
+        if (evt.event === "template") {
+          welcomeTurns.push(
+            makeBotTurn(
+              String(evt.data.content || ""),
+              evt.data.buttons as string[] | undefined,
+            ),
+          );
         }
       }
 
@@ -56,7 +115,8 @@ export function useBotPlayground(botId: string | undefined) {
         turns: welcomeTurns,
         traces: [],
         streaming: false,
-        state: data.state,
+        state,
+        apiKey,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create session");
@@ -68,7 +128,12 @@ export function useBotPlayground(botId: string | undefined) {
       const sid = playground.sessionId;
       if (!botId || !sid) return;
 
-      // Add user turn
+      const apiKey = playground.apiKey || readApiKey(botId);
+      if (!apiKey) {
+        setError("Aucune cle API runtime. Generez une cle dans l'etape Publication.");
+        return;
+      }
+
       const userTurn: Turn = {
         turn_id: crypto.randomUUID(),
         role: "user",
@@ -92,7 +157,10 @@ export function useBotPlayground(botId: string | undefined) {
           `/api/v1/bot/${botId}/sessions/${sid}/messages`,
           {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+              "Content-Type": "application/json",
+              ...authHeaders(apiKey),
+            },
             body: JSON.stringify({ text, type }),
             signal: abortRef.current.signal,
           },
@@ -106,76 +174,83 @@ export function useBotPlayground(botId: string | undefined) {
         const reader = res.body!.getReader();
         const decoder = new TextDecoder();
         let buffer = "";
-        let currentBotText = "";
-        let currentButtons: string[] | undefined;
         let currentState = playground.state;
+        const newBotTurns: Turn[] = [];
+        const newTraces: TraceEvent[] = [];
+        let pendingGeneration: PendingGeneration = { text: "" };
+
+        const flushGeneration = () => {
+          if (!pendingGeneration.text && !pendingGeneration.sources?.length) return;
+          newBotTurns.push(makeBotTurn(
+            pendingGeneration.text,
+            undefined,
+            pendingGeneration.sources,
+          ));
+          pendingGeneration = { text: "" };
+        };
+
+        const handleEvent = (event: string, data: Record<string, unknown>) => {
+          if (event === "state" && typeof data.state === "string") {
+            currentState = data.state;
+            return;
+          }
+
+          if (event === "generation_delta") {
+            pendingGeneration.text += String(data.token || "");
+            return;
+          }
+
+          if (event === "sources") {
+            pendingGeneration.sources = data.sources as Array<Record<string, unknown>>;
+            return;
+          }
+
+          if (event === "template") {
+            flushGeneration();
+            newBotTurns.push(
+              makeBotTurn(
+                String(data.content || ""),
+                data.buttons as string[] | undefined,
+              ),
+            );
+            return;
+          }
+
+          if (event === "traces") {
+            const traces = data.traces as TraceEvent[] | undefined;
+            if (traces?.length) newTraces.push(...traces);
+          }
+        };
 
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
 
           buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split("\n");
-          buffer = lines.pop() || "";
+          const blocks = buffer.split("\n\n");
+          buffer = blocks.pop() || "";
 
-          for (const line of lines) {
-            if (line.startsWith("event: ")) {
-              continue;
-            }
-            if (line.startsWith("data: ")) {
-              const jsonStr = line.slice(6);
-              try {
-                const data = JSON.parse(jsonStr);
-
-                if (data.state) {
-                  currentState = data.state;
-                }
-
-                if (data.text !== undefined) {
-                  currentBotText += data.text;
-                }
-
-                if (data.buttons) {
-                  currentButtons = data.buttons;
-                }
-
-                setPlayground((prev) => ({
-                  ...prev,
-                  state: currentState,
-                }));
-              } catch {
-                // Ignore parse errors for partial lines
-              }
-            }
+          for (const block of blocks) {
+            const parsed = parseSSEBlock(block);
+            if (parsed) handleEvent(parsed.event, parsed.data);
           }
         }
 
-        // Add the final bot turn
-        if (currentBotText) {
-          const botTurn: Turn = {
-            turn_id: crypto.randomUUID(),
-            role: "bot",
-            content: currentBotText,
-            timestamp: new Date().toISOString(),
-            buttons: currentButtons,
-          };
-
-          setPlayground((prev) => ({
-            ...prev,
-            turns: [...prev.turns, botTurn],
-            streaming: false,
-            state: currentState,
-          }));
-        } else {
-          setPlayground((prev) => ({
-            ...prev,
-            streaming: false,
-            state: currentState,
-          }));
+        if (buffer.trim()) {
+          const parsed = parseSSEBlock(buffer);
+          if (parsed) handleEvent(parsed.event, parsed.data);
         }
 
-        // Fetch traces
-        await fetchTraces(sid);
+        flushGeneration();
+
+        setPlayground((prev) => ({
+          ...prev,
+          turns: [...prev.turns, ...newBotTurns],
+          traces: [...prev.traces, ...newTraces],
+          streaming: false,
+          state: currentState,
+          apiKey,
+        }));
       } catch (err) {
         if ((err as Error).name !== "AbortError") {
           setError(err instanceof Error ? err.message : "Failed to send message");
@@ -183,35 +258,27 @@ export function useBotPlayground(botId: string | undefined) {
         setPlayground((prev) => ({ ...prev, streaming: false }));
       }
     },
-    [botId, playground.sessionId, playground.state],
+    [botId, playground.apiKey, playground.sessionId, playground.state],
   );
 
-  const fetchTraces = useCallback(
-    async (sessionId?: string) => {
-      const sid = sessionId || playground.sessionId;
-      if (!botId || !sid) return;
-      try {
-        const traces = await api<TraceEvent[]>(
-          `/api/v1/bot/${botId}/sessions/${sid}/traces`,
-        );
-        setPlayground((prev) => ({ ...prev, traces }));
-      } catch {
-        // Traces are optional
-      }
-    },
-    [botId, playground.sessionId],
-  );
+  const fetchTraces = useCallback(async () => {
+    return playground.traces;
+  }, [playground.traces]);
 
   const sendFeedback = useCallback(
     async (turnId: string, rating: "positive" | "negative") => {
       const sid = playground.sessionId;
       if (!botId || !sid) return;
+      const apiKey = playground.apiKey || readApiKey(botId);
+      if (!apiKey) return;
+
       await api(`/api/v1/bot/${botId}/sessions/${sid}/feedback`, {
         method: "POST",
+        headers: authHeaders(apiKey),
         body: JSON.stringify({ turn_id: turnId, rating }),
       });
     },
-    [botId, playground.sessionId],
+    [botId, playground.apiKey, playground.sessionId],
   );
 
   const reset = useCallback(() => {
@@ -222,9 +289,10 @@ export function useBotPlayground(botId: string | undefined) {
       traces: [],
       streaming: false,
       state: "",
+      apiKey: readApiKey(botId),
     });
     setError(null);
-  }, []);
+  }, [botId]);
 
   return {
     ...playground,

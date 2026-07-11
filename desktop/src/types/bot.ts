@@ -155,5 +155,5 @@ export const JOURNEY_DEFAULTS: JourneyParams = {
   max_demandes: 5,
   timeout_inactivite_s: 300,
   retrieval_min_score: 0.35,
-  retrieval_min_chunks: 2,
+  retrieval_min_chunks: 1,
 };

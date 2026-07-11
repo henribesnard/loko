@@ -124,7 +124,7 @@ def on_classification_l1_done(
             if decision.intent == "demande_conseiller"
             else EscalationMotif.HORS_PERIMETRE
         )
-        new = _update(session, state=BotState.ESCALADE)
+        new = _update(session, state=BotState.ESCALADE, current_intent=decision.intent)
         return new, [CallEscalation(motif=motif)]
 
     if decision.type == "reject":

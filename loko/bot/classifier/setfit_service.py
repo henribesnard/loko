@@ -250,6 +250,8 @@ def prepare_l1_training_data(config: BotConfig) -> tuple[list[str], list[str]]:
 
     for intent in config.intents:
         examples = list(intent.examples)
+        for sub_motif in intent.sub_motifs:
+            examples.extend(sub_motif.examples)
 
         # Merge built-in examples for demande_conseiller
         if intent.id == "demande_conseiller":
