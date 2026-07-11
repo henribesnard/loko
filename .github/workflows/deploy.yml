@@ -90,11 +90,13 @@ jobs:
 
       - name: Smoke test after deploy
         env:
+          SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
           VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
         run: |
-          # Wait for service to be ready
+          # Wait for service to be ready (test on local port)
           for i in {1..30}; do
-            if curl -f -s https://$VPS_HOST/health > /dev/null; then
+            if ssh -i ~/.ssh/deploy_key $VPS_USER@$VPS_HOST "curl -f -s http://localhost:8001/health > /dev/null"; then
               echo "✅ Health check passed"
               exit 0
             fi
