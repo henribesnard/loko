@@ -319,7 +319,7 @@ def create_app() -> FastAPI:
     # --- Health ---
     @app.get("/health")
     async def health() -> dict[str, str]:
-        return {"status": "ok", "service": "loko-bot"}
+        return {"status": "ok", "service": "loko-bot", "version": __version__}
 
     # --- L4: recover interrupted training jobs on boot ---
     @app.on_event("startup")

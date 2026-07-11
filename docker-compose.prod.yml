@@ -1,0 +1,18 @@
+# Production override — use pre-built GHCR images instead of local build.
+#
+# Usage:
+#   export LOKO_VERSION=0.3.9
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml pull
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# Rollback:
+#   export LOKO_VERSION=0.3.8
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml pull
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# Or use the rollback script:
+#   ./tools/rollback_loko.sh 0.3.8
+
+services:
+  loko:
+    image: ghcr.io/henribesnard/loko:${LOKO_VERSION:-latest}

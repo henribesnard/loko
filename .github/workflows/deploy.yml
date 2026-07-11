@@ -15,12 +15,14 @@ jobs:
     name: Build and Deploy
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       packages: write
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for tag resolution
 
       - name: Extract version from tag
         id: version
@@ -28,6 +30,11 @@ jobs:
           VERSION=${GITHUB_REF#refs/tags/v}
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "tag=$GITHUB_REF_NAME" >> $GITHUB_OUTPUT
+
+          # Find previous version tag for rollback reference
+          PREV_TAG=$(git tag -l 'v*.*.*' --sort=-version:refname | grep -v "^${GITHUB_REF_NAME}$" | head -1)
+          echo "prev_tag=${PREV_TAG:-none}" >> $GITHUB_OUTPUT
+          echo "Current: $GITHUB_REF_NAME, Previous: ${PREV_TAG:-none}"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -52,81 +59,105 @@ jobs:
           build-args: |
             VERSION=${{ steps.version.outputs.version }}
 
-      - name: Deploy to VPS
+      - name: Setup SSH
         env:
           SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
           VPS_HOST: ${{ secrets.VPS_HOST }}
-          VPS_USER: ${{ secrets.VPS_USER }}
         run: |
-          # Setup SSH
           mkdir -p ~/.ssh
           echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H $VPS_HOST >> ~/.ssh/known_hosts
+          ssh-keyscan -H $VPS_HOST >> ~/.ssh/known_hosts 2>/dev/null
 
-          # Deploy via SSH
-          ssh -i ~/.ssh/deploy_key $VPS_USER@$VPS_HOST << 'ENDSSH'
-            set -e
-            cd /opt/loko
-
-            # Pull latest code
-            git fetch --tags --force
-            git checkout ${{ steps.version.outputs.tag }}
-
-            # Pull new Docker image
-            docker compose pull
-
-            # Backup before deploy (safety)
-            ./tools/backup_loko.sh || echo "Warning: Backup failed"
-
-            # Deploy with zero-downtime (if possible)
-            docker compose up -d --no-deps --build
-
-            # Wait for health check
-            sleep 10
-
-            echo "Deployment complete: ${{ steps.version.outputs.tag }}"
-          ENDSSH
-
-      - name: Smoke test after deploy
+      - name: Deploy to VPS
         env:
-          SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
         run: |
-          # Wait for service to be ready (test on local port)
-          for i in {1..30}; do
-            if ssh -i ~/.ssh/deploy_key $VPS_USER@$VPS_HOST "curl -f -s http://localhost:8001/health > /dev/null"; then
-              echo "✅ Health check passed"
+          ssh -i ~/.ssh/deploy_key $VPS_USER@$VPS_HOST << ENDSSH
+            set -e
+            cd /opt/loko
+
+            # Pull latest code and tags
+            git fetch --tags --force
+            git checkout ${{ steps.version.outputs.tag }}
+
+            # Backup before deploy (safety)
+            ./tools/backup_loko.sh || echo "Warning: Backup failed, continuing"
+
+            # Pull pre-built image from GHCR (not --build)
+            export LOKO_VERSION=${{ steps.version.outputs.version }}
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml pull
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+            echo "Deployment started: ${{ steps.version.outputs.tag }}"
+          ENDSSH
+
+      - name: Smoke test
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+        run: |
+          echo "Waiting for service to start..."
+          sleep 5
+
+          for i in $(seq 1 30); do
+            RESPONSE=$(ssh -i ~/.ssh/deploy_key $VPS_USER@$VPS_HOST \
+              "curl -sf http://localhost:8001/health 2>/dev/null || true")
+
+            if echo "$RESPONSE" | grep -q '"status":"ok"'; then
+              # Verify deployed version matches expected
+              DEPLOYED_VER=$(echo "$RESPONSE" | python3 -c "import sys,json; print(json.load(sys.stdin).get('version',''))" 2>/dev/null || true)
+              echo "Health check passed (version: ${DEPLOYED_VER:-unknown})"
+
+              if [ -n "$DEPLOYED_VER" ] && [ "$DEPLOYED_VER" != "${{ steps.version.outputs.version }}" ]; then
+                echo "WARNING: Deployed version ($DEPLOYED_VER) differs from expected (${{ steps.version.outputs.version }})"
+              fi
               exit 0
             fi
-            echo "Waiting for service... ($i/30)"
+            echo "  Waiting... ($i/30)"
             sleep 2
           done
 
-          echo "❌ Health check failed after deployment"
+          echo "Health check failed after 60s"
           exit 1
 
       - name: Rollback on failure
         if: failure()
         env:
-          SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
         run: |
-          echo "⚠️ Deployment failed, attempting rollback..."
+          PREV_TAG="${{ steps.version.outputs.prev_tag }}"
+          if [ "$PREV_TAG" = "none" ]; then
+            echo "No previous version tag found, cannot rollback"
+            exit 1
+          fi
 
-          ssh -i ~/.ssh/deploy_key $VPS_USER@$VPS_HOST << 'ENDSSH'
+          PREV_VERSION="${PREV_TAG#v}"
+          echo "Deployment failed, rolling back to $PREV_TAG..."
+
+          ssh -i ~/.ssh/deploy_key $VPS_USER@$VPS_HOST << ENDSSH
+            set -e
             cd /opt/loko
 
-            # Rollback to previous tag
-            PREV_TAG=$(git describe --tags --abbrev=0 HEAD^)
-            echo "Rolling back to $PREV_TAG"
-
+            git fetch --tags --force
             git checkout $PREV_TAG
-            docker compose up -d --no-deps
 
-            echo "Rollback complete"
+            export LOKO_VERSION=$PREV_VERSION
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml pull
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+            # Verify rollback health
+            sleep 10
+            for i in \$(seq 1 15); do
+              if curl -sf http://localhost:8001/health > /dev/null 2>&1; then
+                echo "Rollback to $PREV_TAG successful"
+                exit 0
+              fi
+              sleep 2
+            done
+            echo "WARNING: Rollback health check inconclusive"
           ENDSSH
 
       - name: Create GitHub Release
@@ -138,23 +169,28 @@ jobs:
           tag_name: ${{ steps.version.outputs.tag }}
           release_name: Release ${{ steps.version.outputs.tag }}
           body: |
-            Automated deployment of LOKO ${{ steps.version.outputs.version }}
+            ## LOKO ${{ steps.version.outputs.version }}
 
-            Changes: See commit history
+            **Deployment:** Successful
+            **Health check:** Passed
+            **Previous version:** ${{ steps.version.outputs.prev_tag }}
 
-            Deployment: ✅ Successful
-            Health check: ✅ Passed
+            ### Rollback
+            If issues are found, rollback from VPS:
+            ```bash
+            ssh root@VPS_HOST "cd /opt/loko && ./tools/rollback_loko.sh ${{ steps.version.outputs.prev_tag }}"
+            ```
+
+            See commit history for changes.
           draft: false
           prerelease: false
 
       - name: Notify deployment
         if: always()
         run: |
-          STATUS=${{ job.status }}
-          if [ "$STATUS" == "success" ]; then
-            echo "✅ Deployment successful: ${{ steps.version.outputs.tag }}"
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "Deployment successful: ${{ steps.version.outputs.tag }}"
           else
-            echo "❌ Deployment failed: ${{ steps.version.outputs.tag }}"
+            echo "Deployment FAILED: ${{ steps.version.outputs.tag }}"
+            echo "Rollback attempted to: ${{ steps.version.outputs.prev_tag }}"
           fi
-
-          # TODO: Send notification (Slack, email, etc.)
