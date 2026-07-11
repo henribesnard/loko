@@ -70,7 +70,7 @@ jobs:
             cd /opt/loko
 
             # Pull latest code
-            git fetch --tags
+            git fetch --tags --force
             git checkout ${{ steps.version.outputs.tag }}
 
             # Pull new Docker image
