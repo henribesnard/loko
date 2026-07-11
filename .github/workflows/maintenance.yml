@@ -1,0 +1,121 @@
+name: VPS Maintenance
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Action to perform'
+        required: true
+        type: choice
+        options:
+          - docker-prune
+          - disk-usage
+          - redeploy-latest
+
+jobs:
+  maintenance:
+    name: VPS Maintenance
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H $VPS_HOST >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Docker Prune
+        if: inputs.action == 'docker-prune'
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+        run: |
+          ssh -i ~/.ssh/deploy_key $VPS_USER@$VPS_HOST << 'ENDSSH'
+            echo "=== Disk usage BEFORE ==="
+            df -h /
+            echo ""
+            echo "=== Docker disk usage ==="
+            docker system df
+            echo ""
+            echo "=== Pruning unused Docker resources ==="
+            docker system prune -af --volumes
+            echo ""
+            echo "=== Cleaning old backups (keep last 3) ==="
+            cd /opt/loko/backups 2>/dev/null && ls -t *.tar.gz 2>/dev/null | tail -n +4 | xargs rm -f || true
+            echo ""
+            echo "=== Cleaning apt cache ==="
+            apt-get clean 2>/dev/null || true
+            echo ""
+            echo "=== Cleaning journal logs (keep 3 days) ==="
+            journalctl --vacuum-time=3d 2>/dev/null || true
+            echo ""
+            echo "=== Disk usage AFTER ==="
+            df -h /
+          ENDSSH
+
+      - name: Disk Usage
+        if: inputs.action == 'disk-usage'
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+        run: |
+          ssh -i ~/.ssh/deploy_key $VPS_USER@$VPS_HOST << 'ENDSSH'
+            echo "=== Disk usage ==="
+            df -h /
+            echo ""
+            echo "=== Docker disk usage ==="
+            docker system df
+            echo ""
+            echo "=== Largest directories in /opt/loko ==="
+            du -sh /opt/loko/*/ 2>/dev/null | sort -rh | head -10
+            echo ""
+            echo "=== Backups ==="
+            ls -lh /opt/loko/backups/ 2>/dev/null || echo "No backups dir"
+          ENDSSH
+
+      - name: Redeploy Latest Tag
+        if: inputs.action == 'redeploy-latest'
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          REGISTRY: ghcr.io
+          IMAGE_NAME: ${{ github.repository }}
+        run: |
+          LATEST_TAG=$(git tag -l 'v*.*.*' --sort=-version:refname | head -1)
+          LATEST_VERSION="${LATEST_TAG#v}"
+          echo "Redeploying $LATEST_TAG (version $LATEST_VERSION)"
+
+          ssh -i ~/.ssh/deploy_key $VPS_USER@$VPS_HOST << ENDSSH
+            set -e
+            cd /opt/loko
+
+            git fetch --tags --force
+            git checkout $LATEST_TAG
+
+            chmod +x tools/*.sh 2>/dev/null || true
+
+            export LOKO_VERSION=$LATEST_VERSION
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml pull
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+            echo "Redeployment of $LATEST_TAG complete"
+
+            sleep 5
+            for i in \$(seq 1 15); do
+              if curl -sf http://localhost:8001/health > /dev/null 2>&1; then
+                echo "Health check passed"
+                exit 0
+              fi
+              sleep 2
+            done
+            echo "WARNING: Health check inconclusive"
+          ENDSSH
