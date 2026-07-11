@@ -36,7 +36,7 @@ export function VerifyEmailPage() {
           if (err instanceof ApiError) {
             try {
               const body = JSON.parse(err.body);
-              setError(body.detail || t("auth.verifyEmailError"));
+              setError(typeof body.detail === "string" ? body.detail : t("auth.verifyEmailError"));
             } catch {
               setError(t("auth.verifyEmailError"));
             }

@@ -209,5 +209,14 @@
     "success": "Success",
     "copy": "Copy",
     "copied": "Copied!"
+  },
+  "errorBoundary": {
+    "pageError": "Page Error",
+    "errorInPage": "An error occurred in {{name}}.",
+    "unexpectedError": "An unexpected error occurred on this page.",
+    "reload": "Reload page",
+    "goHome": "Go to home",
+    "tryAgain": "Try again",
+    "errorRecurring": "This error has occurred {{count}} times. Consider refreshing the page."
   }
 }

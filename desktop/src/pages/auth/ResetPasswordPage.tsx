@@ -101,7 +101,7 @@ function ResetForm({ token }: { token: string }) {
       if (err instanceof ApiError) {
         try {
           const body = JSON.parse(err.body);
-          setError(body.detail || t("auth.resetError"));
+          setError(typeof body.detail === "string" ? body.detail : t("auth.resetError"));
         } catch {
           setError(t("auth.resetError"));
         }

@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import ErrorBoundary from './ErrorBoundary';
 
 interface PageErrorBoundaryProps {
@@ -13,6 +14,7 @@ interface PageErrorBoundaryProps {
  */
 export default function PageErrorBoundary({ children, name }: PageErrorBoundaryProps) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const handleError = (error: Error) => {
     // Log to console in development
@@ -45,11 +47,13 @@ export default function PageErrorBoundary({ children, name }: PageErrorBoundaryP
           </div>
 
           <h2 className="mt-4 text-center text-2xl font-bold text-gray-900">
-            Page Error
+            {t('errorBoundary.pageError')}
           </h2>
 
           <p className="mt-2 text-center text-sm text-gray-600">
-            {name ? `An error occurred in ${name}.` : 'An unexpected error occurred on this page.'}
+            {name
+              ? t('errorBoundary.errorInPage', { name })
+              : t('errorBoundary.unexpectedError')}
           </p>
 
           <div className="mt-6 flex flex-col space-y-3">
@@ -57,14 +61,14 @@ export default function PageErrorBoundary({ children, name }: PageErrorBoundaryP
               onClick={() => window.location.reload()}
               className="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
-              Reload page
+              {t('errorBoundary.reload')}
             </button>
 
             <button
               onClick={() => navigate('/')}
               className="w-full inline-flex justify-center items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
-              Go to home
+              {t('errorBoundary.goHome')}
             </button>
           </div>
         </div>

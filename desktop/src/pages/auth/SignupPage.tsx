@@ -36,7 +36,8 @@ export function SignupPage() {
       if (err instanceof ApiError) {
         try {
           const body = JSON.parse(err.body);
-          setError(body.detail || t("auth.signupError"));
+          const detail = body.detail;
+          setError(typeof detail === "string" ? detail : t("auth.signupError"));
         } catch {
           setError(t("auth.signupError"));
         }

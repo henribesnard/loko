@@ -69,7 +69,7 @@ export function useAuth(): AuthState {
       if (err instanceof ApiError) {
         try {
           const body = JSON.parse(err.body);
-          setError(body.detail || "auth.error");
+          setError(typeof body.detail === "string" ? body.detail : "auth.error");
         } catch {
           setError("auth.error");
         }
