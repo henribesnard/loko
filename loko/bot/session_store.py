@@ -108,7 +108,10 @@ class SessionStore:
         self.create_session(session)
 
     def list_sessions(
-        self, bot_id: str, limit: int = 50, offset: int = 0,
+        self,
+        bot_id: str,
+        limit: int = 50,
+        offset: int = 0,
     ) -> list[dict[str, Any]]:
         with self._connect() as conn:
             rows = conn.execute(
@@ -205,7 +208,11 @@ class SessionStore:
     # ------------------------------------------------------------------
 
     def add_feedback(
-        self, session_id: str, turn_id: str, rating: str, comment: str = "",
+        self,
+        session_id: str,
+        turn_id: str,
+        rating: str,
+        comment: str = "",
     ) -> None:
         with self._connect() as conn:
             conn.execute(
@@ -296,11 +303,13 @@ CREATE INDEX IF NOT EXISTS idx_feedback_session
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _row_to_turn(row: sqlite3.Row) -> Turn:
     buttons = json.loads(row["buttons"]) if row["buttons"] else None
     sources = json.loads(row["sources"]) if row["sources"] else None
     tk = row["template_key"]
     from loko.bot.models import TemplateKey
+
     template_key = TemplateKey(tk) if tk else None
 
     return Turn(
@@ -321,9 +330,11 @@ def _row_to_turn(row: sqlite3.Row) -> Turn:
 # Bot config store (simple JSON file)
 # ---------------------------------------------------------------------------
 
+
 def get_bots_dir() -> Path:
     """Return the root directory for bot data (~/.loko/bots/)."""
     import os
+
     custom = os.environ.get("LOKO_DATA_DIR")
     root = Path(custom) if custom else Path.home() / ".loko"
     bots_dir = root / "bots"

@@ -21,6 +21,7 @@ from loko.bot.models import BotConfig, JourneyParams
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _make_journey(**kwargs) -> JourneyParams:
     defaults = {"seuil_haut": 0.75, "seuil_bas": 0.45}
     defaults.update(kwargs)
@@ -30,6 +31,7 @@ def _make_journey(**kwargs) -> JourneyParams:
 # ---------------------------------------------------------------------------
 # R1: decide_l1 parity tests
 # ---------------------------------------------------------------------------
+
 
 class TestDecideL1:
     """Core decision logic tests — covers all branches."""
@@ -123,19 +125,23 @@ class TestDecideL1:
 # R1: eval/decision.decide() produces the same results as decide_l1()
 # ---------------------------------------------------------------------------
 
+
 class TestEvalDecisionParity:
     """Ensure eval/decision.decide() is just a thin wrapper around decide_l1()."""
 
-    @pytest.mark.parametrize("scores,ecart,expected_type", [
-        ([("a", 0.9)], 0.0, "route"),
-        ([("a", 0.85), ("b", 0.80)], 0.10, "clarify_inter"),
-        ([("a", 0.85), ("b", 0.70)], 0.10, "route"),
-        ([("hors_perimetre", 0.8)], 0.0, "reject"),
-        ([("demande_conseiller", 0.5)], 0.0, "escalate"),
-        ([], 0.0, "reject"),
-        ([("a", 0.3)], 0.0, "reject"),
-        ([("a", 0.6), ("b", 0.5)], 0.0, "clarify_inter"),
-    ])
+    @pytest.mark.parametrize(
+        "scores,ecart,expected_type",
+        [
+            ([("a", 0.9)], 0.0, "route"),
+            ([("a", 0.85), ("b", 0.80)], 0.10, "clarify_inter"),
+            ([("a", 0.85), ("b", 0.70)], 0.10, "route"),
+            ([("hors_perimetre", 0.8)], 0.0, "reject"),
+            ([("demande_conseiller", 0.5)], 0.0, "escalate"),
+            ([], 0.0, "reject"),
+            ([("a", 0.3)], 0.0, "reject"),
+            ([("a", 0.6), ("b", 0.5)], 0.0, "clarify_inter"),
+        ],
+    )
     def test_eval_matches_decide_l1(self, scores, ecart, expected_type):
         from loko.eval.decision import decide
 
@@ -157,13 +163,15 @@ class TestEvalDecisionParity:
 # R2: Anti-regression guard — states.py must not inline threshold logic
 # ---------------------------------------------------------------------------
 
-_STATES_PATH = Path(__file__).resolve().parent.parent.parent / "loko" / "bot" / "states.py"
+_STATES_PATH = (
+    Path(__file__).resolve().parent.parent.parent / "loko" / "bot" / "states.py"
+)
 
 # Patterns that indicate inline threshold logic (should use decide_l1 instead)
 _FORBIDDEN_PATTERNS = [
-    re.compile(r'best_score\s*[<>]=?\s*journey\.seuil_haut'),
-    re.compile(r'best_score\s*[<>]=?\s*journey\.seuil_bas'),
-    re.compile(r'seuil_ecart'),
+    re.compile(r"best_score\s*[<>]=?\s*journey\.seuil_haut"),
+    re.compile(r"best_score\s*[<>]=?\s*journey\.seuil_bas"),
+    re.compile(r"seuil_ecart"),
 ]
 
 
@@ -178,7 +186,11 @@ def test_states_no_inline_thresholds():
     violations = []
     for i, line in enumerate(content.splitlines(), 1):
         stripped = line.lstrip()
-        if stripped.startswith("#") or stripped.startswith("from ") or stripped.startswith("import "):
+        if (
+            stripped.startswith("#")
+            or stripped.startswith("from ")
+            or stripped.startswith("import ")
+        ):
             continue
         for pattern in _FORBIDDEN_PATTERNS:
             if pattern.search(line):

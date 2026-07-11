@@ -74,7 +74,9 @@ async def require_bot_api_key(
     record = validate_api_key_for_bot(raw_key, bot_id)
     if not record:
         # Intentionally vague: don't reveal if bot exists vs key invalid
-        logger.warning("Auth failure: invalid API key — IP=%s bot=%s", client_ip, bot_id)
+        logger.warning(
+            "Auth failure: invalid API key — IP=%s bot=%s", client_ip, bot_id
+        )
         raise HTTPException(
             status_code=401,
             detail="Authentication required",
@@ -85,7 +87,10 @@ async def require_bot_api_key(
     if not check_origin(record, origin):
         logger.warning(
             "Auth failure: origin rejected — IP=%s bot=%s key=%s origin=%s",
-            client_ip, bot_id, record.key_id, origin,
+            client_ip,
+            bot_id,
+            record.key_id,
+            origin,
         )
         raise HTTPException(
             status_code=403,
@@ -119,6 +124,7 @@ def _get_admin_token() -> str | None:
 def _get_mode() -> str:
     """Read LOKO_MODE from environment (default: desktop)."""
     from loko.config.env import get_env
+
     return get_env("MODE", "desktop")
 
 

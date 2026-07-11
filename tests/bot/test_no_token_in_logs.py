@@ -15,6 +15,7 @@ from loko.db.accounts import create_account, create_user
 def _fresh_db(tmp_path, monkeypatch):
     """Use a temporary database for each test."""
     import loko.db.accounts as mod
+
     monkeypatch.setattr(mod, "_DB_PATH", tmp_path / "test.db")
     monkeypatch.setattr(mod, "_connection", None)
     yield
@@ -34,6 +35,7 @@ def test_signup_no_token_in_logs(caplog):
         os.environ.pop("LOKO_AUTH_DEBUG_TOKENS", None)
 
         from loko.main import create_app
+
         app = create_app()
 
         async def _run():
@@ -41,12 +43,15 @@ def test_signup_no_token_in_logs(caplog):
                 transport=ASGITransport(app=app), base_url="http://test"
             ) as client:
                 with caplog.at_level(logging.DEBUG):
-                    resp = await client.post("/api/auth/signup", json={
-                        "email": "s1test@example.com",
-                        "password": "MyStr0ngPwd!",
-                        "org_name": "S1 Test",
-                        "accept_terms": True,
-                    })
+                    resp = await client.post(
+                        "/api/auth/signup",
+                        json={
+                            "email": "s1test@example.com",
+                            "password": "MyStr0ngPwd!",
+                            "org_name": "S1 Test",
+                            "accept_terms": True,
+                        },
+                    )
                     assert resp.status_code == 201
                     # No _debug_verify_token in response (debug mode off)
                     assert "_debug_verify_token" not in resp.json()
@@ -71,6 +76,7 @@ def test_reset_no_token_in_logs(caplog):
     import asyncio
 
     from loko.main import create_app
+
     app = create_app()
 
     async def _run():
@@ -78,9 +84,12 @@ def test_reset_no_token_in_logs(caplog):
             transport=ASGITransport(app=app), base_url="http://test"
         ) as client:
             with caplog.at_level(logging.DEBUG):
-                resp = await client.post("/api/auth/request-reset", json={
-                    "email": "reset@example.com",
-                })
+                resp = await client.post(
+                    "/api/auth/request-reset",
+                    json={
+                        "email": "reset@example.com",
+                    },
+                )
                 assert resp.status_code == 200
 
         for record in caplog.records:

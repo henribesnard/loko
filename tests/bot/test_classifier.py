@@ -25,14 +25,21 @@ from loko.bot.models import BotConfig, Intent, SubMotif
 # Built-in examples
 # ---------------------------------------------------------------------------
 
+
 class TestBuiltinExamples:
     def test_demande_conseiller_has_enough_examples(self):
         assert len(DEMANDE_CONSEILLER_EXAMPLES) >= 20
 
     def test_demande_conseiller_has_fr_and_en(self):
         # At least some FR and some EN examples (heuristic detection)
-        fr_count = sum(1 for e in DEMANDE_CONSEILLER_EXAMPLES if any(c in e for c in "éèêàùç"))
-        en_count = sum(1 for e in DEMANDE_CONSEILLER_EXAMPLES if e.startswith("I ") or "speak" in e.lower() or "please" in e.lower())
+        fr_count = sum(
+            1 for e in DEMANDE_CONSEILLER_EXAMPLES if any(c in e for c in "éèêàùç")
+        )
+        en_count = sum(
+            1
+            for e in DEMANDE_CONSEILLER_EXAMPLES
+            if e.startswith("I ") or "speak" in e.lower() or "please" in e.lower()
+        )
         assert fr_count >= 5
         assert en_count >= 5
 
@@ -44,26 +51,37 @@ class TestBuiltinExamples:
 # Training data preparation
 # ---------------------------------------------------------------------------
 
+
 class TestPrepareL1Data:
     def _make_config(self) -> BotConfig:
         return BotConfig(
             name="Test",
             intents=[
                 Intent(
-                    id="livraison", label="Livraison", definition="Livraison",
+                    id="livraison",
+                    label="Livraison",
+                    definition="Livraison",
                     examples=[f"livraison ex {i}" for i in range(10)],
                 ),
                 Intent(
-                    id="facturation", label="Facturation", definition="Facturation",
+                    id="facturation",
+                    label="Facturation",
+                    definition="Facturation",
                     examples=[f"facture ex {i}" for i in range(8)],
                 ),
                 Intent(
-                    id="hors_perimetre", label="Hors perimetre", definition="HP",
-                    examples=["blague", "meteo"], is_system=True,
+                    id="hors_perimetre",
+                    label="Hors perimetre",
+                    definition="HP",
+                    examples=["blague", "meteo"],
+                    is_system=True,
                 ),
                 Intent(
-                    id="demande_conseiller", label="Conseiller", definition="Conseiller",
-                    examples=["un humain"], is_system=True,
+                    id="demande_conseiller",
+                    label="Conseiller",
+                    definition="Conseiller",
+                    examples=["un humain"],
+                    is_system=True,
                 ),
             ],
         )
@@ -91,13 +109,23 @@ class TestPrepareL1Data:
 class TestPrepareL2Data:
     def test_returns_submotif_examples(self):
         intent = Intent(
-            id="livraison", label="Livraison", definition="Livraison",
+            id="livraison",
+            label="Livraison",
+            definition="Livraison",
             examples=[f"ex {i}" for i in range(8)],
             sub_motifs=[
-                SubMotif(id="suivi", label="Suivi", definition="Suivi",
-                         examples=["a", "b", "c"]),
-                SubMotif(id="retard", label="Retard", definition="Retard",
-                         examples=["d", "e", "f"]),
+                SubMotif(
+                    id="suivi",
+                    label="Suivi",
+                    definition="Suivi",
+                    examples=["a", "b", "c"],
+                ),
+                SubMotif(
+                    id="retard",
+                    label="Retard",
+                    definition="Retard",
+                    examples=["d", "e", "f"],
+                ),
             ],
         )
         texts, labels = prepare_l2_training_data(intent)
@@ -108,6 +136,7 @@ class TestPrepareL2Data:
 # ---------------------------------------------------------------------------
 # Model store
 # ---------------------------------------------------------------------------
+
 
 class TestModelStore:
     def test_get_model_dir_level1(self, tmp_path, monkeypatch):
@@ -159,6 +188,7 @@ class TestModelStore:
 # SetFit training + inference (integration — needs ML dependencies)
 # ---------------------------------------------------------------------------
 
+
 class TestSetFitIntegration:
     """These tests actually train a small SetFit model.
 
@@ -173,14 +203,26 @@ class TestSetFitIntegration:
     @pytest.fixture
     def mini_data(self):
         texts = [
-            "ou est mon colis", "suivi de commande", "livraison en cours",
-            "je veux ma facture", "probleme de paiement", "montant incorrect",
-            "retourner un article", "renvoi produit", "remboursement",
+            "ou est mon colis",
+            "suivi de commande",
+            "livraison en cours",
+            "je veux ma facture",
+            "probleme de paiement",
+            "montant incorrect",
+            "retourner un article",
+            "renvoi produit",
+            "remboursement",
         ]
         labels = [
-            "livraison", "livraison", "livraison",
-            "facturation", "facturation", "facturation",
-            "retour", "retour", "retour",
+            "livraison",
+            "livraison",
+            "livraison",
+            "facturation",
+            "facturation",
+            "facturation",
+            "retour",
+            "retour",
+            "retour",
         ]
         return texts, labels
 

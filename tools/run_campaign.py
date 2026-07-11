@@ -60,9 +60,11 @@ INTERDITS_V22 = [
 # Data models
 # ──────────────────────────────────────────────────────────────────────
 
+
 @dataclass
 class TestLine:
     """A single test line in the protocol."""
+
     id: str
     description: str
     gate: str  # Which gate this belongs to (G-0, G-1, G-1b, G-2, G-3)
@@ -79,6 +81,7 @@ class TestLine:
 @dataclass
 class GateResult:
     """Calculated gate result (never editable)."""
+
     gate_id: str
     description: str
     lines: list[str] = field(default_factory=list)  # TestLine IDs
@@ -92,6 +95,7 @@ class GateResult:
 @dataclass
 class CampaignReport:
     """Full campaign report."""
+
     version: str = ""
     tag: str = ""
     commit: str = ""
@@ -114,6 +118,7 @@ class CampaignReport:
 # Protocol definition: all lines from CE to V3
 # ──────────────────────────────────────────────────────────────────────
 
+
 def build_protocol_lines() -> list[TestLine]:
     """Build the full protocol v2.2 test matrix.
 
@@ -130,34 +135,39 @@ def build_protocol_lines() -> list[TestLine]:
         TestLine("CE-7", "Campaign artifacts directory exists", "CE", "CE"),
         TestLine("CE-8", "LLM provider ping (temp 0)", "CE", "CE", skippable=True),
         TestLine("CE-9", "Bot conformity: 9 intents + L2 labels", "CE", "CE"),
-
         # ── V0: Build validation (G-0) ──
         TestLine("V0-1", "pytest: all tests pass", "G-0", "V0"),
         TestLine("V0-2", "ML imports (PyTorch, SetFit)", "G-0", "V0"),
         TestLine("V0-3", "Anti-mock grep (0 occurrences)", "G-0", "V0"),
         TestLine("V0-4", "npm/pip audit (0 vulnerabilities)", "G-0", "V0"),
         TestLine("V0-5", "Image size by inspect <= 1.6 Go", "G-0", "V0"),
-
         # ── V1: Runtime R0 (G-1 éliminatoire) ──
         TestLine("V1-1", "Server startup + health check", "G-1", "V1"),
         TestLine("V1-2", "No-mock guard active at runtime", "G-1", "V1"),
         TestLine("V1-3", "Classifier loader integrity", "G-1", "V1"),
         TestLine("V1-4", "CRITICAL log at boot (check_published_bots)", "G-1", "V1"),
         TestLine("V1-5", "Offline mode (HF_HUB_OFFLINE=1)", "G-1b", "V1"),
-
         # ── V2: Training R1.a (G-2) ──
         TestLine("V2-1", "Training time <= 300s", "G-2", "V2"),
         TestLine("V2-2", "L2 coverage (help_account 5 labels)", "G-2", "V2"),
-        TestLine("V2-3", "Atomicity (train -> publish -> restart -> identical)", "G-2", "V2"),
+        TestLine(
+            "V2-3", "Atomicity (train -> publish -> restart -> identical)", "G-2", "V2"
+        ),
         TestLine("V2-4", "Improvement cycle: pair detected + re-train", "G-2", "V2"),
         TestLine("V2-5", "Improvement cycle: verify pair resolved", "G-2", "V2"),
-        TestLine("V2-6", "Classification P95 <= 50ms (machine de reference)", "G-2", "V2"),
-
+        TestLine(
+            "V2-6", "Classification P95 <= 50ms (machine de reference)", "G-2", "V2"
+        ),
         # ── V3: Evaluation R1.b (G-3) ──
         TestLine("V3-0", "Sweep Pareto 3-axis + selection", "G-3", "V3"),
         TestLine("V3-1", "GNG-1 >= 85% (heldout_metier)", "G-3", "V3"),
         TestLine("V3-2", "GNG-2 >= 90% (heldout_conseiller)", "G-3", "V3"),
-        TestLine("V3-3", "GNG-3 >= 80%, routes directes <= 5 (heldout_horsscope)", "G-3", "V3"),
+        TestLine(
+            "V3-3",
+            "GNG-3 >= 80%, routes directes <= 5 (heldout_horsscope)",
+            "G-3",
+            "V3",
+        ),
         TestLine("V3-4", "Pieges >= 12/15 commentes", "G-3", "V3"),
         TestLine("V3-5", "Modele + seuils + manifeste geles", "G-3", "V3"),
         TestLine("V3-6", "Reproducibility: diff vide sur 2 runs", "G-3", "V3"),
@@ -186,10 +196,16 @@ def build_gates(lines: list[TestLine]) -> list[GateResult]:
 # Helpers
 # ──────────────────────────────────────────────────────────────────────
 
-def _run_cmd(cmd: list[str], timeout: int = 300, cwd: Path | None = None) -> subprocess.CompletedProcess:
+
+def _run_cmd(
+    cmd: list[str], timeout: int = 300, cwd: Path | None = None
+) -> subprocess.CompletedProcess:
     """Run a command with timeout."""
     return subprocess.run(
-        cmd, capture_output=True, text=True, timeout=timeout,
+        cmd,
+        capture_output=True,
+        text=True,
+        timeout=timeout,
         cwd=cwd or ROOT,
     )
 
@@ -239,6 +255,7 @@ def _mark_fail(line: TestLine, measured: str, detail: str = "") -> None:
 # Test executors — each returns True if the check can proceed
 # ──────────────────────────────────────────────────────────────────────
 
+
 def exec_ce1(line: TestLine, campaign_dir: Path, **ctx: Any) -> None:
     """CE-1: Worktree clean, main branch."""
     result = _run_cmd(["git", "status", "--porcelain"])
@@ -249,8 +266,14 @@ def exec_ce1(line: TestLine, campaign_dir: Path, **ctx: Any) -> None:
         _mark_pass(line, f"branch={branch}, clean=yes", str(campaign_dir / "CE-1.txt"))
         _save_artifact(campaign_dir, "CE-1.txt", f"branch={branch}\nclean=yes\n")
     else:
-        _mark_fail(line, f"branch={branch}, dirty={len(dirty_files)}", "\n".join(dirty_files))
-        _save_artifact(campaign_dir, "CE-1.txt", f"FAIL\nbranch={branch}\n" + "\n".join(dirty_files))
+        _mark_fail(
+            line, f"branch={branch}, dirty={len(dirty_files)}", "\n".join(dirty_files)
+        )
+        _save_artifact(
+            campaign_dir,
+            "CE-1.txt",
+            f"FAIL\nbranch={branch}\n" + "\n".join(dirty_files),
+        )
 
 
 def exec_ce2(line: TestLine, campaign_dir: Path, **ctx: Any) -> None:
@@ -314,8 +337,13 @@ def exec_ce4(line: TestLine, campaign_dir: Path, **ctx: Any) -> None:
         return
 
     errors: list[str] = []
-    expected_files = ["train.csv", "heldout_metier.csv", "heldout_conseiller.csv",
-                      "heldout_horsscope.csv", "pieges.csv"]
+    expected_files = [
+        "train.csv",
+        "heldout_metier.csv",
+        "heldout_conseiller.csv",
+        "heldout_horsscope.csv",
+        "pieges.csv",
+    ]
 
     for hash_line in hashes_file.read_text(encoding="utf-8").strip().splitlines():
         if not hash_line.strip():
@@ -336,10 +364,16 @@ def exec_ce4(line: TestLine, campaign_dir: Path, **ctx: Any) -> None:
     if errors:
         _mark_fail(line, "; ".join(errors))
     else:
-        _mark_pass(line, f"{len(expected_files)} files verified",
-                   str(campaign_dir / "CE-4.txt"))
-    _save_artifact(campaign_dir, "CE-4.txt",
-                   "OK\n" + "\n".join(errors) if errors else "OK: all hashes match")
+        _mark_pass(
+            line,
+            f"{len(expected_files)} files verified",
+            str(campaign_dir / "CE-4.txt"),
+        )
+    _save_artifact(
+        campaign_dir,
+        "CE-4.txt",
+        "OK\n" + "\n".join(errors) if errors else "OK: all hashes match",
+    )
 
 
 def exec_ce5(line: TestLine, campaign_dir: Path, **ctx: Any) -> None:
@@ -354,13 +388,14 @@ def exec_ce5(line: TestLine, campaign_dir: Path, **ctx: Any) -> None:
         _mark_pass(line, "exit 0 - no intersection", str(campaign_dir / "CE-5.txt"))
     else:
         _mark_fail(line, f"exit {result.returncode}", result.stderr.strip())
-    _save_artifact(campaign_dir, "CE-5.txt",
-                   result.stdout + "\n" + result.stderr)
+    _save_artifact(campaign_dir, "CE-5.txt", result.stdout + "\n" + result.stderr)
 
 
 def exec_ce6(line: TestLine, campaign_dir: Path, **ctx: Any) -> None:
     """CE-6: loko-eval installed."""
-    result = _run_cmd([sys.executable, "-c", "from loko.eval.cli import main; print('ok')"])
+    result = _run_cmd(
+        [sys.executable, "-c", "from loko.eval.cli import main; print('ok')"]
+    )
     if result.returncode == 0:
         _mark_pass(line, "loko-eval importable", str(campaign_dir / "CE-6.txt"))
     else:
@@ -433,9 +468,14 @@ def exec_ce9(line: TestLine, campaign_dir: Path, **ctx: Any) -> None:
 
     # Check 9 intents
     required_intents = {
-        "hors_perimetre", "demande_conseiller",
-        "help_leave", "help_contact", "help_billing",
-        "help_documents", "help_cancellation", "help_account",
+        "hors_perimetre",
+        "demande_conseiller",
+        "help_leave",
+        "help_contact",
+        "help_billing",
+        "help_documents",
+        "help_cancellation",
+        "help_account",
         "help_transfer",
     }
     missing_intents = required_intents - intent_ids
@@ -444,11 +484,13 @@ def exec_ce9(line: TestLine, campaign_dir: Path, **ctx: Any) -> None:
     if len(intents) != 9:
         errors.append(f"expected 9 intents, got {len(intents)}")
 
-    conformity["checks"].append({
-        "check": "9_intents",
-        "pass": len(missing_intents) == 0 and len(intents) == 9,
-        "detail": f"found {len(intents)}, missing: {sorted(missing_intents)}",
-    })
+    conformity["checks"].append(
+        {
+            "check": "9_intents",
+            "pass": len(missing_intents) == 0 and len(intents) == 9,
+            "detail": f"found {len(intents)}, missing: {sorted(missing_intents)}",
+        }
+    )
 
     # Check >= 8 examples per non-system intent
     for intent in intents:
@@ -456,35 +498,43 @@ def exec_ce9(line: TestLine, campaign_dir: Path, **ctx: Any) -> None:
         is_sys = intent.get("is_system", False)
         if not is_sys and n_ex < 8:
             errors.append(f"intent '{intent['id']}' has {n_ex} examples (min 8)")
-        conformity["checks"].append({
-            "check": f"examples_{intent['id']}",
-            "pass": is_sys or n_ex >= 8,
-            "detail": f"{n_ex} examples" + (" (system)" if is_sys else ""),
-        })
+        conformity["checks"].append(
+            {
+                "check": f"examples_{intent['id']}",
+                "pass": is_sys or n_ex >= 8,
+                "detail": f"{n_ex} examples" + (" (system)" if is_sys else ""),
+            }
+        )
 
     # Check L2 help_account
     sel_intent = next((i for i in intents if i["id"] == "help_account"), None)
     if sel_intent:
         sub_motifs = sel_intent.get("sub_motifs", [])
         n_labels = len(sub_motifs)
-        conformity["checks"].append({
-            "check": "l2_help_account",
-            "pass": n_labels >= 5,
-            "detail": f"{n_labels} sub-motifs: {[s['id'] for s in sub_motifs]}",
-        })
+        conformity["checks"].append(
+            {
+                "check": "l2_help_account",
+                "pass": n_labels >= 5,
+                "detail": f"{n_labels} sub-motifs: {[s['id'] for s in sub_motifs]}",
+            }
+        )
         if n_labels < 5:
             errors.append(f"help_account L2 has {n_labels} labels (need >= 5)")
     else:
         errors.append("help_account intent not found")
-        conformity["checks"].append({
-            "check": "l2_help_account",
-            "pass": False,
-            "detail": "intent not found",
-        })
+        conformity["checks"].append(
+            {
+                "check": "l2_help_account",
+                "pass": False,
+                "detail": "intent not found",
+            }
+        )
 
     # Save conformity JSON artifact
     artifact_path = campaign_dir / "CE-9_conformity.json"
-    artifact_path.write_text(json.dumps(conformity, ensure_ascii=False, indent=2), encoding="utf-8")
+    artifact_path.write_text(
+        json.dumps(conformity, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
 
     if errors:
         _mark_fail(line, "; ".join(errors), str(artifact_path))
@@ -494,8 +544,10 @@ def exec_ce9(line: TestLine, campaign_dir: Path, **ctx: Any) -> None:
 
 def exec_v0_1(line: TestLine, campaign_dir: Path, **ctx: Any) -> None:
     """V0-1: pytest all tests pass."""
-    result = _run_cmd([sys.executable, "-m", "pytest", str(ROOT / "tests"),
-                       "-x", "--tb=short", "-q"], timeout=600)
+    result = _run_cmd(
+        [sys.executable, "-m", "pytest", str(ROOT / "tests"), "-x", "--tb=short", "-q"],
+        timeout=600,
+    )
     content = result.stdout + "\n" + result.stderr
     _save_artifact(campaign_dir, "V0-1_pytest.txt", content)
 
@@ -503,7 +555,9 @@ def exec_v0_1(line: TestLine, campaign_dir: Path, **ctx: Any) -> None:
         # Extract pass count
         for output_line in result.stdout.splitlines():
             if "passed" in output_line:
-                _mark_pass(line, output_line.strip(), str(campaign_dir / "V0-1_pytest.txt"))
+                _mark_pass(
+                    line, output_line.strip(), str(campaign_dir / "V0-1_pytest.txt")
+                )
                 return
         _mark_pass(line, "exit 0", str(campaign_dir / "V0-1_pytest.txt"))
     else:
@@ -534,7 +588,11 @@ def exec_v0_3(line: TestLine, campaign_dir: Path, **ctx: Any) -> None:
     # Filter out allowed exceptions (testing module, conftest)
     matches = []
     for grep_line in result.stdout.strip().splitlines():
-        if grep_line.strip() and "testing/" not in grep_line and "conftest" not in grep_line:
+        if (
+            grep_line.strip()
+            and "testing/" not in grep_line
+            and "conftest" not in grep_line
+        ):
             matches.append(grep_line)
 
     content = "\n".join(matches) if matches else "0 occurrences"
@@ -552,7 +610,9 @@ def exec_v0_4(line: TestLine, campaign_dir: Path, **ctx: Any) -> None:
     npm_output = ""
     desktop_dir = ROOT / "desktop"
     if desktop_dir.is_dir():
-        npm_result = _run_cmd(["npm", "audit", "--production"], cwd=desktop_dir, timeout=120)
+        npm_result = _run_cmd(
+            ["npm", "audit", "--production"], cwd=desktop_dir, timeout=120
+        )
         npm_output = npm_result.stdout + "\n" + npm_result.stderr
 
     content = f"=== pip audit ===\n{pip_result.stdout}\n{pip_result.stderr}\n"
@@ -569,8 +629,11 @@ def exec_v0_4(line: TestLine, campaign_dir: Path, **ctx: Any) -> None:
         # pip-audit not installed — run basic pip check instead
         check = _run_cmd([sys.executable, "-m", "pip", "check"])
         if check.returncode == 0:
-            _mark_pass(line, "pip check OK (pip-audit not installed)",
-                       str(campaign_dir / "V0-4_audit.txt"))
+            _mark_pass(
+                line,
+                "pip check OK (pip-audit not installed)",
+                str(campaign_dir / "V0-4_audit.txt"),
+            )
         else:
             _mark_fail(line, "pip check failed")
     else:
@@ -616,6 +679,7 @@ def _exec_stub(line: TestLine, campaign_dir: Path, **ctx: Any) -> None:
 # V3 executors (offline - use loko-eval)
 # ──────────────────────────────────────────────────────────────────────
 
+
 def _apply_sweep_thresholds(bot_dir: str, sel: dict) -> None:
     """Apply sweep-selected thresholds to bot config.json.
 
@@ -654,12 +718,20 @@ def exec_v3_0(line: TestLine, campaign_dir: Path, **ctx: Any) -> None:
         f"pieges={DATASETS_DIR / 'pieges.csv'}"
     )
 
-    result = _run_cmd([
-        sys.executable, "-m", "loko.eval.cli",
-        "--bot-dir", str(bot_dir),
-        "--sweep-datasets", sweep_datasets,
-        "--out", str(sweep_dir),
-    ], timeout=600)
+    result = _run_cmd(
+        [
+            sys.executable,
+            "-m",
+            "loko.eval.cli",
+            "--bot-dir",
+            str(bot_dir),
+            "--sweep-datasets",
+            sweep_datasets,
+            "--out",
+            str(sweep_dir),
+        ],
+        timeout=600,
+    )
 
     content = result.stdout + "\n" + result.stderr
     _save_artifact(campaign_dir, "V3-0_sweep.txt", content)
@@ -672,9 +744,9 @@ def exec_v3_0(line: TestLine, campaign_dir: Path, **ctx: Any) -> None:
             detail = (
                 f"haut={sel['seuil_haut']:.2f} bas={sel['seuil_bas']:.2f} "
                 f"ecart={sel['seuil_ecart']:.2f} | "
-                f"GNG-1={sel.get('gng1', 0)*100:.1f}% "
-                f"GNG-2={sel.get('gng2', 0)*100:.1f}% "
-                f"GNG-3={sel.get('gng3', 0)*100:.1f}%"
+                f"GNG-1={sel.get('gng1', 0) * 100:.1f}% "
+                f"GNG-2={sel.get('gng2', 0) * 100:.1f}% "
+                f"GNG-3={sel.get('gng3', 0) * 100:.1f}%"
             )
             _mark_pass(line, detail, str(selection_file))
 
@@ -687,8 +759,14 @@ def exec_v3_0(line: TestLine, campaign_dir: Path, **ctx: Any) -> None:
         _mark_fail(line, "selection.json not produced", content[-500:])
 
 
-def exec_v3_eval(line: TestLine, campaign_dir: Path, dataset_name: str,
-                 gng_name: str, threshold: float, **ctx: Any) -> None:
+def exec_v3_eval(
+    line: TestLine,
+    campaign_dir: Path,
+    dataset_name: str,
+    gng_name: str,
+    threshold: float,
+    **ctx: Any,
+) -> None:
     """Generic V3 evaluator for GNG metrics."""
     bot_dir = ctx.get("bot_dir")
     if not bot_dir:
@@ -704,13 +782,22 @@ def exec_v3_eval(line: TestLine, campaign_dir: Path, dataset_name: str,
     out_dir = campaign_dir / f"V3_{dataset_name}"
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    result = _run_cmd([
-        sys.executable, "-m", "loko.eval.cli",
-        "--bot-dir", str(bot_dir),
-        "--dataset", str(dataset_path),
-        "--mode", mode,
-        "--out", str(out_dir),
-    ], timeout=600)
+    result = _run_cmd(
+        [
+            sys.executable,
+            "-m",
+            "loko.eval.cli",
+            "--bot-dir",
+            str(bot_dir),
+            "--dataset",
+            str(dataset_path),
+            "--mode",
+            mode,
+            "--out",
+            str(out_dir),
+        ],
+        timeout=600,
+    )
 
     content = result.stdout + "\n" + result.stderr
     _save_artifact(campaign_dir, f"V3_{dataset_name}_output.txt", content)
@@ -723,7 +810,7 @@ def exec_v3_eval(line: TestLine, campaign_dir: Path, dataset_name: str,
         correct = report.get("correct", 0)
         n_errors = report.get("n_errors", 0)
 
-        measured = f"{gng_name}={accuracy*100:.1f}% ({correct}/{total})"
+        measured = f"{gng_name}={accuracy * 100:.1f}% ({correct}/{total})"
 
         # Extra details for horsscope
         extra = report.get("extra", {})
@@ -734,7 +821,7 @@ def exec_v3_eval(line: TestLine, campaign_dir: Path, dataset_name: str,
         if accuracy >= threshold:
             _mark_pass(line, measured, str(report_file))
         else:
-            _mark_fail(line, measured, f"below {threshold*100:.0f}% threshold")
+            _mark_fail(line, measured, f"below {threshold * 100:.0f}% threshold")
     else:
         _mark_fail(line, "report.json not produced", content[-500:])
 
@@ -769,13 +856,22 @@ def exec_v3_4(line: TestLine, campaign_dir: Path, **ctx: Any) -> None:
     out_dir = campaign_dir / "V3_pieges"
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    result = _run_cmd([
-        sys.executable, "-m", "loko.eval.cli",
-        "--bot-dir", str(bot_dir),
-        "--dataset", str(dataset_path),
-        "--mode", "pieges",
-        "--out", str(out_dir),
-    ], timeout=600)
+    result = _run_cmd(
+        [
+            sys.executable,
+            "-m",
+            "loko.eval.cli",
+            "--bot-dir",
+            str(bot_dir),
+            "--dataset",
+            str(dataset_path),
+            "--mode",
+            "pieges",
+            "--out",
+            str(out_dir),
+        ],
+        timeout=600,
+    )
 
     content = result.stdout + "\n" + result.stderr
     _save_artifact(campaign_dir, "V3-4_pieges_output.txt", content)
@@ -812,9 +908,15 @@ def exec_v3_5(line: TestLine, campaign_dir: Path, **ctx: Any) -> None:
 
     detail = f"manifest_hash={manifest_hash[:16]}..."
     _mark_pass(line, detail, str(manifest_path))
-    _save_artifact(campaign_dir, "V3-5_manifest.json",
-                   json.dumps({"manifest_hash": manifest_hash, "manifest": manifest},
-                              ensure_ascii=False, indent=2))
+    _save_artifact(
+        campaign_dir,
+        "V3-5_manifest.json",
+        json.dumps(
+            {"manifest_hash": manifest_hash, "manifest": manifest},
+            ensure_ascii=False,
+            indent=2,
+        ),
+    )
 
 
 def exec_v3_6(line: TestLine, campaign_dir: Path, **ctx: Any) -> None:
@@ -834,13 +936,22 @@ def exec_v3_6(line: TestLine, campaign_dir: Path, **ctx: Any) -> None:
         out_dir = campaign_dir / f"V3-6_run{run_idx + 1}"
         out_dir.mkdir(parents=True, exist_ok=True)
 
-        _run_cmd([
-            sys.executable, "-m", "loko.eval.cli",
-            "--bot-dir", str(bot_dir),
-            "--dataset", str(dataset_path),
-            "--mode", "decision",
-            "--out", str(out_dir),
-        ], timeout=600)
+        _run_cmd(
+            [
+                sys.executable,
+                "-m",
+                "loko.eval.cli",
+                "--bot-dir",
+                str(bot_dir),
+                "--dataset",
+                str(dataset_path),
+                "--mode",
+                "decision",
+                "--out",
+                str(out_dir),
+            ],
+            timeout=600,
+        )
 
         report_file = out_dir / "report.json"
         if report_file.exists():
@@ -856,9 +967,12 @@ def exec_v3_6(line: TestLine, campaign_dir: Path, **ctx: Any) -> None:
     else:
         diff_keys = [k for k in runs[0] if runs[0].get(k) != runs[1].get(k)]
         _mark_fail(line, f"diff on keys: {diff_keys}")
-        _save_artifact(campaign_dir, "V3-6_diff.txt",
-                       f"DIFF on: {diff_keys}\nRun 1: {json.dumps(runs[0], indent=2)}\n"
-                       f"Run 2: {json.dumps(runs[1], indent=2)}")
+        _save_artifact(
+            campaign_dir,
+            "V3-6_diff.txt",
+            f"DIFF on: {diff_keys}\nRun 1: {json.dumps(runs[0], indent=2)}\n"
+            f"Run 2: {json.dumps(runs[1], indent=2)}",
+        )
 
 
 # ──────────────────────────────────────────────────────────────────────
@@ -908,6 +1022,7 @@ EXECUTORS: dict[str, Any] = {
 # Gate calculation — COMPUTED, never editable
 # ──────────────────────────────────────────────────────────────────────
 
+
 def calculate_gates(lines: list[TestLine], gates: list[GateResult]) -> None:
     """Calculate gate verdicts from line verdicts.
 
@@ -945,6 +1060,7 @@ def calculate_gates(lines: list[TestLine], gates: list[GateResult]) -> None:
 # Report generation
 # ──────────────────────────────────────────────────────────────────────
 
+
 def generate_report_md(report: CampaignReport) -> str:
     """Generate markdown report (gabarit annexe A)."""
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
@@ -978,10 +1094,16 @@ def generate_report_md(report: CampaignReport) -> str:
     md.append("|---|---|---|---|---|")
 
     for line in report.lines:
-        verdict_emoji = "PASS" if line.verdict == "PASS" else ("SKIP" if line.verdict == "SKIP" else "FAIL")
+        verdict_emoji = (
+            "PASS"
+            if line.verdict == "PASS"
+            else ("SKIP" if line.verdict == "SKIP" else "FAIL")
+        )
         artifact_short = Path(line.artifact).name if line.artifact else "-"
         measured = line.measured or line.detail or "NON EXÉCUTÉ"
-        md.append(f"| {line.id} | {line.description} | {verdict_emoji} {line.verdict} | {measured} | {artifact_short} |")
+        md.append(
+            f"| {line.id} | {line.description} | {verdict_emoji} {line.verdict} | {measured} | {artifact_short} |"
+        )
 
     md.append("")
 
@@ -993,7 +1115,9 @@ def generate_report_md(report: CampaignReport) -> str:
 
     for gate in report.gates:
         verdict_emoji = "PASS" if gate.verdict == "PASS" else "FAIL"
-        md.append(f"| {gate.gate_id} | {gate.description} | {verdict_emoji} {gate.verdict} | {gate.detail} |")
+        md.append(
+            f"| {gate.gate_id} | {gate.description} | {verdict_emoji} {gate.verdict} | {gate.detail} |"
+        )
 
     md.append("")
 
@@ -1013,7 +1137,8 @@ def generate_report_md(report: CampaignReport) -> str:
     md.append("## Décision de campagne")
     md.append("")
     all_critical_pass = all(
-        g.verdict == "PASS" for g in report.gates
+        g.verdict == "PASS"
+        for g in report.gates
         if g.gate_id in ("CE", "G-0", "G-1", "G-1b", "G-2", "G-3")
     )
     if report.dry_run:
@@ -1028,7 +1153,9 @@ def generate_report_md(report: CampaignReport) -> str:
 
     md.append("")
     md.append("---")
-    md.append(f"*Rapport généré automatiquement par le runner de campagne v{report.runner_version}*")
+    md.append(
+        f"*Rapport généré automatiquement par le runner de campagne v{report.runner_version}*"
+    )
     md.append("*Les verdicts de gates sont calculés, non rédigés (interdit n°9).*")
 
     return "\n".join(md)
@@ -1083,6 +1210,7 @@ def generate_report_json(report: CampaignReport) -> dict:
 # Main runner
 # ──────────────────────────────────────────────────────────────────────
 
+
 def run_campaign(
     bot_dir: str,
     campaign_dir: str,
@@ -1134,7 +1262,9 @@ def run_campaign(
 
     if image:
         digest = _run_cmd(["docker", "inspect", "--format", "{{.Id}}", image])
-        report.image_digest = digest.stdout.strip()[:20] if digest.returncode == 0 else "(unavailable)"
+        report.image_digest = (
+            digest.stdout.strip()[:20] if digest.returncode == 0 else "(unavailable)"
+        )
 
     # Build protocol
     report.lines = build_protocol_lines()
@@ -1179,7 +1309,11 @@ def run_campaign(
         executor = EXECUTORS.get(test_line.id, _exec_stub)
         phase_label = f"[{test_line.phase}]"
 
-        print(f"  {phase_label:6s} {test_line.id:6s} {test_line.description[:50]:50s} ", end="", flush=True)
+        print(
+            f"  {phase_label:6s} {test_line.id:6s} {test_line.description[:50]:50s} ",
+            end="",
+            flush=True,
+        )
 
         try:
             executor(test_line, campaign_path, **context)
@@ -1190,7 +1324,11 @@ def run_campaign(
             )
 
         status = test_line.verdict
-        color = "\033[92m" if status == "PASS" else ("\033[93m" if status == "SKIP" else "\033[91m")
+        color = (
+            "\033[92m"
+            if status == "PASS"
+            else ("\033[93m" if status == "SKIP" else "\033[91m")
+        )
         print(f"{color}{status}\033[0m  {test_line.measured or test_line.detail or ''}")
 
     # Calculate gates
@@ -1204,7 +1342,9 @@ def run_campaign(
     print("=" * 70)
     for gate in report.gates:
         color = "\033[92m" if gate.verdict == "PASS" else "\033[91m"
-        print(f"  {gate.gate_id:6s} {color}{gate.verdict:4s}\033[0m  {gate.detail}  - {gate.description}")
+        print(
+            f"  {gate.gate_id:6s} {color}{gate.verdict:4s}\033[0m  {gate.detail}  - {gate.description}"
+        )
 
     # Overall
     all_pass = all(g.verdict == "PASS" for g in report.gates)
@@ -1245,6 +1385,7 @@ def run_campaign(
 # CLI
 # ──────────────────────────────────────────────────────────────────────
 
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="E0 - LOKO Campaign Runner: enforces protocol opposability",
@@ -1265,15 +1406,27 @@ Examples:
         """,
     )
     parser.add_argument("--bot-dir", required=True, help="Path to bot directory")
-    parser.add_argument("--campaign-dir", required=True, help="Campaign artifacts directory")
+    parser.add_argument(
+        "--campaign-dir", required=True, help="Campaign artifacts directory"
+    )
     parser.add_argument("--image", default=None, help="Docker image name")
     parser.add_argument("--tag", default=None, help="Expected git tag")
-    parser.add_argument("--dry-run", action="store_true",
-                        help="Execute CE+V0 only, show what V1+ would be")
-    parser.add_argument("--phases", nargs="*", default=None,
-                        help="Limit to specific phases (CE, V0, V1, V2, V3)")
-    parser.add_argument("--e1-diagnostic", action="store_true",
-                        help="E1 mini-campaign: CE-1..CE-9 + V2-1,V2-2 + V3-0..V3-4")
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Execute CE+V0 only, show what V1+ would be",
+    )
+    parser.add_argument(
+        "--phases",
+        nargs="*",
+        default=None,
+        help="Limit to specific phases (CE, V0, V1, V2, V3)",
+    )
+    parser.add_argument(
+        "--e1-diagnostic",
+        action="store_true",
+        help="E1 mini-campaign: CE-1..CE-9 + V2-1,V2-2 + V3-0..V3-4",
+    )
 
     args = parser.parse_args()
 
@@ -1282,9 +1435,22 @@ Examples:
     if args.e1_diagnostic:
         # E1 mini-campaign: CE-1..CE-9, V2-1, V2-2, V3-0..V3-4
         allowed_tests = {
-            "CE-1", "CE-2", "CE-3", "CE-4", "CE-5", "CE-6", "CE-7", "CE-8", "CE-9",
-            "V2-1", "V2-2",
-            "V3-0", "V3-1", "V3-2", "V3-3", "V3-4",
+            "CE-1",
+            "CE-2",
+            "CE-3",
+            "CE-4",
+            "CE-5",
+            "CE-6",
+            "CE-7",
+            "CE-8",
+            "CE-9",
+            "V2-1",
+            "V2-2",
+            "V3-0",
+            "V3-1",
+            "V3-2",
+            "V3-3",
+            "V3-4",
         }
         # E1 uses all phases that contain the allowed tests
         if not args.phases:
@@ -1303,10 +1469,7 @@ Examples:
     # Exit code based on overall verdict
     if report.dry_run:
         # Dry-run: exit 1 if any executed test failed (expected for E0 gate test)
-        has_failures = any(
-            l.verdict == "FAIL" and l.executed
-            for l in report.lines
-        )
+        has_failures = any(l.verdict == "FAIL" and l.executed for l in report.lines)
         sys.exit(1 if has_failures else 0)
     else:
         sys.exit(0 if report.overall_verdict == "VALIDE" else 1)

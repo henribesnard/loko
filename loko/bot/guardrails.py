@@ -22,14 +22,19 @@ logger = logging.getLogger(__name__)
 try:
     import regex as _regex_mod
 
-    def _match_with_timeout(pattern: re.Pattern, text: str, timeout_ms: int = 10) -> bool:
+    def _match_with_timeout(
+        pattern: re.Pattern, text: str, timeout_ms: int = 10
+    ) -> bool:
         """Match with timeout protection against ReDoS."""
         try:
-            return bool(_regex_mod.search(
-                pattern.pattern, text,
-                flags=pattern.flags | _regex_mod.IGNORECASE,
-                timeout=timeout_ms / 1000.0,
-            ))
+            return bool(
+                _regex_mod.search(
+                    pattern.pattern,
+                    text,
+                    flags=pattern.flags | _regex_mod.IGNORECASE,
+                    timeout=timeout_ms / 1000.0,
+                )
+            )
         except _regex_mod.error:
             return False
         except TimeoutError:
@@ -38,7 +43,10 @@ try:
             )
             return False
 except ImportError:
-    def _match_with_timeout(pattern: re.Pattern, text: str, timeout_ms: int = 10) -> bool:
+
+    def _match_with_timeout(
+        pattern: re.Pattern, text: str, timeout_ms: int = 10
+    ) -> bool:
         """Fallback: match without timeout (stdlib re)."""
         return bool(pattern.search(text))
 
@@ -47,12 +55,17 @@ except ImportError:
 # Models
 # ---------------------------------------------------------------------------
 
+
 class GuardrailRule(BaseModel):
     """A single guardrail rule."""
+
     id: str
     category: Literal[
-        "dangereux", "donnees_tiers", "injection",
-        "juridique_medical", "custom",
+        "dangereux",
+        "donnees_tiers",
+        "injection",
+        "juridique_medical",
+        "custom",
     ]
     pattern: str
     action: Literal["refuser", "refuser_et_compter", "escalader"]
@@ -62,6 +75,7 @@ class GuardrailRule(BaseModel):
 
 class GuardrailsConfig(BaseModel):
     """Guardrail configuration per bot."""
+
     enabled: bool = True
     rules: list[GuardrailRule] = Field(default_factory=list)
     max_infractions: int = Field(default=2, ge=1, le=5)
@@ -72,6 +86,7 @@ class GuardrailsConfig(BaseModel):
 
 class GuardrailResult(BaseModel):
     """Result of a guardrail check."""
+
     blocked: bool = False
     rule_id: str | None = None
     category: str | None = None
@@ -154,6 +169,7 @@ def default_ruleset() -> list[GuardrailRule]:
 # Pre-filter engine
 # ---------------------------------------------------------------------------
 
+
 class GuardrailEngine:
     """Deterministic pre-filter engine.
 
@@ -178,7 +194,8 @@ class GuardrailEngine:
             except re.error as exc:
                 logger.critical(
                     "Invalid guardrail regex (rule %s): %s — disabling",
-                    rule.id, exc,
+                    rule.id,
+                    exc,
                 )
 
     def check(self, text: str) -> GuardrailResult:
@@ -198,7 +215,9 @@ class GuardrailEngine:
             if _match_with_timeout(pattern, normalized):
                 logger.info(
                     "Guardrail rule %s (%s) matched — action=%s",
-                    rule.id, rule.category, rule.action,
+                    rule.id,
+                    rule.category,
+                    rule.action,
                 )
                 return GuardrailResult(
                     blocked=True,
@@ -216,12 +235,12 @@ class GuardrailEngine:
 
 # Patterns for leak detection (always blocking)
 _LEAK_PATTERNS = [
-    re.compile(r"sk-[a-zA-Z0-9]{20,}"),         # OpenAI-style keys
-    re.compile(r"loko_[a-zA-Z0-9_]{10,}"),       # LOKO API keys
+    re.compile(r"sk-[a-zA-Z0-9]{20,}"),  # OpenAI-style keys
+    re.compile(r"loko_[a-zA-Z0-9_]{10,}"),  # LOKO API keys
     re.compile(r"Bearer\s+[a-zA-Z0-9._\-]{20,}"),  # Bearer tokens
     re.compile(r"(/app/|/root/|C:\\Users\\)[^\s]+\.py"),  # Disk paths
-    re.compile(r"Traceback \(most recent call last\)"),   # Stack traces
-    re.compile(r"File \"[^\"]+\", line \d+"),     # Python stack frames
+    re.compile(r"Traceback \(most recent call last\)"),  # Stack traces
+    re.compile(r"File \"[^\"]+\", line \d+"),  # Python stack frames
 ]
 
 
@@ -270,10 +289,10 @@ def check_grounding(
         # Check for shared n-grams
         chunk_ngrams = set()
         for i in range(len(chunk_words) - min_ngram + 1):
-            chunk_ngrams.add(tuple(chunk_words[i:i + min_ngram]))
+            chunk_ngrams.add(tuple(chunk_words[i : i + min_ngram]))
 
         for i in range(len(response_words) - min_ngram + 1):
-            ngram = tuple(response_words[i:i + min_ngram])
+            ngram = tuple(response_words[i : i + min_ngram])
             if ngram in chunk_ngrams:
                 return True
 

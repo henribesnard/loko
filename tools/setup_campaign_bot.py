@@ -151,7 +151,9 @@ def build_intents_from_train(train_csv: Path) -> list[dict]:
             examples_by_intent[row["intent"]].append(row["text"])
 
     total_train = sum(len(ex) for ex in examples_by_intent.values())
-    print(f"Loaded {total_train} examples across {len(examples_by_intent)} intents from train.csv")
+    print(
+        f"Loaded {total_train} examples across {len(examples_by_intent)} intents from train.csv"
+    )
 
     intents = []
 
@@ -170,22 +172,28 @@ def build_intents_from_train(train_csv: Path) -> list[dict]:
         # Add L2 sub-motifs for services_en_ligne
         if intent_name == "help_account":
             intent["sub_motifs"] = SERVICES_EN_LIGNE_SUB_MOTIFS
-            print(f"  + services_en_ligne: {len(SERVICES_EN_LIGNE_SUB_MOTIFS)} L2 sub-motifs added")
+            print(
+                f"  + services_en_ligne: {len(SERVICES_EN_LIGNE_SUB_MOTIFS)} L2 sub-motifs added"
+            )
 
         intents.append(intent)
 
     # Add demande_conseiller if not in train.csv (the v0.3.7 bug)
     if "demande_conseiller" not in examples_by_intent:
-        print("  + Adding missing system intent: demande_conseiller "
-              f"({len(DEMANDE_CONSEILLER_EXAMPLES)} built-in examples)")
-        intents.append({
-            "id": "demande_conseiller",
-            "label": "Demande conseiller",
-            "definition": INTENT_DEFINITIONS["demande_conseiller"],
-            "examples": DEMANDE_CONSEILLER_EXAMPLES,
-            "sub_motifs": [],
-            "is_system": True,
-        })
+        print(
+            "  + Adding missing system intent: demande_conseiller "
+            f"({len(DEMANDE_CONSEILLER_EXAMPLES)} built-in examples)"
+        )
+        intents.append(
+            {
+                "id": "demande_conseiller",
+                "label": "Demande conseiller",
+                "definition": INTENT_DEFINITIONS["demande_conseiller"],
+                "examples": DEMANDE_CONSEILLER_EXAMPLES,
+                "sub_motifs": [],
+                "is_system": True,
+            }
+        )
 
     return intents
 
@@ -196,9 +204,14 @@ def verify_conformity(intents: list[dict]) -> list[str]:
     intent_ids = {i["id"] for i in intents}
 
     required = {
-        "hors_perimetre", "demande_conseiller",
-        "help_leave", "help_contact", "help_billing",
-        "help_documents", "help_cancellation", "help_account",
+        "hors_perimetre",
+        "demande_conseiller",
+        "help_leave",
+        "help_contact",
+        "help_billing",
+        "help_documents",
+        "help_cancellation",
+        "help_account",
         "help_transfer",
     }
     missing = required - intent_ids
@@ -235,16 +248,23 @@ def main():
         description="E1 — Setup campaign bot (protocol v2.2 compliant)",
     )
     parser.add_argument("bot_id", help="Bot ID (UUID)")
-    parser.add_argument("--api-url", default="http://localhost:8001",
-                        help="LOKO API base URL")
-    parser.add_argument("--admin-token", default="test-token-v1",
-                        help="Admin token")
-    parser.add_argument("--offline", action="store_true",
-                        help="Offline mode: write config.json directly instead of API")
-    parser.add_argument("--bot-dir", default=None,
-                        help="Bot directory for offline mode")
-    parser.add_argument("--train-csv", default=str(ROOT / "eval" / "datasets" / "train.csv"),
-                        help="Path to training CSV")
+    parser.add_argument(
+        "--api-url", default="http://localhost:8001", help="LOKO API base URL"
+    )
+    parser.add_argument("--admin-token", default="test-token-v1", help="Admin token")
+    parser.add_argument(
+        "--offline",
+        action="store_true",
+        help="Offline mode: write config.json directly instead of API",
+    )
+    parser.add_argument(
+        "--bot-dir", default=None, help="Bot directory for offline mode"
+    )
+    parser.add_argument(
+        "--train-csv",
+        default=str(ROOT / "eval" / "datasets" / "train.csv"),
+        help="Path to training CSV",
+    )
 
     args = parser.parse_args()
 
@@ -271,7 +291,9 @@ def main():
 
     if args.offline:
         # Offline mode: write config.json directly
-        bot_dir = Path(args.bot_dir) if args.bot_dir else ROOT / "data" / "bots" / args.bot_id
+        bot_dir = (
+            Path(args.bot_dir) if args.bot_dir else ROOT / "data" / "bots" / args.bot_id
+        )
         config_path = bot_dir / "config.json"
 
         if config_path.exists():
@@ -290,9 +312,14 @@ def main():
                 "templates": {},
                 "knowledge_collection": "",
                 "confidentiality_filter": ["public"],
-                "llm": {"provider": "openai", "model": "gpt-4o-mini",
-                         "api_key_set": False, "max_tokens": 600,
-                         "temperature": 0.0, "timeout": 60},
+                "llm": {
+                    "provider": "openai",
+                    "model": "gpt-4o-mini",
+                    "api_key_set": False,
+                    "max_tokens": 600,
+                    "temperature": 0.0,
+                    "timeout": 60,
+                },
                 "status": "draft",
             }
 
@@ -309,7 +336,8 @@ def main():
 
         url = f"{args.api_url}/api/bot/{args.bot_id}"
         req = urllib.request.Request(
-            url, headers={"X-Admin-Token": args.admin_token},
+            url,
+            headers={"X-Admin-Token": args.admin_token},
         )
 
         with urllib.request.urlopen(req) as resp:
@@ -319,20 +347,27 @@ def main():
 
         data = json.dumps(config).encode("utf-8")
         req = urllib.request.Request(
-            url, data=data,
-            headers={"Content-Type": "application/json",
-                      "X-Admin-Token": args.admin_token},
+            url,
+            data=data,
+            headers={
+                "Content-Type": "application/json",
+                "X-Admin-Token": args.admin_token,
+            },
             method="PUT",
         )
 
         with urllib.request.urlopen(req) as resp:
             result = json.loads(resp.read().decode("utf-8"))
-            print(f"\nBot updated via API: {len(result.get('intents', []))} intents configured")
+            print(
+                f"\nBot updated via API: {len(result.get('intents', []))} intents configured"
+            )
 
     print(f"\nBot {args.bot_id} ready for training!")
     if not args.offline:
-        print(f"Run: curl -X POST -H 'X-Admin-Token: {args.admin_token}' "
-              f"{args.api_url}/api/bot/{args.bot_id}/train")
+        print(
+            f"Run: curl -X POST -H 'X-Admin-Token: {args.admin_token}' "
+            f"{args.api_url}/api/bot/{args.bot_id}/train"
+        )
 
 
 if __name__ == "__main__":

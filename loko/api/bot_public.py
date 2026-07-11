@@ -58,6 +58,7 @@ def _apply_limit(rate: str):
 
     def _noop(func):
         return func
+
     return _noop
 
 
@@ -85,6 +86,7 @@ def _check_demo_rate(request: Request) -> None:
 # Request / Response models
 # ---------------------------------------------------------------------------
 
+
 class MessageRequest(BaseModel):
     """User message sent to the bot.
 
@@ -92,6 +94,7 @@ class MessageRequest(BaseModel):
     If text is non-empty with interrupt, the text is processed
     as a new message immediately after cancellation.
     """
+
     model_config = ConfigDict(extra="forbid")
 
     text: str = Field(default="", max_length=2000)
@@ -100,6 +103,7 @@ class MessageRequest(BaseModel):
 
 class FeedbackRequest(BaseModel):
     """User feedback for a turn."""
+
     model_config = ConfigDict(extra="forbid")
 
     turn_id: str
@@ -109,6 +113,7 @@ class FeedbackRequest(BaseModel):
 
 class SessionResponse(BaseModel):
     """Session state returned to the client."""
+
     session_id: str
     bot_id: str
     state: str
@@ -125,12 +130,15 @@ _SESSION_LOCKS_MAX = 10_000  # R4: bounded size to prevent unbounded memory grow
 
 # INT: active generation tracking per session for interrupt support
 
+
 @dataclass
 class _ActiveGeneration:
     """Tracks an in-flight generation for interrupt support (INT)."""
+
     cancel: asyncio.Event
     turn_id: str = ""
     tokens_emitted: int = 0
+
 
 _ACTIVE_GENERATIONS: dict[str, _ActiveGeneration] = {}  # session_id → generation state
 
@@ -168,15 +176,21 @@ def _get_orchestrator(bot_id: str, config: BotConfig) -> BotOrchestrator:
         try:
             esc_config = EscalationConfig(provider=escalation_provider_name)
             # Load per-bot escalation config if available
-            esc_config_path = get_bot_dir(bot_id) / "escalation.json" if hasattr(config, 'bot_id') else None
+            esc_config_path = (
+                get_bot_dir(bot_id) / "escalation.json"
+                if hasattr(config, "bot_id")
+                else None
+            )
             if esc_config_path and esc_config_path.is_file():
                 import json as _esc_json
+
                 esc_data = _esc_json.loads(esc_config_path.read_text(encoding="utf-8"))
                 esc_config = EscalationConfig(**esc_data)
 
             secret_store = None
             try:
                 from loko.security.secret_store import get_secret_store
+
                 secret_store = get_secret_store()
             except Exception:
                 pass
@@ -185,6 +199,7 @@ def _get_orchestrator(bot_id: str, config: BotConfig) -> BotOrchestrator:
         except Exception as exc:
             logger.warning("Could not build escalation provider: %s — using mock", exc)
             from loko.testing.mocks import MockEscalationProvider
+
             escalation = MockEscalationProvider()
 
         orchestrator = BotOrchestrator(
@@ -269,6 +284,7 @@ def _sse_keepalive() -> str:
 # ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
+
 
 @router.post("/{bot_id}/sessions", status_code=201)
 @_apply_limit(RATE_SESSIONS)
@@ -368,22 +384,29 @@ async def send_message(
             for action in timeout_actions:
                 if isinstance(action, _ET):
                     template = resolve_template(
-                        config.templates, action.key, config.tone_profile,
+                        config.templates,
+                        action.key,
+                        config.tone_profile,
                     )
                     lang = config.language if config.language != "auto" else "fr"
                     text = render_template(template, lang, action.variables)
-                    yield _sse_encode(_SSE(
-                        event="template",
-                        data={
-                            "content": text,
-                            "template_key": action.key.value,
-                            "buttons": action.buttons,
-                        },
-                    ))
+                    yield _sse_encode(
+                        _SSE(
+                            event="template",
+                            data={
+                                "content": text,
+                                "template_key": action.key.value,
+                                "buttons": action.buttons,
+                            },
+                        )
+                    )
                 elif isinstance(action, _CS):
-                    yield _sse_encode(_SSE(
-                        event="end_of_turn", data={"reason": action.reason},
-                    ))
+                    yield _sse_encode(
+                        _SSE(
+                            event="end_of_turn",
+                            data={"reason": action.reason},
+                        )
+                    )
             # R4: clean up lock for timed-out session
             _SESSION_LOCKS.pop(session_id, None)
 
@@ -397,7 +420,12 @@ async def send_message(
             },
         )
 
-    if session.state in (BotState.FIN, BotState.TIMEOUT, BotState.CLOTURE_DOUCE, BotState.FIN_FERME):
+    if session.state in (
+        BotState.FIN,
+        BotState.TIMEOUT,
+        BotState.CLOTURE_DOUCE,
+        BotState.FIN_FERME,
+    ):
         raise HTTPException(400, "Session has ended")
 
     # --- INT: handle interrupt type ---
@@ -407,7 +435,9 @@ async def send_message(
     # Concurrency guard: reject if another message is being processed (P1-5)
     lock = _SESSION_LOCKS.setdefault(session_id, asyncio.Lock())
     if lock.locked():
-        raise HTTPException(409, "A message is already being processed for this session")
+        raise HTTPException(
+            409, "A message is already being processed for this session"
+        )
 
     # A5: ComponentUnavailableError → 503
     try:
@@ -427,11 +457,15 @@ async def send_message(
             try:
                 if req.type == "button_click":
                     event_iter = orchestrator.process_button_click(
-                        current_session, req.text, config,
+                        current_session,
+                        req.text,
+                        config,
                     )
                 else:
                     event_iter = orchestrator.process_message(
-                        current_session, req.text, config,
+                        current_session,
+                        req.text,
+                        config,
                     )
 
                 async for current_session, sse_event in event_iter:
@@ -445,11 +479,16 @@ async def send_message(
             finally:
                 # Persist session state even on client disconnect (P1-5)
                 store.update_session(current_session)
-                for turn in current_session.transcript[len(session.transcript):]:
+                for turn in current_session.transcript[len(session.transcript) :]:
                     store.add_turn(current_session.session_id, turn)
 
                 # R4: release session lock when session reaches terminal state
-                if current_session.state in (BotState.FIN, BotState.TIMEOUT, BotState.CLOTURE_DOUCE, BotState.FIN_FERME):
+                if current_session.state in (
+                    BotState.FIN,
+                    BotState.TIMEOUT,
+                    BotState.CLOTURE_DOUCE,
+                    BotState.FIN_FERME,
+                ):
                     _SESSION_LOCKS.pop(session_id, None)
                 # INT: clean up active generation reference
                 _ACTIVE_GENERATIONS.pop(session_id, None)
@@ -536,6 +575,7 @@ async def add_feedback(
 # INT: Interrupt handler (§3.2)
 # ---------------------------------------------------------------------------
 
+
 async def _handle_interrupt(
     session_id: str,
     session: Any,
@@ -556,10 +596,12 @@ async def _handle_interrupt(
     if active_gen is None or active_gen.cancel.is_set():
         # No active generation — idempotent no-op (INT-A4)
         async def _noop_stream() -> AsyncIterator[str]:
-            yield _sse_encode(SSEEvent(
-                event="noop",
-                data={"reason": "no_active_generation"},
-            ))
+            yield _sse_encode(
+                SSEEvent(
+                    event="noop",
+                    data={"reason": "no_active_generation"},
+                )
+            )
 
         return StreamingResponse(
             _noop_stream(),
@@ -580,10 +622,12 @@ async def _handle_interrupt(
 
     async def _interrupt_stream() -> AsyncIterator[str]:
         # Emit generation_interrupted event with actual metadata
-        yield _sse_encode(SSEEvent(
-            event="generation_interrupted",
-            data={"tokens_emitted": tokens_emitted},
-        ))
+        yield _sse_encode(
+            SSEEvent(
+                event="generation_interrupted",
+                data={"tokens_emitted": tokens_emitted},
+            )
+        )
 
         # If text is provided, process it as a new message
         if req.text.strip():
@@ -603,7 +647,9 @@ async def _handle_interrupt(
             )
 
             async for current_session, sse_event in orchestrator.process_message(
-                current_session, req.text, config,
+                current_session,
+                req.text,
+                config,
             ):
                 yield _sse_encode(sse_event)
 
@@ -619,7 +665,6 @@ async def _handle_interrupt(
         },
     )
 
-
     # Note: /traces endpoint removed from public API (P1-2).
     # Traces are accessible via the admin dashboard API only.
 
@@ -627,6 +672,7 @@ async def _handle_interrupt(
 # ---------------------------------------------------------------------------
 # PRO-6: API key quota helpers
 # ---------------------------------------------------------------------------
+
 
 def _check_api_key_quota(
     key: APIKeyRecord,
@@ -680,6 +726,7 @@ def _increment_api_key_quota(
         return
 
     from loko.bot.quota_usage import get_quota_usage_store
+
     store = get_quota_usage_store()
     store.increment(key.key_id, metric, amount)
 
@@ -687,8 +734,13 @@ def _increment_api_key_quota(
 def _get_quota_config(bot_id: str) -> Any:
     """Load quota config for a bot (from quota_configs directory)."""
     from loko.bot.quota_usage import QuotaConfig
+
     try:
-        config_path = Path(os.environ.get("LOKO_DATA_DIR", "data")) / "quota_configs" / f"{bot_id}.json"
+        config_path = (
+            Path(os.environ.get("LOKO_DATA_DIR", "data"))
+            / "quota_configs"
+            / f"{bot_id}.json"
+        )
         if config_path.is_file():
             data = json.loads(config_path.read_text(encoding="utf-8"))
             return QuotaConfig(**data)
@@ -701,6 +753,7 @@ def _get_quota_config(bot_id: str) -> Any:
 # PRO-7: Maintenance mode helpers
 # ---------------------------------------------------------------------------
 
+
 def _maintenance_response(bot_id: str, config: BotConfig) -> dict[str, Any]:
     """Return a maintenance response for session creation (200, not error)."""
     from loko.bot.templates import render_template, resolve_template
@@ -712,7 +765,9 @@ def _maintenance_response(bot_id: str, config: BotConfig) -> dict[str, Any]:
         text = custom_msg
     else:
         template = resolve_template(
-            config.templates, TemplateKey.MAINTENANCE, config.tone_profile,
+            config.templates,
+            TemplateKey.MAINTENANCE,
+            config.tone_profile,
         )
         lang = config.language if config.language != "auto" else "fr"
         text = render_template(template, lang, {"nom_bot": config.name})
@@ -739,29 +794,40 @@ def _maintenance_message_response(
         text = custom_msg
     else:
         template = resolve_template(
-            config.templates, TemplateKey.MAINTENANCE, config.tone_profile,
+            config.templates,
+            TemplateKey.MAINTENANCE,
+            config.tone_profile,
         )
         lang = config.language if config.language != "auto" else "fr"
         text = render_template(template, lang, {"nom_bot": config.name})
 
     async def _maint_stream() -> AsyncIterator[str]:
-        yield _sse_encode(SSEEvent(
-            event="template",
-            data={
-                "content": text,
-                "template_key": "maintenance",
-                "buttons": None,
-            },
-        ))
-        yield _sse_encode(SSEEvent(
-            event="end_of_turn",
-            data={"reason": "maintenance"},
-        ))
+        yield _sse_encode(
+            SSEEvent(
+                event="template",
+                data={
+                    "content": text,
+                    "template_key": "maintenance",
+                    "buttons": None,
+                },
+            )
+        )
+        yield _sse_encode(
+            SSEEvent(
+                event="end_of_turn",
+                data={"reason": "maintenance"},
+            )
+        )
 
         # Close the session
         store = get_session_store(bot_id)
         session = store.get_session(session_id)
-        if session and session.state not in (BotState.FIN, BotState.TIMEOUT, BotState.CLOTURE_DOUCE, BotState.FIN_FERME):
+        if session and session.state not in (
+            BotState.FIN,
+            BotState.TIMEOUT,
+            BotState.CLOTURE_DOUCE,
+            BotState.FIN_FERME,
+        ):
             session = session.model_copy(update={"state": BotState.FIN})
             store.update_session(session)
         _SESSION_LOCKS.pop(session_id, None)

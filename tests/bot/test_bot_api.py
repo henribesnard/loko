@@ -19,9 +19,11 @@ def app(tmp_path, monkeypatch):
     monkeypatch.setenv("LOKO_ADMIN_TOKEN", "test-admin-token-12345")
 
     from loko.api.bot_public import clear_orchestrators
+
     clear_orchestrators()
 
     from loko.main import create_app
+
     return create_app()
 
 
@@ -42,12 +44,26 @@ def sample_config(tmp_path, monkeypatch) -> BotConfig:
     config = BotConfig(
         name="TestBot",
         intents=[
-            Intent(id="livraison", label="Livraison", definition="Livraison",
-                   examples=[f"ex {i}" for i in range(10)]),
-            Intent(id="hors_perimetre", label="HP", definition="HP",
-                   examples=["hp"], is_system=True),
-            Intent(id="demande_conseiller", label="DC", definition="DC",
-                   examples=["dc"], is_system=True),
+            Intent(
+                id="livraison",
+                label="Livraison",
+                definition="Livraison",
+                examples=[f"ex {i}" for i in range(10)],
+            ),
+            Intent(
+                id="hors_perimetre",
+                label="HP",
+                definition="HP",
+                examples=["hp"],
+                is_system=True,
+            ),
+            Intent(
+                id="demande_conseiller",
+                label="DC",
+                definition="DC",
+                examples=["dc"],
+                is_system=True,
+            ),
         ],
         status="published",
     )
@@ -100,6 +116,7 @@ def auth_headers(api_key):
 # Admin API
 # ---------------------------------------------------------------------------
 
+
 class TestAdminAPI:
     def test_create_bot(self, client, admin_headers):
         res = client.post("/api/bot/", json={"name": "NewBot"}, headers=admin_headers)
@@ -139,13 +156,15 @@ class TestAdminAPI:
 
     def test_delete_bot(self, client, sample_config, admin_headers):
         res = client.delete(
-            f"/api/bot/{sample_config.bot_id}", headers=admin_headers,
+            f"/api/bot/{sample_config.bot_id}",
+            headers=admin_headers,
         )
         assert res.status_code == 200
         assert res.json()["status"] == "deleted"
 
         res2 = client.get(
-            f"/api/bot/{sample_config.bot_id}", headers=admin_headers,
+            f"/api/bot/{sample_config.bot_id}",
+            headers=admin_headers,
         )
         assert res2.status_code == 404
 
@@ -153,6 +172,7 @@ class TestAdminAPI:
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
+
 
 class TestPublicAPI:
     def test_create_session(self, client, sample_config, auth_headers):
@@ -291,10 +311,12 @@ class TestPublicAPI:
 # Path traversal (P0-4)
 # ---------------------------------------------------------------------------
 
+
 class TestPathTraversal:
     def test_bot_id_with_dots_rejected(self, client, api_key):
         """P0-4: bot_id with dots/traversal patterns rejected at storage level."""
         from loko.bot.session_store import get_bot_dir
+
         with pytest.raises(ValueError):
             get_bot_dir("..")
         with pytest.raises(ValueError):
@@ -313,6 +335,7 @@ class TestPathTraversal:
 # ---------------------------------------------------------------------------
 # Origin check (P1-4)
 # ---------------------------------------------------------------------------
+
 
 class TestOriginCheck:
     def test_origin_restricted(self, client, sample_config, tmp_path, monkeypatch):
@@ -339,6 +362,7 @@ class TestOriginCheck:
 # Security headers (P0-3)
 # ---------------------------------------------------------------------------
 
+
 class TestSecurityHeaders:
     def test_security_headers_on_health(self, client):
         """P0-3: Security headers present on responses."""
@@ -352,6 +376,7 @@ class TestSecurityHeaders:
 # ---------------------------------------------------------------------------
 # Health
 # ---------------------------------------------------------------------------
+
 
 class TestHealth:
     def test_health(self, client):

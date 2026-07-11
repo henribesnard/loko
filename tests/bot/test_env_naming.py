@@ -19,12 +19,14 @@ import pytest
 # get_env() behavior tests
 # ---------------------------------------------------------------------------
 
+
 def test_loko_env_read(monkeypatch):
     """LOKO_ENV=test is read correctly by get_env()."""
     monkeypatch.setenv("LOKO_ENV", "test")
     monkeypatch.delenv("RAGKIT_ENV", raising=False)
 
     from loko.config.env import get_env
+
     assert get_env("ENV") == "test"
 
 
@@ -34,6 +36,7 @@ def test_ragkit_fallback_with_warning(monkeypatch):
     monkeypatch.setenv("RAGKIT_ENV", "test")
 
     from loko.config.env import get_env
+
     with pytest.warns(DeprecationWarning, match="RAGKIT_ENV is deprecated"):
         val = get_env("ENV")
     assert val == "test"
@@ -45,6 +48,7 @@ def test_loko_takes_precedence(monkeypatch):
     monkeypatch.setenv("RAGKIT_MODE", "desktop")
 
     from loko.config.env import get_env
+
     assert get_env("MODE") == "server"
 
 
@@ -54,6 +58,7 @@ def test_default_when_neither_set(monkeypatch):
     monkeypatch.delenv("RAGKIT_MODE", raising=False)
 
     from loko.config.env import get_env
+
     assert get_env("MODE", "desktop") == "desktop"
     assert get_env("MODE") is None
 
@@ -89,7 +94,11 @@ def test_no_direct_ragkit_reads():
             continue
         for i, line in enumerate(content.splitlines(), 1):
             stripped = line.lstrip()
-            if stripped.startswith("#") or stripped.startswith('"""') or stripped.startswith("'''"):
+            if (
+                stripped.startswith("#")
+                or stripped.startswith('"""')
+                or stripped.startswith("'''")
+            ):
                 continue
             for pattern in _FORBIDDEN:
                 if pattern.search(line):

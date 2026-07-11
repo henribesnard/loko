@@ -16,6 +16,7 @@ from loko.db.accounts import (
 def _fresh_db(tmp_path, monkeypatch):
     """Use a temporary database for each test."""
     import loko.db.accounts as mod
+
     monkeypatch.setattr(mod, "_DB_PATH", tmp_path / "test.db")
     monkeypatch.setattr(mod, "_connection", None)
     yield

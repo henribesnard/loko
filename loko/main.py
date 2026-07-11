@@ -43,6 +43,7 @@ _DEFAULT_CORS_ORIGINS = [
 # Security headers middleware (P0-3)
 # ---------------------------------------------------------------------------
 
+
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     """Add security headers to all responses."""
 
@@ -75,6 +76,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 # API Documentation Protection (C3)
 # ---------------------------------------------------------------------------
 
+
 class APIDocsMiddleware(BaseHTTPMiddleware):
     """Protect API documentation endpoints with admin token (server mode only)."""
 
@@ -93,7 +95,9 @@ class APIDocsMiddleware(BaseHTTPMiddleware):
                 # Admin token not configured - deny access
                 return JSONResponse(
                     status_code=503,
-                    content={"detail": "API documentation not configured (LOKO_ADMIN_TOKEN missing)"}
+                    content={
+                        "detail": "API documentation not configured (LOKO_ADMIN_TOKEN missing)"
+                    },
                 )
 
             # Extract token from Authorization header or query param
@@ -107,10 +111,12 @@ class APIDocsMiddleware(BaseHTTPMiddleware):
 
             provided_token = token_from_header or token_from_query
 
-            if not provided_token or not hmac.compare_digest(provided_token, admin_token):
+            if not provided_token or not hmac.compare_digest(
+                provided_token, admin_token
+            ):
                 return JSONResponse(
                     status_code=401,
-                    content={"detail": "Authentication required for API documentation"}
+                    content={"detail": "Authentication required for API documentation"},
                 )
 
         return await call_next(request)
@@ -119,6 +125,7 @@ class APIDocsMiddleware(BaseHTTPMiddleware):
 # ---------------------------------------------------------------------------
 # Rate limiting (P0-5)
 # ---------------------------------------------------------------------------
+
 
 def _setup_rate_limiting(app: FastAPI) -> None:
     """Configure slowapi rate limiting.
@@ -151,6 +158,7 @@ def _setup_rate_limiting(app: FastAPI) -> None:
 # ---------------------------------------------------------------------------
 # Session purge background task (P1-7)
 # ---------------------------------------------------------------------------
+
 
 async def _session_purge_task() -> None:
     """Periodically purge expired sessions (RGPD compliance) and orphan locks (R4)."""
@@ -185,7 +193,9 @@ async def _session_purge_task() -> None:
 
                     # Q5: use tighter cutoff for demo bots
                     config = load_bot_config(bot_id)
-                    effective_cutoff = demo_cutoff if (config and config.demo) else cutoff
+                    effective_cutoff = (
+                        demo_cutoff if (config and config.demo) else cutoff
+                    )
 
                     purged = store.purge_expired(bot_id, effective_cutoff)
                     if purged:
@@ -237,6 +247,7 @@ async def _alert_evaluation_task() -> None:
                         continue
 
                     import json as _json
+
                     alert_data = _json.loads(
                         alert_config_path.read_text(encoding="utf-8")
                     )
@@ -253,8 +264,13 @@ async def _alert_evaluation_task() -> None:
                     metrics: dict[str, float] = {}
                     try:
                         from loko.bot.session_store import get_session_store
+
                         store = get_session_store(bot_id)
-                        stats = store.get_session_stats(bot_id) if hasattr(store, "get_session_stats") else {}
+                        stats = (
+                            store.get_session_stats(bot_id)
+                            if hasattr(store, "get_session_stats")
+                            else {}
+                        )
                         metrics.update(stats)
                     except Exception:
                         pass
@@ -264,14 +280,20 @@ async def _alert_evaluation_task() -> None:
                         if event.resolved:
                             logger.info(
                                 "Alert resolved: bot=%s rule=%s metric=%s value=%.2f",
-                                bot_id, event.rule_id, event.metric, event.value,
+                                bot_id,
+                                event.rule_id,
+                                event.metric,
+                                event.value,
                             )
                         else:
                             logger.warning(
                                 "Alert triggered: bot=%s rule=%s metric=%s "
                                 "value=%.2f threshold=%.2f",
-                                bot_id, event.rule_id, event.metric,
-                                event.value, event.threshold,
+                                bot_id,
+                                event.rule_id,
+                                event.metric,
+                                event.value,
+                                event.threshold,
                             )
 
                 except Exception:
@@ -287,6 +309,7 @@ async def _alert_evaluation_task() -> None:
 # App factory
 # ---------------------------------------------------------------------------
 
+
 def create_app() -> FastAPI:
     """Create and configure the FastAPI application."""
     # C3: Expose API documentation at /api/docs (protected by admin token)
@@ -294,13 +317,14 @@ def create_app() -> FastAPI:
         title="LOKO API",
         version=__version__,
         description="Deterministic chatbot platform for customer service.",
-        docs_url="/api/docs",       # Swagger UI
-        redoc_url="/api/redoc",     # ReDoc
+        docs_url="/api/docs",  # Swagger UI
+        redoc_url="/api/redoc",  # ReDoc
         openapi_url="/api/openapi.json",
     )
 
     # --- CORS (P0-3 + H2: credentials guard) ---
     from loko.config.env import get_env
+
     cors_env = get_env("CORS_ORIGINS", "")
     if cors_env:
         origins = [o.strip() for o in cors_env.split(",") if o.strip()]
@@ -321,11 +345,18 @@ def create_app() -> FastAPI:
         allow_origins=origins,
         allow_credentials=True,
         allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-        allow_headers=["Authorization", "Content-Type", "X-API-Key", "X-Admin-Token", "X-CSRF-Token"],
+        allow_headers=[
+            "Authorization",
+            "Content-Type",
+            "X-API-Key",
+            "X-Admin-Token",
+            "X-CSRF-Token",
+        ],
     )
 
     # --- S6: CSRF double-submit cookie ---
     from loko.api.csrf import CSRFMiddleware
+
     app.add_middleware(CSRFMiddleware)
 
     # --- Security headers (P0-3) ---
@@ -392,6 +423,7 @@ def create_app() -> FastAPI:
     @app.on_event("startup")
     async def recover_training_jobs():
         from loko.api.bot_admin import recover_interrupted_jobs
+
         recover_interrupted_jobs()
 
     # --- W1.2: check published bots for model availability at boot ---
@@ -429,7 +461,9 @@ def create_app() -> FastAPI:
                 logger.info("No published bots found at startup")
                 return
 
-            logger.info(f"Checking {len(published_bots)} published bot(s) for model availability...")
+            logger.info(
+                f"Checking {len(published_bots)} published bot(s) for model availability..."
+            )
 
             unavailable_count = 0
             for bot_id, bot_name in published_bots:
@@ -460,7 +494,9 @@ def create_app() -> FastAPI:
                     f"have unavailable models - they will fail-fast on requests"
                 )
             else:
-                logger.info(f"All {len(published_bots)} published bot(s) have available models")
+                logger.info(
+                    f"All {len(published_bots)} published bot(s) have available models"
+                )
 
         except Exception as exc:
             # Don't crash server if startup check itself fails
@@ -531,23 +567,31 @@ def _mount_api_key_routes(app: FastAPI, mode: str, admin_token: str | None) -> N
 
     @keys_router.post("/{bot_id}/api-keys", status_code=201)
     async def create_api_key(
-        bot_id: str, req: CreateKeyRequest, request: Request = None,
+        bot_id: str,
+        req: CreateKeyRequest,
+        request: Request = None,
         _auth=Depends(require_tenant_or_ops),
     ) -> dict:
         raw_key, key_id = generate_api_key(
-            bot_id, label=req.label, allowed_origins=req.allowed_origins,
+            bot_id,
+            label=req.label,
+            allowed_origins=req.allowed_origins,
         )
         return {"raw_key": raw_key, "key_id": key_id}
 
     @keys_router.get("/{bot_id}/api-keys")
     async def list_keys(
-        bot_id: str, request: Request = None, _auth=Depends(require_tenant_or_ops),
+        bot_id: str,
+        request: Request = None,
+        _auth=Depends(require_tenant_or_ops),
     ) -> list[dict]:
         return list_api_keys(bot_id)
 
     @keys_router.delete("/{bot_id}/api-keys/{key_id}")
     async def revoke_key(
-        bot_id: str, key_id: str, request: Request = None,
+        bot_id: str,
+        key_id: str,
+        request: Request = None,
         _auth=Depends(require_tenant_or_ops),
     ) -> dict:
         if not revoke_api_key(bot_id, key_id):

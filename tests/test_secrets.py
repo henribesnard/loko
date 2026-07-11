@@ -36,10 +36,12 @@ class TestGetSecret:
         secret_file = tmp_path / "test_secret.txt"
         secret_file.write_text("file-value")
 
-        with patch_env({
-            "TEST_SECRET": "env-value",
-            "TEST_SECRET_FILE": str(secret_file),
-        }):
+        with patch_env(
+            {
+                "TEST_SECRET": "env-value",
+                "TEST_SECRET_FILE": str(secret_file),
+            }
+        ):
             value = get_secret("TEST_SECRET")
             assert value == "file-value"
 
@@ -55,7 +57,9 @@ class TestGetSecret:
     def test_get_secret_not_found_required(self):
         """Test that required secrets raise ValueError if not found."""
         with patch_env({}):
-            with pytest.raises(ValueError, match="Required secret 'MISSING_SECRET' not found"):
+            with pytest.raises(
+                ValueError, match="Required secret 'MISSING_SECRET' not found"
+            ):
                 get_secret("MISSING_SECRET", required=True)
 
     def test_get_secret_not_found_optional(self):
@@ -72,10 +76,12 @@ class TestGetSecret:
 
     def test_get_secret_file_not_found(self):
         """Test that non-existent file falls back to env var."""
-        with patch_env({
-            "TEST_SECRET": "fallback-value",
-            "TEST_SECRET_FILE": "/nonexistent/file.txt",
-        }):
+        with patch_env(
+            {
+                "TEST_SECRET": "fallback-value",
+                "TEST_SECRET_FILE": "/nonexistent/file.txt",
+            }
+        ):
             value = get_secret("TEST_SECRET")
             assert value == "fallback-value"
 
@@ -84,10 +90,12 @@ class TestGetSecret:
         secret_file = tmp_path / "empty.txt"
         secret_file.write_text("")
 
-        with patch_env({
-            "TEST_SECRET": "fallback-value",
-            "TEST_SECRET_FILE": str(secret_file),
-        }):
+        with patch_env(
+            {
+                "TEST_SECRET": "fallback-value",
+                "TEST_SECRET_FILE": str(secret_file),
+            }
+        ):
             value = get_secret("TEST_SECRET")
             assert value == "fallback-value"
 

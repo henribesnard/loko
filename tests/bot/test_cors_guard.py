@@ -16,6 +16,7 @@ def _fresh_create_app():
     for m in mods_to_remove:
         del sys.modules[m]
     from loko.main import create_app
+
     return create_app
 
 

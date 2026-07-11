@@ -63,7 +63,9 @@ class TestSessionCRUD:
 
     def test_purge_expired(self, store):
         old = BotSession(bot_id="bot-X", last_activity_at="2020-01-01T00:00:00+00:00")
-        recent = BotSession(bot_id="bot-X", last_activity_at="2099-01-01T00:00:00+00:00")
+        recent = BotSession(
+            bot_id="bot-X", last_activity_at="2099-01-01T00:00:00+00:00"
+        )
         store.create_session(old)
         store.create_session(recent)
 
@@ -123,7 +125,9 @@ class TestTraces:
 class TestFeedback:
     def test_add_and_retrieve_feedback(self, store, sample_session):
         store.create_session(sample_session)
-        store.add_feedback(sample_session.session_id, "turn-1", "positive", "good answer")
+        store.add_feedback(
+            sample_session.session_id, "turn-1", "positive", "good answer"
+        )
 
         feedbacks = store.get_feedback(sample_session.session_id)
         assert len(feedbacks) == 1

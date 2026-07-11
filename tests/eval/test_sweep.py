@@ -25,10 +25,20 @@ def _config(seuil_haut=0.75, seuil_bas=0.45, seuil_ecart=0.0) -> BotConfig:
         intents=[
             Intent(id="intent-a", label="A", definition="A", examples=_ex[:]),
             Intent(id="intent-b", label="B", definition="B", examples=_ex[:]),
-            Intent(id="hors_perimetre", label="HP", definition="HP",
-                   examples=["hp"], is_system=True),
-            Intent(id="demande_conseiller", label="DC", definition="DC",
-                   examples=["dc"], is_system=True),
+            Intent(
+                id="hors_perimetre",
+                label="HP",
+                definition="HP",
+                examples=["hp"],
+                is_system=True,
+            ),
+            Intent(
+                id="demande_conseiller",
+                label="DC",
+                definition="DC",
+                examples=["dc"],
+                is_system=True,
+            ),
         ],
         journey=JourneyParams(
             seuil_haut=seuil_haut,
@@ -128,10 +138,26 @@ class TestThresholdSweep3Axis:
         # pieges
         pieges = tmp_path / "pieges.csv"
         with open(pieges, "w", encoding="utf-8", newline="") as f:
-            w = csv.DictWriter(f, fieldnames=["id", "text", "expected_behavior", "note"])
+            w = csv.DictWriter(
+                f, fieldnames=["id", "text", "expected_behavior", "note"]
+            )
             w.writeheader()
-            w.writerow({"id": "T01", "text": "route A", "expected_behavior": "route:A", "note": ""})
-            w.writerow({"id": "T02", "text": "ambigu", "expected_behavior": "clarify_inter:A|B", "note": ""})
+            w.writerow(
+                {
+                    "id": "T01",
+                    "text": "route A",
+                    "expected_behavior": "route:A",
+                    "note": "",
+                }
+            )
+            w.writerow(
+                {
+                    "id": "T02",
+                    "text": "ambigu",
+                    "expected_behavior": "clarify_inter:A|B",
+                    "note": "",
+                }
+            )
 
         return {
             "metier": metier,
@@ -186,6 +212,7 @@ class TestThresholdSweep3Axis:
 
         class CloseScoreClassifier:
             """Returns close scores to test ecart effect."""
+
             def classify_l1(self, text):
                 if "ambigu" in text:
                     return [("A", 0.80), ("B", 0.75)]  # gap = 0.05

@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 def _check_test_env(class_name: str) -> None:
     """Guard: raise RuntimeError if not in test environment."""
     from loko.config.env import get_env
+
     is_test = get_env("ENV") == "test"
     is_explicit_mock = os.environ.get("LOKO_ESCALATION_PROVIDER") == "mock"
     # MockEscalationProvider is the only one allowed with explicit LOKO_ESCALATION_PROVIDER=mock

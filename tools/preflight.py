@@ -80,7 +80,9 @@ def check_ce1_git_clean() -> bool:
             for line in dirty_files:
                 detail += f"\n    {line}"
 
-        detail += "\n\n  CE-1 will fail until worktree is clean (git describe != *-dirty)\n"
+        detail += (
+            "\n\n  CE-1 will fail until worktree is clean (git describe != *-dirty)\n"
+        )
 
     return _print_result("CE-1", "Worktree clean, main branch", passed, detail)
 
@@ -132,7 +134,9 @@ def check_ce2_tag(tag: str | None, image: str | None = None) -> bool:
     else:
         detail += ", pip=skipped (no image)"
 
-    triple_passed = _print_result("CE-2b", "Triple version check (M3)", versions_match, detail)
+    triple_passed = _print_result(
+        "CE-2b", "Triple version check (M3)", versions_match, detail
+    )
 
     return tag_passed and triple_passed
 
@@ -140,7 +144,9 @@ def check_ce2_tag(tag: str | None, image: str | None = None) -> bool:
 def check_ce3_image(image: str | None) -> bool:
     """CE-3: Docker image built from tag, size by digest ≤ 1.6 Go (L6/K4.3)."""
     if not image:
-        return _print_result("CE-3", "Docker image built", False, "no --image specified, skipped")
+        return _print_result(
+            "CE-3", "Docker image built", False, "no --image specified, skipped"
+        )
 
     result = _run(["docker", "inspect", "--format", "{{.Id}}", image])
     if result.returncode != 0:
@@ -156,21 +162,27 @@ def check_ce3_image(image: str | None) -> bool:
             size_mb = size_bytes / (1024 * 1024)
             threshold_mb = 1600  # 1.6 Go
             size_ok = size_mb <= threshold_mb
-            detail = f"image={image}, id={digest}..., size={size_mb:.0f}MB (inspect/digest)"
+            detail = (
+                f"image={image}, id={digest}..., size={size_mb:.0f}MB (inspect/digest)"
+            )
             if not size_ok:
                 detail += f" > {threshold_mb}MB THRESHOLD"
             return _print_result("CE-3", "Docker image built + size", size_ok, detail)
         except ValueError:
             pass
 
-    return _print_result("CE-3", "Docker image built", True, f"image={image}, id={digest}...")
+    return _print_result(
+        "CE-3", "Docker image built", True, f"image={image}, id={digest}..."
+    )
 
 
 def check_ce4_datasets() -> bool:
     """CE-4: frozen datasets present, hashes match."""
     hashes_file = DATASETS_DIR / "HASHES.sha256"
     if not hashes_file.exists():
-        return _print_result("CE-4", "Datasets present + hashes", False, "HASHES.sha256 missing")
+        return _print_result(
+            "CE-4", "Datasets present + hashes", False, "HASHES.sha256 missing"
+        )
 
     errors: list[str] = []
     for line in hashes_file.read_text(encoding="utf-8").strip().splitlines():
@@ -198,11 +210,19 @@ def check_ce5_datasets_check() -> bool:
     """CE-5: make_datasets.py --check passes."""
     script = ROOT / "tools" / "make_datasets.py"
     if not script.exists():
-        return _print_result("CE-5", "Dataset intersection check", False, "make_datasets.py not found")
+        return _print_result(
+            "CE-5", "Dataset intersection check", False, "make_datasets.py not found"
+        )
 
     result = _run([sys.executable, str(script), "--check", str(DATASETS_DIR)], cwd=ROOT)
     ok = result.returncode == 0
-    detail = "exit 0" if ok else result.stderr.strip().splitlines()[-1] if result.stderr.strip() else f"exit {result.returncode}"
+    detail = (
+        "exit 0"
+        if ok
+        else result.stderr.strip().splitlines()[-1]
+        if result.stderr.strip()
+        else f"exit {result.returncode}"
+    )
 
     return _print_result("CE-5", "Dataset intersection check", ok, detail)
 
@@ -228,7 +248,9 @@ def check_ce6_eval_installed(image: str | None) -> bool:
 def check_ce7_campaign_dir(campaign_dir: str | None) -> bool:
     """CE-7: campaign artifacts directory exists."""
     if not campaign_dir:
-        return _print_result("CE-7", "Campaign directory ready", False, "no --campaign-dir specified")
+        return _print_result(
+            "CE-7", "Campaign directory ready", False, "no --campaign-dir specified"
+        )
 
     d = Path(campaign_dir)
     ok = d.is_dir()
@@ -247,15 +269,21 @@ def check_ce9_bot_conformity(bot_dir: str | None) -> bool:
     Output: machine-readable JSON conformity report.
     """
     if not bot_dir:
-        return _print_result("CE-9", "Bot conformity (9 intents + L2)", False,
-                             "no --bot-dir specified, skipped")
+        return _print_result(
+            "CE-9",
+            "Bot conformity (9 intents + L2)",
+            False,
+            "no --bot-dir specified, skipped",
+        )
 
     config_path = Path(bot_dir) / "config.json"
     if not config_path.is_file():
-        return _print_result("CE-9", "Bot conformity", False,
-                             f"config.json not found at {config_path}")
+        return _print_result(
+            "CE-9", "Bot conformity", False, f"config.json not found at {config_path}"
+        )
 
     import json
+
     config = json.loads(config_path.read_text(encoding="utf-8"))
     intents = config.get("intents", [])
     intent_ids = {i["id"] for i in intents}
@@ -264,9 +292,14 @@ def check_ce9_bot_conformity(bot_dir: str | None) -> bool:
 
     # Check 9 intents
     required = {
-        "hors_perimetre", "demande_conseiller",
-        "arret_travail", "changement_coordonnees", "cotisations",
-        "justificatif_droits", "resiliation", "services_en_ligne",
+        "hors_perimetre",
+        "demande_conseiller",
+        "arret_travail",
+        "changement_coordonnees",
+        "cotisations",
+        "justificatif_droits",
+        "resiliation",
+        "services_en_ligne",
         "teletransmission_noemie",
     }
     missing = required - intent_ids
@@ -292,7 +325,11 @@ def check_ce9_bot_conformity(bot_dir: str | None) -> bool:
         errors.append("services_en_ligne intent not found")
 
     ok = len(errors) == 0
-    detail = f"{len(intents)} intents, {len(errors)} issues" if errors else "9 intents, L2 OK"
+    detail = (
+        f"{len(intents)} intents, {len(errors)} issues"
+        if errors
+        else "9 intents, L2 OK"
+    )
     if errors:
         detail += " — " + "; ".join(errors)
 
@@ -300,16 +337,24 @@ def check_ce9_bot_conformity(bot_dir: str | None) -> bool:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Preflight check for LOKO validation campaigns (C10)")
+    parser = argparse.ArgumentParser(
+        description="Preflight check for LOKO validation campaigns (C10)"
+    )
     parser.add_argument("--tag", default=None, help="Expected git tag (e.g. v0.3.1)")
-    parser.add_argument("--image", default=None, help="Docker image to verify (e.g. loko:v0.3.1)")
-    parser.add_argument("--campaign-dir", default=None, help="Campaign artifacts directory")
-    parser.add_argument("--bot-dir", default=None, help="Bot directory for CE-9 conformity check")
+    parser.add_argument(
+        "--image", default=None, help="Docker image to verify (e.g. loko:v0.3.1)"
+    )
+    parser.add_argument(
+        "--campaign-dir", default=None, help="Campaign artifacts directory"
+    )
+    parser.add_argument(
+        "--bot-dir", default=None, help="Bot directory for CE-9 conformity check"
+    )
     args = parser.parse_args()
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("  LOKO Preflight — CE-1 to CE-9 (protocole v2.2)")
-    print(f"{'='*60}\n")
+    print(f"{'=' * 60}\n")
 
     results = [
         check_ce1_git_clean(),
@@ -326,9 +371,11 @@ def main() -> None:
     total = len(results)
     all_ok = all(results)
 
-    print(f"\n{'='*60}")
-    print(f"  Result: {passed}/{total} checks passed {'— ALL CLEAR (v2.2)' if all_ok else '— BLOCKED'}")
-    print(f"{'='*60}\n")
+    print(f"\n{'=' * 60}")
+    print(
+        f"  Result: {passed}/{total} checks passed {'— ALL CLEAR (v2.2)' if all_ok else '— BLOCKED'}"
+    )
+    print(f"{'=' * 60}\n")
 
     sys.exit(0 if all_ok else 1)
 

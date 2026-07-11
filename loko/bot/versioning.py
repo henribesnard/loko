@@ -29,6 +29,7 @@ MAX_RELEASES = 10
 
 class Release(BaseModel):
     """A publication release snapshot."""
+
     bot_id: str
     version: int
     created_at: str
@@ -92,8 +93,15 @@ class ReleaseStore:
                 "INSERT INTO releases (bot_id, version, created_at, config_json, "
                 "config_hash, model_hash, index_hash, active) "
                 "VALUES (?, ?, ?, ?, ?, ?, ?, 1)",
-                (bot_id, next_version, now, config_json, config_hash,
-                 model_hash, index_hash),
+                (
+                    bot_id,
+                    next_version,
+                    now,
+                    config_json,
+                    config_hash,
+                    model_hash,
+                    index_hash,
+                ),
             )
 
             # Enforce retention (FIFO, keep active + newest MAX_RELEASES)
@@ -121,8 +129,12 @@ class ReleaseStore:
 
         return [
             Release(
-                bot_id=r[0], version=r[1], created_at=r[2],
-                config_hash=r[3], model_hash=r[4], index_hash=r[5],
+                bot_id=r[0],
+                version=r[1],
+                created_at=r[2],
+                config_hash=r[3],
+                model_hash=r[4],
+                index_hash=r[5],
                 active=bool(r[6]),
             )
             for r in rows
@@ -147,7 +159,10 @@ class ReleaseStore:
         if actual_hash != row[1]:
             logger.error(
                 "Release %s v%d config hash mismatch: expected=%s actual=%s",
-                bot_id, version, row[1], actual_hash,
+                bot_id,
+                version,
+                row[1],
+                actual_hash,
             )
             return None
 

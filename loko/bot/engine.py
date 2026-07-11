@@ -72,15 +72,26 @@ def step(
         return new_session, actions
 
     # 2. Explicit request for advisor (from user text at any state)
-    if event.type == EventType.USER_MESSAGE and _is_escalation_request(session, event, config):
+    if event.type == EventType.USER_MESSAGE and _is_escalation_request(
+        session, event, config
+    ):
         new_session = session.model_copy(update={"state": BotState.ESCALADE})
-        actions: list[Action] = [CallEscalation(motif=EscalationMotif.DEMANDE_EXPLICITE)]
+        actions: list[Action] = [
+            CallEscalation(motif=EscalationMotif.DEMANDE_EXPLICITE)
+        ]
         _log_transition(session.state, BotState.ESCALADE, event.type, actions)
         return new_session, actions
 
     # --- Terminal states ---
-    if session.state in (BotState.FIN, BotState.TIMEOUT, BotState.CLOTURE_DOUCE, BotState.FIN_FERME):
-        logger.debug("Session %s already in terminal state %s", session.session_id, session.state)
+    if session.state in (
+        BotState.FIN,
+        BotState.TIMEOUT,
+        BotState.CLOTURE_DOUCE,
+        BotState.FIN_FERME,
+    ):
+        logger.debug(
+            "Session %s already in terminal state %s", session.session_id, session.state
+        )
         return session, []
 
     # --- Look up transition ---
@@ -142,8 +153,11 @@ def add_turn_to_session(
 # Internal helpers
 # ---------------------------------------------------------------------------
 
+
 def _is_escalation_request(
-    session: BotSession, event: Event, config: BotConfig,
+    session: BotSession,
+    event: Event,
+    config: BotConfig,
 ) -> bool:
     """Check if the user text is an explicit escalation request.
 

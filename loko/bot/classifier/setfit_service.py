@@ -64,7 +64,7 @@ class SetFitClassifier:
         self.intent_id = intent_id
         self._model: Any = None  # SetFitModel once loaded
         self._label_map: dict[int, str] = {}  # numeric label -> class id
-        self._id_map: dict[str, int] = {}     # class id -> numeric label
+        self._id_map: dict[str, int] = {}  # class id -> numeric label
 
     @property
     def is_loaded(self) -> bool:
@@ -148,7 +148,11 @@ class SetFitClassifier:
 
         logger.info(
             "Trained %s classifier for bot %s: %d classes, %d samples in %.1fs",
-            self.level, self.bot_id, len(unique_labels), len(texts), duration,
+            self.level,
+            self.bot_id,
+            len(unique_labels),
+            len(texts),
+            duration,
         )
 
         return {
@@ -220,6 +224,7 @@ class SetFitClassifier:
         """Save label mapping alongside the model."""
         import json
         from pathlib import Path
+
         label_path = Path(model_dir) / "label_map.json"
         # Convert int keys to str for JSON
         data = {str(k): v for k, v in self._label_map.items()}
@@ -229,6 +234,7 @@ class SetFitClassifier:
         """Load label mapping from disk."""
         import json
         from pathlib import Path
+
         label_path = Path(model_dir) / "label_map.json"
         if label_path.exists():
             data = json.loads(label_path.read_text(encoding="utf-8"))
@@ -239,6 +245,7 @@ class SetFitClassifier:
 # ---------------------------------------------------------------------------
 # High-level helpers
 # ---------------------------------------------------------------------------
+
 
 def prepare_l1_training_data(config: BotConfig) -> tuple[list[str], list[str]]:
     """Build training texts and labels for L1 classification from a BotConfig.

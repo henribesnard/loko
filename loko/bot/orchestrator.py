@@ -57,6 +57,7 @@ logger = logging.getLogger(__name__)
 # Classifier protocol
 # ---------------------------------------------------------------------------
 
+
 @runtime_checkable
 class ClassifierProtocol(Protocol):
     """Interface for intent/sub-motif classification."""
@@ -74,6 +75,7 @@ class ClassifierProtocol(Protocol):
 # Escalation protocol
 # ---------------------------------------------------------------------------
 
+
 @runtime_checkable
 class EscalationProtocol(Protocol):
     """Interface for escalation to human agent."""
@@ -87,9 +89,11 @@ class EscalationProtocol(Protocol):
 # SSE event types
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class SSEEvent:
     """A Server-Sent Event for the runtime API."""
+
     event: str
     data: dict[str, Any] = field(default_factory=dict)
 
@@ -97,6 +101,7 @@ class SSEEvent:
 # ---------------------------------------------------------------------------
 # Orchestrator
 # ---------------------------------------------------------------------------
+
 
 class BotOrchestrator:
     """Connects FSM engine to I/O services.
@@ -142,17 +147,22 @@ class BotOrchestrator:
             if isinstance(action, EmitTemplate):
                 text = self._render_action_template(action, config)
                 session = add_turn_to_session(
-                    session, role="bot", content=text,
-                    template_key=action.key, buttons=action.buttons,
+                    session,
+                    role="bot",
+                    content=text,
+                    template_key=action.key,
+                    buttons=action.buttons,
                 )
-                events.append(SSEEvent(
-                    event="template",
-                    data={
-                        "content": text,
-                        "template_key": action.key.value,
-                        "buttons": action.buttons,
-                    },
-                ))
+                events.append(
+                    SSEEvent(
+                        event="template",
+                        data={
+                            "content": text,
+                            "template_key": action.key.value,
+                            "buttons": action.buttons,
+                        },
+                    )
+                )
 
         return session, events
 
@@ -211,7 +221,9 @@ class BotOrchestrator:
             config,
         )
         new_session = add_turn_to_session(
-            new_session, role="bot", content=text,
+            new_session,
+            role="bot",
+            content=text,
             template_key=TemplateKey.CLOTURE_DOUCE,
         )
 
@@ -262,10 +274,13 @@ class BotOrchestrator:
         # --- GF Layer 1: deterministic pre-filter (before classification) ---
         guardrail_result = self._guardrail_engine.check(user_text)
         if guardrail_result.blocked:
-            traces.add("guardrail_prefilter", detail={
-                "blocked_by": guardrail_result.rule_id,
-                "category": guardrail_result.category,
-            })
+            traces.add(
+                "guardrail_prefilter",
+                detail={
+                    "blocked_by": guardrail_result.rule_id,
+                    "category": guardrail_result.category,
+                },
+            )
 
             # Record user message
             session = add_turn_to_session(session, role="user", content=user_text)
@@ -280,11 +295,15 @@ class BotOrchestrator:
             if session.infractions >= self._guardrails_config.max_infractions:
                 if self._guardrails_config.action_apres_max == "escalade":
                     session = session.model_copy(update={"state": BotState.ESCALADE})
-                    yield session, SSEEvent(event="state", data={"state": session.state.value})
+                    yield (
+                        session,
+                        SSEEvent(event="state", data={"state": session.state.value}),
+                    )
                     async for session, sse_event in self._handle_escalation(
                         session,
                         CallEscalation(motif=EscalationMotif.INFRACTIONS),
-                        config, traces,
+                        config,
+                        traces,
                     ):
                         yield session, sse_event
                 else:
@@ -301,15 +320,29 @@ class BotOrchestrator:
                         config,
                     )
                     session = add_turn_to_session(
-                        session, role="bot", content=text,
+                        session,
+                        role="bot",
+                        content=text,
                         template_key=TemplateKey.FIN_FERME,
                     )
-                    yield session, SSEEvent(event="state", data={"state": session.state.value})
-                    yield session, SSEEvent(
-                        event="template",
-                        data={"content": text, "template_key": TemplateKey.FIN_FERME.value},
+                    yield (
+                        session,
+                        SSEEvent(event="state", data={"state": session.state.value}),
                     )
-                    yield session, SSEEvent(event="end_of_turn", data={"reason": "fin_ferme"})
+                    yield (
+                        session,
+                        SSEEvent(
+                            event="template",
+                            data={
+                                "content": text,
+                                "template_key": TemplateKey.FIN_FERME.value,
+                            },
+                        ),
+                    )
+                    yield (
+                        session,
+                        SSEEvent(event="end_of_turn", data={"reason": "fin_ferme"}),
+                    )
             else:
                 # Emit refusal template (no LLM, no retrieval)
                 intent_labels = ", ".join(
@@ -326,18 +359,29 @@ class BotOrchestrator:
                     config,
                 )
                 session = add_turn_to_session(
-                    session, role="bot", content=text,
+                    session,
+                    role="bot",
+                    content=text,
                     template_key=TemplateKey.DEMANDE_INAPPROPRIEE,
                 )
-                yield session, SSEEvent(
-                    event="template",
-                    data={"content": text, "template_key": TemplateKey.DEMANDE_INAPPROPRIEE.value},
+                yield (
+                    session,
+                    SSEEvent(
+                        event="template",
+                        data={
+                            "content": text,
+                            "template_key": TemplateKey.DEMANDE_INAPPROPRIEE.value,
+                        },
+                    ),
                 )
 
             # Emit traces
-            yield session, SSEEvent(
-                event="traces",
-                data={"turn_id": turn_id, "traces": traces.to_list()},
+            yield (
+                session,
+                SSEEvent(
+                    event="traces",
+                    data={"turn_id": turn_id, "traces": traces.to_list()},
+                ),
             )
             return
 
@@ -352,22 +396,29 @@ class BotOrchestrator:
 
         # Process actions iteratively
         async for session, sse_event in self._process_actions(
-            session, actions, config, user_text, traces,
+            session,
+            actions,
+            config,
+            user_text,
+            traces,
         ):
             yield session, sse_event
 
         # Emit traces with ORC counters
-        yield session, SSEEvent(
-            event="traces",
-            data={
-                "turn_id": turn_id,
-                "traces": traces.to_list(),
-                "counters": {
-                    "demandes": session.demandes_count,
-                    "tours_demande": session.tours_demande,
-                    "tokens_llm": session.tokens_llm_cumul,
+        yield (
+            session,
+            SSEEvent(
+                event="traces",
+                data={
+                    "turn_id": turn_id,
+                    "traces": traces.to_list(),
+                    "counters": {
+                        "demandes": session.demandes_count,
+                        "tours_demande": session.tours_demande,
+                        "tokens_llm": session.tokens_llm_cumul,
+                    },
                 },
-            },
+            ),
         )
 
     async def process_button_click(
@@ -381,7 +432,9 @@ class BotOrchestrator:
         traces = TraceCollector(turn_id)
 
         session = add_turn_to_session(
-            session, role="user", content=button_value,
+            session,
+            role="user",
+            content=button_value,
             button_selected=button_value,
         )
 
@@ -391,13 +444,20 @@ class BotOrchestrator:
         yield session, SSEEvent(event="state", data={"state": session.state.value})
 
         async for session, sse_event in self._process_actions(
-            session, actions, config, button_value, traces,
+            session,
+            actions,
+            config,
+            button_value,
+            traces,
         ):
             yield session, sse_event
 
-        yield session, SSEEvent(
-            event="traces",
-            data={"turn_id": turn_id, "traces": traces.to_list()},
+        yield (
+            session,
+            SSEEvent(
+                event="traces",
+                data={"turn_id": turn_id, "traces": traces.to_list()},
+            ),
         )
 
     # ------------------------------------------------------------------
@@ -431,20 +491,32 @@ class BotOrchestrator:
             # --- State-driven: classification auto-steps ---
             if session.state == BotState.CLASSIFICATION_L1:
                 new_session, new_actions = await self._run_classification_l1(
-                    session, user_text, config, traces,
+                    session,
+                    user_text,
+                    config,
+                    traces,
                 )
                 session = new_session
-                yield session, SSEEvent(event="state", data={"state": session.state.value})
+                yield (
+                    session,
+                    SSEEvent(event="state", data={"state": session.state.value}),
+                )
                 pending_actions = list(new_actions) + pending_actions
                 continue
 
             if session.state == BotState.CLASSIFICATION_L2:
                 query = session.original_query or user_text
                 new_session, new_actions = await self._run_classification_l2(
-                    session, query, config, traces,
+                    session,
+                    query,
+                    config,
+                    traces,
                 )
                 session = new_session
-                yield session, SSEEvent(event="state", data={"state": session.state.value})
+                yield (
+                    session,
+                    SSEEvent(event="state", data={"state": session.state.value}),
+                )
                 pending_actions = list(new_actions) + pending_actions
                 continue
 
@@ -457,34 +529,49 @@ class BotOrchestrator:
             if isinstance(action, EmitTemplate):
                 text = self._render_action_template(action, config)
                 session = add_turn_to_session(
-                    session, role="bot", content=text,
-                    template_key=action.key, buttons=action.buttons,
+                    session,
+                    role="bot",
+                    content=text,
+                    template_key=action.key,
+                    buttons=action.buttons,
                 )
-                yield session, SSEEvent(
-                    event="template",
-                    data={
-                        "content": text,
-                        "template_key": action.key.value,
-                        "buttons": action.buttons,
-                    },
+                yield (
+                    session,
+                    SSEEvent(
+                        event="template",
+                        data={
+                            "content": text,
+                            "template_key": action.key.value,
+                            "buttons": action.buttons,
+                        },
+                    ),
                 )
 
             elif isinstance(action, EmitGeneration):
                 async for session, sse_event in self._handle_generation(
-                    session, action, config, traces,
+                    session,
+                    action,
+                    config,
+                    traces,
                 ):
                     yield session, sse_event
 
             elif isinstance(action, CallEscalation):
                 async for session, sse_event in self._handle_escalation(
-                    session, action, config, traces,
+                    session,
+                    action,
+                    config,
+                    traces,
                 ):
                     yield session, sse_event
 
             elif isinstance(action, CloseSession):
-                yield session, SSEEvent(
-                    event="end_of_turn",
-                    data={"reason": action.reason},
+                yield (
+                    session,
+                    SSEEvent(
+                        event="end_of_turn",
+                        data={"reason": action.reason},
+                    ),
                 )
 
     # ------------------------------------------------------------------
@@ -569,7 +656,9 @@ class BotOrchestrator:
         """Handle EmitGeneration: retrieval → check → generate → satisfaction."""
         # Find intent/sub-motif labels for query augmentation
         intent_label, sub_motif_label = self._find_intent_labels(
-            config, action.intent, action.sub_motif,
+            config,
+            action.intent,
+            action.sub_motif,
         )
 
         # --- Retrieval ---
@@ -597,7 +686,10 @@ class BotOrchestrator:
                 motif=result.escalation_motif or EscalationMotif.RETRIEVAL_INSUFFISANT,
             )
             async for session, sse_event in self._handle_escalation(
-                session, escalation_action, config, traces,
+                session,
+                escalation_action,
+                config,
+                traces,
             ):
                 yield session, sse_event
             return
@@ -607,7 +699,9 @@ class BotOrchestrator:
             session = session.model_copy(update={"state": BotState.CLOTURE_DOUCE})
             yield session, SSEEvent(event="state", data={"state": session.state.value})
 
-            resume = ", ".join(session.resolved_intents) if session.resolved_intents else ""
+            resume = (
+                ", ".join(session.resolved_intents) if session.resolved_intents else ""
+            )
             cloture_action = EmitTemplate(
                 key=TemplateKey.CLOTURE_DOUCE,
                 variables={
@@ -618,14 +712,25 @@ class BotOrchestrator:
             )
             text = self._render_action_template(cloture_action, config)
             session = add_turn_to_session(
-                session, role="bot", content=text,
+                session,
+                role="bot",
+                content=text,
                 template_key=TemplateKey.CLOTURE_DOUCE,
             )
-            yield session, SSEEvent(
-                event="template",
-                data={"content": text, "template_key": TemplateKey.CLOTURE_DOUCE.value},
+            yield (
+                session,
+                SSEEvent(
+                    event="template",
+                    data={
+                        "content": text,
+                        "template_key": TemplateKey.CLOTURE_DOUCE.value,
+                    },
+                ),
             )
-            yield session, SSEEvent(event="end_of_turn", data={"reason": "budget_tokens"})
+            yield (
+                session,
+                SSEEvent(event="end_of_turn", data={"reason": "budget_tokens"}),
+            )
             return
 
         # --- Generation (streaming) ---
@@ -639,9 +744,12 @@ class BotOrchestrator:
                 config=config,
             ):
                 tokens.append(token)
-                yield session, SSEEvent(
-                    event="generation_delta",
-                    data={"token": token},
+                yield (
+                    session,
+                    SSEEvent(
+                        event="generation_delta",
+                        data={"token": token},
+                    ),
                 )
 
             full_response = "".join(tokens)
@@ -670,7 +778,8 @@ class BotOrchestrator:
             traces.add("guardrail_leak", detail={"leak_pattern": leak})
             # Replace response with apology template
             full_response = self._render_action_template(
-                EmitTemplate(key=TemplateKey.HORS_PERIMETRE), config,
+                EmitTemplate(key=TemplateKey.HORS_PERIMETRE),
+                config,
             )
 
         # GF Layer 3b: grounding check (V1 = marking only)
@@ -685,8 +794,11 @@ class BotOrchestrator:
 
         # Record bot turn
         session = add_turn_to_session(
-            session, role="bot", content=full_response,
-            intent=action.intent, sub_motif=action.sub_motif,
+            session,
+            role="bot",
+            content=full_response,
+            intent=action.intent,
+            sub_motif=action.sub_motif,
             sources=sources,
         )
 
@@ -700,16 +812,22 @@ class BotOrchestrator:
             if isinstance(a, EmitTemplate):
                 text = self._render_action_template(a, config)
                 session = add_turn_to_session(
-                    session, role="bot", content=text,
-                    template_key=a.key, buttons=a.buttons,
+                    session,
+                    role="bot",
+                    content=text,
+                    template_key=a.key,
+                    buttons=a.buttons,
                 )
-                yield session, SSEEvent(
-                    event="template",
-                    data={
-                        "content": text,
-                        "template_key": a.key.value,
-                        "buttons": a.buttons,
-                    },
+                yield (
+                    session,
+                    SSEEvent(
+                        event="template",
+                        data={
+                            "content": text,
+                            "template_key": a.key.value,
+                            "buttons": a.buttons,
+                        },
+                    ),
                 )
 
     # ------------------------------------------------------------------
@@ -741,9 +859,13 @@ class BotOrchestrator:
         # PRO-4: build deterministic structured summary (never LLM-generated)
         resume: dict[str, Any] = {
             "demandes_count": session.demandes_count,
-            "resolved_intents": list(session.resolved_intents) if session.resolved_intents else [],
+            "resolved_intents": list(session.resolved_intents)
+            if session.resolved_intents
+            else [],
             "infractions": session.infractions,
-            "motif": action.motif.value if hasattr(action.motif, "value") else str(action.motif),
+            "motif": action.motif.value
+            if hasattr(action.motif, "value")
+            else str(action.motif),
         }
 
         return EscalationPayload(
@@ -791,7 +913,9 @@ class BotOrchestrator:
         with traces.measure("escalation") as ctx:
             result = await self.escalation.escalate(payload)
             ctx["motif"] = action.motif.value
-            ctx["result"] = result.model_dump() if hasattr(result, "model_dump") else result
+            ctx["result"] = (
+                result.model_dump() if hasattr(result, "model_dump") else result
+            )
 
         temps_attente = self._extract_temps_attente(result)
         session, esc_actions = handle_escalation_result(session, config, temps_attente)
@@ -802,20 +926,28 @@ class BotOrchestrator:
             if isinstance(a, EmitTemplate):
                 text = self._render_action_template(a, config)
                 session = add_turn_to_session(
-                    session, role="bot", content=text,
+                    session,
+                    role="bot",
+                    content=text,
                     template_key=a.key,
                 )
-                yield session, SSEEvent(
-                    event="template",
-                    data={
-                        "content": text,
-                        "template_key": a.key.value,
-                    },
+                yield (
+                    session,
+                    SSEEvent(
+                        event="template",
+                        data={
+                            "content": text,
+                            "template_key": a.key.value,
+                        },
+                    ),
                 )
             elif isinstance(a, CloseSession):
-                yield session, SSEEvent(
-                    event="end_of_turn",
-                    data={"reason": a.reason},
+                yield (
+                    session,
+                    SSEEvent(
+                        event="end_of_turn",
+                        data={"reason": a.reason},
+                    ),
                 )
 
     # ------------------------------------------------------------------
@@ -829,7 +961,9 @@ class BotOrchestrator:
     ) -> str:
         """Resolve and render a template action."""
         template = resolve_template(
-            config.templates, action.key, config.tone_profile,
+            config.templates,
+            action.key,
+            config.tone_profile,
         )
         lang = config.language if config.language != "auto" else "fr"
         return render_template(template, lang, action.variables)

@@ -182,6 +182,7 @@ class TestAuditLogger:
 
         # Read and verify CSV
         import csv
+
         with open(csv_path, "r", encoding="utf-8") as f:
             reader = csv.DictReader(f)
             rows = list(reader)
@@ -196,6 +197,7 @@ class TestAuditLogger:
         old_date = datetime.now(timezone.utc) - timedelta(days=400)
 
         import sqlite3
+
         conn = sqlite3.connect(audit_logger.db_path)
         conn.execute(
             """
@@ -237,7 +239,9 @@ class TestAuditLogger:
             )
 
         # Query failed logins from this IP
-        logs = audit_logger.get_logs(action=AuditLogger.ACTION_AUTH_LOGIN_FAILED, limit=10)
+        logs = audit_logger.get_logs(
+            action=AuditLogger.ACTION_AUTH_LOGIN_FAILED, limit=10
+        )
 
         # Filter by IP (would need additional query parameter in real implementation)
         failed_from_ip = [log for log in logs if log["ip_address"] == ip]

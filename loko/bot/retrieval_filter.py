@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 # Retrieval backend protocol
 # ---------------------------------------------------------------------------
 
+
 @runtime_checkable
 class ChunkSearchBackend(Protocol):
     """Low-level search backend that the filtered retriever delegates to.
@@ -61,6 +62,7 @@ class ChunkSearchBackend(Protocol):
 # ---------------------------------------------------------------------------
 # Filtered retriever
 # ---------------------------------------------------------------------------
+
 
 class FilteredRetriever:
     """Retrieves chunks with hard filtering by intent/sub-motif + confidentiality.
@@ -106,7 +108,9 @@ class FilteredRetriever:
         """
         collection = config.knowledge_collection
         if not collection:
-            logger.warning("No knowledge collection configured for bot %s", config.bot_id)
+            logger.warning(
+                "No knowledge collection configured for bot %s", config.bot_id
+            )
             return RetrievalResult(
                 success=False,
                 escalate=True,
@@ -119,21 +123,27 @@ class FilteredRetriever:
 
         # --- Step 1: Search at sub-motif level (if applicable) ---
         if sub_motif:
-            augmented_query = f"{query} — {sub_motif_label}" if sub_motif_label else query
+            augmented_query = (
+                f"{query} — {sub_motif_label}" if sub_motif_label else query
+            )
             filters = self._build_filters(
                 intent=intent,
                 sub_motif=sub_motif,
                 confidentiality=config.confidentiality_filter,
             )
             chunks = await self.backend.search(
-                augmented_query, collection, filters=filters, top_k=top_k,
+                augmented_query,
+                collection,
+                filters=filters,
+                top_k=top_k,
             )
             good_chunks = [c for c in chunks if c.score >= min_score]
 
             if len(good_chunks) >= min_chunks:
                 logger.info(
                     "Retrieval success at sub-motif level: %d chunks (min=%d)",
-                    len(good_chunks), min_chunks,
+                    len(good_chunks),
+                    min_chunks,
                 )
                 return RetrievalResult(
                     chunks=good_chunks,
@@ -143,7 +153,8 @@ class FilteredRetriever:
 
             logger.info(
                 "Insufficient chunks at sub-motif level (%d < %d), widening to intent",
-                len(good_chunks), min_chunks,
+                len(good_chunks),
+                min_chunks,
             )
 
         # --- Step 2: Search at intent level ---
@@ -154,14 +165,18 @@ class FilteredRetriever:
             confidentiality=config.confidentiality_filter,
         )
         chunks = await self.backend.search(
-            augmented_query, collection, filters=filters, top_k=top_k,
+            augmented_query,
+            collection,
+            filters=filters,
+            top_k=top_k,
         )
         good_chunks = [c for c in chunks if c.score >= min_score]
 
         if len(good_chunks) >= min_chunks:
             logger.info(
                 "Retrieval success at intent level: %d chunks (min=%d)",
-                len(good_chunks), min_chunks,
+                len(good_chunks),
+                min_chunks,
             )
             return RetrievalResult(
                 chunks=good_chunks,
@@ -172,7 +187,8 @@ class FilteredRetriever:
         # --- Step 3: Insufficient → escalate ---
         logger.info(
             "Retrieval insufficient at intent level (%d < %d) → escalation",
-            len(good_chunks), min_chunks,
+            len(good_chunks),
+            min_chunks,
         )
         return RetrievalResult(
             chunks=good_chunks,  # still pass what we found

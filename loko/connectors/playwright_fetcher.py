@@ -172,6 +172,7 @@ class PlaywrightPageFetcher:
             if loop.is_running():
                 # We're inside an async context — use a new thread
                 import concurrent.futures
+
                 with concurrent.futures.ThreadPoolExecutor() as pool:
                     future = pool.submit(asyncio.run, self.fetch(url))
                     return future.result(timeout=self.timeout_ms / 1000 + 5)
@@ -225,6 +226,7 @@ def get_page_fetcher(
     if prefer_playwright:
         try:
             import playwright  # noqa: F401
+
             return SyncPlaywrightPageFetcher(
                 allowed_domains=allowed_domains,
                 allow_private_networks=allow_private_networks,
@@ -236,4 +238,5 @@ def get_page_fetcher(
             )
 
     from loko.connectors.faq_web_crawler import SimplePageFetcher
+
     return SimplePageFetcher(allow_private_networks=allow_private_networks)

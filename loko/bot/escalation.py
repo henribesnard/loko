@@ -38,8 +38,10 @@ class EscalationProvider(Protocol):
 # Configuration
 # ---------------------------------------------------------------------------
 
+
 class EscalationConfig(BaseModel):
     """Escalation configuration per bot."""
+
     provider: Literal["mock", "webhook", "email"] = "mock"
     webhook_url: str = ""
     webhook_secret_ref: str = ""  # ref in secret store for HMAC signing
@@ -54,6 +56,7 @@ class EscalationConfig(BaseModel):
 # ---------------------------------------------------------------------------
 # Webhook provider
 # ---------------------------------------------------------------------------
+
 
 class WebhookEscalationProvider:
     """POST escalation payload to a webhook URL with HMAC signature.
@@ -110,22 +113,27 @@ class WebhookEscalationProvider:
                         wait = data.get("temps_attente_estime_min", self.fallback_wait)
                         return EscalationResult(temps_attente_estime_min=int(wait))
                     except (json.JSONDecodeError, ValueError):
-                        return EscalationResult(temps_attente_estime_min=self.fallback_wait)
+                        return EscalationResult(
+                            temps_attente_estime_min=self.fallback_wait
+                        )
 
                 logger.warning(
                     "Webhook escalation returned %d (attempt %d)",
-                    response.status_code, attempt + 1,
+                    response.status_code,
+                    attempt + 1,
                 )
 
             except Exception as exc:
                 logger.warning(
                     "Webhook escalation failed (attempt %d): %s",
-                    attempt + 1, exc,
+                    attempt + 1,
+                    exc,
                 )
 
             # Backoff before retry
             if attempt == 0:
                 import asyncio
+
                 await asyncio.sleep(2.0)
 
         # All attempts failed — graceful degradation
@@ -139,6 +147,7 @@ class WebhookEscalationProvider:
 # ---------------------------------------------------------------------------
 # Email provider
 # ---------------------------------------------------------------------------
+
 
 class EmailEscalationProvider:
     """Send escalation via SMTP email.
@@ -169,8 +178,7 @@ class EmailEscalationProvider:
 
         # Build email body
         transcript_text = "\n".join(
-            f"[{t.get('role', '?')}] {t.get('content', '')}"
-            for t in payload.transcript
+            f"[{t.get('role', '?')}] {t.get('content', '')}" for t in payload.transcript
         )
 
         body = (
@@ -204,6 +212,7 @@ class EmailEscalationProvider:
 # ---------------------------------------------------------------------------
 # Factory
 # ---------------------------------------------------------------------------
+
 
 def build_escalation_provider(
     config: EscalationConfig,
@@ -251,4 +260,5 @@ def build_escalation_provider(
 
     # Mock — import from testing module
     from loko.testing.mocks import MockEscalationProvider
+
     return MockEscalationProvider()

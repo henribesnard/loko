@@ -27,20 +27,23 @@ def load_classifier(bot_id: str) -> Any:
         from loko.bot.classifier.setfit_service import SetFitClassifier
     except ImportError:
         raise ComponentUnavailableError(
-            "classifier_l1", bot_id,
+            "classifier_l1",
+            bot_id,
             "SetFit not installed (pip install loko[ml])",
         )
 
     if not model_exists(bot_id, "level1"):
         raise ComponentUnavailableError(
-            "classifier_l1", bot_id,
+            "classifier_l1",
+            bot_id,
             "Level 1 classifier not trained",
         )
 
     clf = SetFitClassifier(bot_id, "level1")
     if not clf.load():
         raise ComponentUnavailableError(
-            "classifier_l1", bot_id,
+            "classifier_l1",
+            bot_id,
             "Failed to load level 1 classifier from disk",
         )
 
@@ -56,12 +59,14 @@ def load_search_backend(bot_id: str) -> Any:
     """
     try:
         from loko.bot.knowledge_store import get_knowledge_store
+
         return get_knowledge_store(bot_id)
     except Exception:
         logger.warning("Could not load knowledge store for bot %s", bot_id)
 
     raise ComponentUnavailableError(
-        "knowledge_store", bot_id,
+        "knowledge_store",
+        bot_id,
         "Failed to initialize knowledge store",
     )
 

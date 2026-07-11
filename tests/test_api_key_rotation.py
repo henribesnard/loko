@@ -97,13 +97,17 @@ class TestAPIKeyRotation:
 
         # Create and rotate
         old_raw_key, old_key_id = generate_api_key(bot_id)
-        new_raw_key, new_key_id = rotate_api_key(bot_id, old_key_id, grace_period_hours=0)
+        new_raw_key, new_key_id = rotate_api_key(
+            bot_id, old_key_id, grace_period_hours=0
+        )
 
         # Set expires_at to past (simulate expiration)
         keys = _load_keys(bot_id)
         for k in keys:
             if k.key_id == old_key_id:
-                k.expires_at = (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat()
+                k.expires_at = (
+                    datetime.now(timezone.utc) - timedelta(hours=1)
+                ).isoformat()
                 break
         _save_keys(bot_id, keys)
 
@@ -181,7 +185,9 @@ class TestAPIKeyRotation:
             keys = _load_keys(bot_id)
             for k in keys:
                 if k.key_id == key_id:
-                    k.expires_at = (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat()
+                    k.expires_at = (
+                        datetime.now(timezone.utc) - timedelta(hours=1)
+                    ).isoformat()
             _save_keys(bot_id, keys)
 
         # Cleanup all bots

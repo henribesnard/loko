@@ -17,8 +17,10 @@ def app(tmp_path, monkeypatch):
     monkeypatch.setenv("LOKO_ENV", "test")
     monkeypatch.setenv("LOKO_ADMIN_TOKEN", "test-admin-token")
     from loko.api.bot_public import clear_orchestrators
+
     clear_orchestrators()
     from loko.main import create_app
+
     return create_app()
 
 
@@ -38,14 +40,32 @@ def _make_bot(tmp_path, monkeypatch) -> BotConfig:
     config = BotConfig(
         name="TestPub",
         intents=[
-            Intent(id="livraison", label="Livraison", definition="D",
-                   examples=[f"livraison ex {i}" for i in range(10)]),
-            Intent(id="facturation", label="Facturation", definition="D",
-                   examples=[f"facturation ex {i}" for i in range(10)]),
-            Intent(id="hors_perimetre", label="HP", definition="HP",
-                   examples=["hp"], is_system=True),
-            Intent(id="demande_conseiller", label="DC", definition="DC",
-                   examples=["dc"], is_system=True),
+            Intent(
+                id="livraison",
+                label="Livraison",
+                definition="D",
+                examples=[f"livraison ex {i}" for i in range(10)],
+            ),
+            Intent(
+                id="facturation",
+                label="Facturation",
+                definition="D",
+                examples=[f"facturation ex {i}" for i in range(10)],
+            ),
+            Intent(
+                id="hors_perimetre",
+                label="HP",
+                definition="HP",
+                examples=["hp"],
+                is_system=True,
+            ),
+            Intent(
+                id="demande_conseiller",
+                label="DC",
+                definition="DC",
+                examples=["dc"],
+                is_system=True,
+            ),
         ],
     )
     save_bot_config(config)
@@ -70,6 +90,7 @@ class TestPublish422Codes:
         config = _make_bot(tmp_path, monkeypatch)
         # Create manifest file with corrupt content
         from loko.bot.classifier.manifest import get_manifest_path
+
         manifest_path = get_manifest_path(config.bot_id)
         manifest_path.parent.mkdir(parents=True, exist_ok=True)
         manifest_path.write_text("NOT VALID JSON {{{{")
@@ -84,6 +105,7 @@ class TestPublish422Codes:
         config = _make_bot(tmp_path, monkeypatch)
         from loko.bot.classifier.model_store import get_model_dir
         from loko.bot.classifier.manifest import get_manifest_path
+
         model_dir = get_model_dir(config.bot_id, "level1")
         model_dir.mkdir(parents=True, exist_ok=True)
         # Write a fake model file
@@ -94,7 +116,10 @@ class TestPublish422Codes:
             "schema": 1,
             "levels": {
                 "level1": {
-                    "files": {"model.safetensors": "0000dead", "config.json": "0000beef"},
+                    "files": {
+                        "model.safetensors": "0000dead",
+                        "config.json": "0000beef",
+                    },
                     "labels": ["livraison", "facturation"],
                     "n_train_examples": 20,
                 },
@@ -116,6 +141,7 @@ class TestPublish422Codes:
         config = _make_bot(tmp_path, monkeypatch)
         from loko.bot.classifier.model_store import get_model_dir
         from loko.bot.classifier.manifest import compute_file_hashes, get_manifest_path
+
         model_dir = get_model_dir(config.bot_id, "level1")
         model_dir.mkdir(parents=True, exist_ok=True)
         # Write model files
@@ -129,7 +155,12 @@ class TestPublish422Codes:
             "levels": {
                 "level1": {
                     "files": real_hashes,
-                    "labels": ["livraison", "facturation", "hors_perimetre", "demande_conseiller"],
+                    "labels": [
+                        "livraison",
+                        "facturation",
+                        "hors_perimetre",
+                        "demande_conseiller",
+                    ],
                     "n_train_examples": 20,
                 },
             },
@@ -142,7 +173,9 @@ class TestPublish422Codes:
         # Monkey-patch verify_model to pass (we only test retrain detection)
         monkeypatch.setattr(
             "loko.bot.classifier.manifest.verify_model",
-            lambda bot_id: type("V", (), {"ok": True, "errors": [], "error_code": None})(),
+            lambda bot_id: type(
+                "V", (), {"ok": True, "errors": [], "error_code": None}
+            )(),
         )
         resp = client.post(f"/api/bot/{config.bot_id}/publish", headers=admin_headers)
         assert resp.status_code == 422
@@ -150,14 +183,20 @@ class TestPublish422Codes:
         assert body["error"] == "model_integrity"
         assert body["code"] == "retrain_required"
 
-    def test_business_validation_stays_400(self, client, admin_headers, tmp_path, monkeypatch):
+    def test_business_validation_stays_400(
+        self, client, admin_headers, tmp_path, monkeypatch
+    ):
         """Business errors (missing hors_perimetre) remain 400, not 422."""
         monkeypatch.setenv("LOKO_DATA_DIR", str(tmp_path))
         config = BotConfig(
             name="BadBot",
             intents=[
-                Intent(id="livraison", label="Livraison", definition="D",
-                       examples=[f"ex {i}" for i in range(10)]),
+                Intent(
+                    id="livraison",
+                    label="Livraison",
+                    definition="D",
+                    examples=[f"ex {i}" for i in range(10)],
+                ),
                 # Missing hors_perimetre → business validation error
             ],
         )

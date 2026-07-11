@@ -42,12 +42,18 @@ def load_bot_config(bot_id: str) -> BotConfig | None:
         config = BotConfig.model_validate(data)
         # T1: lazy migration for schema v1 → v2
         if data.get("schema_version", 1) < 2 or not config.account_id:
-            config = config.model_copy(update={
-                "schema_version": 2,
-                "account_id": config.account_id or _get_internal_account_id(),
-            })
+            config = config.model_copy(
+                update={
+                    "schema_version": 2,
+                    "account_id": config.account_id or _get_internal_account_id(),
+                }
+            )
             save_bot_config(config)
-            logger.info("Bot %s migrated to schema v2 (account_id=%s)", bot_id, config.account_id)
+            logger.info(
+                "Bot %s migrated to schema v2 (account_id=%s)",
+                bot_id,
+                config.account_id,
+            )
         return config
     except Exception:
         logger.exception("Failed to load bot config %s", config_path)
@@ -61,6 +67,7 @@ _INTERNAL_ACCOUNT_ID = "wezon-internal"
 def _get_internal_account_id() -> str:
     """Return the internal account ID, creating it if needed."""
     from loko.db.accounts import get_account, get_db
+
     try:
         account = get_account(_INTERNAL_ACCOUNT_ID)
         if account:
@@ -68,6 +75,7 @@ def _get_internal_account_id() -> str:
         # Create with fixed ID
         db = get_db()
         from datetime import datetime, timezone
+
         now = datetime.now(timezone.utc).isoformat()
         db.execute(
             "INSERT OR IGNORE INTO accounts (id, org_name, plan, quotas, status, created_at) "
@@ -93,12 +101,14 @@ def list_bots(account_id: str | None = None) -> list[dict[str, str]]:
                 bot_account = data.get("account_id", "")
                 if account_id and bot_account != account_id:
                     continue
-                result.append({
-                    "bot_id": data.get("bot_id", bot_dir.name),
-                    "name": data.get("name", ""),
-                    "status": data.get("status", "draft"),
-                    "account_id": bot_account,
-                })
+                result.append(
+                    {
+                        "bot_id": data.get("bot_id", bot_dir.name),
+                        "name": data.get("name", ""),
+                        "status": data.get("status", "draft"),
+                        "account_id": bot_account,
+                    }
+                )
             except Exception:
                 continue
     return result
@@ -107,6 +117,7 @@ def list_bots(account_id: str | None = None) -> list[dict[str, str]]:
 def delete_bot(bot_id: str) -> bool:
     """Delete a bot and all its data.  Returns True if found."""
     import shutil
+
     bot_dir = get_bot_dir(bot_id, create=False)
     if bot_dir.exists():
         shutil.rmtree(bot_dir)

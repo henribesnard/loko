@@ -17,6 +17,7 @@ from loko.bot.models import BotConfig, Chunk, ToneProfile
 # Prompt building
 # ---------------------------------------------------------------------------
 
+
 class TestBuildSystemPrompt:
     def test_fr_prompt_contains_bot_name(self):
         config = BotConfig(name="MonBot", language="fr")
@@ -51,7 +52,9 @@ class TestBuildSystemPrompt:
 class TestBuildUserPrompt:
     def test_includes_chunks(self):
         chunks = [
-            Chunk(text="Premier extrait", source_url="https://a.com", source_title="Doc A"),
+            Chunk(
+                text="Premier extrait", source_url="https://a.com", source_title="Doc A"
+            ),
             Chunk(text="Deuxième extrait"),
         ]
         prompt = build_user_prompt("ma question", chunks, "livraison", None)
@@ -62,7 +65,11 @@ class TestBuildUserPrompt:
 
     def test_includes_source_urls(self):
         chunks = [
-            Chunk(text="texte", source_url="https://example.com/article", source_title="Article"),
+            Chunk(
+                text="texte",
+                source_url="https://example.com/article",
+                source_title="Article",
+            ),
         ]
         prompt = build_user_prompt("q", chunks, "intent", None)
         assert "https://example.com/article" in prompt
@@ -80,6 +87,7 @@ class TestBuildUserPrompt:
 # ---------------------------------------------------------------------------
 # Generator
 # ---------------------------------------------------------------------------
+
 
 class TestBotGenerator:
     @pytest.mark.asyncio

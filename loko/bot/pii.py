@@ -33,18 +33,14 @@ _NIR_PATTERN = re.compile(
 )
 
 # Email
-_EMAIL_PATTERN = re.compile(
-    r"\b[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}\b"
-)
+_EMAIL_PATTERN = re.compile(r"\b[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}\b")
 
 # Phone (FR formats: 01-10, +33, 0033; international with +)
 _PHONE_PATTERN = re.compile(
     r"(?:\+\d{1,3}[\s.\-]?)?\(?\d{1,4}\)?[\s.\-]?\d{2,4}[\s.\-]?\d{2,4}[\s.\-]?\d{2,4}\b"
 )
 # More specific FR phone
-_PHONE_FR_PATTERN = re.compile(
-    r"\b(?:(?:\+33|0033|0)\s*[1-9])(?:[\s.\-]?\d{2}){4}\b"
-)
+_PHONE_FR_PATTERN = re.compile(r"\b(?:(?:\+33|0033|0)\s*[1-9])(?:[\s.\-]?\d{2}){4}\b")
 
 # IBAN (FR format: FR + 2 check digits + 23 alphanumeric; generic: 2 letters + 2 digits + up to 30 alnum)
 _IBAN_PATTERN = re.compile(
@@ -53,9 +49,7 @@ _IBAN_PATTERN = re.compile(
 )
 
 # Credit card: 13-19 digits (spaces/dashes allowed), Luhn-validated
-_CB_PATTERN = re.compile(
-    r"\b(?:\d[\s\-]?){13,19}\b"
-)
+_CB_PATTERN = re.compile(r"\b(?:\d[\s\-]?){13,19}\b")
 
 
 def _luhn_check(number: str) -> bool:
@@ -84,6 +78,7 @@ _ALL_PII_TYPES: set[PIIType] = {"nir", "email", "tel", "iban", "cb"}
 
 class PIIConfig(BaseModel):
     """PII masking configuration per bot."""
+
     enabled: bool = True
     types: set[PIIType] = Field(default_factory=lambda: set(_ALL_PII_TYPES))
     custom_patterns: list[dict[str, str]] = Field(default_factory=list)
@@ -93,6 +88,7 @@ class PIIConfig(BaseModel):
 # ---------------------------------------------------------------------------
 # Masking engine
 # ---------------------------------------------------------------------------
+
 
 def mask_pii(text: str, config: PIIConfig | None = None) -> str:
     """Mask PII in text using deterministic regex replacement.
@@ -131,6 +127,7 @@ def mask_pii(text: str, config: PIIConfig | None = None) -> str:
             if _luhn_check(digits):
                 return "[CB]"
             return match.group()
+
         result = _CB_PATTERN.sub(_cb_replace, result)
 
     if "tel" in types:

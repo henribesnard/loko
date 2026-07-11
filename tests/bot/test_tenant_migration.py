@@ -8,7 +8,6 @@ from pathlib import Path
 import pytest
 
 
-
 @pytest.fixture()
 def bots_dir(tmp_path, monkeypatch):
     """Set up a temporary bots directory."""
@@ -21,6 +20,7 @@ def bots_dir(tmp_path, monkeypatch):
 
     # Patch accounts db
     import loko.db.accounts as acc
+
     monkeypatch.setattr(acc, "_DB_PATH", data_dir / "loko_accounts.db")
     monkeypatch.setattr(acc, "_connection", None)
 

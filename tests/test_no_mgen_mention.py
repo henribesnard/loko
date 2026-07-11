@@ -56,9 +56,20 @@ def test_no_mgen_mention_in_codebase():
                 continue
 
             # Skip binary files and build artifacts
-            if file_path.suffix in {".pyc", ".so", ".dll", ".exe", ".bin", ".safetensors", ".pkl"}:
+            if file_path.suffix in {
+                ".pyc",
+                ".so",
+                ".dll",
+                ".exe",
+                ".bin",
+                ".safetensors",
+                ".pkl",
+            }:
                 continue
-            if any(part in file_path.parts for part in {"__pycache__", "node_modules", "dist", "build", ".git"}):
+            if any(
+                part in file_path.parts
+                for part in {"__pycache__", "node_modules", "dist", "build", ".git"}
+            ):
                 continue
 
             # Scan text files
@@ -80,7 +91,9 @@ def test_no_mgen_mention_in_codebase():
                 continue
 
     if violations:
-        violation_list = "\n".join(f"  - {v}" for v in violations[:20])  # Limit to first 20
+        violation_list = "\n".join(
+            f"  - {v}" for v in violations[:20]
+        )  # Limit to first 20
         if len(violations) > 20:
             violation_list += f"\n  ... and {len(violations) - 20} more"
 

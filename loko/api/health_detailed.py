@@ -18,6 +18,7 @@ def check_database_writable() -> tuple[bool, str]:
     """Check if database is accessible for writes."""
     try:
         from loko.bot.config_store import get_bots_dir
+
         bots_dir = get_bots_dir()
 
         # Try to write a test file
@@ -48,7 +49,7 @@ def check_models_loaded() -> tuple[bool, str]:
                 config = load_bot_config(bot_id)
 
                 # Only check published bots
-                if not getattr(config, 'is_published', False):
+                if not getattr(config, "is_published", False):
                     continue
 
                 # Check L1 model
@@ -79,13 +80,17 @@ def check_disk_space(threshold_mb: int = 1000) -> tuple[bool, str]:
     """Check if disk space > threshold."""
     try:
         from loko.bot.config_store import get_bots_dir
+
         data_dir = get_bots_dir().parent
 
         stat = os.statvfs(data_dir)
         free_mb = (stat.f_bavail * stat.f_frsize) / (1024 * 1024)
 
         if free_mb < threshold_mb:
-            return False, f"Low disk space: {free_mb:.0f} MB free (threshold: {threshold_mb} MB)"
+            return (
+                False,
+                f"Low disk space: {free_mb:.0f} MB free (threshold: {threshold_mb} MB)",
+            )
 
         return True, f"{free_mb:.0f} MB free"
 
@@ -111,7 +116,10 @@ def check_backup_age(max_age_hours: int = 26) -> tuple[bool, str]:
         age_hours = age.total_seconds() / 3600
 
         if age_hours > max_age_hours:
-            return False, f"Backup too old: {age_hours:.1f}h ago (max: {max_age_hours}h)"
+            return (
+                False,
+                f"Backup too old: {age_hours:.1f}h ago (max: {max_age_hours}h)",
+            )
 
         return True, f"Last backup: {age_hours:.1f}h ago"
 
@@ -140,7 +148,7 @@ def check_llm_reachable() -> tuple[bool, str]:
 
 @router.get("/health/detailed")
 async def health_detailed(
-    _admin: str | None = None  # Optionally protect with admin token
+    _admin: str | None = None,  # Optionally protect with admin token
 ) -> JSONResponse:
     """
     Detailed health check (admin-only recommended).
@@ -187,7 +195,7 @@ async def health_detailed(
     response = {
         "status": status,
         "checks": checks,
-        "timestamp": datetime.now(timezone.utc).isoformat()
+        "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
     # Return 503 if degraded (for monitoring)

@@ -65,7 +65,9 @@ class TestDefaultTemplates:
     def test_all_keys_present(self, tone):
         defaults = get_default_templates(tone)
         for key in TemplateKey:
-            assert key in defaults, f"Missing template {key.value} for tone {tone.value}"
+            assert key in defaults, (
+                f"Missing template {key.value} for tone {tone.value}"
+            )
 
     @pytest.mark.parametrize("tone", list(ToneProfile))
     def test_all_templates_renderable(self, tone):
@@ -104,7 +106,9 @@ class TestResolveTemplate:
             text_en="Custom end.",
         )
         result = resolve_template(
-            {TemplateKey.FIN: custom}, TemplateKey.FIN, ToneProfile.NEUTRE,
+            {TemplateKey.FIN: custom},
+            TemplateKey.FIN,
+            ToneProfile.NEUTRE,
         )
         assert result.text_fr == "Custom fin."
 

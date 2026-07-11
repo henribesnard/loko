@@ -30,230 +30,269 @@ from loko.eval.runner import (
 # L1.2 — check_expected_behavior: parametrized on T01-T15 pieges fixtures
 # ---------------------------------------------------------------------------
 
+
 class TestCheckExpectedBehavior:
     """L1.2: pieges expected_behavior grammar parser."""
 
     # --- route:{intent} ---
 
-    @pytest.mark.parametrize("expected,decision,want", [
-        # T01: route:services_en_ligne — route correct
-        (
-            "route:services_en_ligne",
-            Decision(type="route", intent="services_en_ligne", score=0.9),
-            True,
-        ),
-        # T01: route:services_en_ligne — wrong intent
-        (
-            "route:services_en_ligne",
-            Decision(type="route", intent="cotisations", score=0.9),
-            False,
-        ),
-        # T01: route:services_en_ligne — type is not route
-        (
-            "route:services_en_ligne",
-            Decision(type="reject", intent="services_en_ligne", score=0.3),
-            False,
-        ),
-        # T02: route:services_en_ligne
-        (
-            "route:services_en_ligne",
-            Decision(type="route", intent="services_en_ligne", score=0.85),
-            True,
-        ),
-        # T07: route:justificatif_droits
-        (
-            "route:justificatif_droits",
-            Decision(type="route", intent="justificatif_droits", score=0.92),
-            True,
-        ),
-        # T08: route:arret_travail
-        (
-            "route:arret_travail",
-            Decision(type="route", intent="arret_travail", score=0.88),
-            True,
-        ),
-        # T09: route:teletransmission_noemie
-        (
-            "route:teletransmission_noemie",
-            Decision(type="route", intent="teletransmission_noemie", score=0.91),
-            True,
-        ),
-        # T10: route:resiliation
-        (
-            "route:resiliation",
-            Decision(type="route", intent="resiliation", score=0.87),
-            True,
-        ),
-        # T14: route:teletransmission_noemie
-        (
-            "route:teletransmission_noemie",
-            Decision(type="route", intent="teletransmission_noemie", score=0.75),
-            True,
-        ),
-        # T15: route:services_en_ligne
-        (
-            "route:services_en_ligne",
-            Decision(type="route", intent="services_en_ligne", score=0.78),
-            True,
-        ),
-    ])
+    @pytest.mark.parametrize(
+        "expected,decision,want",
+        [
+            # T01: route:services_en_ligne — route correct
+            (
+                "route:services_en_ligne",
+                Decision(type="route", intent="services_en_ligne", score=0.9),
+                True,
+            ),
+            # T01: route:services_en_ligne — wrong intent
+            (
+                "route:services_en_ligne",
+                Decision(type="route", intent="cotisations", score=0.9),
+                False,
+            ),
+            # T01: route:services_en_ligne — type is not route
+            (
+                "route:services_en_ligne",
+                Decision(type="reject", intent="services_en_ligne", score=0.3),
+                False,
+            ),
+            # T02: route:services_en_ligne
+            (
+                "route:services_en_ligne",
+                Decision(type="route", intent="services_en_ligne", score=0.85),
+                True,
+            ),
+            # T07: route:justificatif_droits
+            (
+                "route:justificatif_droits",
+                Decision(type="route", intent="justificatif_droits", score=0.92),
+                True,
+            ),
+            # T08: route:arret_travail
+            (
+                "route:arret_travail",
+                Decision(type="route", intent="arret_travail", score=0.88),
+                True,
+            ),
+            # T09: route:teletransmission_noemie
+            (
+                "route:teletransmission_noemie",
+                Decision(type="route", intent="teletransmission_noemie", score=0.91),
+                True,
+            ),
+            # T10: route:resiliation
+            (
+                "route:resiliation",
+                Decision(type="route", intent="resiliation", score=0.87),
+                True,
+            ),
+            # T14: route:teletransmission_noemie
+            (
+                "route:teletransmission_noemie",
+                Decision(type="route", intent="teletransmission_noemie", score=0.75),
+                True,
+            ),
+            # T15: route:services_en_ligne
+            (
+                "route:services_en_ligne",
+                Decision(type="route", intent="services_en_ligne", score=0.78),
+                True,
+            ),
+        ],
+    )
     def test_route(self, expected, decision, want):
         assert check_expected_behavior(expected, decision) is want
 
     # --- clarify_intra:{intent} ---
 
-    @pytest.mark.parametrize("expected,decision,want", [
-        # T03: clarify_intra:services_en_ligne — route to correct intent (acceptable)
-        (
-            "clarify_intra:services_en_ligne",
-            Decision(type="route", intent="services_en_ligne", score=0.85),
-            True,
-        ),
-        # T03: clarify_intra:services_en_ligne — clarify_inter with intent in candidates
-        (
-            "clarify_intra:services_en_ligne",
-            Decision(
-                type="clarify_inter", intent="services_en_ligne", score=0.6,
-                candidates=[("services_en_ligne", 0.6), ("cotisations", 0.3)],
+    @pytest.mark.parametrize(
+        "expected,decision,want",
+        [
+            # T03: clarify_intra:services_en_ligne — route to correct intent (acceptable)
+            (
+                "clarify_intra:services_en_ligne",
+                Decision(type="route", intent="services_en_ligne", score=0.85),
+                True,
             ),
-            True,
-        ),
-        # T03: clarify_intra — wrong intent routed
-        (
-            "clarify_intra:services_en_ligne",
-            Decision(type="route", intent="cotisations", score=0.9),
-            False,
-        ),
-        # T03: clarify_intra — clarify_inter without expected intent
-        (
-            "clarify_intra:services_en_ligne",
-            Decision(
-                type="clarify_inter", intent="cotisations", score=0.6,
-                candidates=[("cotisations", 0.6), ("arret_travail", 0.3)],
+            # T03: clarify_intra:services_en_ligne — clarify_inter with intent in candidates
+            (
+                "clarify_intra:services_en_ligne",
+                Decision(
+                    type="clarify_inter",
+                    intent="services_en_ligne",
+                    score=0.6,
+                    candidates=[("services_en_ligne", 0.6), ("cotisations", 0.3)],
+                ),
+                True,
             ),
-            False,
-        ),
-        # T03: clarify_intra — rejected
-        (
-            "clarify_intra:services_en_ligne",
-            Decision(type="reject", intent="services_en_ligne", score=0.2),
-            False,
-        ),
-    ])
+            # T03: clarify_intra — wrong intent routed
+            (
+                "clarify_intra:services_en_ligne",
+                Decision(type="route", intent="cotisations", score=0.9),
+                False,
+            ),
+            # T03: clarify_intra — clarify_inter without expected intent
+            (
+                "clarify_intra:services_en_ligne",
+                Decision(
+                    type="clarify_inter",
+                    intent="cotisations",
+                    score=0.6,
+                    candidates=[("cotisations", 0.6), ("arret_travail", 0.3)],
+                ),
+                False,
+            ),
+            # T03: clarify_intra — rejected
+            (
+                "clarify_intra:services_en_ligne",
+                Decision(type="reject", intent="services_en_ligne", score=0.2),
+                False,
+            ),
+        ],
+    )
     def test_clarify_intra(self, expected, decision, want):
         assert check_expected_behavior(expected, decision) is want
 
     # --- clarify_inter:{a}|{b}[|{c}] ---
 
-    @pytest.mark.parametrize("expected,decision,want", [
-        # T04: clarify_inter:changement_coordonnees|cotisations — both present
-        (
-            "clarify_inter:changement_coordonnees|cotisations",
-            Decision(
-                type="clarify_inter", intent="changement_coordonnees", score=0.65,
-                candidates=[("changement_coordonnees", 0.65), ("cotisations", 0.55)],
+    @pytest.mark.parametrize(
+        "expected,decision,want",
+        [
+            # T04: clarify_inter:changement_coordonnees|cotisations — both present
+            (
+                "clarify_inter:changement_coordonnees|cotisations",
+                Decision(
+                    type="clarify_inter",
+                    intent="changement_coordonnees",
+                    score=0.65,
+                    candidates=[
+                        ("changement_coordonnees", 0.65),
+                        ("cotisations", 0.55),
+                    ],
+                ),
+                True,
             ),
-            True,
-        ),
-        # T04: only one of two present
-        (
-            "clarify_inter:changement_coordonnees|cotisations",
-            Decision(
-                type="clarify_inter", intent="changement_coordonnees", score=0.65,
-                candidates=[("changement_coordonnees", 0.65), ("arret_travail", 0.3)],
+            # T04: only one of two present
+            (
+                "clarify_inter:changement_coordonnees|cotisations",
+                Decision(
+                    type="clarify_inter",
+                    intent="changement_coordonnees",
+                    score=0.65,
+                    candidates=[
+                        ("changement_coordonnees", 0.65),
+                        ("arret_travail", 0.3),
+                    ],
+                ),
+                False,
             ),
-            False,
-        ),
-        # T05: clarify_inter:changement_coordonnees|cotisations — both present
-        (
-            "clarify_inter:changement_coordonnees|cotisations",
-            Decision(
-                type="clarify_inter", intent="cotisations", score=0.6,
-                candidates=[("cotisations", 0.6), ("changement_coordonnees", 0.55)],
+            # T05: clarify_inter:changement_coordonnees|cotisations — both present
+            (
+                "clarify_inter:changement_coordonnees|cotisations",
+                Decision(
+                    type="clarify_inter",
+                    intent="cotisations",
+                    score=0.6,
+                    candidates=[("cotisations", 0.6), ("changement_coordonnees", 0.55)],
+                ),
+                True,
             ),
-            True,
-        ),
-        # T06: clarify_inter:arret_travail|cotisations|justificatif_droits — 3 intents
-        (
-            "clarify_inter:arret_travail|cotisations|justificatif_droits",
-            Decision(
-                type="clarify_inter", intent="arret_travail", score=0.5,
-                candidates=[
-                    ("arret_travail", 0.5), ("cotisations", 0.45),
-                    ("justificatif_droits", 0.4),
-                ],
+            # T06: clarify_inter:arret_travail|cotisations|justificatif_droits — 3 intents
+            (
+                "clarify_inter:arret_travail|cotisations|justificatif_droits",
+                Decision(
+                    type="clarify_inter",
+                    intent="arret_travail",
+                    score=0.5,
+                    candidates=[
+                        ("arret_travail", 0.5),
+                        ("cotisations", 0.45),
+                        ("justificatif_droits", 0.4),
+                    ],
+                ),
+                True,
             ),
-            True,
-        ),
-        # T06: only 2 of 3 present
-        (
-            "clarify_inter:arret_travail|cotisations|justificatif_droits",
-            Decision(
-                type="clarify_inter", intent="arret_travail", score=0.5,
-                candidates=[("arret_travail", 0.5), ("cotisations", 0.45)],
+            # T06: only 2 of 3 present
+            (
+                "clarify_inter:arret_travail|cotisations|justificatif_droits",
+                Decision(
+                    type="clarify_inter",
+                    intent="arret_travail",
+                    score=0.5,
+                    candidates=[("arret_travail", 0.5), ("cotisations", 0.45)],
+                ),
+                False,
             ),
-            False,
-        ),
-        # Wrong type entirely
-        (
-            "clarify_inter:changement_coordonnees|cotisations",
-            Decision(type="route", intent="changement_coordonnees", score=0.9),
-            False,
-        ),
-    ])
+            # Wrong type entirely
+            (
+                "clarify_inter:changement_coordonnees|cotisations",
+                Decision(type="route", intent="changement_coordonnees", score=0.9),
+                False,
+            ),
+        ],
+    )
     def test_clarify_inter(self, expected, decision, want):
         assert check_expected_behavior(expected, decision) is want
 
     # --- escalate[:{detail}] ---
 
-    @pytest.mark.parametrize("expected,decision,want", [
-        # T11: escalate:demande_explicite
-        (
-            "escalate:demande_explicite",
-            Decision(type="escalate", intent="demande_conseiller", score=0.95),
-            True,
-        ),
-        # escalate without detail
-        (
-            "escalate",
-            Decision(type="escalate", intent="demande_conseiller", score=0.9),
-            True,
-        ),
-        # escalate expected but got route
-        (
-            "escalate:demande_explicite",
-            Decision(type="route", intent="demande_conseiller", score=0.9),
-            False,
-        ),
-    ])
+    @pytest.mark.parametrize(
+        "expected,decision,want",
+        [
+            # T11: escalate:demande_explicite
+            (
+                "escalate:demande_explicite",
+                Decision(type="escalate", intent="demande_conseiller", score=0.95),
+                True,
+            ),
+            # escalate without detail
+            (
+                "escalate",
+                Decision(type="escalate", intent="demande_conseiller", score=0.9),
+                True,
+            ),
+            # escalate expected but got route
+            (
+                "escalate:demande_explicite",
+                Decision(type="route", intent="demande_conseiller", score=0.9),
+                False,
+            ),
+        ],
+    )
     def test_escalate(self, expected, decision, want):
         assert check_expected_behavior(expected, decision) is want
 
     # --- reject ---
 
-    @pytest.mark.parametrize("expected,decision,want", [
-        # T12: reject
-        (
-            "reject",
-            Decision(type="reject", intent="hors_perimetre", score=0.85),
-            True,
-        ),
-        # T13: reject
-        (
-            "reject",
-            Decision(type="reject", intent="hors_perimetre", score=0.7),
-            True,
-        ),
-        # reject expected but got clarify
-        (
-            "reject",
-            Decision(
-                type="clarify_inter", intent="hors_perimetre", score=0.5,
-                candidates=[("hors_perimetre", 0.5), ("cotisations", 0.4)],
+    @pytest.mark.parametrize(
+        "expected,decision,want",
+        [
+            # T12: reject
+            (
+                "reject",
+                Decision(type="reject", intent="hors_perimetre", score=0.85),
+                True,
             ),
-            False,
-        ),
-    ])
+            # T13: reject
+            (
+                "reject",
+                Decision(type="reject", intent="hors_perimetre", score=0.7),
+                True,
+            ),
+            # reject expected but got clarify
+            (
+                "reject",
+                Decision(
+                    type="clarify_inter",
+                    intent="hors_perimetre",
+                    score=0.5,
+                    candidates=[("hors_perimetre", 0.5), ("cotisations", 0.4)],
+                ),
+                False,
+            ),
+        ],
+    )
     def test_reject(self, expected, decision, want):
         assert check_expected_behavior(expected, decision) is want
 
@@ -262,16 +301,31 @@ class TestCheckExpectedBehavior:
 # L1.1 — errors.csv schema: 'correct' field present, no crash
 # ---------------------------------------------------------------------------
 
+
 class TestErrorsCsv:
     """L1.1: errors.csv written correctly with 'correct' field."""
 
     def test_errors_csv_written_with_correct_field(self, tmp_path):
         report = EvalReport(mode="decision", dataset="test.csv", total=3, correct=1)
         report.errors = [
-            EvalRow(text="test", expected="A", predicted="B", score=0.5,
-                    decision_type="route", correct=False, detail="err"),
-            EvalRow(text="test2", expected="A", predicted="C", score=0.4,
-                    decision_type="route", correct=False, detail="err2"),
+            EvalRow(
+                text="test",
+                expected="A",
+                predicted="B",
+                score=0.5,
+                decision_type="route",
+                correct=False,
+                detail="err",
+            ),
+            EvalRow(
+                text="test2",
+                expected="A",
+                predicted="C",
+                score=0.4,
+                decision_type="route",
+                correct=False,
+                detail="err2",
+            ),
         ]
         report.accuracy = 1 / 3
 
@@ -290,8 +344,15 @@ class TestErrorsCsv:
 
     def test_errors_csv_fieldnames_match_evalrow(self):
         """Fieldnames must cover all EvalRow fields."""
-        row = EvalRow(text="t", expected="A", predicted="B", score=0.5,
-                      decision_type="route", correct=False, detail="d")
+        row = EvalRow(
+            text="t",
+            expected="A",
+            predicted="B",
+            score=0.5,
+            decision_type="route",
+            correct=False,
+            detail="d",
+        )
         row_dict = asdict(row)
         for field_name in row_dict:
             assert field_name in _ERRORS_CSV_FIELDNAMES, (
@@ -309,6 +370,7 @@ class TestErrorsCsv:
 # ---------------------------------------------------------------------------
 # L1.3 — report.json deterministic (no duration_s), meta.json separate
 # ---------------------------------------------------------------------------
+
 
 class TestDeterminism:
     """L1.3: report.json contains no timing; meta.json has duration_s."""
@@ -345,8 +407,15 @@ class TestDeterminism:
             report.accuracy = 2 / 3
             report.per_class = {"A": {"total": 2, "correct": 1, "accuracy": 0.5}}
             report.errors = [
-                EvalRow(text="x", expected="A", predicted="B", score=0.4,
-                        decision_type="route", correct=False, detail="d"),
+                EvalRow(
+                    text="x",
+                    expected="A",
+                    predicted="B",
+                    score=0.4,
+                    decision_type="route",
+                    correct=False,
+                    detail="d",
+                ),
             ]
             # Different durations on purpose
             report.duration_s = 1.23 if out_dir == dir_a else 9.99
@@ -366,6 +435,7 @@ class TestDeterminism:
 # L1.4 — Exit code: all artefacts written even when accuracy < threshold
 # ---------------------------------------------------------------------------
 
+
 class TestWriteReportCompleteness:
     """L1.4: write_report produces all artefacts before CLI checks threshold."""
 
@@ -373,8 +443,15 @@ class TestWriteReportCompleteness:
         report = EvalReport(mode="decision", dataset="test.csv", total=10, correct=3)
         report.accuracy = 0.3
         report.errors = [
-            EvalRow(text=f"t{i}", expected="A", predicted="B", score=0.5,
-                    decision_type="route", correct=False, detail=f"d{i}")
+            EvalRow(
+                text=f"t{i}",
+                expected="A",
+                predicted="B",
+                score=0.5,
+                decision_type="route",
+                correct=False,
+                detail=f"d{i}",
+            )
             for i in range(7)
         ]
 

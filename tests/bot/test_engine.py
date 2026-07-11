@@ -61,7 +61,9 @@ class TestClassificationL1:
         assert s3.state == BotState.CLASSIFICATION_L2
         assert s3.current_intent == "livraison"
 
-    def test_high_confidence_no_submotifs_goes_to_retrieval(self, fresh_session, sample_config):
+    def test_high_confidence_no_submotifs_goes_to_retrieval(
+        self, fresh_session, sample_config
+    ):
         s = self._go_to_classification(fresh_session, sample_config)
         event = Event(
             EventType.CLASSIFICATION_L1_DONE,
@@ -72,7 +74,9 @@ class TestClassificationL1:
         assert s3.state == BotState.RETRIEVAL_GENERATION
         assert any(isinstance(a, EmitGeneration) for a in actions)
 
-    def test_medium_confidence_triggers_clarification(self, fresh_session, sample_config):
+    def test_medium_confidence_triggers_clarification(
+        self, fresh_session, sample_config
+    ):
         s = self._go_to_classification(fresh_session, sample_config)
         event = Event(
             EventType.CLASSIFICATION_L1_DONE,
@@ -95,10 +99,15 @@ class TestClassificationL1:
         s3, actions = step(s, event, sample_config)
         # First time: allow reformulation
         assert s3.state == BotState.ATTENTE_DEMANDE
-        assert any(isinstance(a, EmitTemplate) and a.key == TemplateKey.HORS_PERIMETRE for a in actions)
+        assert any(
+            isinstance(a, EmitTemplate) and a.key == TemplateKey.HORS_PERIMETRE
+            for a in actions
+        )
         assert s3.reformulation_count_current_demande == 1
 
-    def test_hors_perimetre_class_triggers_out_of_scope(self, fresh_session, sample_config):
+    def test_hors_perimetre_class_triggers_out_of_scope(
+        self, fresh_session, sample_config
+    ):
         s = self._go_to_classification(fresh_session, sample_config)
         event = Event(
             EventType.CLASSIFICATION_L1_DONE,
@@ -108,7 +117,9 @@ class TestClassificationL1:
         assert s3.state == BotState.ATTENTE_DEMANDE
         assert s3.reformulation_count_current_demande == 1
 
-    def test_second_hors_perimetre_triggers_escalade(self, fresh_session, sample_config):
+    def test_second_hors_perimetre_triggers_escalade(
+        self, fresh_session, sample_config
+    ):
         s = self._go_to_classification(fresh_session, sample_config)
         # First out-of-scope
         event1 = Event(
@@ -119,7 +130,9 @@ class TestClassificationL1:
         assert s3.reformulation_count_current_demande == 1
 
         # User reformulates
-        s4, _ = step(s3, Event(EventType.USER_MESSAGE, {"text": "autre chose"}), sample_config)
+        s4, _ = step(
+            s3, Event(EventType.USER_MESSAGE, {"text": "autre chose"}), sample_config
+        )
         # Second classification still out-of-scope
         s5 = s4.model_copy(update={"reformulation_count_current_demande": 1})
         event2 = Event(
@@ -139,7 +152,8 @@ class TestClassificationL1:
         s3, actions = step(s, event, sample_config)
         assert s3.state == BotState.ESCALADE
         assert any(
-            isinstance(a, CallEscalation) and a.motif == EscalationMotif.DEMANDE_EXPLICITE
+            isinstance(a, CallEscalation)
+            and a.motif == EscalationMotif.DEMANDE_EXPLICITE
             for a in actions
         )
 
@@ -147,7 +161,9 @@ class TestClassificationL1:
 class TestClarificationInter:
     def _go_to_clarification_inter(self, fresh_session, sample_config):
         s, _ = start_session(fresh_session, sample_config)
-        s, _ = step(s, Event(EventType.USER_MESSAGE, {"text": "question"}), sample_config)
+        s, _ = step(
+            s, Event(EventType.USER_MESSAGE, {"text": "question"}), sample_config
+        )
         event = Event(
             EventType.CLASSIFICATION_L1_DONE,
             {"scores": [("livraison", 0.60), ("facturation", 0.50)]},
@@ -195,7 +211,9 @@ class TestClassificationL2:
         gen = next(a for a in actions if isinstance(a, EmitGeneration))
         assert gen.sub_motif == "suivi_colis"
 
-    def test_low_confidence_triggers_clarification_intra(self, fresh_session, sample_config):
+    def test_low_confidence_triggers_clarification_intra(
+        self, fresh_session, sample_config
+    ):
         s = self._go_to_l2(fresh_session, sample_config)
         event = Event(
             EventType.CLASSIFICATION_L2_DONE,
@@ -219,7 +237,9 @@ class TestClarificationIntra:
         )
         s, _ = step(
             s,
-            Event(EventType.CLASSIFICATION_L2_DONE, {"scores": [("suivi_colis", 0.40)]}),
+            Event(
+                EventType.CLASSIFICATION_L2_DONE, {"scores": [("suivi_colis", 0.40)]}
+            ),
             sample_config,
         )
         assert s.state == BotState.CLARIFICATION_INTRA
@@ -250,10 +270,14 @@ class TestClarificationIntra:
 class TestRetrievalAndSatisfaction:
     def _go_to_enquete(self, fresh_session, sample_config):
         s, _ = start_session(fresh_session, sample_config)
-        s, _ = step(s, Event(EventType.USER_MESSAGE, {"text": "facture"}), sample_config)
+        s, _ = step(
+            s, Event(EventType.USER_MESSAGE, {"text": "facture"}), sample_config
+        )
         s, _ = step(
             s,
-            Event(EventType.CLASSIFICATION_L1_DONE, {"scores": [("facturation", 0.90)]}),
+            Event(
+                EventType.CLASSIFICATION_L1_DONE, {"scores": [("facturation", 0.90)]}
+            ),
             sample_config,
         )
         # facturation has no sub_motifs -> RETRIEVAL_GENERATION
@@ -268,12 +292,16 @@ class TestRetrievalAndSatisfaction:
 
     def test_satisfied_goes_to_autre_demande(self, fresh_session, sample_config):
         s = self._go_to_enquete(fresh_session, sample_config)
-        s2, actions = step(s, Event(EventType.BUTTON_CLICK, {"button": "Oui"}), sample_config)
+        s2, actions = step(
+            s, Event(EventType.BUTTON_CLICK, {"button": "Oui"}), sample_config
+        )
         assert s2.state == BotState.AUTRE_DEMANDE
 
     def test_not_satisfied_escalates_immediately(self, fresh_session, sample_config):
         s = self._go_to_enquete(fresh_session, sample_config)
-        s2, actions = step(s, Event(EventType.BUTTON_CLICK, {"button": "Non"}), sample_config)
+        s2, actions = step(
+            s, Event(EventType.BUTTON_CLICK, {"button": "Non"}), sample_config
+        )
         assert s2.state == BotState.ESCALADE
         assert any(
             isinstance(a, CallEscalation) and a.motif == EscalationMotif.INSATISFACTION
@@ -284,10 +312,14 @@ class TestRetrievalAndSatisfaction:
 class TestAutreDemande:
     def _go_to_autre_demande(self, fresh_session, sample_config):
         s, _ = start_session(fresh_session, sample_config)
-        s, _ = step(s, Event(EventType.USER_MESSAGE, {"text": "facture"}), sample_config)
+        s, _ = step(
+            s, Event(EventType.USER_MESSAGE, {"text": "facture"}), sample_config
+        )
         s, _ = step(
             s,
-            Event(EventType.CLASSIFICATION_L1_DONE, {"scores": [("facturation", 0.90)]}),
+            Event(
+                EventType.CLASSIFICATION_L1_DONE, {"scores": [("facturation", 0.90)]}
+            ),
             sample_config,
         )
         s, _ = step(s, Event(EventType.RETRIEVAL_GENERATION_DONE, {}), sample_config)
@@ -304,7 +336,9 @@ class TestAutreDemande:
 
     def test_non_closes(self, fresh_session, sample_config):
         s = self._go_to_autre_demande(fresh_session, sample_config)
-        s2, actions = step(s, Event(EventType.BUTTON_CLICK, {"button": "Non"}), sample_config)
+        s2, actions = step(
+            s, Event(EventType.BUTTON_CLICK, {"button": "Non"}), sample_config
+        )
         assert s2.state == BotState.FIN
         assert any(isinstance(a, CloseSession) for a in actions)
 
@@ -314,17 +348,25 @@ class TestAutreDemande:
         on_autre_demande_oui, which doesn't check max_demandes).
         """
         s, _ = start_session(fresh_session, sample_config)
-        s, _ = step(s, Event(EventType.USER_MESSAGE, {"text": "facture"}), sample_config)
+        s, _ = step(
+            s, Event(EventType.USER_MESSAGE, {"text": "facture"}), sample_config
+        )
         s, _ = step(
             s,
-            Event(EventType.CLASSIFICATION_L1_DONE, {"scores": [("facturation", 0.90)]}),
+            Event(
+                EventType.CLASSIFICATION_L1_DONE, {"scores": [("facturation", 0.90)]}
+            ),
             sample_config,
         )
         # Set demandes_count to max - 1 before the satisfaction step
-        s = s.model_copy(update={"demandes_count": sample_config.journey.max_demandes - 1})
+        s = s.model_copy(
+            update={"demandes_count": sample_config.journey.max_demandes - 1}
+        )
         # RETRIEVAL_GENERATION_DONE → on_satisfaction → Oui path
         s, _ = step(s, Event(EventType.RETRIEVAL_GENERATION_DONE, {}), sample_config)
-        s2, actions = step(s, Event(EventType.BUTTON_CLICK, {"button": "Oui"}), sample_config)
+        s2, actions = step(
+            s, Event(EventType.BUTTON_CLICK, {"button": "Oui"}), sample_config
+        )
         assert s2.state == BotState.CLOTURE_DOUCE
         assert any(isinstance(a, CloseSession) for a in actions)
 
@@ -334,18 +376,25 @@ class TestTransverseExits:
         s, _ = start_session(fresh_session, sample_config)
         s2, actions = step(s, Event(EventType.TIMEOUT_EXPIRED), sample_config)
         assert s2.state == BotState.TIMEOUT
-        assert any(isinstance(a, EmitTemplate) and a.key == TemplateKey.TIMEOUT for a in actions)
+        assert any(
+            isinstance(a, EmitTemplate) and a.key == TemplateKey.TIMEOUT
+            for a in actions
+        )
         assert any(isinstance(a, CloseSession) for a in actions)
 
     def test_terminal_state_ignores_events(self, fresh_session, sample_config):
         s = fresh_session.model_copy(update={"state": BotState.FIN})
-        s2, actions = step(s, Event(EventType.USER_MESSAGE, {"text": "hello"}), sample_config)
+        s2, actions = step(
+            s, Event(EventType.USER_MESSAGE, {"text": "hello"}), sample_config
+        )
         assert s2.state == BotState.FIN
         assert actions == []
 
 
 class TestEscalationResult:
-    def test_escalation_result_emits_mise_en_relation(self, fresh_session, sample_config):
+    def test_escalation_result_emits_mise_en_relation(
+        self, fresh_session, sample_config
+    ):
         s = fresh_session.model_copy(update={"state": BotState.ESCALADE})
         s2, actions = handle_escalation_result(s, sample_config, temps_attente=7)
         assert s2.state == BotState.FIN
@@ -363,7 +412,9 @@ class TestDeterminism:
             Event(EventType.START),
             Event(EventType.USER_MESSAGE, {"text": "livraison"}),
             Event(EventType.CLASSIFICATION_L1_DONE, {"scores": [("livraison", 0.90)]}),
-            Event(EventType.CLASSIFICATION_L2_DONE, {"scores": [("suivi_colis", 0.75)]}),
+            Event(
+                EventType.CLASSIFICATION_L2_DONE, {"scores": [("suivi_colis", 0.75)]}
+            ),
             Event(EventType.RETRIEVAL_GENERATION_DONE, {}),
             Event(EventType.BUTTON_CLICK, {"button": "Oui"}),
             Event(EventType.BUTTON_CLICK, {"button": "Non"}),

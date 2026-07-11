@@ -24,6 +24,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class BotMetrics:
     """Aggregated bot metrics."""
+
     total_sessions: int = 0
     completed_sessions: int = 0
     escalated_sessions: int = 0
@@ -113,7 +114,9 @@ def compute_metrics(db_path: Path, limit_recent: int = 20) -> BotMetrics:
         if metrics.total_sessions > 0:
             non_escalated = metrics.total_sessions - metrics.escalated_sessions
             metrics.selfcare_rate = non_escalated / metrics.total_sessions
-            metrics.escalation_rate = metrics.escalated_sessions / metrics.total_sessions
+            metrics.escalation_rate = (
+                metrics.escalated_sessions / metrics.total_sessions
+            )
 
         # --- Clarification rate ---
         clarif_count = conn.execute(
@@ -141,7 +144,9 @@ def compute_metrics(db_path: Path, limit_recent: int = 20) -> BotMetrics:
 
         for intent, total in intent_total.items():
             sc = intent_selfcare.get(intent, 0)
-            metrics.selfcare_by_intent[intent] = round(sc / total, 4) if total > 0 else 0.0
+            metrics.selfcare_by_intent[intent] = (
+                round(sc / total, 4) if total > 0 else 0.0
+            )
 
         # --- Escalation by intent ---
         esc_rows = conn.execute("""
@@ -179,13 +184,16 @@ def compute_metrics(db_path: Path, limit_recent: int = 20) -> BotMetrics:
             metrics.feedback_rate = metrics.feedback_positive / total_fb
 
         # --- Recent sessions ---
-        recent_rows = conn.execute("""
+        recent_rows = conn.execute(
+            """
             SELECT session_id, state, created_at, last_activity_at,
                    demandes_count, current_intent
             FROM sessions
             ORDER BY last_activity_at DESC
             LIMIT ?
-        """, (limit_recent,)).fetchall()
+        """,
+            (limit_recent,),
+        ).fetchall()
         metrics.recent_sessions = [dict(r) for r in recent_rows]
 
         return metrics
@@ -212,7 +220,8 @@ def get_misclassified_turns(
     try:
         # D2 fix: feedback.turn_id points to the BOT turn (which was rated).
         # We need to find the preceding USER turn to get the actual user message.
-        rows = conn.execute("""
+        rows = conn.execute(
+            """
             SELECT
                 f.session_id,
                 f.turn_id,
@@ -230,46 +239,54 @@ def get_misclassified_turns(
             WHERE f.rating = 'negative'
             ORDER BY f.timestamp DESC
             LIMIT ?
-        """, (limit,)).fetchall()
+        """,
+            (limit,),
+        ).fetchall()
 
         results = []
         for r in rows:
             # Find the preceding user turn (the one the bot was responding to)
-            user_turn_row = conn.execute("""
+            user_turn_row = conn.execute(
+                """
                 SELECT content, intent FROM turns
                 WHERE session_id = ? AND role = 'user'
                   AND timestamp < ?
                 ORDER BY timestamp DESC LIMIT 1
-            """, (r["session_id"], r["bot_turn_time"])).fetchone()
+            """,
+                (r["session_id"], r["bot_turn_time"]),
+            ).fetchone()
 
             user_message = user_turn_row["content"] if user_turn_row else ""
-            user_intent = (
-                user_turn_row["intent"] if user_turn_row else None
-            )
+            user_intent = user_turn_row["intent"] if user_turn_row else None
 
             # Try to find classification trace for context
-            trace_row = conn.execute("""
+            trace_row = conn.execute(
+                """
                 SELECT detail FROM traces
                 WHERE session_id = ? AND step = 'classification_l1'
                 ORDER BY rowid DESC LIMIT 1
-            """, (r["session_id"],)).fetchone()
+            """,
+                (r["session_id"],),
+            ).fetchone()
 
             classification_detail = {}
             if trace_row and trace_row["detail"]:
                 classification_detail = json.loads(trace_row["detail"])
 
-            results.append({
-                "session_id": r["session_id"],
-                "turn_id": r["turn_id"],
-                "user_message": user_message,
-                "classified_intent": (
-                    user_intent or r["bot_intent"] or r["session_intent"]
-                ),
-                "sub_motif": r["sub_motif"],
-                "feedback_comment": r["comment"],
-                "feedback_time": r["feedback_time"],
-                "classification_scores": classification_detail.get("scores", []),
-            })
+            results.append(
+                {
+                    "session_id": r["session_id"],
+                    "turn_id": r["turn_id"],
+                    "user_message": user_message,
+                    "classified_intent": (
+                        user_intent or r["bot_intent"] or r["session_intent"]
+                    ),
+                    "sub_motif": r["sub_motif"],
+                    "feedback_comment": r["comment"],
+                    "feedback_time": r["feedback_time"],
+                    "classification_scores": classification_detail.get("scores", []),
+                }
+            )
 
         return results
 

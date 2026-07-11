@@ -55,7 +55,10 @@ class TestAPIKeys:
     def test_origin_check_empty_list_blocks_cross_origin(self):
         """P1-4: Empty allowed_origins blocks cross-origin (fail-closed)."""
         record = APIKeyRecord(
-            key_id="k1", key_hash="h1", bot_id="b1", allowed_origins=[],
+            key_id="k1",
+            key_hash="h1",
+            bot_id="b1",
+            allowed_origins=[],
         )
         # Non-browser (no origin) is allowed
         assert check_origin(record, None)
@@ -65,14 +68,19 @@ class TestAPIKeys:
     def test_origin_check_wildcard_allows_all(self):
         """P1-4: Explicit wildcard allows all origins."""
         record = APIKeyRecord(
-            key_id="k1", key_hash="h1", bot_id="b1", allowed_origins=["*"],
+            key_id="k1",
+            key_hash="h1",
+            bot_id="b1",
+            allowed_origins=["*"],
         )
         assert check_origin(record, "https://anything.com")
         assert check_origin(record, None)
 
     def test_origin_check_with_restriction(self):
         record = APIKeyRecord(
-            key_id="k1", key_hash="h1", bot_id="b1",
+            key_id="k1",
+            key_hash="h1",
+            bot_id="b1",
             allowed_origins=["https://allowed.com"],
         )
         assert check_origin(record, "https://allowed.com")

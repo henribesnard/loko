@@ -74,7 +74,11 @@ def _find_mock_class_definitions(filepath: Path) -> list[str]:
     for node in ast.walk(tree):
         if isinstance(node, ast.ClassDef):
             name = node.name
-            if name in MOCK_CLASS_NAMES or name.startswith("Mock") or name.startswith("_Mock"):
+            if (
+                name in MOCK_CLASS_NAMES
+                or name.startswith("Mock")
+                or name.startswith("_Mock")
+            ):
                 found.append(name)
     return found
 
@@ -134,7 +138,6 @@ def test_no_mock_class_definitions():
                 rel_path = filepath.relative_to(LOKO_ROOT.parent)
                 violations.append(f"{rel_path}: defines {', '.join(found)}")
 
-    assert not violations, (
-        "Production code defines mock classes (C7):\n"
-        + "\n".join(f"  - {v}" for v in violations)
+    assert not violations, "Production code defines mock classes (C7):\n" + "\n".join(
+        f"  - {v}" for v in violations
     )

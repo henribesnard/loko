@@ -34,9 +34,14 @@ ROOT = Path(__file__).resolve().parent.parent
 DATASETS_DIR = ROOT / "eval" / "datasets"
 
 REQUIRED_MODEL_LABELS = {
-    "hors_perimetre", "demande_conseiller",
-    "arret_travail", "changement_coordonnees", "cotisations",
-    "justificatif_droits", "resiliation", "services_en_ligne",
+    "hors_perimetre",
+    "demande_conseiller",
+    "arret_travail",
+    "changement_coordonnees",
+    "cotisations",
+    "justificatif_droits",
+    "resiliation",
+    "services_en_ligne",
     "teletransmission_noemie",
 }
 
@@ -89,26 +94,30 @@ def audit(bot_dir: Path, compare_dir: Path | None = None) -> dict:
     # ── Check 1: Load model label_map ──
     label_map = load_label_map(bot_dir)
     if label_map is None:
-        report["checks"].append({
-            "id": "LM-1",
-            "name": "Model label_map exists",
-            "pass": False,
-            "detail": "label_map.json not found",
-        })
+        report["checks"].append(
+            {
+                "id": "LM-1",
+                "name": "Model label_map exists",
+                "pass": False,
+                "detail": "label_map.json not found",
+            }
+        )
         report["errors"].append("No label_map.json — model not trained?")
         report["verdict"] = "FAIL"
         return report
 
     model_labels = set(label_map.values())
-    report["checks"].append({
-        "id": "LM-1",
-        "name": "Model label_map exists",
-        "pass": True,
-        "detail": {
-            "n_labels": len(model_labels),
-            "labels": sorted(model_labels),
-        },
-    })
+    report["checks"].append(
+        {
+            "id": "LM-1",
+            "name": "Model label_map exists",
+            "pass": True,
+            "detail": {
+                "n_labels": len(model_labels),
+                "labels": sorted(model_labels),
+            },
+        }
+    )
 
     # ── Check 2: Model has all 9 required labels ──
     missing_labels = REQUIRED_MODEL_LABELS - model_labels
@@ -154,10 +163,14 @@ def audit(bot_dir: Path, compare_dir: Path | None = None) -> dict:
             # This is the expected state: dataset uses 'parler_conseiller',
             # model has 'demande_conseiller', eval checks escalate decision
             check_cons["pass"] = True
-            check_cons["detail"]["status"] = "consistent (parler→demande mapping via escalate)"
+            check_cons["detail"]["status"] = (
+                "consistent (parler→demande mapping via escalate)"
+            )
         elif uses_demande:
             check_cons["pass"] = True
-            check_cons["detail"]["status"] = "direct match (both use demande_conseiller)"
+            check_cons["detail"]["status"] = (
+                "direct match (both use demande_conseiller)"
+            )
         else:
             check_cons["pass"] = False
             report["errors"].append(
@@ -237,12 +250,13 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         description="E1 — Audit label mapping consistency",
     )
-    parser.add_argument("--bot-dir", required=True,
-                        help="Path to bot directory")
-    parser.add_argument("--compare", default=None,
-                        help="Compare with previous campaign directory")
-    parser.add_argument("--output", "-o", default=None,
-                        help="Write JSON report to file")
+    parser.add_argument("--bot-dir", required=True, help="Path to bot directory")
+    parser.add_argument(
+        "--compare", default=None, help="Compare with previous campaign directory"
+    )
+    parser.add_argument(
+        "--output", "-o", default=None, help="Write JSON report to file"
+    )
 
     args = parser.parse_args()
 
@@ -263,9 +277,9 @@ def main() -> None:
         out_path.write_text(report_json, encoding="utf-8")
 
     # Console summary
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"  Label Mapping Audit — {report['verdict']}")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
 
     for check in report["checks"]:
         status = "[PASS]" if check["pass"] else "[FAIL]"

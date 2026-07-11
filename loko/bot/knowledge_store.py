@@ -84,11 +84,12 @@ END;
 # Chunking
 # ---------------------------------------------------------------------------
 
+
 def _chunk_text(text: str, max_chunk_size: int = 500, overlap: int = 50) -> list[str]:
     """Split text into overlapping chunks by sentence boundaries."""
     import re
 
-    sentences = re.split(r'(?<=[.!?])\s+', text)
+    sentences = re.split(r"(?<=[.!?])\s+", text)
     chunks: list[str] = []
     current: list[str] = []
     current_len = 0
@@ -118,6 +119,7 @@ def _chunk_text(text: str, max_chunk_size: int = 500, overlap: int = 50) -> list
 # ---------------------------------------------------------------------------
 # Knowledge store
 # ---------------------------------------------------------------------------
+
 
 class KnowledgeStore:
     """SQLite-backed knowledge store with FTS5 search for a single bot."""
@@ -174,8 +176,14 @@ class KnowledgeStore:
                     bot_intents, bot_sub_motifs, confidentiality)
                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
                 (
-                    doc_id, source_url, source_title, content, content_hash,
-                    json.dumps(intents), json.dumps(sub_motifs), confidentiality,
+                    doc_id,
+                    source_url,
+                    source_title,
+                    content,
+                    content_hash,
+                    json.dumps(intents),
+                    json.dumps(sub_motifs),
+                    confidentiality,
                 ),
             )
 
@@ -189,27 +197,39 @@ class KnowledgeStore:
                         bot_intents, bot_sub_motifs, confidentiality, chunk_index)
                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                     (
-                        chunk_id, doc_id, chunk_text, source_url, source_title,
-                        json.dumps(intents), json.dumps(sub_motifs),
-                        confidentiality, i,
+                        chunk_id,
+                        doc_id,
+                        chunk_text,
+                        source_url,
+                        source_title,
+                        json.dumps(intents),
+                        json.dumps(sub_motifs),
+                        confidentiality,
+                        i,
                     ),
                 )
 
         logger.info(
             "Ingested document %s (%d chunks, intents=%s)",
-            doc_id, len(chunks), intents,
+            doc_id,
+            len(chunks),
+            intents,
         )
         return doc_id
 
     def delete_document(self, doc_id: str) -> bool:
         with self._connect() as conn:
             cursor = conn.execute(
-                "DELETE FROM documents WHERE doc_id = ?", (doc_id,),
+                "DELETE FROM documents WHERE doc_id = ?",
+                (doc_id,),
             )
             return cursor.rowcount > 0
 
     def list_documents(
-        self, *, intent: str | None = None, limit: int = 100,
+        self,
+        *,
+        intent: str | None = None,
+        limit: int = 100,
     ) -> list[dict[str, Any]]:
         with self._connect() as conn:
             if intent:
@@ -384,7 +404,12 @@ class KnowledgeStore:
                 # FTS query syntax error — fallback to LIKE search
                 logger.warning("FTS query failed, falling back to LIKE search")
                 return await self._fallback_search(
-                    conn, query, filters, top_k, where_parts, params,
+                    conn,
+                    query,
+                    filters,
+                    top_k,
+                    where_parts,
+                    params,
                 )
 
             return [
@@ -467,6 +492,7 @@ class KnowledgeStore:
 # ---------------------------------------------------------------------------
 # Factory
 # ---------------------------------------------------------------------------
+
 
 def get_knowledge_store(bot_id: str) -> KnowledgeStore:
     """Get or create a KnowledgeStore for a bot."""

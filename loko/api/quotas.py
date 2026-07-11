@@ -58,6 +58,7 @@ def check_bot_creation_quota(account_id: str) -> None:
         return  # Ops/internal — no quota
 
     from loko.bot.config_store import list_bots
+
     quotas = get_effective_quotas(account_id)
     current_bots = list_bots(account_id=account_id)
 
@@ -90,6 +91,7 @@ def check_document_quota(account_id: str, bot_id: str) -> None:
     quotas = get_effective_quotas(account_id)
     try:
         from loko.bot.knowledge_store import get_knowledge_store
+
         store = get_knowledge_store(bot_id)
         docs = store.list_documents()
         if len(docs) >= quotas["max_documents"]:

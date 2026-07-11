@@ -14,7 +14,11 @@ from pydantic import BaseModel
 
 from loko.api.session_middleware import require_tenant_or_ops
 from loko.bot.config_store import load_bot_config, save_bot_config
-from loko.bot.metrics import compute_metrics, get_misclassified_turns, get_session_replay
+from loko.bot.metrics import (
+    compute_metrics,
+    get_misclassified_turns,
+    get_session_replay,
+)
 from loko.bot.session_store import get_bot_dir
 
 logger = logging.getLogger(__name__)
@@ -30,8 +34,10 @@ router = APIRouter(
 # Request models
 # ---------------------------------------------------------------------------
 
+
 class AddTrainingExampleRequest(BaseModel):
     """Add a misclassified turn as a training example."""
+
     intent_id: str
     text: str
     from_production: bool = True
@@ -39,6 +45,7 @@ class AddTrainingExampleRequest(BaseModel):
 
 class RetriggerTrainRequest(BaseModel):
     """Re-trigger training after adding examples from production."""
+
     base_model: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
     run_evaluation: bool = True
 
@@ -47,9 +54,12 @@ class RetriggerTrainRequest(BaseModel):
 # Metrics
 # ---------------------------------------------------------------------------
 
+
 @router.get("/{bot_id}/dashboard/metrics")
 async def get_metrics(
-    bot_id: str, request: Request = None, _auth=Depends(require_tenant_or_ops),
+    bot_id: str,
+    request: Request = None,
+    _auth=Depends(require_tenant_or_ops),
 ) -> dict[str, Any]:
     """Get aggregated dashboard metrics for a bot."""
     bot_dir = get_bot_dir(bot_id)
@@ -61,6 +71,7 @@ async def get_metrics(
 # ---------------------------------------------------------------------------
 # Session replay
 # ---------------------------------------------------------------------------
+
 
 @router.get("/{bot_id}/dashboard/sessions")
 async def list_recent_sessions(
@@ -79,7 +90,9 @@ async def list_recent_sessions(
 
 @router.get("/{bot_id}/dashboard/sessions/{session_id}/replay")
 async def replay_session(
-    bot_id: str, session_id: str, request: Request = None,
+    bot_id: str,
+    session_id: str,
+    request: Request = None,
     _auth=Depends(require_tenant_or_ops),
 ) -> dict[str, Any]:
     """Get full session replay (transcript + traces + feedback)."""
@@ -94,6 +107,7 @@ async def replay_session(
 # ---------------------------------------------------------------------------
 # Misclassified turns (continuous improvement)
 # ---------------------------------------------------------------------------
+
 
 @router.get("/{bot_id}/dashboard/misclassified")
 async def list_misclassified(
@@ -201,9 +215,12 @@ async def retrain_from_dashboard(
 # Intent split suggestion
 # ---------------------------------------------------------------------------
 
+
 @router.get("/{bot_id}/dashboard/suggestions")
 async def get_improvement_suggestions(
-    bot_id: str, request: Request = None, _auth=Depends(require_tenant_or_ops),
+    bot_id: str,
+    request: Request = None,
+    _auth=Depends(require_tenant_or_ops),
 ) -> list[dict[str, Any]]:
     """Analyze feedback and retrieval data to suggest improvements.
 
@@ -225,15 +242,17 @@ async def get_improvement_suggestions(
     # Suggest split if an intent has high escalation rate
     for intent_id, selfcare_rate in metrics.selfcare_by_intent.items():
         if selfcare_rate < 0.5 and metrics.escalation_by_intent.get(intent_id, 0) >= 3:
-            suggestions.append({
-                "type": "intent_split",
-                "intent_id": intent_id,
-                "selfcare_rate": selfcare_rate,
-                "escalation_count": metrics.escalation_by_intent.get(intent_id, 0),
-                "message": f"L'intention '{intent_id}' a un taux de selfcare faible "
-                           f"({selfcare_rate:.0%}) et {metrics.escalation_by_intent.get(intent_id, 0)} "
-                           f"escalades. Envisagez de la scinder en sous-intentions plus précises.",
-            })
+            suggestions.append(
+                {
+                    "type": "intent_split",
+                    "intent_id": intent_id,
+                    "selfcare_rate": selfcare_rate,
+                    "escalation_count": metrics.escalation_by_intent.get(intent_id, 0),
+                    "message": f"L'intention '{intent_id}' a un taux de selfcare faible "
+                    f"({selfcare_rate:.0%}) et {metrics.escalation_by_intent.get(intent_id, 0)} "
+                    f"escalades. Envisagez de la scinder en sous-intentions plus précises.",
+                }
+            )
 
     # Suggest more examples for intents with many misclassifications
     misclass_by_intent: dict[str, int] = {}
@@ -244,12 +263,14 @@ async def get_improvement_suggestions(
 
     for intent_id, count in misclass_by_intent.items():
         if count >= 3:
-            suggestions.append({
-                "type": "more_examples",
-                "intent_id": intent_id,
-                "misclassification_count": count,
-                "message": f"L'intention '{intent_id}' a {count} retours négatifs. "
-                           f"Ajoutez des exemples d'entraînement pour améliorer la classification.",
-            })
+            suggestions.append(
+                {
+                    "type": "more_examples",
+                    "intent_id": intent_id,
+                    "misclassification_count": count,
+                    "message": f"L'intention '{intent_id}' a {count} retours négatifs. "
+                    f"Ajoutez des exemples d'entraînement pour améliorer la classification.",
+                }
+            )
 
     return suggestions

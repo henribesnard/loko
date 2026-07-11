@@ -31,8 +31,10 @@ logger = logging.getLogger(__name__)
 # Data models
 # ---------------------------------------------------------------------------
 
+
 class CrawledDocument(BaseModel):
     """A single crawled FAQ article."""
+
     doc_id: str
     url: str
     title: str
@@ -46,6 +48,7 @@ class CrawledDocument(BaseModel):
 
 class CrawlResult(BaseModel):
     """Result of a crawl operation."""
+
     documents: list[CrawledDocument] = Field(default_factory=list)
     urls_visited: int = 0
     urls_skipped: int = 0
@@ -54,6 +57,7 @@ class CrawlResult(BaseModel):
 
 class CrawlConfig(BaseModel):
     """Configuration for the FAQ crawler."""
+
     start_url: str
     max_depth: int = Field(default=3, ge=1, le=10)
     max_pages: int = Field(default=200, ge=1, le=5000)
@@ -72,6 +76,7 @@ class CrawlConfig(BaseModel):
 # Page fetcher protocol (allows mock in tests)
 # ---------------------------------------------------------------------------
 
+
 class PageFetcher(Protocol):
     """Protocol for fetching web pages."""
 
@@ -87,6 +92,7 @@ class PageFetcher(Protocol):
 # ---------------------------------------------------------------------------
 # Simple fetcher (requests-based, no JS rendering)
 # ---------------------------------------------------------------------------
+
 
 def _is_private_ip(hostname: str) -> bool:
     """Check if a hostname resolves to a private/loopback/link-local IP.
@@ -147,7 +153,11 @@ class _NoRedirectHandler(urllib.request.HTTPRedirectHandler):
 
     def redirect_request(self, req, fp, code, msg, headers, newurl):
         raise urllib.request.HTTPError(
-            req.full_url, code, msg, headers, fp,
+            req.full_url,
+            code,
+            msg,
+            headers,
+            fp,
         )
 
 
@@ -246,13 +256,17 @@ class SimplePageFetcher:
                     # against the original hostname (SNI + cert check).
                     ctx.check_hostname = True
                     conn = http.client.HTTPSConnection(
-                        pinned_ip, port, timeout=self.timeout, context=ctx,
+                        pinned_ip,
+                        port,
+                        timeout=self.timeout,
+                        context=ctx,
                     )
                     # Override _host for SNI so TLS handshake sends the
                     # real hostname, not the IP.
                     conn._http_vsn_str = "HTTP/1.1"  # noqa: SLF001
                     conn.request(
-                        "GET", path,
+                        "GET",
+                        path,
                         headers={
                             "User-Agent": self.user_agent,
                             "Host": hostname,
@@ -260,10 +274,13 @@ class SimplePageFetcher:
                     )
                 else:
                     conn = http.client.HTTPConnection(
-                        pinned_ip, port, timeout=self.timeout,
+                        pinned_ip,
+                        port,
+                        timeout=self.timeout,
                     )
                     conn.request(
-                        "GET", path,
+                        "GET",
+                        path,
                         headers={
                             "User-Agent": self.user_agent,
                             "Host": hostname,
@@ -277,7 +294,9 @@ class SimplePageFetcher:
                     location = resp.getheader("Location")
                     conn.close()
                     if not location:
-                        logger.warning("Redirect without Location header from %s", current_url)
+                        logger.warning(
+                            "Redirect without Location header from %s", current_url
+                        )
                         return "", resp.status
                     # Resolve relative redirects
                     current_url = urljoin(current_url, location)
@@ -290,7 +309,9 @@ class SimplePageFetcher:
                 conn.close()
 
                 if len(data) > self.MAX_RESPONSE_SIZE:
-                    logger.warning("Response too large for %s (>5MB), truncating", current_url)
+                    logger.warning(
+                        "Response too large for %s (>5MB), truncating", current_url
+                    )
                     data = data[: self.MAX_RESPONSE_SIZE]
 
                 return data.decode("utf-8", errors="replace"), status
@@ -334,6 +355,7 @@ class SimplePageFetcher:
         # Use xml.etree for safer parsing (P1-3)
         try:
             import xml.etree.ElementTree as ET
+
             root = ET.fromstring(html)
             # Handle namespace
             ns = ""
@@ -352,6 +374,7 @@ class SimplePageFetcher:
 # Content extractor
 # ---------------------------------------------------------------------------
 
+
 def extract_content(html: str) -> tuple[str, str]:
     """Extract title and main text content from HTML.
 
@@ -359,7 +382,9 @@ def extract_content(html: str) -> tuple[str, str]:
     Returns (title, body_text).
     """
     # Extract title
-    title_match = re.search(r"<title[^>]*>(.*?)</title>", html, re.DOTALL | re.IGNORECASE)
+    title_match = re.search(
+        r"<title[^>]*>(.*?)</title>", html, re.DOTALL | re.IGNORECASE
+    )
     title = title_match.group(1).strip() if title_match else ""
     title = re.sub(r"<[^>]+>", "", title)  # strip nested tags
 
@@ -410,9 +435,11 @@ def content_hash(text: str) -> str:
 # Crawler
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class _CrawlState:
     """Internal crawl state for BFS traversal."""
+
     visited: set[str] = field(default_factory=set)
     queue: deque[tuple[str, int]] = field(default_factory=deque)  # (url, depth)
     documents: list[CrawledDocument] = field(default_factory=list)
@@ -562,7 +589,17 @@ class FAQWebCrawler:
 
         # Skip anchors, files
         path = parsed.path.lower()
-        skip_extensions = (".pdf", ".jpg", ".jpeg", ".png", ".gif", ".svg", ".zip", ".css", ".js")
+        skip_extensions = (
+            ".pdf",
+            ".jpg",
+            ".jpeg",
+            ".png",
+            ".gif",
+            ".svg",
+            ".zip",
+            ".css",
+            ".js",
+        )
         if any(path.endswith(ext) for ext in skip_extensions):
             return False
 
@@ -573,7 +610,11 @@ class FAQWebCrawler:
         links: list[str] = []
         for match in re.finditer(r'href=["\']([^"\']+)["\']', html, re.IGNORECASE):
             href = match.group(1)
-            if href.startswith("#") or href.startswith("mailto:") or href.startswith("javascript:"):
+            if (
+                href.startswith("#")
+                or href.startswith("mailto:")
+                or href.startswith("javascript:")
+            ):
                 continue
             absolute = urljoin(base_url, href)
             # Strip fragment
@@ -582,7 +623,9 @@ class FAQWebCrawler:
 
         # Follow iframes if configured
         if self.config.follow_iframes:
-            for match in re.finditer(r'<iframe[^>]+src=["\']([^"\']+)["\']', html, re.IGNORECASE):
+            for match in re.finditer(
+                r'<iframe[^>]+src=["\']([^"\']+)["\']', html, re.IGNORECASE
+            ):
                 src = match.group(1)
                 absolute = urljoin(base_url, src)
                 links.append(absolute)

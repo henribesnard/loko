@@ -55,6 +55,7 @@ def _load_config(bot_dir: Path) -> Any:
         sys.exit(1)
 
     from loko.bot.models import BotConfig
+
     return BotConfig.model_validate_json(config_path.read_text(encoding="utf-8"))
 
 
@@ -82,14 +83,30 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         description="LOKO Evaluation CLI (C2) — evaluate classifier + decision logic",
     )
-    parser.add_argument("--bot-dir", required=True, help="Path to bot directory (~/.loko/bots/my-bot)")
-    parser.add_argument("--dataset", default=None, help="Path to evaluation CSV dataset")
-    parser.add_argument("--mode", choices=["raw", "decision", "pieges"], default="decision")
-    parser.add_argument("--out", default="eval_output", help="Output directory for results")
-    parser.add_argument("--threshold-check", type=float, default=None,
-                        help="Minimum accuracy to pass (e.g. 0.85). Exit code 1 if below.")
-    parser.add_argument("--sweep", nargs="?", const="seuil_haut=0.6:0.9:0.05,seuil_bas=0.3:0.6:0.05",
-                        help="Run threshold sweep (C3). Optional: custom ranges.")
+    parser.add_argument(
+        "--bot-dir", required=True, help="Path to bot directory (~/.loko/bots/my-bot)"
+    )
+    parser.add_argument(
+        "--dataset", default=None, help="Path to evaluation CSV dataset"
+    )
+    parser.add_argument(
+        "--mode", choices=["raw", "decision", "pieges"], default="decision"
+    )
+    parser.add_argument(
+        "--out", default="eval_output", help="Output directory for results"
+    )
+    parser.add_argument(
+        "--threshold-check",
+        type=float,
+        default=None,
+        help="Minimum accuracy to pass (e.g. 0.85). Exit code 1 if below.",
+    )
+    parser.add_argument(
+        "--sweep",
+        nargs="?",
+        const="seuil_haut=0.6:0.9:0.05,seuil_bas=0.3:0.6:0.05",
+        help="Run threshold sweep (C3). Optional: custom ranges.",
+    )
     parser.add_argument(
         "--sweep-datasets",
         help=(
@@ -141,14 +158,22 @@ def main() -> None:
             ds_dict[label.strip()] = p
 
         # Parse sweep ranges (including seuil_ecart)
-        sweep_str = args.sweep or "seuil_haut=0.6:0.9:0.05,seuil_bas=0.3:0.6:0.05,seuil_ecart=0.0:0.25:0.05"
+        sweep_str = (
+            args.sweep
+            or "seuil_haut=0.6:0.9:0.05,seuil_bas=0.3:0.6:0.05,seuil_ecart=0.0:0.25:0.05"
+        )
         ranges = _parse_sweep(sweep_str)
         sh_range = ranges.get("seuil_haut", (0.6, 0.9, 0.05))
         sb_range = ranges.get("seuil_bas", (0.3, 0.6, 0.05))
         se_range = ranges.get("seuil_ecart", (0.0, 0.25, 0.05))
 
         results = threshold_sweep_3axis(
-            classifier, ds_dict, config, sh_range, sb_range, se_range,
+            classifier,
+            ds_dict,
+            config,
+            sh_range,
+            sb_range,
+            se_range,
         )
 
         # W3.1: Pareto-constrained selection
@@ -192,11 +217,19 @@ def main() -> None:
 
         if selection["selected"]:
             sel = selection["selected"]
-            print(f"  Selected: haut={sel['seuil_haut']:.2f} bas={sel['seuil_bas']:.2f} ecart={sel['seuil_ecart']:.2f}")
-            print(f"    GNG-1={sel.get('gng1', 0)*100:.1f}% GNG-2={sel.get('gng2', 0)*100:.1f}% GNG-3={sel.get('gng3', 0)*100:.1f}%")
-            print(f"    Routes directes={sel.get('gng3_routes_directes', 0)} Pieges={sel.get('pieges_correct', 0)}/{sel.get('pieges_total', 0)}")
+            print(
+                f"  Selected: haut={sel['seuil_haut']:.2f} bas={sel['seuil_bas']:.2f} ecart={sel['seuil_ecart']:.2f}"
+            )
+            print(
+                f"    GNG-1={sel.get('gng1', 0) * 100:.1f}% GNG-2={sel.get('gng2', 0) * 100:.1f}% GNG-3={sel.get('gng3', 0) * 100:.1f}%"
+            )
+            print(
+                f"    Routes directes={sel.get('gng3_routes_directes', 0)} Pieges={sel.get('pieges_correct', 0)}/{sel.get('pieges_total', 0)}"
+            )
         else:
-            print("  No feasible point found - see selection.json for closest candidates")
+            print(
+                "  No feasible point found - see selection.json for closest candidates"
+            )
 
         if selection.get("warnings"):
             print("\nWarnings:")
@@ -208,7 +241,10 @@ def main() -> None:
 
     # Require --dataset for non-sweep modes
     if not args.dataset:
-        print("Error: --dataset is required (unless using --sweep-datasets)", file=sys.stderr)
+        print(
+            "Error: --dataset is required (unless using --sweep-datasets)",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     dataset_path = Path(args.dataset)
@@ -227,7 +263,9 @@ def main() -> None:
         out_dir.mkdir(parents=True, exist_ok=True)
         sweep_path = out_dir / "sweep_results.csv"
         with open(sweep_path, "w", encoding="utf-8", newline="") as f:
-            writer = csv.DictWriter(f, fieldnames=list(results[0].keys()) if results else [])
+            writer = csv.DictWriter(
+                f, fieldnames=list(results[0].keys()) if results else []
+            )
             writer.writeheader()
             writer.writerows(results)
 
@@ -248,15 +286,15 @@ def main() -> None:
     write_report(report, out_dir)
 
     # Summary
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"  loko-eval | mode={report.mode} | dataset={report.dataset}")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
     print(f"  Total: {report.total}")
     print(f"  Correct: {report.correct}")
     print(f"  Accuracy: {report.accuracy:.2%}")
     print(f"  Errors: {len(report.errors)}")
     print(f"  Duration: {report.duration_s:.2f}s")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
 
     if report.errors and args.verbose:
         print("\nTop errors:")
@@ -274,7 +312,9 @@ def main() -> None:
             )
             sys.exit(1)
         else:
-            print(f"\nOK: accuracy {report.accuracy:.2%} >= threshold {args.threshold_check:.2%}")
+            print(
+                f"\nOK: accuracy {report.accuracy:.2%} >= threshold {args.threshold_check:.2%}"
+            )
 
 
 if __name__ == "__main__":

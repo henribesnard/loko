@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 class AlertRule(BaseModel):
     """An alert rule definition."""
+
     id: str
     metric: str  # escalation_rate, ttfb_p95, guardrail_block_rate, llm_error_rate, fin_ferme_count
     window_min: int = Field(default=15, ge=1, le=1440)
@@ -31,6 +32,7 @@ class AlertRule(BaseModel):
 
 class AlertEvent(BaseModel):
     """A triggered alert event."""
+
     rule_id: str
     metric: str
     value: float
@@ -77,14 +79,16 @@ class AlertEngine:
                 last = self._last_alert.get(rule.id)
                 if last is not None:
                     self._last_alert.pop(rule.id, None)
-                    events.append(AlertEvent(
-                        rule_id=rule.id,
-                        metric=rule.metric,
-                        value=value,
-                        threshold=rule.threshold,
-                        triggered_at=now,
-                        resolved=True,
-                    ))
+                    events.append(
+                        AlertEvent(
+                            rule_id=rule.id,
+                            metric=rule.metric,
+                            value=value,
+                            threshold=rule.threshold,
+                            triggered_at=now,
+                            resolved=True,
+                        )
+                    )
                 continue
 
             # Check silence window
@@ -93,12 +97,14 @@ class AlertEngine:
                 continue
 
             self._last_alert[rule.id] = now
-            events.append(AlertEvent(
-                rule_id=rule.id,
-                metric=rule.metric,
-                value=value,
-                threshold=rule.threshold,
-                triggered_at=now,
-            ))
+            events.append(
+                AlertEvent(
+                    rule_id=rule.id,
+                    metric=rule.metric,
+                    value=value,
+                    threshold=rule.threshold,
+                    triggered_at=now,
+                )
+            )
 
         return events

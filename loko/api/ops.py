@@ -49,7 +49,9 @@ async def ops_get_account(account_id: str) -> dict[str, Any]:
 
 
 @router.patch("/accounts/{account_id}")
-async def ops_update_account(account_id: str, req: UpdateAccountRequest) -> dict[str, Any]:
+async def ops_update_account(
+    account_id: str, req: UpdateAccountRequest
+) -> dict[str, Any]:
     """Update account fields (plan, quotas, status)."""
     account = get_account(account_id)
     if not account:
@@ -75,6 +77,7 @@ async def ops_update_account(account_id: str, req: UpdateAccountRequest) -> dict
 async def ops_health() -> dict[str, Any]:
     """Extended health check for ops."""
     from loko.bot.config_store import list_bots
+
     bots = list_bots()
     accounts = list_accounts()
     return {

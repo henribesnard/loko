@@ -29,8 +29,15 @@ _MAX_UNLISTED_SIZE = 5 * 1024 * 1024
 
 # Files allowed to be large or excluded from size check
 _ALLOWED_LARGE_EXTENSIONS = {
-    ".json", ".csv", ".md", ".txt", ".sha256",
-    ".safetensors", ".pkl", ".bin", ".onnx",  # model binaries (gitignored)
+    ".json",
+    ".csv",
+    ".md",
+    ".txt",
+    ".sha256",
+    ".safetensors",
+    ".pkl",
+    ".bin",
+    ".onnx",  # model binaries (gitignored)
 }
 
 
@@ -77,8 +84,8 @@ def test_no_secrets_in_loko_source():
     # Patterns that should never appear in log statements.
     # Match cases where a token/password *variable* is passed as a log parameter.
     forbidden_log_patterns = [
-        re.compile(r'logger\.\w+\(.*,\s*\w*token\b', re.IGNORECASE),
-        re.compile(r'logger\.\w+\(.*,\s*\w*password\b', re.IGNORECASE),
+        re.compile(r"logger\.\w+\(.*,\s*\w*token\b", re.IGNORECASE),
+        re.compile(r"logger\.\w+\(.*,\s*\w*password\b", re.IGNORECASE),
     ]
 
     for py_file in loko_dir.rglob("*.py"):
@@ -94,15 +101,15 @@ def test_no_secrets_in_loko_source():
                         f"{py_file.relative_to(REPO_ROOT)}:{i}: {line.strip()}"
                     )
 
-    assert not violations, (
-        "Potential secret leaks in log statements:\n" +
-        "\n".join(f"  {v}" for v in violations)
+    assert not violations, "Potential secret leaks in log statements:\n" + "\n".join(
+        f"  {v}" for v in violations
     )
 
 
 # ---------------------------------------------------------------------------
 # V1 — Version consistency
 # ---------------------------------------------------------------------------
+
 
 def _read_pyproject_version() -> str:
     """Read version from pyproject.toml."""
@@ -120,16 +127,19 @@ def test_version_consistency():
 
     # loko.__version__
     from loko import __version__
+
     assert __version__ == pyproject_version, (
         f"loko.__version__={__version__!r} != pyproject.toml={pyproject_version!r}"
     )
 
     # main.py FastAPI version (read from app instance)
     import sys
+
     # Avoid side effects from existing imports
     if "loko.main" in sys.modules:
         del sys.modules["loko.main"]
     from loko.main import create_app
+
     app = create_app()
     assert app.version == pyproject_version, (
         f"FastAPI app.version={app.version!r} != pyproject.toml={pyproject_version!r}"

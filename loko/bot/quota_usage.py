@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 
 class QuotaConfig(BaseModel):
     """Per-key monthly quota limits."""
+
     sessions_mois: int = Field(default=0, ge=0, description="0 = unlimited")
     messages_mois: int = Field(default=0, ge=0, description="0 = unlimited")
     tokens_llm_mois: int = Field(default=0, ge=0, description="0 = unlimited")
@@ -30,6 +31,7 @@ class QuotaConfig(BaseModel):
 
 class QuotaStatus(BaseModel):
     """Current quota usage status."""
+
     key_id: str
     month: str  # YYYY-MM
     sessions_used: int = 0
@@ -104,8 +106,7 @@ class QuotaUsageStore:
             )
 
             row = conn.execute(
-                f"SELECT {column} FROM quota_counters "
-                f"WHERE key_id = ? AND month = ?",
+                f"SELECT {column} FROM quota_counters WHERE key_id = ? AND month = ?",
                 (key_id, month),
             ).fetchone()
 
@@ -233,6 +234,7 @@ def get_quota_usage_store() -> QuotaUsageStore:
 # ---------------------------------------------------------------------------
 # Helpers for runtime integration
 # ---------------------------------------------------------------------------
+
 
 def get_quota_reset_header() -> str:
     """Return the X-Quota-Reset header value (ISO datetime)."""

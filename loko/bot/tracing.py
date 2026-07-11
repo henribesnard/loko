@@ -38,7 +38,9 @@ class TraceCollector:
 
     @contextmanager
     def measure(
-        self, step: str, detail: dict[str, Any] | None = None,
+        self,
+        step: str,
+        detail: dict[str, Any] | None = None,
     ) -> Generator[dict[str, Any], None, None]:
         """Context manager that measures wall-clock time for a step.
 

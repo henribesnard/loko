@@ -13,58 +13,74 @@ from loko.testing.mocks import InMemorySearchBackend
 # Fixtures
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture
 def backend() -> InMemorySearchBackend:
     """Backend pre-loaded with test chunks."""
     b = InMemorySearchBackend()
 
     # Livraison chunks (sub-motif: suivi)
-    b.add_chunk(Chunk(
-        chunk_id="c1", text="suivre votre colis livraison en cours",
-        metadata={
-            "bot_intents": ["livraison"],
-            "bot_sub_motifs": ["suivi"],
-            "confidentiality": "public",
-        },
-    ))
-    b.add_chunk(Chunk(
-        chunk_id="c2", text="numero de suivi colis expedition livraison",
-        metadata={
-            "bot_intents": ["livraison"],
-            "bot_sub_motifs": ["suivi"],
-            "confidentiality": "public",
-        },
-    ))
+    b.add_chunk(
+        Chunk(
+            chunk_id="c1",
+            text="suivre votre colis livraison en cours",
+            metadata={
+                "bot_intents": ["livraison"],
+                "bot_sub_motifs": ["suivi"],
+                "confidentiality": "public",
+            },
+        )
+    )
+    b.add_chunk(
+        Chunk(
+            chunk_id="c2",
+            text="numero de suivi colis expedition livraison",
+            metadata={
+                "bot_intents": ["livraison"],
+                "bot_sub_motifs": ["suivi"],
+                "confidentiality": "public",
+            },
+        )
+    )
 
     # Livraison chunks (sub-motif: retard)
-    b.add_chunk(Chunk(
-        chunk_id="c3", text="retard livraison délai dépassé",
-        metadata={
-            "bot_intents": ["livraison"],
-            "bot_sub_motifs": ["retard"],
-            "confidentiality": "public",
-        },
-    ))
+    b.add_chunk(
+        Chunk(
+            chunk_id="c3",
+            text="retard livraison délai dépassé",
+            metadata={
+                "bot_intents": ["livraison"],
+                "bot_sub_motifs": ["retard"],
+                "confidentiality": "public",
+            },
+        )
+    )
 
     # Facturation chunks
-    b.add_chunk(Chunk(
-        chunk_id="c4", text="facture paiement montant total",
-        metadata={
-            "bot_intents": ["facturation"],
-            "bot_sub_motifs": [],
-            "confidentiality": "public",
-        },
-    ))
+    b.add_chunk(
+        Chunk(
+            chunk_id="c4",
+            text="facture paiement montant total",
+            metadata={
+                "bot_intents": ["facturation"],
+                "bot_sub_motifs": [],
+                "confidentiality": "public",
+            },
+        )
+    )
 
     # Employee-only chunk
-    b.add_chunk(Chunk(
-        chunk_id="c5", text="procédure interne remboursement livraison",
-        metadata={
-            "bot_intents": ["livraison"],
-            "bot_sub_motifs": ["suivi"],
-            "confidentiality": "employee",
-        },
-    ))
+    b.add_chunk(
+        Chunk(
+            chunk_id="c5",
+            text="procédure interne remboursement livraison",
+            metadata={
+                "bot_intents": ["livraison"],
+                "bot_sub_motifs": ["suivi"],
+                "confidentiality": "employee",
+            },
+        )
+    )
 
     return b
 
@@ -90,6 +106,7 @@ def retriever(backend: InMemorySearchBackend) -> FilteredRetriever:
 # ---------------------------------------------------------------------------
 # Tests: Filtering
 # ---------------------------------------------------------------------------
+
 
 class TestFiltering:
     @pytest.mark.asyncio
@@ -170,15 +187,18 @@ class TestFiltering:
 # Tests: Fallback
 # ---------------------------------------------------------------------------
 
+
 class TestFallback:
     @pytest.mark.asyncio
     async def test_fallback_to_intent_level(self, retriever, config):
         """When sub-motif has insufficient chunks, widen to intent level."""
         config_strict = config.model_copy(
-            update={"journey": JourneyParams(
-                retrieval_min_score=0.1,
-                retrieval_min_chunks=3,  # suivi only has 2 public chunks
-            )}
+            update={
+                "journey": JourneyParams(
+                    retrieval_min_score=0.1,
+                    retrieval_min_chunks=3,  # suivi only has 2 public chunks
+                )
+            }
         )
         result = await retriever.retrieve(
             query="suivi colis livraison",
@@ -194,10 +214,12 @@ class TestFallback:
     async def test_escalation_when_insufficient(self, retriever, config):
         """When even intent level has insufficient chunks, escalate."""
         config_strict = config.model_copy(
-            update={"journey": JourneyParams(
-                retrieval_min_score=0.1,
-                retrieval_min_chunks=20,  # more than available chunks
-            )}
+            update={
+                "journey": JourneyParams(
+                    retrieval_min_score=0.1,
+                    retrieval_min_chunks=20,  # more than available chunks
+                )
+            }
         )
         result = await retriever.retrieve(
             query="suivi colis",
@@ -214,6 +236,7 @@ class TestFallback:
 # Tests: Edge cases
 # ---------------------------------------------------------------------------
 
+
 class TestEdgeCases:
     @pytest.mark.asyncio
     async def test_no_collection_configured(self, retriever):
@@ -223,7 +246,10 @@ class TestEdgeCases:
             knowledge_collection="",
         )
         result = await retriever.retrieve(
-            query="test", intent="x", sub_motif=None, config=config,
+            query="test",
+            intent="x",
+            sub_motif=None,
+            config=config,
         )
         assert not result.success
         assert result.escalate
@@ -251,7 +277,10 @@ class TestEdgeCases:
             journey=JourneyParams(retrieval_min_chunks=1, retrieval_min_score=0.1),
         )
         result = await retriever.retrieve(
-            query="test", intent="x", sub_motif=None, config=config,
+            query="test",
+            intent="x",
+            sub_motif=None,
+            config=config,
         )
         assert not result.success
         assert result.escalate

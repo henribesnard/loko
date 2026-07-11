@@ -43,10 +43,12 @@ def test_require_limiter_in_server_mode_raises(monkeypatch):
     monkeypatch.setenv("LOKO_MODE", "server")
     # Simulate slowapi not importable
     import sys
+
     saved = sys.modules.get("slowapi")
     sys.modules["slowapi"] = None  # type: ignore[assignment]
     try:
         from loko.api.rate_limit import require_limiter_in_server_mode
+
         with pytest.raises(RuntimeError, match="slowapi"):
             require_limiter_in_server_mode()
     finally:
@@ -60,6 +62,7 @@ def test_require_limiter_desktop_mode_ok(monkeypatch):
     """In desktop mode, missing slowapi is not fatal."""
     monkeypatch.setenv("LOKO_MODE", "desktop")
     from loko.api.rate_limit import require_limiter_in_server_mode
+
     # Should not raise
     require_limiter_in_server_mode()
 
@@ -67,6 +70,7 @@ def test_require_limiter_desktop_mode_ok(monkeypatch):
 def test_rate_limit_defaults():
     """Env-based rate limit defaults are correct."""
     from loko.api import rate_limit
+
     # defaults when env vars are not set
     assert "minute" in rate_limit.RATE_SESSIONS
     assert "minute" in rate_limit.RATE_MESSAGES

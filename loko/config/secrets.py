@@ -50,7 +50,7 @@ def get_secret(
         if secret_path.exists() and secret_path.is_file():
             try:
                 # Read secret from file, strip whitespace
-                with open(secret_path, 'r', encoding='utf-8') as f:
+                with open(secret_path, "r", encoding="utf-8") as f:
                     secret_value = f.read().strip()
 
                 if secret_value:
@@ -97,7 +97,7 @@ def get_secret_bytes(
         secret_path = Path(secret_file_path)
         if secret_path.exists() and secret_path.is_file():
             try:
-                with open(secret_path, 'rb') as f:
+                with open(secret_path, "rb") as f:
                     return f.read()
             except (IOError, PermissionError) as e:
                 print(f"Warning: Could not read secret file {secret_path}: {e}")
@@ -105,7 +105,7 @@ def get_secret_bytes(
     # Fallback to environment variable (decode from string)
     secret_value = os.getenv(env_var_name)
     if secret_value:
-        return secret_value.encode('utf-8')
+        return secret_value.encode("utf-8")
 
     if required:
         raise ValueError(
@@ -140,7 +140,9 @@ def verify_secret_file_permissions(secret_file_path: str) -> bool:
         if mode in (0o600, 0o400):
             return True
 
-        print(f"Warning: Secret file {secret_path} has insecure permissions: {oct(mode)}")
+        print(
+            f"Warning: Secret file {secret_path} has insecure permissions: {oct(mode)}"
+        )
         print(f"Recommended: chmod 600 {secret_path}")
         return False
 

@@ -27,12 +27,15 @@ def app(tmp_path, monkeypatch):
     monkeypatch.setenv("LOKO_ADMIN_TOKEN", "test-admin-token-12345")
 
     from loko.api.bot_admin import _TRAINING_STATE
+
     _TRAINING_STATE.clear()
 
     from loko.api.bot_public import clear_orchestrators
+
     clear_orchestrators()
 
     from loko.main import create_app
+
     return create_app()
 
 
@@ -52,12 +55,26 @@ def sample_bot(tmp_path, monkeypatch) -> BotConfig:
     config = BotConfig(
         name="TrainStateBot",
         intents=[
-            Intent(id="livraison", label="Livraison", definition="Livraison",
-                   examples=[f"ex {i}" for i in range(10)]),
-            Intent(id="hors_perimetre", label="HP", definition="HP",
-                   examples=["hp"], is_system=True),
-            Intent(id="demande_conseiller", label="DC", definition="DC",
-                   examples=["dc"], is_system=True),
+            Intent(
+                id="livraison",
+                label="Livraison",
+                definition="Livraison",
+                examples=[f"ex {i}" for i in range(10)],
+            ),
+            Intent(
+                id="hors_perimetre",
+                label="HP",
+                definition="HP",
+                examples=["hp"],
+                is_system=True,
+            ),
+            Intent(
+                id="demande_conseiller",
+                label="DC",
+                definition="DC",
+                examples=["dc"],
+                is_system=True,
+            ),
         ],
     )
     save_bot_config(config)
@@ -154,7 +171,9 @@ class TestTrainStatePersistence:
         # Write a failed state to disk
         state_path = get_bot_dir(bot_id) / "train_state.json"
         state_path.write_text(
-            json.dumps({"status": "failed", "error": "interrupted", "step": "interrupted"}),
+            json.dumps(
+                {"status": "failed", "error": "interrupted", "step": "interrupted"}
+            ),
             encoding="utf-8",
         )
         _TRAINING_STATE.clear()
@@ -168,6 +187,7 @@ class TestTrainStatePersistence:
     def test_idle_when_no_state(self, client, admin_headers, sample_bot):
         """GET /train/status returns idle when no state exists at all."""
         from loko.api.bot_admin import _TRAINING_STATE
+
         _TRAINING_STATE.clear()
 
         bot_id = sample_bot.bot_id

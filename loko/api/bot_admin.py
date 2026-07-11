@@ -22,7 +22,13 @@ from loko.bot.config_store import (
     load_bot_config,
     save_bot_config,
 )
-from loko.bot.models import BotConfig, Intent, JourneyParams, MessageTemplate, TemplateKey
+from loko.bot.models import (
+    BotConfig,
+    Intent,
+    JourneyParams,
+    MessageTemplate,
+    TemplateKey,
+)
 from loko.bot.session_store import get_bot_dir, get_bots_dir
 
 
@@ -30,6 +36,7 @@ def _reject_demo_mutation(config: BotConfig | None, bot_id: str) -> None:
     """Q5: demo bots are read-only — refuse any mutation."""
     if config and config.demo:
         raise HTTPException(403, f"Bot '{bot_id}' is a demo bot (read-only).")
+
 
 logger = logging.getLogger(__name__)
 
@@ -133,6 +140,7 @@ def recover_interrupted_jobs() -> None:
 # Request / Response models
 # ---------------------------------------------------------------------------
 
+
 class BotCreateRequest(BaseModel):
     name: str
     channel: str = "both"
@@ -161,8 +169,11 @@ class TrainRequest(BaseModel):
 # Bot CRUD
 # ---------------------------------------------------------------------------
 
+
 @router.get("/")
-async def list_all_bots(request: Request, _auth=Depends(require_session_or_ops)) -> list[dict[str, str]]:
+async def list_all_bots(
+    request: Request, _auth=Depends(require_session_or_ops)
+) -> list[dict[str, str]]:
     """T2: list bots filtered by tenant (ops sees all)."""
     is_ops = getattr(request.state, "is_ops", False)
     if is_ops:
@@ -183,6 +194,7 @@ async def create_bot(
     # Q1: check bot creation quota
     if account_id:
         from loko.api.quotas import check_bot_creation_quota
+
         check_bot_creation_quota(account_id)
 
     config = BotConfig(
@@ -198,7 +210,9 @@ async def create_bot(
 
 @router.get("/{bot_id}")
 async def get_bot(
-    bot_id: str, request: Request, _auth=Depends(require_tenant_or_ops),
+    bot_id: str,
+    request: Request,
+    _auth=Depends(require_tenant_or_ops),
 ) -> dict[str, Any]:
     config = load_bot_config(bot_id)
     if not config:
@@ -208,7 +222,9 @@ async def get_bot(
 
 @router.put("/{bot_id}")
 async def update_bot(
-    bot_id: str, req: BotUpdateRequest, request: Request,
+    bot_id: str,
+    req: BotUpdateRequest,
+    request: Request,
     _auth=Depends(require_tenant_or_ops),
 ) -> dict[str, Any]:
     config = load_bot_config(bot_id)
@@ -222,6 +238,7 @@ async def update_bot(
 
     # Invalidate cached orchestrator so next request picks up new config
     from loko.api.bot_public import invalidate_orchestrator
+
     invalidate_orchestrator(bot_id)
 
     return updated.model_dump(mode="json")
@@ -229,7 +246,9 @@ async def update_bot(
 
 @router.delete("/{bot_id}")
 async def delete_bot_endpoint(
-    bot_id: str, request: Request, _auth=Depends(require_tenant_or_ops),
+    bot_id: str,
+    request: Request,
+    _auth=Depends(require_tenant_or_ops),
 ) -> dict[str, str]:
     config = load_bot_config(bot_id)
     _reject_demo_mutation(config, bot_id)
@@ -242,9 +261,12 @@ async def delete_bot_endpoint(
 # Publish
 # ---------------------------------------------------------------------------
 
+
 @router.post("/{bot_id}/publish")
 async def publish_bot(
-    bot_id: str, request: Request, _auth=Depends(require_tenant_or_ops),
+    bot_id: str,
+    request: Request,
+    _auth=Depends(require_tenant_or_ops),
 ) -> dict[str, Any]:
     config = load_bot_config(bot_id)
     if not config:
@@ -274,8 +296,11 @@ async def publish_bot(
     from loko.bot.errors import ModelIntegrityError
 
     if not manifest_exists(bot_id):
-        raise ModelIntegrityError(bot_id, "manifest_missing",
-                                  "Aucun manifeste d'integrite. Relancez l'entrainement.")
+        raise ModelIntegrityError(
+            bot_id,
+            "manifest_missing",
+            "Aucun manifeste d'integrite. Relancez l'entrainement.",
+        )
 
     verification = verify_model(bot_id)
     if not verification.ok:
@@ -291,8 +316,11 @@ async def publish_bot(
     current_hash = compute_dataset_hash(texts, labels)
     manifest = read_manifest(bot_id)
     if manifest and manifest.get("dataset_hash") != current_hash:
-        raise ModelIntegrityError(bot_id, "retrain_required",
-                                  "Les exemples ont change depuis le dernier entrainement.")
+        raise ModelIntegrityError(
+            bot_id,
+            "retrain_required",
+            "Les exemples ont change depuis le dernier entrainement.",
+        )
 
     # R2-c: knowledge base coverage warnings
     warnings: list[str] = []
@@ -324,6 +352,7 @@ async def publish_bot(
     # PRO-2: create release snapshot
     try:
         from loko.bot.versioning import get_release_store
+
         release_store = get_release_store()
         model_hash = ""
         if manifest:
@@ -339,6 +368,7 @@ async def publish_bot(
 
     # Invalidate cached orchestrator so runtime picks up new status
     from loko.api.bot_public import invalidate_orchestrator
+
     invalidate_orchestrator(bot_id)
 
     result: dict[str, Any] = {"status": "published", "bot_id": bot_id}
@@ -350,6 +380,7 @@ async def publish_bot(
 # ---------------------------------------------------------------------------
 # Training
 # ---------------------------------------------------------------------------
+
 
 @router.post("/{bot_id}/train")
 async def train_bot(
@@ -367,6 +398,7 @@ async def train_bot(
 
     # R2-a: LOKO_ML guard — refuse training when ML is explicitly disabled
     import os
+
     if os.environ.get("LOKO_ML", "on").lower() == "off":
         raise HTTPException(
             503,
@@ -397,7 +429,9 @@ async def train_bot(
 
 @router.get("/{bot_id}/train/status")
 async def get_training_status(
-    bot_id: str, request: Request, _auth=Depends(require_tenant_or_ops),
+    bot_id: str,
+    request: Request,
+    _auth=Depends(require_tenant_or_ops),
 ) -> dict[str, Any]:
     state = _TRAINING_STATE.get(bot_id)
     if not state:
@@ -411,7 +445,9 @@ async def get_training_status(
 
 @router.get("/{bot_id}/evaluation")
 async def get_evaluation(
-    bot_id: str, request: Request, _auth=Depends(require_tenant_or_ops),
+    bot_id: str,
+    request: Request,
+    _auth=Depends(require_tenant_or_ops),
 ) -> dict[str, Any]:
     state = _TRAINING_STATE.get(bot_id)
     if not state or not state.get("result"):
@@ -425,7 +461,9 @@ async def get_evaluation(
 
 @router.get("/{bot_id}/train/report")
 async def get_training_report(
-    bot_id: str, request: Request, _auth=Depends(require_tenant_or_ops),
+    bot_id: str,
+    request: Request,
+    _auth=Depends(require_tenant_or_ops),
 ) -> dict[str, Any]:
     """Full training report (B2): confusion matrix, F1, advice, latency, manifest."""
     state = _TRAINING_STATE.get(bot_id)
@@ -445,6 +483,7 @@ async def get_training_report(
 
     # Enrich with manifest data if available
     from loko.bot.classifier.manifest import read_manifest
+
     manifest = read_manifest(bot_id)
     if manifest:
         report["manifest_data"] = {
@@ -463,6 +502,7 @@ async def get_training_report(
 
 class IngestDocumentRequest(BaseModel):
     """Request body for document ingestion."""
+
     content: str = Field(..., min_length=1, max_length=500_000)
     source_url: str = ""
     source_title: str = ""
@@ -473,6 +513,7 @@ class IngestDocumentRequest(BaseModel):
 
 class UpdateTagsRequest(BaseModel):
     """Request body for bulk tag updates."""
+
     doc_ids: list[str] = Field(..., min_length=1)
     bot_intents: list[str] | None = None
     bot_sub_motifs: list[str] | None = None
@@ -480,6 +521,7 @@ class UpdateTagsRequest(BaseModel):
 
 class CrawlFAQRequest(BaseModel):
     """Request body for FAQ web crawl + optional ingestion."""
+
     start_url: str = Field(..., min_length=1)
     max_depth: int = Field(default=3, ge=1, le=10)
     max_pages: int = Field(default=200, ge=1, le=5000)
@@ -508,6 +550,7 @@ async def ingest_document(
     # Q1: check document quota
     if config.account_id:
         from loko.api.quotas import check_document_quota
+
         check_document_quota(config.account_id, bot_id)
 
     from loko.bot.knowledge_store import get_knowledge_store
@@ -574,7 +617,8 @@ async def crawl_faq_web(
     if req.document_url_patterns:
         patterns = [re.compile(pattern) for pattern in req.document_url_patterns]
         documents = [
-            doc for doc in documents
+            doc
+            for doc in documents
             if any(pattern.search(doc.url) for pattern in patterns)
         ]
 
@@ -591,11 +635,13 @@ async def crawl_faq_web(
                 confidentiality=req.confidentiality,
                 doc_id=doc.doc_id,
             )
-            ingested.append({
-                "doc_id": doc_id,
-                "url": doc.url,
-                "title": doc.title,
-            })
+            ingested.append(
+                {
+                    "doc_id": doc_id,
+                    "url": doc.url,
+                    "title": doc.title,
+                }
+            )
         if ingested and not config.knowledge_collection:
             config.knowledge_collection = bot_id
             save_bot_config(config)
@@ -642,7 +688,9 @@ async def list_documents(
 
 @router.delete("/{bot_id}/documents/{doc_id}")
 async def delete_document(
-    bot_id: str, doc_id: str, request: Request = None,
+    bot_id: str,
+    doc_id: str,
+    request: Request = None,
     _auth=Depends(require_tenant_or_ops),
 ) -> dict[str, str]:
     """Delete a document from the knowledge base."""
@@ -687,7 +735,9 @@ async def update_document_tags(
 
 @router.get("/{bot_id}/knowledge/coverage")
 async def get_knowledge_coverage(
-    bot_id: str, request: Request = None, _auth=Depends(require_tenant_or_ops),
+    bot_id: str,
+    request: Request = None,
+    _auth=Depends(require_tenant_or_ops),
 ) -> dict[str, Any]:
     """Return document count per intent (for publication readiness checks)."""
     config = load_bot_config(bot_id)
@@ -743,8 +793,10 @@ def _run_training_background(
 # LLM configuration (Lot LLM §6.4) — BYO key per bot
 # ---------------------------------------------------------------------------
 
+
 class LLMConfigRequest(BaseModel):
     """Request body for PUT /api/bot/{bot_id}/llm."""
+
     provider_source: str = "custom"
     preset: str | None = None
     base_url: str = ""
@@ -754,6 +806,7 @@ class LLMConfigRequest(BaseModel):
 
 class LLMTestRequest(BaseModel):
     """Request body for POST /api/bot/{bot_id}/llm/test."""
+
     base_url: str
     model: str
     api_key: str
@@ -774,6 +827,7 @@ async def update_llm_config(
     # Validate base_url with SSRF check
     if req.provider_source == "custom" and req.base_url:
         from loko.security.ssrf import validate_url, SSRFError
+
         try:
             validate_url(req.base_url)
         except SSRFError as exc:
@@ -784,6 +838,7 @@ async def update_llm_config(
     api_key_hint = config.llm.api_key_hint
     if req.api_key:
         from loko.security.secret_store import get_secret_store
+
         store = get_secret_store()
         # Delete old key if exists
         if api_key_ref:
@@ -792,20 +847,23 @@ async def update_llm_config(
         api_key_hint = req.api_key[-4:] if len(req.api_key) >= 4 else "****"
 
     # Update config
-    llm = config.llm.model_copy(update={
-        "provider_source": req.provider_source,
-        "preset": req.preset,
-        "base_url": req.base_url,
-        "model": req.model or config.llm.model,
-        "api_key_ref": api_key_ref,
-        "api_key_hint": api_key_hint,
-        "api_key_set": bool(api_key_ref),
-    })
+    llm = config.llm.model_copy(
+        update={
+            "provider_source": req.provider_source,
+            "preset": req.preset,
+            "base_url": req.base_url,
+            "model": req.model or config.llm.model,
+            "api_key_ref": api_key_ref,
+            "api_key_hint": api_key_hint,
+            "api_key_set": bool(api_key_ref),
+        }
+    )
     config = config.model_copy(update={"llm": llm})
     save_bot_config(config)
 
     # Invalidate orchestrator cache
     from loko.api.bot_public import invalidate_orchestrator
+
     invalidate_orchestrator(bot_id)
 
     return {
@@ -850,6 +908,7 @@ _LLM_TEST_MAX = 5
 def _check_llm_test_rate(request: Request) -> None:
     """Enforce rate limit on LLM test endpoint (5/min per account)."""
     import time as _t
+
     account_id = getattr(request.state, "account_id", None) or (
         request.client.host if request.client else "unknown"
     )
@@ -875,6 +934,7 @@ async def test_llm_connection(
 
     # SSRF validation
     from loko.security.ssrf import validate_url, SSRFError
+
     try:
         validate_url(req.base_url)
     except SSRFError as exc:
@@ -931,6 +991,7 @@ async def test_llm_connection(
 # PRO-2: Versioning and rollback (§7.2)
 # ---------------------------------------------------------------------------
 
+
 @router.get("/{bot_id}/releases")
 async def list_releases(
     bot_id: str,
@@ -942,6 +1003,7 @@ async def list_releases(
         raise HTTPException(404, "Not found")
 
     from loko.bot.versioning import get_release_store
+
     store = get_release_store()
     releases = store.list_releases(bot_id)
     return [r.model_dump(mode="json") for r in releases]
@@ -960,6 +1022,7 @@ async def rollback_release(
     _reject_demo_mutation(config, bot_id)
 
     from loko.bot.versioning import get_release_store
+
     store = get_release_store()
 
     # Get release config
@@ -975,16 +1038,23 @@ async def rollback_release(
 
     if target_release.model_hash:
         from loko.bot.classifier.manifest import read_manifest
+
         manifest = read_manifest(bot_id)
         if not manifest:
             raise HTTPException(
                 422,
-                {"error": "retrain_required", "detail": "Model manifest missing. Retrain before rollback."},
+                {
+                    "error": "retrain_required",
+                    "detail": "Model manifest missing. Retrain before rollback.",
+                },
             )
         if manifest.get("model_hash", "") != target_release.model_hash:
             raise HTTPException(
                 422,
-                {"error": "retrain_required", "detail": "Model has changed since this release. Retrain required."},
+                {
+                    "error": "retrain_required",
+                    "detail": "Model has changed since this release. Retrain required.",
+                },
             )
 
     # Activate the release
@@ -997,6 +1067,7 @@ async def rollback_release(
 
     # Invalidate orchestrator cache
     from loko.api.bot_public import invalidate_orchestrator
+
     invalidate_orchestrator(bot_id)
 
     return {
@@ -1009,6 +1080,7 @@ async def rollback_release(
 # ---------------------------------------------------------------------------
 # PRO-7: Maintenance mode (§7.7)
 # ---------------------------------------------------------------------------
+
 
 class MaintenanceRequest(BaseModel):
     enabled: bool
@@ -1027,6 +1099,7 @@ async def set_maintenance_mode(
         raise HTTPException(404, "Not found")
 
     from loko.bot.maintenance import set_maintenance
+
     state = set_maintenance(bot_id, req.enabled, req.message_override)
 
     return {
@@ -1047,6 +1120,7 @@ async def get_maintenance_mode(
         raise HTTPException(404, "Not found")
 
     from loko.bot.maintenance import is_maintenance, get_maintenance_message
+
     return {
         "bot_id": bot_id,
         "maintenance": is_maintenance(bot_id),
@@ -1057,6 +1131,7 @@ async def get_maintenance_mode(
 # ---------------------------------------------------------------------------
 # PRO-6: Quota management (§7.6)
 # ---------------------------------------------------------------------------
+
 
 class QuotaConfigRequest(BaseModel):
     sessions_mois: int = Field(default=0, ge=0)
@@ -1076,6 +1151,7 @@ async def set_quotas(
         raise HTTPException(404, "Not found")
 
     import os
+
     quota_dir = Path(os.environ.get("LOKO_DATA_DIR", "data")) / "quota_configs"
     quota_dir.mkdir(parents=True, exist_ok=True)
     quota_path = quota_dir / f"{bot_id}.json"
@@ -1132,17 +1208,21 @@ async def delete_llm_key(
 
     if config.llm.api_key_ref:
         from loko.security.secret_store import get_secret_store
+
         get_secret_store().delete(config.llm.api_key_ref)
 
-    llm = config.llm.model_copy(update={
-        "api_key_ref": "",
-        "api_key_hint": "",
-        "api_key_set": False,
-    })
+    llm = config.llm.model_copy(
+        update={
+            "api_key_ref": "",
+            "api_key_hint": "",
+            "api_key_set": False,
+        }
+    )
     config = config.model_copy(update={"llm": llm})
     save_bot_config(config)
 
     from loko.api.bot_public import invalidate_orchestrator
+
     invalidate_orchestrator(bot_id)
 
     return {"status": "key_revoked"}
@@ -1151,6 +1231,7 @@ async def delete_llm_key(
 # ---------------------------------------------------------------------------
 # GF-A8: Guardrails config (§4.8)
 # ---------------------------------------------------------------------------
+
 
 class GuardrailsConfigRequest(BaseModel):
     enabled: bool = True
@@ -1205,6 +1286,7 @@ async def update_guardrails(
 
     # Invalidate orchestrator so it picks up new guardrails
     from loko.api.bot_public import invalidate_orchestrator
+
     invalidate_orchestrator(bot_id)
 
     return {"status": "updated", "bot_id": bot_id}
@@ -1226,7 +1308,8 @@ async def get_guardrails(
 
     # Return defaults
     from loko.bot.guardrails import default_ruleset, GuardrailsConfig, GuardrailRule
-    default_config = GuardrailsConfig(rules=[
-        GuardrailRule(**r) for r in default_ruleset()
-    ])
+
+    default_config = GuardrailsConfig(
+        rules=[GuardrailRule(**r) for r in default_ruleset()]
+    )
     return default_config.model_dump(mode="json")

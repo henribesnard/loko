@@ -60,7 +60,9 @@ def enrich_config_from_csv(config: dict, csv_path: Path) -> dict:
                     intent_map[intent_id]["examples"].append(text)
                     added[intent_id] += 1
             else:
-                print(f"  Warning: intent '{intent_id}' not in config, skipping: {text[:50]}")
+                print(
+                    f"  Warning: intent '{intent_id}' not in config, skipping: {text[:50]}"
+                )
 
     total = sum(added.values())
     print(f"Enrichment: {total} examples added from {csv_path.name}")
@@ -89,7 +91,9 @@ def replace_train_data(config: dict, train_csv: Path) -> dict:
             print(f"  Warning: intent '{intent_id}' in CSV but not in config")
 
     total = sum(len(ex) for ex in examples_by_intent.values())
-    print(f"Training data replaced: {total} examples across {len(examples_by_intent)} intents")
+    print(
+        f"Training data replaced: {total} examples across {len(examples_by_intent)} intents"
+    )
     return config
 
 
@@ -109,24 +113,30 @@ def train(bot_dir: Path, config_dict: dict, skip_eval: bool = False) -> dict:
         if step == "l1_preparing":
             print("  [L1] Preparing training data...")
         elif step == "l1_training":
-            print(f"  [L1] Training: {detail.get('num_samples', '?')} samples, "
-                  f"{detail.get('num_classes', '?')} classes")
+            print(
+                f"  [L1] Training: {detail.get('num_samples', '?')} samples, "
+                f"{detail.get('num_classes', '?')} classes"
+            )
         elif step == "l1_evaluating":
             print("  [L1] Cross-validation + margin analysis...")
         elif step == "l2_preparing":
             print(f"  [L2] Preparing: {detail.get('intent', '?')}")
         elif step == "l2_training":
-            print(f"  [L2] Training: {detail.get('intent', '?')} "
-                  f"({detail.get('num_samples', '?')} samples)")
+            print(
+                f"  [L2] Training: {detail.get('intent', '?')} "
+                f"({detail.get('num_samples', '?')} samples)"
+            )
         elif step == "writing_manifest":
             print("  [--] Writing manifest...")
         elif step == "done":
             profile = detail.get("profile", {})
             if profile:
-                print(f"  [OK] Training complete: {profile.get('total_s', '?')}s total "
-                      f"(L1={profile.get('l1_train_s', '?')}s, "
-                      f"eval={profile.get('eval_s', '?')}s, "
-                      f"L2={profile.get('l2_train_s', '?')}s)")
+                print(
+                    f"  [OK] Training complete: {profile.get('total_s', '?')}s total "
+                    f"(L1={profile.get('l1_train_s', '?')}s, "
+                    f"eval={profile.get('eval_s', '?')}s, "
+                    f"L2={profile.get('l2_train_s', '?')}s)"
+                )
 
     result = train_bot_classifiers(
         config,
@@ -141,18 +151,32 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         description="E1/E2 - Train bot classifier offline (no server required)",
     )
-    parser.add_argument("--bot-dir", required=True,
-                        help="Path to bot directory (data/bots/<uuid>)")
-    parser.add_argument("--enrich", default=None,
-                        help="Path to enrichment CSV (adds examples to existing config)")
-    parser.add_argument("--train-csv", default=None,
-                        help="Path to full training CSV (replaces all examples)")
-    parser.add_argument("--skip-eval", action="store_true",
-                        help="Skip cross-validation (faster, for iteration)")
-    parser.add_argument("--save-config", action="store_true",
-                        help="Save enriched config back to config.json")
-    parser.add_argument("--output", "-o", default=None,
-                        help="Write training report JSON to file")
+    parser.add_argument(
+        "--bot-dir", required=True, help="Path to bot directory (data/bots/<uuid>)"
+    )
+    parser.add_argument(
+        "--enrich",
+        default=None,
+        help="Path to enrichment CSV (adds examples to existing config)",
+    )
+    parser.add_argument(
+        "--train-csv",
+        default=None,
+        help="Path to full training CSV (replaces all examples)",
+    )
+    parser.add_argument(
+        "--skip-eval",
+        action="store_true",
+        help="Skip cross-validation (faster, for iteration)",
+    )
+    parser.add_argument(
+        "--save-config",
+        action="store_true",
+        help="Save enriched config back to config.json",
+    )
+    parser.add_argument(
+        "--output", "-o", default=None, help="Write training report JSON to file"
+    )
 
     args = parser.parse_args()
 
@@ -201,7 +225,9 @@ def main() -> None:
         result = train(bot_dir, config, skip_eval=args.skip_eval)
     except ImportError as exc:
         print(f"\n  Error: ML dependencies not available: {exc}", file=sys.stderr)
-        print("  Install with: pip install setfit sentence-transformers", file=sys.stderr)
+        print(
+            "  Install with: pip install setfit sentence-transformers", file=sys.stderr
+        )
         sys.exit(1)
     except Exception as exc:
         print(f"\n  Error: Training failed: {exc}", file=sys.stderr)
@@ -215,17 +241,21 @@ def main() -> None:
     print(f"  {'=' * 50}")
 
     l1 = result.get("level1", {})
-    print(f"  L1: {l1.get('num_classes', '?')} classes, "
-          f"{l1.get('num_samples', '?')} samples, "
-          f"{l1.get('duration_s', '?')}s")
+    print(
+        f"  L1: {l1.get('num_classes', '?')} classes, "
+        f"{l1.get('num_samples', '?')} samples, "
+        f"{l1.get('duration_s', '?')}s"
+    )
 
     l2 = result.get("level2", {})
     for intent_id, l2_result in l2.items():
         if "error" in l2_result:
             print(f"  L2 {intent_id}: {l2_result['error']}")
         else:
-            print(f"  L2 {intent_id}: {l2_result.get('num_classes', '?')} classes, "
-                  f"{l2_result.get('num_samples', '?')} samples")
+            print(
+                f"  L2 {intent_id}: {l2_result.get('num_classes', '?')} classes, "
+                f"{l2_result.get('num_samples', '?')} samples"
+            )
 
     evaluation = result.get("evaluation")
     if evaluation:

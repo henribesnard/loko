@@ -24,10 +24,10 @@ _SAFE_METHODS = frozenset({"GET", "HEAD", "OPTIONS"})
 
 # Paths exempt from CSRF (public API uses API key, auth login/signup use credentials)
 _EXEMPT_PREFIXES = (
-    "/api/v1/",         # Public bot API (uses API key, no cookie)
+    "/api/v1/",  # Public bot API (uses API key, no cookie)
     "/api/auth/login",  # Login sets the CSRF cookie
-    "/api/auth/signup", # Signup is unauthenticated
-    "/api/ops/",        # Ops uses Bearer token, no cookie
+    "/api/auth/signup",  # Signup is unauthenticated
+    "/api/ops/",  # Ops uses Bearer token, no cookie
     "/health",
     "/widget/",
 )
@@ -39,6 +39,7 @@ class CSRFMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next) -> Response:
         # Only enforce in server mode
         from loko.config.env import get_env
+
         if get_env("MODE", "desktop") != "server":
             return await call_next(request)
 
@@ -56,6 +57,7 @@ class CSRFMiddleware(BaseHTTPMiddleware):
 
         if not cookie_token or not header_token or cookie_token != header_token:
             from starlette.responses import JSONResponse
+
             return JSONResponse(
                 status_code=403,
                 content={"detail": "CSRF token missing or invalid"},

@@ -47,6 +47,7 @@ from setup_campaign_bot import (
 # T1: Protocol matrix structure
 # ---------------------------------------------------------------------------
 
+
 class TestProtocolMatrix:
     """T1: protocol v2.2 matrix invariants."""
 
@@ -68,7 +69,9 @@ class TestProtocolMatrix:
     def test_all_lines_have_unique_ids(self):
         lines = build_protocol_lines()
         ids = [l.id for l in lines]
-        assert len(ids) == len(set(ids)), f"duplicate IDs: {[x for x in ids if ids.count(x) > 1]}"
+        assert len(ids) == len(set(ids)), (
+            f"duplicate IDs: {[x for x in ids if ids.count(x) > 1]}"
+        )
 
     def test_all_lines_have_description(self):
         lines = build_protocol_lines()
@@ -79,12 +82,15 @@ class TestProtocolMatrix:
         known_gates = {"CE", "G-0", "G-1", "G-1b", "G-2", "G-3"}
         lines = build_protocol_lines()
         for line in lines:
-            assert line.gate in known_gates, f"line {line.id} has unknown gate {line.gate}"
+            assert line.gate in known_gates, (
+                f"line {line.id} has unknown gate {line.gate}"
+            )
 
 
 # ---------------------------------------------------------------------------
 # T2: All lines start as FAIL
 # ---------------------------------------------------------------------------
+
 
 class TestLinesStartFail:
     """T2: non execute = FAIL invariant."""
@@ -103,6 +109,7 @@ class TestLinesStartFail:
 # ---------------------------------------------------------------------------
 # T3: Gate calculation
 # ---------------------------------------------------------------------------
+
 
 class TestGateCalculation:
     """T3: gate verdicts computed from line verdicts."""
@@ -162,6 +169,7 @@ class TestGateCalculation:
 # T4: SKIP enforcement
 # ---------------------------------------------------------------------------
 
+
 class TestSkipEnforcement:
     """T4: only skippable lines can be SKIP."""
 
@@ -187,6 +195,7 @@ class TestSkipEnforcement:
 # T5: CE-9 executor
 # ---------------------------------------------------------------------------
 
+
 class TestCE9Executor:
     """T5: CE-9 validates bot conformity."""
 
@@ -194,41 +203,55 @@ class TestCE9Executor:
         """Create a valid bot config with 9 intents + L2."""
         intents = []
         for intent_id in [
-            "help_leave", "help_contact", "help_billing",
-            "help_documents", "help_cancellation", "help_account",
+            "help_leave",
+            "help_contact",
+            "help_billing",
+            "help_documents",
+            "help_cancellation",
+            "help_account",
             "help_transfer",
         ]:
-            intents.append({
-                "id": intent_id,
-                "label": intent_id.replace("_", " ").title(),
-                "definition": f"Intent {intent_id}",
-                "examples": [f"ex{i} for {intent_id}" for i in range(10)],
-                "sub_motifs": [],
-                "is_system": False,
-            })
+            intents.append(
+                {
+                    "id": intent_id,
+                    "label": intent_id.replace("_", " ").title(),
+                    "definition": f"Intent {intent_id}",
+                    "examples": [f"ex{i} for {intent_id}" for i in range(10)],
+                    "sub_motifs": [],
+                    "is_system": False,
+                }
+            )
         # Add services_en_ligne L2 sub-motifs
         sel = next(i for i in intents if i["id"] == "help_account")
         sel["sub_motifs"] = [
-            {"id": f"sub_{j}", "label": f"Sub {j}", "examples": [f"ex{k}" for k in range(3)]}
+            {
+                "id": f"sub_{j}",
+                "label": f"Sub {j}",
+                "examples": [f"ex{k}" for k in range(3)],
+            }
             for j in range(5)
         ]
         # System intents
-        intents.append({
-            "id": "hors_perimetre",
-            "label": "Hors perimetre",
-            "definition": "OOS",
-            "examples": [f"oos{i}" for i in range(10)],
-            "sub_motifs": [],
-            "is_system": True,
-        })
-        intents.append({
-            "id": "demande_conseiller",
-            "label": "Demande conseiller",
-            "definition": "Escalate",
-            "examples": [f"conseiller{i}" for i in range(10)],
-            "sub_motifs": [],
-            "is_system": True,
-        })
+        intents.append(
+            {
+                "id": "hors_perimetre",
+                "label": "Hors perimetre",
+                "definition": "OOS",
+                "examples": [f"oos{i}" for i in range(10)],
+                "sub_motifs": [],
+                "is_system": True,
+            }
+        )
+        intents.append(
+            {
+                "id": "demande_conseiller",
+                "label": "Demande conseiller",
+                "definition": "Escalate",
+                "examples": [f"conseiller{i}" for i in range(10)],
+                "sub_motifs": [],
+                "is_system": True,
+            }
+        )
         config = {"intents": intents}
         config_path = tmp_dir / "config.json"
         config_path.write_text(json.dumps(config, ensure_ascii=False), encoding="utf-8")
@@ -249,7 +272,9 @@ class TestCE9Executor:
         # Remove demande_conseiller
         config_path = bot_dir / "config.json"
         config = json.loads(config_path.read_text(encoding="utf-8"))
-        config["intents"] = [i for i in config["intents"] if i["id"] != "demande_conseiller"]
+        config["intents"] = [
+            i for i in config["intents"] if i["id"] != "demande_conseiller"
+        ]
         config_path.write_text(json.dumps(config, ensure_ascii=False), encoding="utf-8")
 
         campaign_dir = tmp_path / "campaign"
@@ -272,6 +297,7 @@ class TestCE9Executor:
 # T6: setup_campaign_bot intents
 # ---------------------------------------------------------------------------
 
+
 class TestSetupCampaignBot:
     """T6: setup_campaign_bot builds correct intents."""
 
@@ -280,9 +306,14 @@ class TestSetupCampaignBot:
         csv_path = tmp_path / "train.csv"
         rows = []
         for intent in [
-            "help_leave", "help_contact", "help_billing",
-            "hors_perimetre", "help_documents", "help_cancellation",
-            "help_account", "help_transfer",
+            "help_leave",
+            "help_contact",
+            "help_billing",
+            "hors_perimetre",
+            "help_documents",
+            "help_cancellation",
+            "help_account",
+            "help_transfer",
         ]:
             for i in range(10):
                 rows.append({"text": f"example {i} for {intent}", "intent": intent})
@@ -327,6 +358,7 @@ class TestSetupCampaignBot:
 # T7: Conformity check detects issues
 # ---------------------------------------------------------------------------
 
+
 class TestConformityDetection:
     """T7: verify_conformity detects config issues."""
 
@@ -339,12 +371,24 @@ class TestConformityDetection:
 
     def test_too_few_examples_detected(self):
         intents = [
-            {"id": name, "examples": list(range(10)), "is_system": name in ("hors_perimetre", "demande_conseiller"),
-             "sub_motifs": [{"id": f"s{i}"} for i in range(5)] if name == "help_account" else []}
+            {
+                "id": name,
+                "examples": list(range(10)),
+                "is_system": name in ("hors_perimetre", "demande_conseiller"),
+                "sub_motifs": [{"id": f"s{i}"} for i in range(5)]
+                if name == "help_account"
+                else [],
+            }
             for name in [
-                "help_leave", "help_contact", "help_billing",
-                "hors_perimetre", "help_documents", "help_cancellation",
-                "help_account", "help_transfer", "demande_conseiller",
+                "help_leave",
+                "help_contact",
+                "help_billing",
+                "hors_perimetre",
+                "help_documents",
+                "help_cancellation",
+                "help_account",
+                "help_transfer",
+                "demande_conseiller",
             ]
         ]
         # Make one intent have too few examples
@@ -354,12 +398,22 @@ class TestConformityDetection:
 
     def test_missing_l2_detected(self):
         intents = [
-            {"id": name, "examples": list(range(10)), "is_system": name in ("hors_perimetre", "demande_conseiller"),
-             "sub_motifs": []}
+            {
+                "id": name,
+                "examples": list(range(10)),
+                "is_system": name in ("hors_perimetre", "demande_conseiller"),
+                "sub_motifs": [],
+            }
             for name in [
-                "help_leave", "help_contact", "help_billing",
-                "hors_perimetre", "help_documents", "help_cancellation",
-                "help_account", "help_transfer", "demande_conseiller",
+                "help_leave",
+                "help_contact",
+                "help_billing",
+                "hors_perimetre",
+                "help_documents",
+                "help_cancellation",
+                "help_account",
+                "help_transfer",
+                "demande_conseiller",
             ]
         ]
         errors = verify_conformity(intents)
@@ -369,6 +423,7 @@ class TestConformityDetection:
 # ---------------------------------------------------------------------------
 # T8: Report generation
 # ---------------------------------------------------------------------------
+
 
 class TestReportGeneration:
     """T8: MD and JSON reports."""

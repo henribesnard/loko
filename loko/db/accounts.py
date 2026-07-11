@@ -98,11 +98,14 @@ def hash_password(password: str) -> str:
     """S3: Hash with argon2id if available, else PBKDF2-HMAC-SHA256 (AR-2)."""
     try:
         from argon2 import PasswordHasher
+
         ph = PasswordHasher(time_cost=3, memory_cost=65536, parallelism=4)
         return ph.hash(password)
     except ImportError:
         salt = secrets.token_hex(16)
-        dk = hashlib.pbkdf2_hmac("sha256", password.encode(), salt.encode(), _HASH_ITERATIONS)
+        dk = hashlib.pbkdf2_hmac(
+            "sha256", password.encode(), salt.encode(), _HASH_ITERATIONS
+        )
         return f"pbkdf2:sha256:{_HASH_ITERATIONS}:{salt}:{dk.hex()}"
 
 
@@ -113,6 +116,7 @@ def verify_password(password: str, stored_hash: str) -> bool:
         try:
             from argon2 import PasswordHasher
             from argon2.exceptions import VerifyMismatchError
+
             ph = PasswordHasher()
             return ph.verify(stored_hash, password)
         except (ImportError, VerifyMismatchError):
@@ -137,10 +141,17 @@ def verify_password(password: str, stored_hash: str) -> bool:
 # ---------------------------------------------------------------------------
 
 _ACCOUNT_FIELDS = frozenset({"org_name", "plan", "quotas", "status"})
-_USER_FIELDS = frozenset({
-    "email", "password_hash", "email_verified_at", "last_login_at", "role",
-    "terms_accepted_version", "terms_accepted_at",
-})
+_USER_FIELDS = frozenset(
+    {
+        "email",
+        "password_hash",
+        "email_verified_at",
+        "last_login_at",
+        "role",
+        "terms_accepted_version",
+        "terms_accepted_at",
+    }
+)
 
 
 def _validate_fields(kwargs: dict, allowed: frozenset[str], table: str) -> None:
@@ -154,6 +165,7 @@ def _validate_fields(kwargs: dict, allowed: frozenset[str], table: str) -> None:
 # Account CRUD
 # ---------------------------------------------------------------------------
 
+
 def create_account(org_name: str) -> dict[str, Any]:
     """Create a new account. Returns the account dict."""
     db = get_db()
@@ -164,7 +176,13 @@ def create_account(org_name: str) -> dict[str, Any]:
         (account_id, org_name, now),
     )
     db.commit()
-    return {"id": account_id, "org_name": org_name, "plan": "trial", "status": "active", "created_at": now}
+    return {
+        "id": account_id,
+        "org_name": org_name,
+        "plan": "trial",
+        "status": "active",
+        "created_at": now,
+    }
 
 
 def get_account(account_id: str) -> dict[str, Any] | None:
@@ -196,6 +214,7 @@ def update_account(account_id: str, **kwargs: Any) -> bool:
 # User CRUD
 # ---------------------------------------------------------------------------
 
+
 def create_user(account_id: str, email: str, password: str) -> dict[str, Any]:
     """Create a new user. Returns the user dict (without password_hash)."""
     db = get_db()
@@ -207,7 +226,13 @@ def create_user(account_id: str, email: str, password: str) -> dict[str, Any]:
         (user_id, account_id, email, pw_hash, now),
     )
     db.commit()
-    return {"id": user_id, "account_id": account_id, "email": email, "created_at": now, "role": "owner"}
+    return {
+        "id": user_id,
+        "account_id": account_id,
+        "email": email,
+        "created_at": now,
+        "role": "owner",
+    }
 
 
 def get_user_by_email(email: str) -> dict[str, Any] | None:

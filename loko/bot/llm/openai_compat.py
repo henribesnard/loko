@@ -108,7 +108,10 @@ class OpenAICompatProvider:
         async with httpx.AsyncClient(timeout=transport_timeout) as client:
             try:
                 async with client.stream(
-                    "POST", url, json=payload, headers=headers,
+                    "POST",
+                    url,
+                    json=payload,
+                    headers=headers,
                 ) as response:
                     if response.status_code == 401:
                         logger.error("LLM provider returned 401 Unauthorized")
@@ -127,7 +130,8 @@ class OpenAICompatProvider:
                         body = await response.aread()
                         logger.error(
                             "LLM provider error %d: %s",
-                            response.status_code, body[:500],
+                            response.status_code,
+                            body[:500],
                         )
                         raise LLMProviderError(
                             f"LLM provider error ({response.status_code})",
@@ -140,14 +144,16 @@ class OpenAICompatProvider:
                             continue
                         if not line.startswith("data: "):
                             continue
-                        data_str = line[len("data: "):]
+                        data_str = line[len("data: ") :]
                         if data_str.strip() == "[DONE]":
                             break
 
                         try:
                             chunk = json.loads(data_str)
                         except json.JSONDecodeError:
-                            logger.debug("Skipping non-JSON SSE line: %s", data_str[:100])
+                            logger.debug(
+                                "Skipping non-JSON SSE line: %s", data_str[:100]
+                            )
                             continue
 
                         # Capture usage from final chunk if provider includes it
@@ -172,14 +178,17 @@ class OpenAICompatProvider:
                 elapsed = time.perf_counter() - t0
                 logger.info(
                     "LLM generation interrupted: model=%s tokens=%d elapsed=%.2fs",
-                    effective_model, token_count, elapsed,
+                    effective_model,
+                    token_count,
+                    elapsed,
                 )
                 raise
             except httpx.TimeoutException:
                 elapsed = time.perf_counter() - t0
                 logger.error(
                     "LLM provider timeout after %.1fs (limit=%ds)",
-                    elapsed, timeout,
+                    elapsed,
+                    timeout,
                 )
                 raise LLMProviderError(
                     f"LLM provider timeout after {elapsed:.0f}s",
@@ -198,7 +207,10 @@ class OpenAICompatProvider:
         ttft = (first_token_time - t0) if first_token_time else elapsed
         logger.info(
             "LLM generation done: model=%s tokens=%d ttft=%.2fs total=%.2fs",
-            effective_model, token_count, ttft, elapsed,
+            effective_model,
+            token_count,
+            ttft,
+            elapsed,
         )
 
     def get_last_usage(self) -> dict[str, int] | None:

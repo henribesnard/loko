@@ -57,7 +57,9 @@ class TestIntent:
 class TestSubMotif:
     def test_valid_submotif(self):
         sm = SubMotif(
-            id="suivi", label="Suivi", definition="Suivi colis",
+            id="suivi",
+            label="Suivi",
+            definition="Suivi colis",
             examples=["a", "b", "c"],
         )
         assert sm.id == "suivi"
@@ -108,7 +110,9 @@ class TestBotConfig:
             name="Test",
             intents=[
                 Intent(
-                    id="x", label="X", definition="X",
+                    id="x",
+                    label="X",
+                    definition="X",
                     examples=[f"e{i}" for i in range(8)],
                 )
             ],
@@ -121,7 +125,9 @@ class TestBotConfig:
                 name="Test",
                 intents=[
                     Intent(
-                        id="x", label="X", definition="X",
+                        id="x",
+                        label="X",
+                        definition="X",
                         examples=[f"e{i}" for i in range(8)],
                     )
                 ],

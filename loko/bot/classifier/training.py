@@ -38,6 +38,7 @@ logger = logging.getLogger(__name__)
 # Confusion matrix + advice
 # ---------------------------------------------------------------------------
 
+
 class EvaluationResult:
     """Holds cross-validation evaluation results."""
 
@@ -61,7 +62,9 @@ class EvaluationResult:
     def to_dict(self) -> dict[str, Any]:
         # W3.3: cv_method reflects multi-seed averaging if n_seeds > 1
         n_seeds = self.extra_data.get("n_seeds", 1)
-        cv_method = f"base_model_frozen_{n_seeds}seeds" if n_seeds > 1 else "base_model_frozen"
+        cv_method = (
+            f"base_model_frozen_{n_seeds}seeds" if n_seeds > 1 else "base_model_frozen"
+        )
 
         d: dict[str, Any] = {
             "class_names": self.class_names,
@@ -204,7 +207,11 @@ def cross_validate(
         fn = sum(cm[i][j] for j in range(n_classes)) - tp
         precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
         recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
-        f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0.0
+        f1 = (
+            2 * precision * recall / (precision + recall)
+            if (precision + recall) > 0
+            else 0.0
+        )
         per_class_f1[cls_name] = f1
 
     advice = _generate_advice(unique_labels, cm, class_counts, per_class_f1)
@@ -213,7 +220,11 @@ def cross_validate(
     logger.info(
         "Cross-validation completed in %.1fs (base-model CV on %d folds × %d seeds, "
         "encode=%.1fs, cv=%.1fs)",
-        duration, k, n_seeds, encode_time, duration - encode_time,
+        duration,
+        k,
+        n_seeds,
+        encode_time,
+        duration - encode_time,
     )
 
     result = EvaluationResult(
@@ -250,53 +261,61 @@ def _generate_advice(
             errors = cm[i][j]
             if errors >= 2:
                 total_i = sum(cm[i])
-                advice.append({
-                    "type": "confused_pair",
-                    "pair": sorted([class_names[i], class_names[j]]),
-                    "evidence": "cv",
-                    "n_exemples_faibles": errors,
-                    "suggestion": (
-                        f"'{class_names[i]}' et '{class_names[j]}' se confondent "
-                        f"en CV base ({errors}/{total_i} erreurs). "
-                        f"Ajoutez des exemples discriminants entre ces deux intentions."
-                    ),
-                })
+                advice.append(
+                    {
+                        "type": "confused_pair",
+                        "pair": sorted([class_names[i], class_names[j]]),
+                        "evidence": "cv",
+                        "n_exemples_faibles": errors,
+                        "suggestion": (
+                            f"'{class_names[i]}' et '{class_names[j]}' se confondent "
+                            f"en CV base ({errors}/{total_i} erreurs). "
+                            f"Ajoutez des exemples discriminants entre ces deux intentions."
+                        ),
+                    }
+                )
 
     # 2. Under-represented classes
     for cls_name, count in sorted(class_counts.items()):
         if count < 8:
-            advice.append({
-                "type": "under_represented",
-                "intent": cls_name,
-                "n_exemples_faibles": count,
-                "suggestion": (
-                    f"'{cls_name}' n'a que {count} exemples. "
-                    f"Ajoutez-en pour atteindre au moins 15 (recommande)."
-                ),
-            })
+            advice.append(
+                {
+                    "type": "under_represented",
+                    "intent": cls_name,
+                    "n_exemples_faibles": count,
+                    "suggestion": (
+                        f"'{cls_name}' n'a que {count} exemples. "
+                        f"Ajoutez-en pour atteindre au moins 15 (recommande)."
+                    ),
+                }
+            )
         elif count < 15:
-            advice.append({
-                "type": "under_represented",
-                "intent": cls_name,
-                "n_exemples_faibles": count,
-                "suggestion": (
-                    f"'{cls_name}' a {count} exemples. "
-                    f"15-20 exemples sont recommandes pour une classification fiable."
-                ),
-            })
+            advice.append(
+                {
+                    "type": "under_represented",
+                    "intent": cls_name,
+                    "n_exemples_faibles": count,
+                    "suggestion": (
+                        f"'{cls_name}' a {count} exemples. "
+                        f"15-20 exemples sont recommandes pour une classification fiable."
+                    ),
+                }
+            )
 
     # 3. Low F1 classes
     for cls_name, f1 in sorted(per_class_f1.items()):
         if f1 < 0.5:
-            advice.append({
-                "type": "low_f1",
-                "intent": cls_name,
-                "n_exemples_faibles": 0,
-                "suggestion": (
-                    f"'{cls_name}' a un F1 de {f1:.2f} (faible). "
-                    f"Verifiez la qualite et la distinctivite de ses exemples."
-                ),
-            })
+            advice.append(
+                {
+                    "type": "low_f1",
+                    "intent": cls_name,
+                    "n_exemples_faibles": 0,
+                    "suggestion": (
+                        f"'{cls_name}' a un F1 de {f1:.2f} (faible). "
+                        f"Verifiez la qualite et la distinctivite de ses exemples."
+                    ),
+                }
+            )
 
     return advice
 
@@ -363,6 +382,7 @@ def _merge_and_sort_advice(
 # Full training pipeline
 # ---------------------------------------------------------------------------
 
+
 def compute_margin_analysis(
     classifier: SetFitClassifier,
     texts: list[str],
@@ -406,12 +426,14 @@ def compute_margin_analysis(
         margins = pair_margins[(a, b)]
         avg_margin = sum(margins) / len(margins) if margins else 0.0
         verbatims = pair_verbatims[(a, b)][:max_verbatims]
-        weak_pairs.append({
-            "pair": [a, b],
-            "count": count,
-            "avg_margin": round(avg_margin, 4),
-            "verbatims": verbatims,
-        })
+        weak_pairs.append(
+            {
+                "pair": [a, b],
+                "count": count,
+                "avg_margin": round(avg_margin, 4),
+                "verbatims": verbatims,
+            }
+        )
 
     # Generate structured advice for each pair (no count threshold — M1)
     advice: list[dict[str, Any]] = []
@@ -423,21 +445,23 @@ def compute_margin_analysis(
             examples = [f'"{v[:80]}"' for v in wp["verbatims"]]
             verbatim_str = f" Exemples a faible marge : {', '.join(examples)}."
 
-        advice.append({
-            "type": "confused_pair",
-            "pair": [a, b],
-            "evidence": "margins",
-            "n_exemples_faibles": count,
-            "avg_margin": wp["avg_margin"],
-            "suggestion": (
-                f"Les intentions '{a}' et '{b}' sont proches en marge "
-                f"({count} exemples avec ecart top1-top2 < {margin_threshold}, "
-                f"marge moyenne {wp['avg_margin']:.3f}). "
-                f"Ajoutez des exemples discriminants entre ces deux intentions."
-                f"{verbatim_str}"
-            ),
-            "verbatims": wp["verbatims"],
-        })
+        advice.append(
+            {
+                "type": "confused_pair",
+                "pair": [a, b],
+                "evidence": "margins",
+                "n_exemples_faibles": count,
+                "avg_margin": wp["avg_margin"],
+                "suggestion": (
+                    f"Les intentions '{a}' et '{b}' sont proches en marge "
+                    f"({count} exemples avec ecart top1-top2 < {margin_threshold}, "
+                    f"marge moyenne {wp['avg_margin']:.3f}). "
+                    f"Ajoutez des exemples discriminants entre ces deux intentions."
+                    f"{verbatim_str}"
+                ),
+                "verbatims": wp["verbatims"],
+            }
+        )
 
     return weak_pairs, advice
 
@@ -482,11 +506,14 @@ def train_bot_classifiers(
         results["level1"] = {"error": "No training data for L1"}
         return results
 
-    _progress("l1_training", {"num_samples": len(texts), "num_classes": len(set(labels))})
+    _progress(
+        "l1_training", {"num_samples": len(texts), "num_classes": len(set(labels))}
+    )
     t_l1 = time.perf_counter()
     classifier = SetFitClassifier(config.bot_id, "level1")
     train_result = classifier.train(
-        texts, labels,
+        texts,
+        labels,
         base_model=base_model,
         num_iterations=tp.num_iterations,
         num_epochs=tp.num_epochs,
@@ -530,7 +557,8 @@ def train_bot_classifiers(
         _progress("l2_training", {"intent": intent.id, "num_samples": len(l2_texts)})
         l2_classifier = SetFitClassifier(config.bot_id, "level2", intent.id)
         l2_result = l2_classifier.train(
-            l2_texts, l2_labels,
+            l2_texts,
+            l2_labels,
             base_model=base_model,
             num_iterations=tp.num_iterations,
             num_epochs=tp.num_epochs,
@@ -554,7 +582,9 @@ def train_bot_classifiers(
         )
 
         for intent in config.intents:
-            if intent.id in results.get("level2", {}) and "error" not in results["level2"].get(intent.id, {}):
+            if intent.id in results.get("level2", {}) and "error" not in results[
+                "level2"
+            ].get(intent.id, {}):
                 l2_dir = get_model_dir(config.bot_id, "level2", intent.id)
                 l2_texts_i, l2_labels_i = prepare_l2_training_data(intent)
                 levels[f"level2_{intent.id}"] = LevelInfo(
@@ -572,7 +602,9 @@ def train_bot_classifiers(
             results["inference_latency_ms"] = latency
             logger.info(
                 "Inference latency for bot %s: P50=%.1fms, P95=%.1fms",
-                config.bot_id, latency.get("p50", 0), latency.get("p95", 0),
+                config.bot_id,
+                latency.get("p50", 0),
+                latency.get("p95", 0),
             )
         except Exception:
             logger.warning("Could not measure inference latency", exc_info=True)

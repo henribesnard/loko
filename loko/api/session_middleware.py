@@ -53,6 +53,7 @@ def _maybe_extend_session(session: dict[str, Any]) -> None:
     """S7/AR-3: extend session expiry by 7 days if last extended >1h ago."""
     try:
         from loko.db.accounts import get_db
+
         expires = datetime.fromisoformat(session["expires_at"])
         if expires.tzinfo is None:
             expires = expires.replace(tzinfo=timezone.utc)
@@ -73,6 +74,7 @@ def _maybe_extend_session(session: dict[str, Any]) -> None:
 # ---------------------------------------------------------------------------
 # T2: Dual auth — session tenant OR ops token
 # ---------------------------------------------------------------------------
+
 
 def _is_ops_token_valid(request: Request) -> bool:
     """Check if the request carries a valid ops admin token."""
@@ -96,6 +98,7 @@ async def require_tenant(request: Request, bot_id: str) -> dict[str, Any]:
     """
     session = await require_session(request)
     from loko.bot.config_store import load_bot_config
+
     config = load_bot_config(bot_id)
     if not config:
         raise HTTPException(status_code=404, detail="Not found")
@@ -140,6 +143,7 @@ async def require_tenant_or_ops(request: Request, bot_id: str) -> dict[str, Any]
 
     # Check tenant ownership
     from loko.bot.config_store import load_bot_config
+
     config = load_bot_config(bot_id)
     if not config:
         raise HTTPException(status_code=404, detail="Not found")

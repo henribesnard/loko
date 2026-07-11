@@ -32,13 +32,15 @@ from loko.bot.models import (
 # Event types
 # ---------------------------------------------------------------------------
 
+
 class EventType(str, enum.Enum):
     """Events that can trigger state transitions."""
+
     # External (from user / system)
-    START = "start"                          # session created
-    USER_MESSAGE = "user_message"            # free text input
-    BUTTON_CLICK = "button_click"            # user clicked a choice button
-    TIMEOUT_EXPIRED = "timeout_expired"      # inactivity timer
+    START = "start"  # session created
+    USER_MESSAGE = "user_message"  # free text input
+    BUTTON_CLICK = "button_click"  # user clicked a choice button
+    TIMEOUT_EXPIRED = "timeout_expired"  # inactivity timer
 
     # Internal (from engine sub-steps)
     CLASSIFICATION_L1_DONE = "classification_l1_done"
@@ -48,6 +50,7 @@ class EventType(str, enum.Enum):
 
 class Event:
     """Wrapper for an event with optional data payload."""
+
     __slots__ = ("type", "data")
 
     def __init__(self, event_type: EventType, data: dict[str, Any] | None = None):
@@ -71,13 +74,14 @@ def _update(session: BotSession, **kwargs: Any) -> BotSession:
 # Transition handlers
 # ---------------------------------------------------------------------------
 
+
 def on_start(
-    session: BotSession, event: Event, config: BotConfig,
+    session: BotSession,
+    event: Event,
+    config: BotConfig,
 ) -> TransitionResult:
     """ACCUEIL -> ATTENTE_DEMANDE: emit welcome template."""
-    intent_labels = ", ".join(
-        i.label for i in config.intents if not i.is_system
-    )
+    intent_labels = ", ".join(i.label for i in config.intents if not i.is_system)
     new = _update(session, state=BotState.ATTENTE_DEMANDE)
     actions: list[Action] = [
         EmitTemplate(
@@ -92,7 +96,9 @@ def on_start(
 
 
 def on_user_message_attente(
-    session: BotSession, event: Event, config: BotConfig,
+    session: BotSession,
+    event: Event,
+    config: BotConfig,
 ) -> TransitionResult:
     """ATTENTE_DEMANDE -> CLASSIFICATION_L1: user typed first/next query."""
     text = event.data.get("text", "")
@@ -109,7 +115,9 @@ def on_user_message_attente(
 
 
 def on_classification_l1_done(
-    session: BotSession, event: Event, config: BotConfig,
+    session: BotSession,
+    event: Event,
+    config: BotConfig,
 ) -> TransitionResult:
     """Handle L1 classification result — delegates to decide_l1() (R1).
 
@@ -134,10 +142,16 @@ def on_classification_l1_done(
         return _handle_hors_perimetre(session, config)
 
     if decision.type == "clarify_inter":
-        if session.clarifications_count_current_demande >= config.journey.max_clarifications:
+        if (
+            session.clarifications_count_current_demande
+            >= config.journey.max_clarifications
+        ):
             return _route_after_l1(session, config, decision.intent or scores[0][0])
 
-        candidates = decision.candidates or [(scores[0][0], scores[0][1]), (scores[1][0], scores[1][1])]
+        candidates = decision.candidates or [
+            (scores[0][0], scores[0][1]),
+            (scores[1][0], scores[1][1]),
+        ]
         intent_map = {i.id: i.label for i in config.intents}
         options = [intent_map.get(c[0], c[0]) for c in candidates]
 
@@ -180,7 +194,8 @@ def on_classification_l1_done(
 
 
 def _handle_hors_perimetre(
-    session: BotSession, config: BotConfig,
+    session: BotSession,
+    config: BotConfig,
 ) -> TransitionResult:
     """Handle out-of-scope: allow 1 reformulation, then escalade."""
     if session.reformulation_count_current_demande == 0:
@@ -196,7 +211,9 @@ def _handle_hors_perimetre(
 
 
 def _route_after_l1(
-    session: BotSession, config: BotConfig, intent_id: str,
+    session: BotSession,
+    config: BotConfig,
+    intent_id: str,
 ) -> TransitionResult:
     """After L1 is resolved: go to L2 if sub-motifs exist, else retrieval."""
     intent = next((i for i in config.intents if i.id == intent_id), None)
@@ -216,7 +233,9 @@ def _route_after_l1(
 
 
 def on_clarification_inter_button(
-    session: BotSession, event: Event, config: BotConfig,
+    session: BotSession,
+    event: Event,
+    config: BotConfig,
 ) -> TransitionResult:
     """CLARIFICATION_INTER: user clicked a choice button."""
     selected_label = event.data.get("selected", event.data.get("button", ""))
@@ -233,7 +252,9 @@ def on_clarification_inter_button(
 
 
 def on_clarification_inter_text(
-    session: BotSession, event: Event, config: BotConfig,
+    session: BotSession,
+    event: Event,
+    config: BotConfig,
 ) -> TransitionResult:
     """CLARIFICATION_INTER: user typed free text instead of clicking."""
     # Re-classify with L1
@@ -242,7 +263,9 @@ def on_clarification_inter_text(
 
 
 def on_classification_l2_done(
-    session: BotSession, event: Event, config: BotConfig,
+    session: BotSession,
+    event: Event,
+    config: BotConfig,
 ) -> TransitionResult:
     """Handle L2 classification result."""
     scores: list[tuple[str, float]] = event.data.get("scores", [])
@@ -292,9 +315,7 @@ def on_classification_l2_done(
         ]
 
     # Present sub-motif options
-    intent = next(
-        (i for i in config.intents if i.id == session.current_intent), None
-    )
+    intent = next((i for i in config.intents if i.id == session.current_intent), None)
     if not intent:
         new = _update(session, state=BotState.RETRIEVAL_GENERATION)
         return new, [
@@ -322,7 +343,9 @@ def on_classification_l2_done(
 
 
 def on_clarification_intra_button(
-    session: BotSession, event: Event, config: BotConfig,
+    session: BotSession,
+    event: Event,
+    config: BotConfig,
 ) -> TransitionResult:
     """CLARIFICATION_INTRA: user clicked a sub-motif or 'Autre'."""
     selected_label = event.data.get("selected", event.data.get("button", ""))
@@ -338,9 +361,7 @@ def on_clarification_intra_button(
         ]
 
     # Find sub-motif id from label
-    intent = next(
-        (i for i in config.intents if i.id == session.current_intent), None
-    )
+    intent = next((i for i in config.intents if i.id == session.current_intent), None)
     if intent:
         sm = next((s for s in intent.sub_motifs if s.label == selected_label), None)
         if sm:
@@ -368,7 +389,9 @@ def on_clarification_intra_button(
 
 
 def on_clarification_intra_text(
-    session: BotSession, event: Event, config: BotConfig,
+    session: BotSession,
+    event: Event,
+    config: BotConfig,
 ) -> TransitionResult:
     """CLARIFICATION_INTRA: user typed free text — re-classify L2."""
     text = event.data.get("text", "")
@@ -379,7 +402,9 @@ def on_clarification_intra_text(
 
 
 def on_retrieval_generation_done(
-    session: BotSession, event: Event, config: BotConfig,
+    session: BotSession,
+    event: Event,
+    config: BotConfig,
 ) -> TransitionResult:
     """RETRIEVAL_GENERATION -> ENQUETE_SATISFACTION."""
     new = _update(session, state=BotState.ENQUETE_SATISFACTION)
@@ -392,7 +417,9 @@ def on_retrieval_generation_done(
 
 
 def on_satisfaction_positive(
-    session: BotSession, event: Event, config: BotConfig,
+    session: BotSession,
+    event: Event,
+    config: BotConfig,
 ) -> TransitionResult:
     """User satisfied — ask if they have another question.
 
@@ -421,7 +448,9 @@ def on_satisfaction_positive(
     if new_count >= journey.max_demandes:
         resume = ", ".join(resolved) if resolved else ""
         new = _update(
-            new, state=BotState.CLOTURE_DOUCE, demandes_count=new_count,
+            new,
+            state=BotState.CLOTURE_DOUCE,
+            demandes_count=new_count,
         )
         return new, [
             EmitTemplate(
@@ -436,7 +465,10 @@ def on_satisfaction_positive(
         ]
 
     # ORC-4: at max_demandes - 1, use avant_derniere_demande template
-    if journey.prevenir_avant_derniere_demande and new_count == journey.max_demandes - 1:
+    if (
+        journey.prevenir_avant_derniere_demande
+        and new_count == journey.max_demandes - 1
+    ):
         new = _update(new, state=BotState.AUTRE_DEMANDE, demandes_count=new_count)
         return new, [
             EmitTemplate(
@@ -456,7 +488,9 @@ def on_satisfaction_positive(
 
 
 def on_satisfaction_negative(
-    session: BotSession, event: Event, config: BotConfig,
+    session: BotSession,
+    event: Event,
+    config: BotConfig,
 ) -> TransitionResult:
     """User NOT satisfied — immediate escalation (no retry, decision acte)."""
     new = _update(session, state=BotState.ESCALADE)
@@ -464,7 +498,9 @@ def on_satisfaction_negative(
 
 
 def on_autre_demande_oui(
-    session: BotSession, event: Event, config: BotConfig,
+    session: BotSession,
+    event: Event,
+    config: BotConfig,
 ) -> TransitionResult:
     """User has another question — loop back.
 
@@ -485,7 +521,9 @@ def on_autre_demande_oui(
 
 
 def on_autre_demande_non(
-    session: BotSession, event: Event, config: BotConfig,
+    session: BotSession,
+    event: Event,
+    config: BotConfig,
 ) -> TransitionResult:
     """User is done — close."""
     new = _update(session, state=BotState.FIN)
@@ -493,7 +531,9 @@ def on_autre_demande_non(
 
 
 def on_escalade_done(
-    session: BotSession, event: Event, config: BotConfig,
+    session: BotSession,
+    event: Event,
+    config: BotConfig,
 ) -> TransitionResult:
     """After escalation result received — emit template and close."""
     temps_attente = str(event.data.get("temps_attente_estime_min", 4))
@@ -508,7 +548,9 @@ def on_escalade_done(
 
 
 def on_timeout(
-    session: BotSession, event: Event, config: BotConfig,
+    session: BotSession,
+    event: Event,
+    config: BotConfig,
 ) -> TransitionResult:
     """Inactivity timeout — close with timeout template."""
     new = _update(session, state=BotState.TIMEOUT)
@@ -516,7 +558,9 @@ def on_timeout(
 
 
 def on_cloture_douce_done(
-    session: BotSession, event: Event, config: BotConfig,
+    session: BotSession,
+    event: Event,
+    config: BotConfig,
 ) -> TransitionResult:
     """CLOTURE_DOUCE -> FIN: graceful close has been rendered."""
     new = _update(session, state=BotState.FIN)
@@ -524,12 +568,12 @@ def on_cloture_douce_done(
 
 
 def on_fin_ferme(
-    session: BotSession, event: Event, config: BotConfig,
+    session: BotSession,
+    event: Event,
+    config: BotConfig,
 ) -> TransitionResult:
     """GF: firm close due to infractions — emit template and close."""
-    intent_labels = ", ".join(
-        i.label for i in config.intents if not i.is_system
-    )
+    intent_labels = ", ".join(i.label for i in config.intents if not i.is_system)
     new = _update(session, state=BotState.FIN_FERME)
     return new, [
         EmitTemplate(
@@ -555,25 +599,42 @@ TRANSITIONS: dict[tuple[BotState, EventType], TransitionHandler] = {
     # User submits a query
     (BotState.ATTENTE_DEMANDE, EventType.USER_MESSAGE): on_user_message_attente,
     # L1 classification result
-    (BotState.CLASSIFICATION_L1, EventType.CLASSIFICATION_L1_DONE): on_classification_l1_done,
+    (
+        BotState.CLASSIFICATION_L1,
+        EventType.CLASSIFICATION_L1_DONE,
+    ): on_classification_l1_done,
     # Clarification inter-intentions
-    (BotState.CLARIFICATION_INTER, EventType.BUTTON_CLICK): on_clarification_inter_button,
+    (
+        BotState.CLARIFICATION_INTER,
+        EventType.BUTTON_CLICK,
+    ): on_clarification_inter_button,
     (BotState.CLARIFICATION_INTER, EventType.USER_MESSAGE): on_clarification_inter_text,
     # L2 classification result
-    (BotState.CLASSIFICATION_L2, EventType.CLASSIFICATION_L2_DONE): on_classification_l2_done,
+    (
+        BotState.CLASSIFICATION_L2,
+        EventType.CLASSIFICATION_L2_DONE,
+    ): on_classification_l2_done,
     # Clarification intra-intention
-    (BotState.CLARIFICATION_INTRA, EventType.BUTTON_CLICK): on_clarification_intra_button,
+    (
+        BotState.CLARIFICATION_INTRA,
+        EventType.BUTTON_CLICK,
+    ): on_clarification_intra_button,
     (BotState.CLARIFICATION_INTRA, EventType.USER_MESSAGE): on_clarification_intra_text,
     # Retrieval + generation done
-    (BotState.RETRIEVAL_GENERATION, EventType.RETRIEVAL_GENERATION_DONE): on_retrieval_generation_done,
+    (
+        BotState.RETRIEVAL_GENERATION,
+        EventType.RETRIEVAL_GENERATION_DONE,
+    ): on_retrieval_generation_done,
     # Satisfaction survey
     (BotState.ENQUETE_SATISFACTION, EventType.BUTTON_CLICK): lambda s, e, c: (
-        on_satisfaction_positive(s, e, c) if e.data.get("selected", e.data.get("button")) == "Oui"
+        on_satisfaction_positive(s, e, c)
+        if e.data.get("selected", e.data.get("button")) == "Oui"
         else on_satisfaction_negative(s, e, c)
     ),
     # Another question?
     (BotState.AUTRE_DEMANDE, EventType.BUTTON_CLICK): lambda s, e, c: (
-        on_autre_demande_oui(s, e, c) if e.data.get("selected", e.data.get("button")) == "Oui"
+        on_autre_demande_oui(s, e, c)
+        if e.data.get("selected", e.data.get("button")) == "Oui"
         else on_autre_demande_non(s, e, c)
     ),
     # ORC: CLOTURE_DOUCE is terminal (template already rendered by satisfaction handler)

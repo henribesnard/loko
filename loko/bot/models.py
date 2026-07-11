@@ -33,8 +33,10 @@ def validate_slug(value: str, name: str = "id") -> str:
 # Enums
 # ---------------------------------------------------------------------------
 
+
 class BotState(str, enum.Enum):
     """States of the bot conversation FSM."""
+
     ACCUEIL = "accueil"
     ATTENTE_DEMANDE = "attente_demande"
     CLASSIFICATION_L1 = "classification_l1"
@@ -54,6 +56,7 @@ class BotState(str, enum.Enum):
 
 class TemplateKey(str, enum.Enum):
     """Message template identifiers."""
+
     PRESENTATION = "presentation"
     CLARIFICATION_INTER = "clarification_inter"
     CLARIFICATION_INTRA = "clarification_intra"
@@ -75,6 +78,7 @@ class TemplateKey(str, enum.Enum):
 
 class EscalationMotif(str, enum.Enum):
     """Reasons for escalation."""
+
     INSATISFACTION = "insatisfaction"
     DEMANDE_EXPLICITE = "demande_explicite"
     HORS_PERIMETRE = "hors_perimetre"
@@ -87,6 +91,7 @@ class EscalationMotif(str, enum.Enum):
 
 class ToneProfile(str, enum.Enum):
     """Tone profiles for template text."""
+
     FORMEL = "formel"
     CHALEUREUX = "chaleureux"
     NEUTRE = "neutre"
@@ -96,8 +101,10 @@ class ToneProfile(str, enum.Enum):
 # Intent configuration
 # ---------------------------------------------------------------------------
 
+
 class SubMotif(BaseModel):
     """Sub-motif (level 2 intent refinement)."""
+
     id: str
     label: str
     definition: str
@@ -122,6 +129,7 @@ class SubMotif(BaseModel):
 
 class Intent(BaseModel):
     """Intent (level 1 classification target)."""
+
     id: str
     label: str
     definition: str
@@ -150,12 +158,16 @@ class Intent(BaseModel):
 # Journey parameters
 # ---------------------------------------------------------------------------
 
+
 class JourneyParams(BaseModel):
     """Configurable parameters of the conversation state machine."""
+
     seuil_haut: float = Field(default=0.75, ge=0.0, le=1.0)
     seuil_bas: float = Field(default=0.45, ge=0.0, le=1.0)
     seuil_ecart_clarification: float = Field(
-        default=0.0, ge=0.0, le=1.0,
+        default=0.0,
+        ge=0.0,
+        le=1.0,
         description=(
             "M2: minimum gap between top1 and top2 scores to route directly. "
             "If top1 >= seuil_haut but top1 - top2 < seuil_ecart, clarify "
@@ -171,7 +183,9 @@ class JourneyParams(BaseModel):
 
     # --- ORC: fine-grained conversation control ---
     max_tours_par_demande: int = Field(
-        default=3, ge=1, le=10,
+        default=3,
+        ge=1,
+        le=10,
         description=(
             "ORC-1: maximum user turns on the SAME intent within one demande "
             "before forced escalation. Counted when the resolved intent equals "
@@ -180,14 +194,18 @@ class JourneyParams(BaseModel):
         ),
     )
     max_duree_session_s: int = Field(
-        default=1800, ge=120, le=14400,
+        default=1800,
+        ge=120,
+        le=14400,
         description=(
             "ORC-2: hard session duration budget (seconds). When exceeded at "
             "the next user turn, the FSM routes to CLOTURE_DOUCE."
         ),
     )
     max_tokens_llm_session: int = Field(
-        default=8000, ge=500, le=100000,
+        default=8000,
+        ge=500,
+        le=100000,
         description=(
             "ORC-3: cumulative LLM output-token budget per session. When "
             "exhausted, next generation request routes to CLOTURE_DOUCE."
@@ -215,19 +233,22 @@ class JourneyParams(BaseModel):
 # Message templates
 # ---------------------------------------------------------------------------
 
-ALLOWED_TEMPLATE_VARIABLES = frozenset({
-    "nom_bot",
-    "intentions_gerees",
-    "temps_attente",
-    "lien_escalade",
-    "options",
-    # ORC: graceful wind-down
-    "resume_demandes",
-})
+ALLOWED_TEMPLATE_VARIABLES = frozenset(
+    {
+        "nom_bot",
+        "intentions_gerees",
+        "temps_attente",
+        "lien_escalade",
+        "options",
+        # ORC: graceful wind-down
+        "resume_demandes",
+    }
+)
 
 
 class MessageTemplate(BaseModel):
     """A single message template with FR/EN text."""
+
     key: TemplateKey
     text_fr: str
     text_en: str
@@ -246,8 +267,10 @@ class MessageTemplate(BaseModel):
 # Bot LLM config
 # ---------------------------------------------------------------------------
 
+
 class BotLLMConfig(BaseModel):
     """LLM configuration for the generation step."""
+
     provider: str = "openai"
     model: str = "gpt-4o-mini"
     api_key_set: bool = False
@@ -258,7 +281,9 @@ class BotLLMConfig(BaseModel):
     # --- LLM lot: BYO provider per bot ---
     provider_source: Literal["platform", "custom"] = "platform"
     provider_type: Literal["openai_compat"] = "openai_compat"
-    preset: Literal["openai", "mistral", "deepseek", "ollama", "vllm", "autre"] | None = None
+    preset: (
+        Literal["openai", "mistral", "deepseek", "ollama", "vllm", "autre"] | None
+    ) = None
     base_url: str = ""
     api_key_ref: str = ""
     api_key_hint: str = ""
@@ -266,6 +291,7 @@ class BotLLMConfig(BaseModel):
 
 class TrainingParams(BaseModel):
     """L2: configurable training hyperparameters."""
+
     num_iterations: int = Field(default=5, ge=1, le=100)
     num_epochs: int = Field(default=1, ge=1, le=10)
     batch_size: int = Field(default=16, ge=4, le=128)
@@ -275,8 +301,10 @@ class TrainingParams(BaseModel):
 # Bot config (top-level)
 # ---------------------------------------------------------------------------
 
+
 class BotConfig(BaseModel):
     """Full bot configuration, persisted as config.json."""
+
     schema_version: int = 3
     bot_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     name: str
@@ -290,9 +318,7 @@ class BotConfig(BaseModel):
     training: TrainingParams = Field(default_factory=TrainingParams)
     templates: dict[TemplateKey, MessageTemplate] = Field(default_factory=dict)
     knowledge_collection: str = ""
-    confidentiality_filter: list[str] = Field(
-        default_factory=lambda: ["public"]
-    )
+    confidentiality_filter: list[str] = Field(default_factory=lambda: ["public"])
     llm: BotLLMConfig = Field(default_factory=BotLLMConfig)
     status: Literal["draft", "published"] = "draft"
 
@@ -311,8 +337,10 @@ class BotConfig(BaseModel):
 # Session / Turn / Transcript
 # ---------------------------------------------------------------------------
 
+
 class Turn(BaseModel):
     """A single exchange in the conversation."""
+
     turn_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     role: Literal["user", "bot", "system"]
     content: str
@@ -332,6 +360,7 @@ class Turn(BaseModel):
 
 class BotSession(BaseModel):
     """Live session state for a bot conversation."""
+
     session_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     bot_id: str
     state: BotState = BotState.ACCUEIL
@@ -363,10 +392,14 @@ class BotSession(BaseModel):
 # Trace events
 # ---------------------------------------------------------------------------
 
+
 class TraceEvent(BaseModel):
     """Structured trace for one step of a turn."""
+
     turn_id: str
-    step: str  # classification_l1 | classification_l2 | retrieval | generation | template
+    step: (
+        str  # classification_l1 | classification_l2 | retrieval | generation | template
+    )
     detail: dict[str, Any] = Field(default_factory=dict)
     latency_ms: float = 0.0
     # ORC: session counters snapshot (included in deterministic replay diff)
@@ -377,8 +410,10 @@ class TraceEvent(BaseModel):
 # Escalation contract (frozen, mock V1)
 # ---------------------------------------------------------------------------
 
+
 class EscalationPayload(BaseModel):
     """Payload sent to the escalation provider."""
+
     conversation_id: str
     transcript: list[dict[str, Any]]
     intention: str | None = None
@@ -393,6 +428,7 @@ class EscalationPayload(BaseModel):
 
 class EscalationResult(BaseModel):
     """Response from the escalation provider."""
+
     temps_attente_estime_min: int = 4
 
 
@@ -400,8 +436,10 @@ class EscalationResult(BaseModel):
 # Engine actions — typed outputs of the FSM
 # ---------------------------------------------------------------------------
 
+
 class EmitTemplate(BaseModel):
     """Action: render and send a template message."""
+
     key: TemplateKey
     variables: dict[str, str] = Field(default_factory=dict)
     buttons: list[str] | None = None
@@ -409,6 +447,7 @@ class EmitTemplate(BaseModel):
 
 class EmitGeneration(BaseModel):
     """Action: trigger LLM generation with filtered retrieval."""
+
     query: str
     intent: str
     sub_motif: str | None = None
@@ -416,11 +455,13 @@ class EmitGeneration(BaseModel):
 
 class CallEscalation(BaseModel):
     """Action: call the escalation provider."""
+
     motif: EscalationMotif
 
 
 class CloseSession(BaseModel):
     """Action: end the conversation."""
+
     reason: str = "fin"
 
 
@@ -432,8 +473,10 @@ Action = EmitTemplate | EmitGeneration | CallEscalation | CloseSession
 # Retrieval / Generation data models
 # ---------------------------------------------------------------------------
 
+
 class Chunk(BaseModel):
     """A chunk of text from the knowledge base, with metadata."""
+
     chunk_id: str = ""
     text: str
     score: float = 0.0
@@ -444,6 +487,7 @@ class Chunk(BaseModel):
 
 class RetrievalResult(BaseModel):
     """Result of a filtered retrieval operation."""
+
     chunks: list[Chunk] = Field(default_factory=list)
     success: bool = True
     scope: str = ""  # "sub_motif" | "intent" | "fallback"

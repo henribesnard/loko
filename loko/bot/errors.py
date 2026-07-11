@@ -21,14 +21,16 @@ class ComponentUnavailableError(Exception):
 
 
 # K1: Machine-readable integrity error codes for publish endpoint (422).
-INTEGRITY_CODES = frozenset({
-    "manifest_missing",
-    "manifest_invalid",
-    "hash_mismatch",
-    "load_error",
-    "smoke_failed",
-    "retrain_required",
-})
+INTEGRITY_CODES = frozenset(
+    {
+        "manifest_missing",
+        "manifest_invalid",
+        "hash_mismatch",
+        "load_error",
+        "smoke_failed",
+        "retrain_required",
+    }
+)
 
 
 class ModelIntegrityError(ComponentUnavailableError):

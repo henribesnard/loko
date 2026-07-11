@@ -32,7 +32,8 @@ def test_timeout_applied_when_expired(config_short_timeout):
     )
 
     new_session, actions, timed_out = check_and_apply_timeout(
-        session, config_short_timeout,
+        session,
+        config_short_timeout,
     )
 
     assert timed_out is True
@@ -52,7 +53,8 @@ def test_timeout_not_applied_when_active(config_short_timeout):
     )
 
     new_session, actions, timed_out = check_and_apply_timeout(
-        session, config_short_timeout,
+        session,
+        config_short_timeout,
     )
 
     assert timed_out is False
@@ -72,7 +74,8 @@ def test_timeout_not_applied_on_terminal_state(config_short_timeout):
     )
 
     new_session, actions, timed_out = check_and_apply_timeout(
-        session, config_short_timeout,
+        session,
+        config_short_timeout,
     )
 
     assert timed_out is False

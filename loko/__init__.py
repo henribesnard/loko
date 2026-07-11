@@ -5,4 +5,4 @@ try:
 
     __version__ = _v("loko")
 except Exception:
-    __version__ = "0.3.7"
+    __version__ = "0.5.2"

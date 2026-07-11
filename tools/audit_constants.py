@@ -15,26 +15,49 @@ from typing import List, Tuple
 # Constants that are OK (not decision-related)
 ALLOWED_CONSTANTS = {
     # HTTP status codes
-    200, 201, 204, 400, 401, 403, 404, 429, 500, 503,
+    200,
+    201,
+    204,
+    400,
+    401,
+    403,
+    404,
+    429,
+    500,
+    503,
     # Common sizes
-    1024, 2048, 4096,
+    1024,
+    2048,
+    4096,
     # Time constants
-    60, 3600, 86400,  # seconds in minute/hour/day
+    60,
+    3600,
+    86400,  # seconds in minute/hour/day
     24,  # hours in day
     7,  # days in week
     # Common limits
-    100, 1000,
+    100,
+    1000,
 }
 
 # Decision-related constants that should be in config (red flag)
 DECISION_CONSTANTS = {
-    0.7, 0.5, 0.8, 0.9,  # Common threshold values
+    0.7,
+    0.5,
+    0.8,
+    0.9,  # Common threshold values
 }
 
 # Paths to exclude
 EXCLUDE_PATHS = {
-    "tests/", "node_modules/", ".git/", "__pycache__/",
-    "build/", "dist/", ".venv/", "venv/",
+    "tests/",
+    "node_modules/",
+    ".git/",
+    "__pycache__/",
+    "build/",
+    "dist/",
+    ".venv/",
+    "venv/",
 }
 
 

@@ -28,6 +28,7 @@ def env(tmp_path, monkeypatch):
     monkeypatch.setenv("LOKO_DATA_DIR", str(data_dir))
 
     import loko.db.accounts as acc
+
     monkeypatch.setattr(acc, "_DB_PATH", data_dir / "loko_accounts.db")
     monkeypatch.setattr(acc, "_connection", None)
 
@@ -60,9 +61,12 @@ def env(tmp_path, monkeypatch):
     )
 
     yield {
-        "acct_a": acct_a, "acct_b": acct_b,
-        "user_a": user_a, "user_b": user_b,
-        "session_a": session_a, "session_b": session_b,
+        "acct_a": acct_a,
+        "acct_b": acct_b,
+        "user_a": user_a,
+        "user_b": user_b,
+        "session_a": session_a,
+        "session_b": session_b,
     }
 
     if acc._connection:

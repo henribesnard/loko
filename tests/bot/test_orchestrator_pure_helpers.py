@@ -4,7 +4,6 @@ These tests verify the behavior of the pure functions extracted from
 BotOrchestrator._handle_generation() and BotOrchestrator._handle_escalation().
 """
 
-
 from loko.bot.orchestrator import BotOrchestrator
 from loko.bot.models import (
     BotConfig,
@@ -27,8 +26,18 @@ class TestFindIntentLabels:
             bot_id="test",
             name="Test Bot",
             intents=[
-                Intent(id="help", label="Aide générale", definition="Questions d'aide", is_system=True),
-                Intent(id="billing", label="Facturation", definition="Questions de facturation", is_system=True),
+                Intent(
+                    id="help",
+                    label="Aide générale",
+                    definition="Questions d'aide",
+                    is_system=True,
+                ),
+                Intent(
+                    id="billing",
+                    label="Facturation",
+                    definition="Questions de facturation",
+                    is_system=True,
+                ),
             ],
         )
 
@@ -51,10 +60,18 @@ class TestFindIntentLabels:
                     definition="Questions de facturation",
                     is_system=True,
                     sub_motifs=[
-                        SubMotif(id="invoice", label="Facture", definition="Questions sur les factures",
-                                examples=["facture", "invoice", "billing"]),
-                        SubMotif(id="payment", label="Paiement", definition="Questions sur les paiements",
-                                examples=["paiement", "payment", "pay"]),
+                        SubMotif(
+                            id="invoice",
+                            label="Facture",
+                            definition="Questions sur les factures",
+                            examples=["facture", "invoice", "billing"],
+                        ),
+                        SubMotif(
+                            id="payment",
+                            label="Paiement",
+                            definition="Questions sur les paiements",
+                            examples=["paiement", "payment", "pay"],
+                        ),
                     ],
                 ),
             ],
@@ -72,7 +89,14 @@ class TestFindIntentLabels:
         config = BotConfig(
             bot_id="test",
             name="Test Bot",
-            intents=[Intent(id="help", label="Aide", definition="Questions d'aide", is_system=True)],
+            intents=[
+                Intent(
+                    id="help",
+                    label="Aide",
+                    definition="Questions d'aide",
+                    is_system=True,
+                )
+            ],
         )
 
         intent_label, sub_motif_label = BotOrchestrator._find_intent_labels(
@@ -93,8 +117,14 @@ class TestFindIntentLabels:
                     label="Facturation",
                     definition="Questions de facturation",
                     is_system=True,
-                    sub_motifs=[SubMotif(id="invoice", label="Facture", definition="Questions sur les factures",
-                                        examples=["facture", "invoice", "billing"])],
+                    sub_motifs=[
+                        SubMotif(
+                            id="invoice",
+                            label="Facture",
+                            definition="Questions sur les factures",
+                            examples=["facture", "invoice", "billing"],
+                        )
+                    ],
                 ),
             ],
         )
@@ -232,6 +262,7 @@ class TestExtractTempsAttente:
 
     def test_extract_from_object(self):
         """Should extract wait time from object with attribute."""
+
         class EscalationResult:
             temps_attente_estime_min = 20
 
@@ -251,6 +282,7 @@ class TestExtractTempsAttente:
 
     def test_object_missing_attribute_uses_default(self):
         """Should use default when attribute missing from object."""
+
         class EscalationResult:
             other_field = "value"
 

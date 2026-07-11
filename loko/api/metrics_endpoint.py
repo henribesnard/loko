@@ -13,9 +13,7 @@ router = APIRouter(tags=["monitoring"])
 
 
 @router.get("/metrics")
-async def prometheus_metrics(
-    _admin: str = Depends(verify_admin_token)
-) -> Response:
+async def prometheus_metrics(_admin: str = Depends(verify_admin_token)) -> Response:
     """
     Prometheus metrics endpoint (admin-only).
 
@@ -30,6 +28,5 @@ async def prometheus_metrics(
     metrics_data = get_metrics()
 
     return Response(
-        content=metrics_data,
-        media_type="text/plain; version=0.0.4; charset=utf-8"
+        content=metrics_data, media_type="text/plain; version=0.0.4; charset=utf-8"
     )

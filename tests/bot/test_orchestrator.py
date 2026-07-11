@@ -24,6 +24,7 @@ from loko.testing.mocks import InMemorySearchBackend, MockLLMProvider
 # Mock classifier
 # ---------------------------------------------------------------------------
 
+
 class MockClassifier:
     """Mock classifier with configurable L1/L2 results."""
 
@@ -46,6 +47,7 @@ class MockClassifier:
 # Mock escalation
 # ---------------------------------------------------------------------------
 
+
 class MockEscalation:
     def __init__(self, wait_minutes: int = 5):
         self.wait_minutes = wait_minutes
@@ -60,6 +62,7 @@ class MockEscalation:
 # Fixtures
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture
 def config() -> BotConfig:
     return BotConfig(
@@ -67,26 +70,44 @@ def config() -> BotConfig:
         knowledge_collection="test-kb",
         intents=[
             Intent(
-                id="livraison", label="Livraison", definition="Livraison",
+                id="livraison",
+                label="Livraison",
+                definition="Livraison",
                 examples=[f"ex {i}" for i in range(10)],
                 sub_motifs=[
-                    SubMotif(id="suivi", label="Suivi de colis", definition="Suivi",
-                             examples=["a", "b", "c"]),
-                    SubMotif(id="retard", label="Retard", definition="Retard",
-                             examples=["d", "e", "f"]),
+                    SubMotif(
+                        id="suivi",
+                        label="Suivi de colis",
+                        definition="Suivi",
+                        examples=["a", "b", "c"],
+                    ),
+                    SubMotif(
+                        id="retard",
+                        label="Retard",
+                        definition="Retard",
+                        examples=["d", "e", "f"],
+                    ),
                 ],
             ),
             Intent(
-                id="facturation", label="Facturation", definition="Facturation",
+                id="facturation",
+                label="Facturation",
+                definition="Facturation",
                 examples=[f"fact {i}" for i in range(10)],
             ),
             Intent(
-                id="hors_perimetre", label="Hors périmètre", definition="HP",
-                examples=["hp"], is_system=True,
+                id="hors_perimetre",
+                label="Hors périmètre",
+                definition="HP",
+                examples=["hp"],
+                is_system=True,
             ),
             Intent(
-                id="demande_conseiller", label="Conseiller", definition="Conseiller",
-                examples=["humain"], is_system=True,
+                id="demande_conseiller",
+                label="Conseiller",
+                definition="Conseiller",
+                examples=["humain"],
+                is_system=True,
             ),
         ],
         journey=JourneyParams(
@@ -99,35 +120,41 @@ def config() -> BotConfig:
 @pytest.fixture
 def backend() -> InMemorySearchBackend:
     b = InMemorySearchBackend()
-    b.add_chunk(Chunk(
-        chunk_id="c1",
-        text="suivre votre colis livraison en cours",
-        source_url="https://faq.example.com/suivi",
-        source_title="FAQ Suivi",
-        metadata={
-            "bot_intents": ["livraison"],
-            "bot_sub_motifs": ["suivi"],
-            "confidentiality": "public",
-        },
-    ))
-    b.add_chunk(Chunk(
-        chunk_id="c2",
-        text="numero de suivi colis expedition livraison",
-        metadata={
-            "bot_intents": ["livraison"],
-            "bot_sub_motifs": ["suivi"],
-            "confidentiality": "public",
-        },
-    ))
-    b.add_chunk(Chunk(
-        chunk_id="c3",
-        text="facture paiement total montant",
-        metadata={
-            "bot_intents": ["facturation"],
-            "bot_sub_motifs": [],
-            "confidentiality": "public",
-        },
-    ))
+    b.add_chunk(
+        Chunk(
+            chunk_id="c1",
+            text="suivre votre colis livraison en cours",
+            source_url="https://faq.example.com/suivi",
+            source_title="FAQ Suivi",
+            metadata={
+                "bot_intents": ["livraison"],
+                "bot_sub_motifs": ["suivi"],
+                "confidentiality": "public",
+            },
+        )
+    )
+    b.add_chunk(
+        Chunk(
+            chunk_id="c2",
+            text="numero de suivi colis expedition livraison",
+            metadata={
+                "bot_intents": ["livraison"],
+                "bot_sub_motifs": ["suivi"],
+                "confidentiality": "public",
+            },
+        )
+    )
+    b.add_chunk(
+        Chunk(
+            chunk_id="c3",
+            text="facture paiement total montant",
+            metadata={
+                "bot_intents": ["facturation"],
+                "bot_sub_motifs": [],
+                "confidentiality": "public",
+            },
+        )
+    )
     return b
 
 
@@ -138,9 +165,9 @@ def orchestrator(backend) -> BotOrchestrator:
         l2_scores={"livraison": [("suivi", 0.85), ("retard", 0.10)]},
     )
     retriever = FilteredRetriever(backend)
-    generator = BotGenerator(MockLLMProvider(
-        response="Vous pouvez suivre votre colis via le lien de suivi."
-    ))
+    generator = BotGenerator(
+        MockLLMProvider(response="Vous pouvez suivre votre colis via le lien de suivi.")
+    )
     escalation = MockEscalation(wait_minutes=5)
     return BotOrchestrator(
         classifier=classifier,
@@ -153,6 +180,7 @@ def orchestrator(backend) -> BotOrchestrator:
 # ---------------------------------------------------------------------------
 # Tests: Session creation
 # ---------------------------------------------------------------------------
+
 
 class TestSessionCreation:
     @pytest.mark.asyncio
@@ -174,6 +202,7 @@ class TestSessionCreation:
 # Tests: Full pipeline (message → classify → retrieve → generate)
 # ---------------------------------------------------------------------------
 
+
 class TestFullPipeline:
     @pytest.mark.asyncio
     async def test_happy_path_with_generation(self, orchestrator, config):
@@ -182,7 +211,9 @@ class TestFullPipeline:
 
         events: list[SSEEvent] = []
         async for session, event in orchestrator.process_message(
-            session, "où est mon colis", config,
+            session,
+            "où est mon colis",
+            config,
         ):
             events.append(event)
 
@@ -203,7 +234,9 @@ class TestFullPipeline:
 
         gen_tokens: list[str] = []
         async for session, event in orchestrator.process_message(
-            session, "suivi colis", config,
+            session,
+            "suivi colis",
+            config,
         ):
             if event.event == "generation_delta":
                 gen_tokens.append(event.data["token"])
@@ -219,7 +252,9 @@ class TestFullPipeline:
 
         source_events = []
         async for session, event in orchestrator.process_message(
-            session, "suivi colis", config,
+            session,
+            "suivi colis",
+            config,
         ):
             if event.event == "sources":
                 source_events.append(event)
@@ -232,6 +267,7 @@ class TestFullPipeline:
 # ---------------------------------------------------------------------------
 # Tests: Escalation paths
 # ---------------------------------------------------------------------------
+
 
 class TestEscalation:
     @pytest.mark.asyncio
@@ -257,7 +293,9 @@ class TestEscalation:
 
         events: list[SSEEvent] = []
         async for session, event in orch.process_message(
-            session, "je veux ma facture", config,
+            session,
+            "je veux ma facture",
+            config,
         ):
             events.append(event)
 
@@ -265,7 +303,10 @@ class TestEscalation:
         assert not any(e.event == "generation_delta" for e in events)
         # Escalation should have been called
         assert escalation.last_payload is not None
-        assert escalation.last_payload.motif_escalade == EscalationMotif.RETRIEVAL_INSUFFISANT
+        assert (
+            escalation.last_payload.motif_escalade
+            == EscalationMotif.RETRIEVAL_INSUFFISANT
+        )
 
     @pytest.mark.asyncio
     async def test_demande_conseiller_escalation(self, config, backend):
@@ -288,17 +329,22 @@ class TestEscalation:
 
         events: list[SSEEvent] = []
         async for session, event in orch.process_message(
-            session, "je veux un humain", config,
+            session,
+            "je veux un humain",
+            config,
         ):
             events.append(event)
 
         assert escalation.last_payload is not None
-        assert escalation.last_payload.motif_escalade == EscalationMotif.DEMANDE_EXPLICITE
+        assert (
+            escalation.last_payload.motif_escalade == EscalationMotif.DEMANDE_EXPLICITE
+        )
 
 
 # ---------------------------------------------------------------------------
 # Tests: Button clicks
 # ---------------------------------------------------------------------------
+
 
 class TestButtonClicks:
     @pytest.mark.asyncio
@@ -324,7 +370,9 @@ class TestButtonClicks:
         # First message → should get clarification (medium confidence)
         events: list[SSEEvent] = []
         async for session, event in orch.process_message(
-            session, "question floue", config,
+            session,
+            "question floue",
+            config,
         ):
             events.append(event)
 
@@ -336,7 +384,9 @@ class TestButtonClicks:
         # Click on "Livraison" button
         events2: list[SSEEvent] = []
         async for session, event in orch.process_button_click(
-            session, "Livraison", config,
+            session,
+            "Livraison",
+            config,
         ):
             events2.append(event)
 
@@ -349,6 +399,7 @@ class TestButtonClicks:
 # Tests: Traces
 # ---------------------------------------------------------------------------
 
+
 class TestTraces:
     @pytest.mark.asyncio
     async def test_traces_emitted(self, orchestrator, config):
@@ -357,7 +408,9 @@ class TestTraces:
 
         trace_events = []
         async for session, event in orchestrator.process_message(
-            session, "test query", config,
+            session,
+            "test query",
+            config,
         ):
             if event.event == "traces":
                 trace_events.append(event)

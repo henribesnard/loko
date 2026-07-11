@@ -26,10 +26,47 @@ def extract_keywords(text: str) -> list[str]:
 
     # Filter stop words (French common words)
     stop_words = {
-        "le", "la", "les", "un", "une", "de", "du", "des", "mon", "ma", "mes",
-        "pour", "sur", "dans", "à", "a", "et", "ou", "je", "tu", "il", "elle",
-        "nous", "vous", "ils", "elles", "ce", "ça", "mon", "ton", "son",
-        "que", "qui", "quoi", "comment", "où", "est", "sont", "ai", "as", "ont",
+        "le",
+        "la",
+        "les",
+        "un",
+        "une",
+        "de",
+        "du",
+        "des",
+        "mon",
+        "ma",
+        "mes",
+        "pour",
+        "sur",
+        "dans",
+        "à",
+        "a",
+        "et",
+        "ou",
+        "je",
+        "tu",
+        "il",
+        "elle",
+        "nous",
+        "vous",
+        "ils",
+        "elles",
+        "ce",
+        "ça",
+        "mon",
+        "ton",
+        "son",
+        "que",
+        "qui",
+        "quoi",
+        "comment",
+        "où",
+        "est",
+        "sont",
+        "ai",
+        "as",
+        "ont",
     }
 
     keywords = [w for w in words if len(w) > 2 and w not in stop_words]
@@ -92,8 +129,12 @@ def synthesize_patterns(errors_csv: Path, output_dir: Path) -> None:
 
         # Categorize errors
         threshold_errors = [e for e in intent_errors if e.get("category") == "seuil"]
-        ambiguous_errors = [e for e in intent_errors if e.get("category") == "verbatim_ambigu"]
-        missing_examples = [e for e in intent_errors if e.get("category") == "manque_exemples"]
+        ambiguous_errors = [
+            e for e in intent_errors if e.get("category") == "verbatim_ambigu"
+        ]
+        missing_examples = [
+            e for e in intent_errors if e.get("category") == "manque_exemples"
+        ]
 
         patterns_by_intent[intent] = {
             "intent": intent,
@@ -168,7 +209,9 @@ def synthesize_patterns(errors_csv: Path, output_dir: Path) -> None:
             # Example errors
             f.write("**Exemples d'erreurs** :\n")
             for ex in pattern["example_verbatims"][:3]:
-                f.write(f"- \"{ex['text']}\" → prédit `{ex['predicted']}` (cat: {ex['category']})\n")
+                f.write(
+                    f'- "{ex["text"]}" → prédit `{ex["predicted"]}` (cat: {ex["category"]})\n'
+                )
             f.write("\n")
 
             # Recommendations
@@ -179,9 +222,13 @@ def synthesize_patterns(errors_csv: Path, output_dir: Path) -> None:
 
         f.write("\n## Priorités d'enrichissement\n\n")
         for p in priorities["priorities"]:
-            f.write(f"{p['rank']}. **{p['intent']}** (score {p['priority_score']:.1f})\n")
+            f.write(
+                f"{p['rank']}. **{p['intent']}** (score {p['priority_score']:.1f})\n"
+            )
             f.write(f"   - {p['total_errors']} erreurs totales\n")
-            f.write(f"   - Objectif : ajouter ~{p['recommended_examples']} exemples ciblés\n\n")
+            f.write(
+                f"   - Objectif : ajouter ~{p['recommended_examples']} exemples ciblés\n\n"
+            )
 
     print(f"Markdown summary written to {summary_md}")
 
@@ -234,12 +281,14 @@ def _compute_enrichment_priorities(patterns_by_intent: dict) -> dict:
         # Recommended examples: proportional to errors (capped at 30)
         recommended = min(30, max(5, pattern["total_errors"] * 2))
 
-        priorities.append({
-            "intent": intent,
-            "priority_score": score,
-            "total_errors": pattern["total_errors"],
-            "recommended_examples": recommended,
-        })
+        priorities.append(
+            {
+                "intent": intent,
+                "priority_score": score,
+                "total_errors": pattern["total_errors"],
+                "recommended_examples": recommended,
+            }
+        )
 
     # Sort by score descending
     priorities.sort(key=lambda x: -x["priority_score"])

@@ -32,16 +32,17 @@ MANIFEST_SCHEMA_VERSION = 1
 
 # Canary verbatims for smoke test (one per family)
 SMOKE_VERBATIMS = [
-    "Je voudrais connaitre le montant de ma cotisation",          # métier
-    "Je veux parler à un conseiller",                              # transverse
-    "Raconte-moi une blague",                                      # hors-scope
+    "Je voudrais connaitre le montant de ma cotisation",  # métier
+    "Je veux parler à un conseiller",  # transverse
+    "Raconte-moi une blague",  # hors-scope
 ]
 
 
 @dataclass
 class LevelInfo:
     """Manifest info for one classification level."""
-    files: dict[str, str]       # filename -> sha256
+
+    files: dict[str, str]  # filename -> sha256
     labels: list[str]
     n_train_examples: int
 
@@ -49,6 +50,7 @@ class LevelInfo:
 @dataclass
 class ModelVerification:
     """Result of verify_model()."""
+
     ok: bool
     errors: list[str] = field(default_factory=list)
 
@@ -60,7 +62,9 @@ class ModelVerification:
         first = self.errors[0].lower()
         if "manifest" in first and ("missing" in first or "not found" in first):
             return "manifest_missing"
-        if "manifest" in first and ("invalid" in first or "schema" in first or "json" in first):
+        if "manifest" in first and (
+            "invalid" in first or "schema" in first or "json" in first
+        ):
             return "manifest_invalid"
         if "hash" in first:
             return "hash_mismatch"
@@ -170,7 +174,9 @@ def verify_model(bot_id: str) -> ModelVerification:
         return ModelVerification(ok=False, errors=["Manifest not found"])
     manifest = read_manifest(bot_id)
     if manifest is None:
-        return ModelVerification(ok=False, errors=["Manifest invalid JSON or unreadable"])
+        return ModelVerification(
+            ok=False, errors=["Manifest invalid JSON or unreadable"]
+        )
 
     if manifest.get("schema") != MANIFEST_SCHEMA_VERSION:
         errors.append(
@@ -188,7 +194,7 @@ def verify_model(bot_id: str) -> ModelVerification:
         expected_files = level_data.get("files", {})
         intent_id = None
         if level_name.startswith("level2_"):
-            intent_id = level_name[len("level2_"):]
+            intent_id = level_name[len("level2_") :]
             model_dir = get_model_dir(bot_id, "level2", intent_id)
         else:
             model_dir = get_model_dir(bot_id, level_name)
@@ -281,9 +287,11 @@ def measure_inference_latency(
 
     try:
         import torch
+
         # Reset thread count to a sensible runtime value (training may have
         # bumped it).  Default to physical core count or 4.
         import os
+
         runtime_threads = int(os.environ.get("LOKO_INFERENCE_THREADS", "4"))
         torch.set_num_threads(runtime_threads)
     except ImportError:
@@ -295,7 +303,9 @@ def measure_inference_latency(
         raise RuntimeError(f"Cannot measure latency: model not loaded for bot {bot_id}")
 
     # Use smoke verbatims in rotation for realistic diversity
-    all_texts = [SMOKE_VERBATIMS[i % len(SMOKE_VERBATIMS)] for i in range(n_warmup + n_samples)]
+    all_texts = [
+        SMOKE_VERBATIMS[i % len(SMOKE_VERBATIMS)] for i in range(n_warmup + n_samples)
+    ]
 
     # --- Step 1: warm-up (not counted) ---
     for text in all_texts[:n_warmup]:

@@ -18,6 +18,7 @@ from loko.bot.session_store import SessionStore
 # Fixtures
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture
 def db_path(tmp_path: Path) -> Path:
     return tmp_path / "sessions.db"
@@ -35,12 +36,78 @@ def populated_db(db_path: Path, store: SessionStore) -> Path:
 
     # Insert sessions with various states and intents
     sessions = [
-        ("s1", "bot1", "fin", "2024-01-01T10:00:00", "2024-01-01T10:05:00", 1, 0, 0, "facturation", None),
-        ("s2", "bot1", "fin", "2024-01-01T11:00:00", "2024-01-01T11:03:00", 1, 0, 0, "facturation", None),
-        ("s3", "bot1", "escalade", "2024-01-01T12:00:00", "2024-01-01T12:02:00", 1, 0, 0, "facturation", None),
-        ("s4", "bot1", "fin", "2024-01-01T13:00:00", "2024-01-01T13:04:00", 1, 0, 0, "livraison", None),
-        ("s5", "bot1", "escalade", "2024-01-01T14:00:00", "2024-01-01T14:01:00", 1, 0, 0, "livraison", None),
-        ("s6", "bot1", "timeout", "2024-01-01T15:00:00", "2024-01-01T15:10:00", 0, 0, 0, None, None),
+        (
+            "s1",
+            "bot1",
+            "fin",
+            "2024-01-01T10:00:00",
+            "2024-01-01T10:05:00",
+            1,
+            0,
+            0,
+            "facturation",
+            None,
+        ),
+        (
+            "s2",
+            "bot1",
+            "fin",
+            "2024-01-01T11:00:00",
+            "2024-01-01T11:03:00",
+            1,
+            0,
+            0,
+            "facturation",
+            None,
+        ),
+        (
+            "s3",
+            "bot1",
+            "escalade",
+            "2024-01-01T12:00:00",
+            "2024-01-01T12:02:00",
+            1,
+            0,
+            0,
+            "facturation",
+            None,
+        ),
+        (
+            "s4",
+            "bot1",
+            "fin",
+            "2024-01-01T13:00:00",
+            "2024-01-01T13:04:00",
+            1,
+            0,
+            0,
+            "livraison",
+            None,
+        ),
+        (
+            "s5",
+            "bot1",
+            "escalade",
+            "2024-01-01T14:00:00",
+            "2024-01-01T14:01:00",
+            1,
+            0,
+            0,
+            "livraison",
+            None,
+        ),
+        (
+            "s6",
+            "bot1",
+            "timeout",
+            "2024-01-01T15:00:00",
+            "2024-01-01T15:10:00",
+            0,
+            0,
+            0,
+            None,
+            None,
+        ),
     ]
     for s in sessions:
         conn.execute(
@@ -54,15 +121,99 @@ def populated_db(db_path: Path, store: SessionStore) -> Path:
 
     # Insert turns (including some with clarification templates)
     turns = [
-        ("t1", "s1", "bot", "Bienvenue", "2024-01-01T10:00:00", "presentation", None, None, None, None, None),
-        ("t2", "s1", "user", "Ma facture est fausse", "2024-01-01T10:00:30", None, None, None, "facturation", None, None),
-        ("t3", "s1", "bot", "Voici les informations", "2024-01-01T10:01:00", None, None, None, None, None, None),
+        (
+            "t1",
+            "s1",
+            "bot",
+            "Bienvenue",
+            "2024-01-01T10:00:00",
+            "presentation",
+            None,
+            None,
+            None,
+            None,
+            None,
+        ),
+        (
+            "t2",
+            "s1",
+            "user",
+            "Ma facture est fausse",
+            "2024-01-01T10:00:30",
+            None,
+            None,
+            None,
+            "facturation",
+            None,
+            None,
+        ),
+        (
+            "t3",
+            "s1",
+            "bot",
+            "Voici les informations",
+            "2024-01-01T10:01:00",
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        ),
         # s3: user turn before the bot clarification (needed for D2 fix)
-        ("t3b", "s3", "user", "Ma facture", "2024-01-01T12:00:15", None, None, None, "facturation", None, None),
-        ("t4", "s3", "bot", "Clarification", "2024-01-01T12:00:30", "clarification_inter", '["facturation", "livraison"]', None, None, None, None),
+        (
+            "t3b",
+            "s3",
+            "user",
+            "Ma facture",
+            "2024-01-01T12:00:15",
+            None,
+            None,
+            None,
+            "facturation",
+            None,
+            None,
+        ),
+        (
+            "t4",
+            "s3",
+            "bot",
+            "Clarification",
+            "2024-01-01T12:00:30",
+            "clarification_inter",
+            '["facturation", "livraison"]',
+            None,
+            None,
+            None,
+            None,
+        ),
         # s5: user turn before the bot response, then the bot response that gets rated
-        ("t5", "s5", "user", "Je veux parler à quelqu'un", "2024-01-01T14:00:30", None, None, None, "livraison", None, None),
-        ("t5b", "s5", "bot", "Je vous transfere", "2024-01-01T14:00:45", None, None, None, None, None, None),
+        (
+            "t5",
+            "s5",
+            "user",
+            "Je veux parler à quelqu'un",
+            "2024-01-01T14:00:30",
+            None,
+            None,
+            None,
+            "livraison",
+            None,
+            None,
+        ),
+        (
+            "t5b",
+            "s5",
+            "bot",
+            "Je vous transfere",
+            "2024-01-01T14:00:45",
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        ),
     ]
     for t in turns:
         conn.execute(
@@ -76,10 +227,22 @@ def populated_db(db_path: Path, store: SessionStore) -> Path:
 
     # Insert traces with latencies
     traces = [
-        ("t2", "s1", "classification_l1", json.dumps({"scores": [("facturation", 0.85)]}), 25.3),
+        (
+            "t2",
+            "s1",
+            "classification_l1",
+            json.dumps({"scores": [("facturation", 0.85)]}),
+            25.3,
+        ),
         ("t2", "s1", "retrieval", json.dumps({"chunks": 3}), 45.1),
         ("t2", "s1", "generation", json.dumps({}), 180.5),
-        ("t5", "s5", "classification_l1", json.dumps({"scores": [("livraison", 0.42)]}), 22.0),
+        (
+            "t5",
+            "s5",
+            "classification_l1",
+            json.dumps({"scores": [("livraison", 0.42)]}),
+            22.0,
+        ),
     ]
     for tr in traces:
         conn.execute(
@@ -107,6 +270,7 @@ def populated_db(db_path: Path, store: SessionStore) -> Path:
 # ---------------------------------------------------------------------------
 # Tests: compute_metrics
 # ---------------------------------------------------------------------------
+
 
 class TestComputeMetrics:
     def test_empty_db(self, db_path: Path, store: SessionStore):
@@ -184,6 +348,7 @@ class TestComputeMetrics:
 # Tests: get_misclassified_turns
 # ---------------------------------------------------------------------------
 
+
 class TestGetMisclassifiedTurns:
     def test_returns_negative_feedback_turns(self, populated_db: Path):
         turns = get_misclassified_turns(populated_db)
@@ -212,6 +377,7 @@ class TestGetMisclassifiedTurns:
 # ---------------------------------------------------------------------------
 # Tests: get_session_replay
 # ---------------------------------------------------------------------------
+
 
 class TestGetSessionReplay:
     def test_returns_full_replay(self, populated_db: Path):

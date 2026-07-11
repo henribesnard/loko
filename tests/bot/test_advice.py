@@ -76,22 +76,26 @@ class TestMergeAndSortAdvice:
 
     def test_merge_same_pair(self):
         """Same pair in both CV and margin → merged with evidence='both'."""
-        cv = [{
-            "type": "confused_pair",
-            "pair": ["A", "B"],
-            "evidence": "cv",
-            "n_exemples_faibles": 3,
-            "suggestion": "CV confusion.",
-        }]
-        margin = [{
-            "type": "confused_pair",
-            "pair": ["A", "B"],
-            "evidence": "margins",
-            "n_exemples_faibles": 5,
-            "avg_margin": 0.05,
-            "suggestion": "Margin confusion.",
-            "verbatims": ["text1", "text2"],
-        }]
+        cv = [
+            {
+                "type": "confused_pair",
+                "pair": ["A", "B"],
+                "evidence": "cv",
+                "n_exemples_faibles": 3,
+                "suggestion": "CV confusion.",
+            }
+        ]
+        margin = [
+            {
+                "type": "confused_pair",
+                "pair": ["A", "B"],
+                "evidence": "margins",
+                "n_exemples_faibles": 5,
+                "avg_margin": 0.05,
+                "suggestion": "Margin confusion.",
+                "verbatims": ["text1", "text2"],
+            }
+        ]
 
         merged = _merge_and_sort_advice(cv, margin)
         pair_entries = [a for a in merged if a.get("type") == "confused_pair"]
@@ -103,22 +107,26 @@ class TestMergeAndSortAdvice:
 
     def test_disjoint_pairs(self):
         """Different pairs → both preserved."""
-        cv = [{
-            "type": "confused_pair",
-            "pair": ["A", "B"],
-            "evidence": "cv",
-            "n_exemples_faibles": 3,
-            "suggestion": "AB.",
-        }]
-        margin = [{
-            "type": "confused_pair",
-            "pair": ["C", "D"],
-            "evidence": "margins",
-            "n_exemples_faibles": 2,
-            "avg_margin": 0.1,
-            "suggestion": "CD.",
-            "verbatims": ["x"],
-        }]
+        cv = [
+            {
+                "type": "confused_pair",
+                "pair": ["A", "B"],
+                "evidence": "cv",
+                "n_exemples_faibles": 3,
+                "suggestion": "AB.",
+            }
+        ]
+        margin = [
+            {
+                "type": "confused_pair",
+                "pair": ["C", "D"],
+                "evidence": "margins",
+                "n_exemples_faibles": 2,
+                "avg_margin": 0.1,
+                "suggestion": "CD.",
+                "verbatims": ["x"],
+            }
+        ]
 
         merged = _merge_and_sort_advice(cv, margin)
         pair_entries = [a for a in merged if a.get("type") == "confused_pair"]
@@ -127,11 +135,26 @@ class TestMergeAndSortAdvice:
     def test_sort_by_severity(self):
         """confused_pair sorted first by n_exemples_faibles desc."""
         entries: list[dict[str, Any]] = [
-            {"type": "under_represented", "intent": "X", "n_exemples_faibles": 3, "suggestion": "x"},
-            {"type": "confused_pair", "pair": ["A", "B"], "evidence": "margins",
-             "n_exemples_faibles": 2, "suggestion": "small"},
-            {"type": "confused_pair", "pair": ["C", "D"], "evidence": "cv",
-             "n_exemples_faibles": 7, "suggestion": "big"},
+            {
+                "type": "under_represented",
+                "intent": "X",
+                "n_exemples_faibles": 3,
+                "suggestion": "x",
+            },
+            {
+                "type": "confused_pair",
+                "pair": ["A", "B"],
+                "evidence": "margins",
+                "n_exemples_faibles": 2,
+                "suggestion": "small",
+            },
+            {
+                "type": "confused_pair",
+                "pair": ["C", "D"],
+                "evidence": "cv",
+                "n_exemples_faibles": 7,
+                "suggestion": "big",
+            },
         ]
         merged = _merge_and_sort_advice(entries, [])
 
@@ -145,15 +168,17 @@ class TestMergeAndSortAdvice:
 
     def test_margin_only(self):
         """Margin advice without any CV advice."""
-        margin = [{
-            "type": "confused_pair",
-            "pair": ["A", "B"],
-            "evidence": "margins",
-            "n_exemples_faibles": 4,
-            "avg_margin": 0.08,
-            "suggestion": "Pair AB.",
-            "verbatims": ["v1", "v2"],
-        }]
+        margin = [
+            {
+                "type": "confused_pair",
+                "pair": ["A", "B"],
+                "evidence": "margins",
+                "n_exemples_faibles": 4,
+                "avg_margin": 0.08,
+                "suggestion": "Pair AB.",
+                "verbatims": ["v1", "v2"],
+            }
+        ]
 
         merged = _merge_and_sort_advice([], margin)
         assert len(merged) == 1

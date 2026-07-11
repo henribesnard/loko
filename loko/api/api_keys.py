@@ -27,6 +27,7 @@ logger = logging.getLogger(__name__)
 # Key data model
 # ---------------------------------------------------------------------------
 
+
 class APIKeyRecord:
     """Represents a stored API key record."""
 
@@ -80,6 +81,7 @@ class APIKeyRecord:
             return False
 
         from datetime import datetime, timezone
+
         expires = datetime.fromisoformat(self.expires_at)
         now = datetime.now(timezone.utc)
         return now > expires
@@ -88,6 +90,7 @@ class APIKeyRecord:
 # ---------------------------------------------------------------------------
 # Key store (file-based, per bot)
 # ---------------------------------------------------------------------------
+
 
 def _keys_file(bot_id: str) -> Path:
     return get_bots_dir() / bot_id / "api_keys.json"
@@ -115,6 +118,7 @@ def _hash_key(raw_key: str) -> str:
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
+
 
 def generate_api_key(
     bot_id: str,
@@ -204,7 +208,9 @@ def validate_api_key_for_bot(raw_key: str, bot_id: str) -> APIKeyRecord | None:
         if _hmac.compare_digest(record.key_hash, key_hash):
             # K3: Reject expired keys
             if record.is_expired():
-                logger.warning("API key %s is expired for bot %s", record.key_id, bot_id)
+                logger.warning(
+                    "API key %s is expired for bot %s", record.key_id, bot_id
+                )
                 return None
             return record
 

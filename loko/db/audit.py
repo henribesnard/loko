@@ -194,7 +194,8 @@ class AuditLogger:
         for key, value in details.items():
             # Skip sensitive keys
             if key.lower() in SENSITIVE_KEYS or any(
-                sensitive in key.lower() for sensitive in ["password", "token", "secret", "key"]
+                sensitive in key.lower()
+                for sensitive in ["password", "token", "secret", "key"]
             ):
                 sanitized[key] = "[REDACTED]"
             # Recursively sanitize nested dicts
@@ -301,7 +302,15 @@ class AuditLogger:
 
                 # Header
                 writer.writerow(
-                    ["id", "timestamp", "user_id", "action", "resource_id", "ip_address", "details"]
+                    [
+                        "id",
+                        "timestamp",
+                        "user_id",
+                        "action",
+                        "resource_id",
+                        "ip_address",
+                        "details",
+                    ]
                 )
 
                 # Rows

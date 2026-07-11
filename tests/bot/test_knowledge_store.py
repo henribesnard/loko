@@ -12,6 +12,7 @@ from loko.bot.knowledge_store import KnowledgeStore, _chunk_text
 # Fixtures
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture
 def store(tmp_path) -> KnowledgeStore:
     db_path = tmp_path / "knowledge.db"
@@ -30,6 +31,7 @@ SAMPLE_CONTENT = (
 # ---------------------------------------------------------------------------
 # Tests: chunking
 # ---------------------------------------------------------------------------
+
 
 class TestChunking:
     def test_short_text_single_chunk(self):
@@ -50,6 +52,7 @@ class TestChunking:
 # ---------------------------------------------------------------------------
 # Tests: document ingestion
 # ---------------------------------------------------------------------------
+
 
 class TestIngestion:
     def test_ingest_and_list(self, store):
@@ -91,6 +94,7 @@ class TestIngestion:
 # Tests: search
 # ---------------------------------------------------------------------------
 
+
 class TestSearch:
     @pytest.mark.asyncio
     async def test_fts_search_finds_content(self, store):
@@ -101,7 +105,8 @@ class TestSearch:
         )
 
         results = await store.search(
-            "mot de passe", "collection",
+            "mot de passe",
+            "collection",
         )
         assert len(results) > 0
         assert any("mot de passe" in r.text.lower() for r in results)
@@ -118,7 +123,8 @@ class TestSearch:
         )
 
         results = await store.search(
-            "colis", "collection",
+            "colis",
+            "collection",
             filters={"bot_intents": "livraison"},
         )
         # Should only find the livraison document
@@ -142,14 +148,17 @@ class TestSearch:
 # Tests: tags and coverage
 # ---------------------------------------------------------------------------
 
+
 class TestTags:
     def test_update_tags(self, store):
         doc_id = store.ingest_document(
-            "Test content.", bot_intents=["old_intent"],
+            "Test content.",
+            bot_intents=["old_intent"],
         )
 
         updated = store.update_tags(
-            [doc_id], bot_intents=["new_intent"],
+            [doc_id],
+            bot_intents=["new_intent"],
         )
         assert updated == 1
 

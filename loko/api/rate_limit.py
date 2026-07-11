@@ -78,6 +78,7 @@ def require_limiter_in_server_mode() -> None:
     a warning only.
     """
     from loko.config.env import get_env
+
     mode = get_env("MODE", "desktop")
     if mode != "server":
         return

@@ -49,9 +49,11 @@ def app(tmp_path, monkeypatch):
     monkeypatch.setenv("LOKO_ADMIN_TOKEN", "e2e-admin-token-xyz")
 
     from loko.api.bot_public import clear_orchestrators
+
     clear_orchestrators()
 
     from loko.main import create_app
+
     return create_app()
 
 
@@ -75,20 +77,24 @@ def e2e_config(tmp_path, monkeypatch) -> BotConfig:
     for ri in raw_intents:
         sub_motifs = []
         for sm in ri.get("sub_motifs", []):
-            sub_motifs.append(SubMotif(
-                id=sm["id"],
-                label=sm["label"],
-                definition=sm["definition"],
-                examples=sm["examples"],
-            ))
-        intents.append(Intent(
-            id=ri["id"],
-            label=ri["label"],
-            definition=ri["definition"],
-            examples=ri["examples"],
-            sub_motifs=sub_motifs,
-            is_system=ri.get("is_system", False),
-        ))
+            sub_motifs.append(
+                SubMotif(
+                    id=sm["id"],
+                    label=sm["label"],
+                    definition=sm["definition"],
+                    examples=sm["examples"],
+                )
+            )
+        intents.append(
+            Intent(
+                id=ri["id"],
+                label=ri["label"],
+                definition=ri["definition"],
+                examples=ri["examples"],
+                sub_motifs=sub_motifs,
+                is_system=ri.get("is_system", False),
+            )
+        )
 
     # System intents (hors_perimetre, demande_conseiller) are already in e2e_intents.json
 
@@ -124,11 +130,15 @@ def auth_headers(api_key):
 # Mock classifier for controlled E2E tests
 # ---------------------------------------------------------------------------
 
+
 class ControlledClassifier:
     """Classifier that returns pre-configured scores for E2E test scenarios."""
 
-    def __init__(self, l1_responses: dict[str, list[tuple[str, float]]] | None = None,
-                 l2_responses: dict[str, list[tuple[str, float]]] | None = None):
+    def __init__(
+        self,
+        l1_responses: dict[str, list[tuple[str, float]]] | None = None,
+        l2_responses: dict[str, list[tuple[str, float]]] | None = None,
+    ):
         self._l1 = l1_responses or {}
         self._l2 = l2_responses or {}
         self._default_l1 = [("hors_perimetre", 0.5)]
@@ -183,9 +193,11 @@ def _register_controlled_orchestrator(
     orchestrator = BotOrchestrator(
         classifier=classifier,
         retriever=MockSuccessRetriever(),
-        generator=BotGenerator(MockLLMProvider(
-            response="[FAQ] Voici la reponse a votre question. Pour plus de details consultez https://example.com/help.",
-        )),
+        generator=BotGenerator(
+            MockLLMProvider(
+                response="[FAQ] Voici la reponse a votre question. Pour plus de details consultez https://example.com/help.",
+            )
+        ),
         escalation=MockEscalationProvider(),
     )
     register_orchestrator(bot_id, orchestrator)
@@ -196,6 +208,7 @@ def _register_controlled_orchestrator(
 # Helper: parse SSE events from streaming response
 # ---------------------------------------------------------------------------
 
+
 def parse_sse_events(content: str) -> list[dict]:
     """Parse SSE formatted text into a list of event dicts."""
     events = []
@@ -204,9 +217,9 @@ def parse_sse_events(content: str) -> list[dict]:
 
     for line in content.split("\n"):
         if line.startswith("event:"):
-            current_event = line[len("event:"):].strip()
+            current_event = line[len("event:") :].strip()
         elif line.startswith("data:"):
-            current_data = line[len("data:"):].strip()
+            current_data = line[len("data:") :].strip()
         elif line == "" and current_event is not None:
             try:
                 data = json.loads(current_data) if current_data else {}
@@ -223,24 +236,33 @@ def parse_sse_events(content: str) -> list[dict]:
 # P0 — Installation & creation du bot
 # ===========================================================================
 
+
 class TestP0_BotCreation:
     """P0: Bot creation via admin API."""
 
     def test_create_demo_bot(self, client, admin_headers):
         """P0: Create the 'Demo Assistant' bot via wizard step 1."""
-        res = client.post("/api/bot/", json={
-            "name": "Demo Assistant",
-        }, headers=admin_headers)
+        res = client.post(
+            "/api/bot/",
+            json={
+                "name": "Demo Assistant",
+            },
+            headers=admin_headers,
+        )
         assert res.status_code == 201
         data = res.json()
         assert data["name"] == "Demo Assistant"
         assert "bot_id" in data
         assert data["status"] == "draft"
 
-    def test_bot_persists_in_data_dir(self, client, admin_headers, tmp_path, monkeypatch):
+    def test_bot_persists_in_data_dir(
+        self, client, admin_headers, tmp_path, monkeypatch
+    ):
         """P0: Config persisted in data dir."""
         monkeypatch.setenv("LOKO_DATA_DIR", str(tmp_path))
-        res = client.post("/api/bot/", json={"name": "PersistTest"}, headers=admin_headers)
+        res = client.post(
+            "/api/bot/", json={"name": "PersistTest"}, headers=admin_headers
+        )
         bot_id = res.json()["bot_id"]
         # Verify file on disk
         config_file = tmp_path / "bots" / bot_id / "config.json"
@@ -251,26 +273,37 @@ class TestP0_BotCreation:
 # P1 — Intentions & validation
 # ===========================================================================
 
+
 class TestP1_Intents:
     """P1: Intent configuration and validation."""
 
-    def test_intent_min_examples_validation(self, client, admin_headers, tmp_path, monkeypatch):
+    def test_intent_min_examples_validation(
+        self, client, admin_headers, tmp_path, monkeypatch
+    ):
         """P1: Attempting to save an intent with < 8 examples should fail."""
         monkeypatch.setenv("LOKO_DATA_DIR", str(tmp_path))
         # Create bot first
-        res = client.post("/api/bot/", json={"name": "ValidationBot"}, headers=admin_headers)
+        res = client.post(
+            "/api/bot/", json={"name": "ValidationBot"}, headers=admin_headers
+        )
         bot_id = res.json()["bot_id"]
 
         # Try to update with insufficient examples (5 < min 8)
-        res = client.put(f"/api/bot/{bot_id}", json={
-            "intents": [{
-                "id": "help_cancellation",
-                "label": "Resiliation",
-                "definition": "Resiliation du contrat",
-                "examples": ["ex1", "ex2", "ex3", "ex4", "ex5"],
-                "is_system": False,
-            }],
-        }, headers=admin_headers)
+        res = client.put(
+            f"/api/bot/{bot_id}",
+            json={
+                "intents": [
+                    {
+                        "id": "help_cancellation",
+                        "label": "Resiliation",
+                        "definition": "Resiliation du contrat",
+                        "examples": ["ex1", "ex2", "ex3", "ex4", "ex5"],
+                        "is_system": False,
+                    }
+                ],
+            },
+            headers=admin_headers,
+        )
         # Should be rejected (422) due to insufficient examples
         assert res.status_code in (422, 400)
 
@@ -288,20 +321,25 @@ class TestP1_Intents:
         assert len(sel.sub_motifs) == 5
         sub_ids = {sm.id for sm in sel.sub_motifs}
         assert sub_ids == {
-            "password_forgotten", "login_help",
-            "account_locked", "account_creation", "password_reset",
+            "password_forgotten",
+            "login_help",
+            "account_locked",
+            "account_creation",
+            "password_reset",
         }
 
     def test_all_intents_have_min_examples(self, e2e_config):
         """P1: All intents have >= 8 examples (validation threshold)."""
         for intent in e2e_config.intents:
-            assert len(intent.examples) >= 8, \
+            assert len(intent.examples) >= 8, (
                 f"Intent {intent.id} has only {len(intent.examples)} examples"
+            )
 
 
 # ===========================================================================
 # P3 — Conversational paths (FSM)
 # ===========================================================================
+
 
 class TestP3_ConversationalPaths:
     """P3: Conversational paths through the state machine."""
@@ -352,7 +390,9 @@ class TestP3_ConversationalPaths:
         if template_events:
             last_template = template_events[-1]
             assert last_template["data"].get("template_key") in (
-                "enquete_satisfaction", "hors_perimetre", "mise_en_relation",
+                "enquete_satisfaction",
+                "hors_perimetre",
+                "mise_en_relation",
             )
 
     def test_T03_clarification_intra(self, client, e2e_config, auth_headers):
@@ -395,14 +435,19 @@ class TestP3_ConversationalPaths:
         template_events = [e for e in events if e["event"] == "template"]
         clarification_found = False
         for te in template_events:
-            if te["data"].get("template_key") in ("clarification_intra", "clarification_inter"):
+            if te["data"].get("template_key") in (
+                "clarification_intra",
+                "clarification_inter",
+            ):
                 clarification_found = True
                 # Should have buttons
                 buttons = te["data"].get("buttons", [])
                 assert len(buttons) >= 2
                 break
 
-        assert clarification_found, f"Expected clarification, got events: {[e['event'] for e in events]}"
+        assert clarification_found, (
+            f"Expected clarification, got events: {[e['event'] for e in events]}"
+        )
 
     def test_T04_clarification_inter(self, client, e2e_config, auth_headers):
         """T04: 'RIB coordonnees bancaires' → ambiguous → clarification inter."""
@@ -438,7 +483,9 @@ class TestP3_ConversationalPaths:
             te["data"].get("template_key") == "clarification_inter"
             for te in template_events
         )
-        assert has_clarification, f"Expected clarification_inter, got: {template_events}"
+        assert has_clarification, (
+            f"Expected clarification_inter, got: {template_events}"
+        )
 
     def test_T07_justificatif_droits_direct(self, client, e2e_config, auth_headers):
         """T07: coverage certificate → help_documents direct."""
@@ -471,7 +518,9 @@ class TestP3_ConversationalPaths:
         event_types = [e["event"] for e in events]
         assert "generation_delta" in event_types
         assert "clarification_inter" not in [
-            e.get("data", {}).get("template_key") for e in events if e["event"] == "template"
+            e.get("data", {}).get("template_key")
+            for e in events
+            if e["event"] == "template"
         ]
 
     def test_T09_teletransmission_direct(self, client, e2e_config, auth_headers):
@@ -537,7 +586,9 @@ class TestP3_ConversationalPaths:
             te["data"].get("template_key") == "mise_en_relation"
             for te in template_events
         )
-        assert escalation_found, f"Expected escalation, got: {[e['event'] for e in events]}"
+        assert escalation_found, (
+            f"Expected escalation, got: {[e['event'] for e in events]}"
+        )
 
     def test_T12_hors_perimetre(self, client, e2e_config, auth_headers):
         """T12: 'declarer un accident de ski' → hors_perimetre → template hors perimetre."""
@@ -572,7 +623,9 @@ class TestP3_ConversationalPaths:
             te["data"].get("template_key") in ("hors_perimetre", "mise_en_relation")
             for te in template_events
         )
-        assert hp_or_esc, f"Expected hors_perimetre or escalation, got: {template_events}"
+        assert hp_or_esc, (
+            f"Expected hors_perimetre or escalation, got: {template_events}"
+        )
 
     def test_T14_single_word_noemie(self, client, e2e_config, auth_headers):
         """T14: single word transfer → help_transfer — robustness test."""
@@ -610,6 +663,7 @@ class TestP3_ConversationalPaths:
 # ===========================================================================
 # P3 — Scenarios (S1-S9)
 # ===========================================================================
+
 
 class TestP3_Scenarios:
     """P3: Full conversational scenarios."""
@@ -673,8 +727,7 @@ class TestP3_Scenarios:
 
         template_events = [e for e in events if e["event"] == "template"]
         autre_demande_found = any(
-            te["data"].get("template_key") == "autre_demande"
-            for te in template_events
+            te["data"].get("template_key") == "autre_demande" for te in template_events
         )
         assert autre_demande_found, f"No autre_demande. Events: {events}"
 
@@ -690,8 +743,7 @@ class TestP3_Scenarios:
 
         template_events = [e for e in events if e["event"] == "template"]
         fin_found = any(
-            te["data"].get("template_key") == "fin"
-            for te in template_events
+            te["data"].get("template_key") == "fin" for te in template_events
         )
         end_events = [e for e in events if e["event"] == "end_of_turn"]
         assert fin_found or len(end_events) > 0, f"No FIN. Events: {events}"
@@ -703,7 +755,9 @@ class TestP3_Scenarios:
         )
         assert res.json()["state"] == "fin"
 
-    def test_S4_max_one_clarification_per_demande(self, client, e2e_config, auth_headers):
+    def test_S4_max_one_clarification_per_demande(
+        self, client, e2e_config, auth_headers
+    ):
         """S4: Max 1 clarification per demande (regle d'or)."""
         # First message triggers clarification inter
         classifier = ControlledClassifier(
@@ -741,7 +795,8 @@ class TestP3_Scenarios:
 
         template_events = [e for e in events if e["event"] == "template"]
         clarification_inter = [
-            te for te in template_events
+            te
+            for te in template_events
             if te["data"].get("template_key") == "clarification_inter"
         ]
         # Should get at most one clarification
@@ -796,7 +851,9 @@ class TestP3_Scenarios:
             te["data"].get("template_key") == "mise_en_relation"
             for te in template_events
         )
-        assert escalation_found, f"Expected escalation on insatisfaction. Events: {events}"
+        assert escalation_found, (
+            f"Expected escalation on insatisfaction. Events: {events}"
+        )
 
         # Verify session ends (FIN after escalation)
         res = client.get(
@@ -847,7 +904,7 @@ class TestP3_Scenarios:
             state = session_res.json()["state"]
             if state == "fin":
                 # Should have ended at or before demand 6
-                assert i >= 4, f"Session ended too early at demand {i+1}"
+                assert i >= 4, f"Session ended too early at demand {i + 1}"
                 break
 
             # If in satisfaction survey, click Oui
@@ -893,6 +950,7 @@ class TestP3_Scenarios:
 # ===========================================================================
 # P4 — Escalation (4 motifs)
 # ===========================================================================
+
 
 class TestP4_Escalation:
     """P4: Escalation with all 4 motifs."""
@@ -1013,6 +1071,7 @@ class TestP4_Escalation:
 # P5 — Determinism
 # ===========================================================================
 
+
 class TestP5_Determinism:
     """P5: Deterministic replay — same inputs → same state transitions."""
 
@@ -1052,47 +1111,73 @@ class TestP5_Determinism:
                 e["data"].get("state") for e in events if e["event"] == "state"
             ]
             template_sequence = [
-                e["data"].get("template_key") for e in events if e["event"] == "template"
+                e["data"].get("template_key")
+                for e in events
+                if e["event"] == "template"
             ]
-            results.append({
-                "states": state_sequence,
-                "templates": template_sequence,
-            })
+            results.append(
+                {
+                    "states": state_sequence,
+                    "templates": template_sequence,
+                }
+            )
 
         # Both replays must be identical
-        assert results[0]["states"] == results[1]["states"], \
+        assert results[0]["states"] == results[1]["states"], (
             f"State divergence: {results[0]['states']} vs {results[1]['states']}"
-        assert results[0]["templates"] == results[1]["templates"], \
+        )
+        assert results[0]["templates"] == results[1]["templates"], (
             f"Template divergence: {results[0]['templates']} vs {results[1]['templates']}"
+        )
 
 
 # ===========================================================================
 # P7 — Publication, runtime & widget
 # ===========================================================================
 
+
 class TestP7_Runtime:
     """P7: Publication, runtime, and security."""
 
-    def test_draft_bot_cannot_serve(self, client, admin_headers, auth_headers, tmp_path, monkeypatch):
+    def test_draft_bot_cannot_serve(
+        self, client, admin_headers, auth_headers, tmp_path, monkeypatch
+    ):
         """P7: Draft bot returns 409 at runtime."""
         monkeypatch.setenv("LOKO_DATA_DIR", str(tmp_path))
         from loko.api.bot_public import clear_orchestrators
+
         clear_orchestrators()
 
         config = BotConfig(
             name="DraftBot",
             intents=[
-                Intent(id="test", label="Test", definition="Test",
-                       examples=[f"ex{i}" for i in range(10)]),
-                Intent(id="hors_perimetre", label="HP", definition="HP",
-                       examples=[f"hp{i}" for i in range(10)], is_system=True),
-                Intent(id="demande_conseiller", label="DC", definition="DC",
-                       examples=[f"dc{i}" for i in range(10)], is_system=True),
+                Intent(
+                    id="test",
+                    label="Test",
+                    definition="Test",
+                    examples=[f"ex{i}" for i in range(10)],
+                ),
+                Intent(
+                    id="hors_perimetre",
+                    label="HP",
+                    definition="HP",
+                    examples=[f"hp{i}" for i in range(10)],
+                    is_system=True,
+                ),
+                Intent(
+                    id="demande_conseiller",
+                    label="DC",
+                    definition="DC",
+                    examples=[f"dc{i}" for i in range(10)],
+                    is_system=True,
+                ),
             ],
             status="draft",
         )
         save_bot_config(config)
-        raw_key, _ = generate_api_key(config.bot_id, label="test", allowed_origins=["*"])
+        raw_key, _ = generate_api_key(
+            config.bot_id, label="test", allowed_origins=["*"]
+        )
 
         res = client.post(
             f"/api/v1/bot/{config.bot_id}/sessions",
@@ -1150,7 +1235,14 @@ class TestP7_Runtime:
         events = parse_sse_events(content)
         assert len(events) > 0
         # All events should have the expected types
-        valid_types = {"state", "template", "generation_delta", "sources", "end_of_turn", "traces"}
+        valid_types = {
+            "state",
+            "template",
+            "generation_delta",
+            "sources",
+            "end_of_turn",
+            "traces",
+        }
         for e in events:
             assert e["event"] in valid_types, f"Unknown event type: {e['event']}"
 
@@ -1177,7 +1269,9 @@ class TestP7_Runtime:
         res = client.post(f"/api/v1/bot/{e2e_config.bot_id}/sessions")
         assert res.status_code == 401
 
-    def test_security_wrong_origin_rejected(self, client, e2e_config, tmp_path, monkeypatch):
+    def test_security_wrong_origin_rejected(
+        self, client, e2e_config, tmp_path, monkeypatch
+    ):
         """P7: Wrong origin → 403."""
         monkeypatch.setenv("LOKO_DATA_DIR", str(tmp_path))
         raw_key, _ = generate_api_key(
@@ -1205,7 +1299,10 @@ class TestP7_Runtime:
         """P7: Ended session rejects new messages with 400."""
         classifier = ControlledClassifier(
             l1_responses={
-                "parler a un humain": [("demande_conseiller", 0.98), ("hors_perimetre", 0.01)],
+                "parler a un humain": [
+                    ("demande_conseiller", 0.98),
+                    ("hors_perimetre", 0.01),
+                ],
             },
         )
         _register_controlled_orchestrator(e2e_config.bot_id, e2e_config, classifier)
@@ -1237,6 +1334,7 @@ class TestP7_Runtime:
 # ===========================================================================
 # P9 — Feedback & metrics
 # ===========================================================================
+
 
 class TestP9_Metrics:
     """P9: Feedback recording and session replay."""
@@ -1365,6 +1463,7 @@ class TestP9_Metrics:
 # Security tests (cross-cutting P0-1/P0-3/P0-4)
 # ===========================================================================
 
+
 class TestSecurity:
     """Cross-cutting security tests."""
 
@@ -1406,6 +1505,7 @@ class TestSecurity:
     def test_path_traversal_rejected(self):
         """P0-4: Path traversal in bot_id rejected."""
         from loko.bot.session_store import get_bot_dir
+
         with pytest.raises(ValueError):
             get_bot_dir("..")
         with pytest.raises(ValueError):

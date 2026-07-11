@@ -56,17 +56,20 @@ def _build_custom_provider(bot_id: str, llm_config):
 
     if not base_url:
         raise ComponentUnavailableError(
-            "llm", bot_id,
+            "llm",
+            bot_id,
             "Custom LLM provider requires base_url.",
         )
     if not model:
         raise ComponentUnavailableError(
-            "llm", bot_id,
+            "llm",
+            bot_id,
             "Custom LLM provider requires model.",
         )
     if not llm_config.api_key_ref:
         raise ComponentUnavailableError(
-            "llm", bot_id,
+            "llm",
+            bot_id,
             "Custom LLM provider requires an API key. "
             "Use PUT /api/bot/{bot_id}/llm to set one.",
         )
@@ -78,7 +81,8 @@ def _build_custom_provider(bot_id: str, llm_config):
         validate_url(base_url)
     except SSRFError as exc:
         raise ComponentUnavailableError(
-            "llm", bot_id,
+            "llm",
+            bot_id,
             f"base_url blocked by SSRF validation: {exc.reason}",
         ) from exc
 
@@ -90,7 +94,8 @@ def _build_custom_provider(bot_id: str, llm_config):
             pinned_url, original_host = resolve_and_pin(base_url)
         except SSRFError as exc:
             raise ComponentUnavailableError(
-                "llm", bot_id,
+                "llm",
+                bot_id,
                 f"base_url DNS resolution blocked: {exc.reason}",
             ) from exc
 
@@ -101,13 +106,16 @@ def _build_custom_provider(bot_id: str, llm_config):
         api_key = get_secret_store().get(llm_config.api_key_ref)
     except (KeyError, RuntimeError) as exc:
         raise ComponentUnavailableError(
-            "llm", bot_id,
+            "llm",
+            bot_id,
             f"Failed to resolve API key: {exc}",
         ) from exc
 
     logger.info(
         "Building custom LLM provider for bot %s: base_url=%s model=%s",
-        bot_id, base_url, model,
+        bot_id,
+        base_url,
+        model,
     )
     return OpenAICompatProvider(
         base_url=pinned_url,
@@ -131,17 +139,20 @@ def _build_platform_provider(bot_id: str):
     if provider_type == "openai_compat":
         if not base_url:
             raise ComponentUnavailableError(
-                "llm", bot_id,
+                "llm",
+                bot_id,
                 "LOKO_LLM_BASE_URL is required for openai_compat provider.",
             )
         if not api_key:
             raise ComponentUnavailableError(
-                "llm", bot_id,
+                "llm",
+                bot_id,
                 "LOKO_LLM_API_KEY is required for openai_compat provider.",
             )
         if not model:
             raise ComponentUnavailableError(
-                "llm", bot_id,
+                "llm",
+                bot_id,
                 "LOKO_LLM_MODEL is required for openai_compat provider.",
             )
 
@@ -149,13 +160,16 @@ def _build_platform_provider(bot_id: str):
 
         logger.info(
             "Building OpenAI-compat LLM provider for bot %s: base_url=%s model=%s",
-            bot_id, base_url, model,
+            bot_id,
+            base_url,
+            model,
         )
         return OpenAICompatProvider(base_url=base_url, api_key=api_key, model=model)
 
     # No provider configured
     raise ComponentUnavailableError(
-        "llm", bot_id,
+        "llm",
+        bot_id,
         "No LLM provider configured. "
         "Set LOKO_LLM_BASE_URL, LOKO_LLM_API_KEY, and LOKO_LLM_MODEL, "
         "or set LOKO_LLM_PROVIDER=openai_compat.",

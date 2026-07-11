@@ -14,13 +14,16 @@ from loko.bot.session_store import get_bot_dir, _SCHEMA_SQL
 # Fixtures
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture
 def app(tmp_path, monkeypatch):
     monkeypatch.setenv("LOKO_DATA_DIR", str(tmp_path))
     monkeypatch.setenv("LOKO_ADMIN_TOKEN", "test-admin-token-12345")
     from loko.api.bot_public import clear_orchestrators
+
     clear_orchestrators()
     from loko.main import create_app
+
     return create_app()
 
 
@@ -73,8 +76,18 @@ def bot_with_sessions(tmp_path, monkeypatch) -> str:
             demandes_count, clarifications_count, reformulation_count,
             current_intent, current_sub_motif)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-        ("s1", bot_id, "fin", "2024-01-01T10:00:00", "2024-01-01T10:05:00",
-         1, 0, 0, "facturation", None),
+        (
+            "s1",
+            bot_id,
+            "fin",
+            "2024-01-01T10:00:00",
+            "2024-01-01T10:05:00",
+            1,
+            0,
+            0,
+            "facturation",
+            None,
+        ),
     )
     conn.execute(
         """INSERT INTO turns
@@ -82,8 +95,19 @@ def bot_with_sessions(tmp_path, monkeypatch) -> str:
             template_key, buttons, button_selected,
             intent, sub_motif, sources)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-        ("t1", "s1", "user", "Ma facture", "2024-01-01T10:00:30",
-         None, None, None, "facturation", None, None),
+        (
+            "t1",
+            "s1",
+            "user",
+            "Ma facture",
+            "2024-01-01T10:00:30",
+            None,
+            None,
+            None,
+            "facturation",
+            None,
+            None,
+        ),
     )
     # Bot response (this is what the user rates)
     conn.execute(
@@ -92,8 +116,19 @@ def bot_with_sessions(tmp_path, monkeypatch) -> str:
             template_key, buttons, button_selected,
             intent, sub_motif, sources)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-        ("t1b", "s1", "bot", "Voici votre facture", "2024-01-01T10:00:45",
-         None, None, None, None, None, None),
+        (
+            "t1b",
+            "s1",
+            "bot",
+            "Voici votre facture",
+            "2024-01-01T10:00:45",
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        ),
     )
     conn.execute(
         "INSERT INTO feedback (session_id, turn_id, rating, comment, timestamp) VALUES (?, ?, ?, ?, ?)",
@@ -109,6 +144,7 @@ def bot_with_sessions(tmp_path, monkeypatch) -> str:
 # Tests
 # ---------------------------------------------------------------------------
 
+
 class TestDashboardMetrics:
     def test_get_metrics_empty_bot(self, client: TestClient):
         resp = client.get("/api/bot/nonexistent/dashboard/metrics")
@@ -116,7 +152,9 @@ class TestDashboardMetrics:
         data = resp.json()
         assert data["total_sessions"] == 0
 
-    def test_get_metrics_with_sessions(self, client: TestClient, bot_with_sessions: str):
+    def test_get_metrics_with_sessions(
+        self, client: TestClient, bot_with_sessions: str
+    ):
         resp = client.get(f"/api/bot/{bot_with_sessions}/dashboard/metrics")
         assert resp.status_code == 200
         data = resp.json()
@@ -141,7 +179,9 @@ class TestDashboardSessions:
         assert len(data["feedback"]) == 1
 
     def test_replay_unknown_session(self, client: TestClient, bot_with_sessions: str):
-        resp = client.get(f"/api/bot/{bot_with_sessions}/dashboard/sessions/unknown/replay")
+        resp = client.get(
+            f"/api/bot/{bot_with_sessions}/dashboard/sessions/unknown/replay"
+        )
         assert resp.status_code == 404
 
 
@@ -173,7 +213,9 @@ class TestDashboardAddExample:
         assert resp.status_code == 200
         assert resp.json()["status"] == "duplicate"
 
-    def test_add_example_unknown_intent(self, client: TestClient, bot_with_sessions: str):
+    def test_add_example_unknown_intent(
+        self, client: TestClient, bot_with_sessions: str
+    ):
         resp = client.post(
             f"/api/bot/{bot_with_sessions}/dashboard/add-example",
             json={"intent_id": "nonexistent", "text": "test"},

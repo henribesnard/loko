@@ -116,7 +116,9 @@ def _validate_password(password: str) -> list[str]:
     """Return list of validation errors (empty = valid)."""
     errors = []
     if len(password) < PW_MIN_CHARS:
-        errors.append(f"Le mot de passe doit contenir au moins {PW_MIN_CHARS} caracteres.")
+        errors.append(
+            f"Le mot de passe doit contenir au moins {PW_MIN_CHARS} caracteres."
+        )
     if not re.search(r"[A-Z]", password):
         errors.append("Le mot de passe doit contenir au moins une majuscule.")
     if not re.search(r"[0-9]", password):
@@ -163,6 +165,7 @@ class ChangePasswordRequest(BaseModel):
 # Endpoints
 # ---------------------------------------------------------------------------
 
+
 @router.post("/signup", status_code=201)
 async def signup(req: SignupRequest, request: Request) -> dict[str, Any]:
     """Create a new account and user."""
@@ -201,20 +204,28 @@ async def signup(req: SignupRequest, request: Request) -> dict[str, Any]:
 
     # Create verification token and send email
     token = create_email_token(user["id"], "verify")
-    logger.info("Signup: user=%s account=%s verify_token created", user["id"], account["id"])
+    logger.info(
+        "Signup: user=%s account=%s verify_token created", user["id"], account["id"]
+    )
 
     # Q3: send verification email (stub if SMTP not configured)
     from loko.email import send_verification_email
+
     send_verification_email(email, token)
 
     import os
+
     result: dict[str, Any] = {
         "status": "created",
         "message": "Compte cree. Verifiez votre email.",
     }
     # S1: debug mode only — never in production
     from loko.config.env import get_env
-    if os.environ.get("LOKO_AUTH_DEBUG_TOKENS") == "on" and get_env("ENV") != "production":
+
+    if (
+        os.environ.get("LOKO_AUTH_DEBUG_TOKENS") == "on"
+        and get_env("ENV") != "production"
+    ):
         result["_debug_verify_token"] = token
         result["user_id"] = user["id"]
         result["account_id"] = account["id"]
@@ -223,7 +234,9 @@ async def signup(req: SignupRequest, request: Request) -> dict[str, Any]:
 
 
 @router.post("/login")
-async def login(req: LoginRequest, request: Request, response: Response) -> dict[str, Any]:
+async def login(
+    req: LoginRequest, request: Request, response: Response
+) -> dict[str, Any]:
     """Authenticate and create a session."""
     ip = request.client.host if request.client else "unknown"
     _check_rate_limit(ip)
@@ -236,6 +249,7 @@ async def login(req: LoginRequest, request: Request, response: Response) -> dict
         raise HTTPException(401, "Email ou mot de passe incorrect.")
 
     from loko.db.accounts import verify_password
+
     if not verify_password(req.password, user["password_hash"]):
         _record_attempt(ip)
         raise HTTPException(401, "Email ou mot de passe incorrect.")
@@ -258,6 +272,7 @@ async def login(req: LoginRequest, request: Request, response: Response) -> dict
 
     # S6: set CSRF cookie on login
     from loko.api.csrf import set_csrf_cookie
+
     set_csrf_cookie(response)
 
     # Update last_login_at
@@ -293,6 +308,7 @@ async def logout(request: Request, response: Response) -> dict[str, str]:
 async def get_csrf_token(response: Response) -> dict[str, str]:
     """S6: Issue/refresh CSRF token (double-submit cookie)."""
     from loko.api.csrf import set_csrf_cookie
+
     token = set_csrf_cookie(response)
     return {"csrf_token": token}
 
@@ -335,7 +351,9 @@ async def verify_email(req: VerifyEmailRequest) -> dict[str, str]:
         raise HTTPException(400, "Lien de verification invalide ou expire.")
 
     mark_token_used(data["id"])
-    update_user(data["user_id"], email_verified_at=datetime.now(timezone.utc).isoformat())
+    update_user(
+        data["user_id"], email_verified_at=datetime.now(timezone.utc).isoformat()
+    )
 
     return {"status": "ok", "message": "Email verifie."}
 
@@ -345,7 +363,9 @@ class ResendVerificationRequest(BaseModel):
 
 
 @router.post("/resend-verification")
-async def resend_verification(req: ResendVerificationRequest, request: Request) -> dict[str, str]:
+async def resend_verification(
+    req: ResendVerificationRequest, request: Request
+) -> dict[str, str]:
     """ACC-4: resend verification email. Anti-enumeration: always same response."""
     ip = request.client.host if request.client else "unknown"
     _check_rate_limit(ip)
@@ -357,10 +377,14 @@ async def resend_verification(req: ResendVerificationRequest, request: Request) 
         token = create_email_token(user["id"], "verify")
         logger.info("Resend verification: user=%s verify_token created", user["id"])
         from loko.email import send_verification_email
+
         send_verification_email(email, token)
 
     # Anti-enumeration: identical response whether user exists, is verified, or not
-    return {"status": "ok", "message": "Si un compte non verifie existe avec cet email, un nouveau lien a ete envoye."}
+    return {
+        "status": "ok",
+        "message": "Si un compte non verifie existe avec cet email, un nouveau lien a ete envoye.",
+    }
 
 
 @router.post("/request-reset")
@@ -377,10 +401,14 @@ async def request_reset(req: ResetRequestModel, request: Request) -> dict[str, s
         logger.info("Password reset requested for user=%s", user["id"])
         # Q3: send reset email (stub if SMTP not configured)
         from loko.email import send_password_reset_email
+
         send_password_reset_email(email, token)
 
     # Always same response (anti-enumeration)
-    return {"status": "ok", "message": "Si un compte existe avec cet email, un lien de reinitialisation a ete envoye."}
+    return {
+        "status": "ok",
+        "message": "Si un compte existe avec cet email, un lien de reinitialisation a ete envoye.",
+    }
 
 
 @router.post("/reset-password")
@@ -403,7 +431,9 @@ async def reset_password(req: ResetPasswordRequest) -> dict[str, str]:
 
 
 @router.post("/change-password")
-async def change_password(req: ChangePasswordRequest, request: Request) -> dict[str, str]:
+async def change_password(
+    req: ChangePasswordRequest, request: Request
+) -> dict[str, str]:
     """Change password (requires active session)."""
     session_id = _get_session_id(request)
     if not session_id:
@@ -418,6 +448,7 @@ async def change_password(req: ChangePasswordRequest, request: Request) -> dict[
         raise HTTPException(401, "Utilisateur introuvable.")
 
     from loko.db.accounts import verify_password
+
     if not verify_password(req.current_password, user["password_hash"]):
         raise HTTPException(400, "Mot de passe actuel incorrect.")
 
@@ -438,6 +469,7 @@ async def change_password(req: ChangePasswordRequest, request: Request) -> dict[
 # Q2: GDPR — data export and account deletion
 # ---------------------------------------------------------------------------
 
+
 @router.get("/export")
 async def export_my_data(request: Request) -> dict[str, Any]:
     """Q2/GDPR: export all personal data for the current user."""
@@ -457,6 +489,7 @@ async def export_my_data(request: Request) -> dict[str, Any]:
 
     # Collect bot data
     from loko.bot.config_store import list_bots
+
     bots = list_bots(account_id=session["account_id"])
 
     export = {
@@ -485,7 +518,9 @@ class DeleteAccountRequest(BaseModel):
 
 @router.post("/delete-account")
 async def delete_my_account(
-    req: DeleteAccountRequest, request: Request, response: Response,
+    req: DeleteAccountRequest,
+    request: Request,
+    response: Response,
 ) -> dict[str, str]:
     """Q2/GDPR: permanently delete account and all associated data."""
     if req.confirm != "SUPPRIMER":
@@ -511,6 +546,8 @@ async def delete_my_account(
     delete_user_and_account(session["user_id"], session["account_id"])
 
     _clear_session_cookie(response)
-    logger.info("Account deleted: user=%s account=%s", session["user_id"], session["account_id"])
+    logger.info(
+        "Account deleted: user=%s account=%s", session["user_id"], session["account_id"]
+    )
 
     return {"status": "deleted", "message": "Compte et donnees supprimes."}

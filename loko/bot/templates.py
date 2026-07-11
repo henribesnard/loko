@@ -62,7 +62,6 @@ def render_template(
 
 _DEFAULTS: dict[ToneProfile, dict[TemplateKey, tuple[str, str, list[str]]]] = {
     # Each value: (text_fr, text_en, [variables_used])
-
     ToneProfile.NEUTRE: {
         TemplateKey.PRESENTATION: (
             "Bonjour, je suis {nom_bot}. Je peux vous aider sur les sujets suivants : {intentions_gerees}. Comment puis-je vous aider ?",
@@ -138,7 +137,6 @@ _DEFAULTS: dict[ToneProfile, dict[TemplateKey, tuple[str, str, list[str]]]] = {
             ["nom_bot"],
         ),
     },
-
     ToneProfile.FORMEL: {
         TemplateKey.PRESENTATION: (
             "Bonjour. Je suis {nom_bot}, votre assistant. Je suis a votre disposition pour les sujets suivants : {intentions_gerees}. En quoi puis-je vous etre utile ?",
@@ -211,7 +209,6 @@ _DEFAULTS: dict[ToneProfile, dict[TemplateKey, tuple[str, str, list[str]]]] = {
             ["nom_bot"],
         ),
     },
-
     ToneProfile.CHALEUREUX: {
         TemplateKey.PRESENTATION: (
             "Bonjour ! Je suis {nom_bot}. Je suis la pour vous aider sur : {intentions_gerees}. Dites-moi comment je peux vous aider.",

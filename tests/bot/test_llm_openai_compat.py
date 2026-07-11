@@ -19,6 +19,7 @@ from loko.bot.llm.openai_compat import LLMProviderError, OpenAICompatProvider
 # Fake OpenAI-compatible server
 # ---------------------------------------------------------------------------
 
+
 class FakeOpenAIHandler(BaseHTTPRequestHandler):
     """Minimal handler that streams OpenAI-format SSE responses."""
 
@@ -61,6 +62,7 @@ class FakeOpenAIHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
         import time
+
         if self.delay_s > 0:
             time.sleep(self.delay_s)
 
@@ -68,11 +70,13 @@ class FakeOpenAIHandler(BaseHTTPRequestHandler):
             chunk = {
                 "id": f"chatcmpl-{i}",
                 "object": "chat.completion.chunk",
-                "choices": [{
-                    "index": 0,
-                    "delta": {"content": token},
-                    "finish_reason": None,
-                }],
+                "choices": [
+                    {
+                        "index": 0,
+                        "delta": {"content": token},
+                        "finish_reason": None,
+                    }
+                ],
             }
             self.wfile.write(f"data: {json.dumps(chunk)}\n\n".encode())
             self.wfile.flush()
@@ -110,6 +114,7 @@ def fake_server():
 # Tests
 # ---------------------------------------------------------------------------
 
+
 class TestOpenAICompatProvider:
     """K2: OpenAI-compatible provider tests."""
 
@@ -117,14 +122,19 @@ class TestOpenAICompatProvider:
     async def test_nominal_streaming(self, fake_server):
         """Nominal: stream tokens from OpenAI-compat endpoint."""
         provider = OpenAICompatProvider(
-            base_url=fake_server, api_key="test-key", model="gpt-test",
+            base_url=fake_server,
+            api_key="test-key",
+            model="gpt-test",
         )
         messages = [{"role": "user", "content": "Bonjour"}]
 
         tokens: list[str] = []
         async for token in provider.stream_chat(
-            messages, model="gpt-test", temperature=0.0,
-            max_tokens=100, timeout=10,
+            messages,
+            model="gpt-test",
+            temperature=0.0,
+            max_tokens=100,
+            timeout=10,
         ):
             tokens.append(token)
 
@@ -134,13 +144,16 @@ class TestOpenAICompatProvider:
     async def test_temperature_always_zero(self, fake_server):
         """Temperature must always be 0 regardless of caller value."""
         provider = OpenAICompatProvider(
-            base_url=fake_server, api_key="test-key", model="gpt-test",
+            base_url=fake_server,
+            api_key="test-key",
+            model="gpt-test",
         )
 
         async for _ in provider.stream_chat(
             [{"role": "user", "content": "test"}],
             temperature=0.7,  # caller tries non-zero
-            max_tokens=100, timeout=10,
+            max_tokens=100,
+            timeout=10,
         ):
             pass
 
@@ -153,13 +166,16 @@ class TestOpenAICompatProvider:
         FakeOpenAIHandler.auth_required = "correct-key"
 
         provider = OpenAICompatProvider(
-            base_url=fake_server, api_key="wrong-key", model="gpt-test",
+            base_url=fake_server,
+            api_key="wrong-key",
+            model="gpt-test",
         )
 
         with pytest.raises(LLMProviderError, match="401"):
             async for _ in provider.stream_chat(
                 [{"role": "user", "content": "test"}],
-                max_tokens=100, timeout=10,
+                max_tokens=100,
+                timeout=10,
             ):
                 pass
 
@@ -169,13 +185,16 @@ class TestOpenAICompatProvider:
         FakeOpenAIHandler.status_code = 429
 
         provider = OpenAICompatProvider(
-            base_url=fake_server, api_key="test-key", model="gpt-test",
+            base_url=fake_server,
+            api_key="test-key",
+            model="gpt-test",
         )
 
         with pytest.raises(LLMProviderError, match="429"):
             async for _ in provider.stream_chat(
                 [{"role": "user", "content": "test"}],
-                max_tokens=100, timeout=10,
+                max_tokens=100,
+                timeout=10,
             ):
                 pass
 
@@ -185,13 +204,16 @@ class TestOpenAICompatProvider:
         FakeOpenAIHandler.delay_s = 5  # 5 second delay
 
         provider = OpenAICompatProvider(
-            base_url=fake_server, api_key="test-key", model="gpt-test",
+            base_url=fake_server,
+            api_key="test-key",
+            model="gpt-test",
         )
 
         with pytest.raises(LLMProviderError, match="timeout"):
             async for _ in provider.stream_chat(
                 [{"role": "user", "content": "test"}],
-                max_tokens=100, timeout=1,  # 1 second timeout
+                max_tokens=100,
+                timeout=1,  # 1 second timeout
             ):
                 pass
 
@@ -199,13 +221,16 @@ class TestOpenAICompatProvider:
     async def test_default_model_used(self, fake_server):
         """When model param is empty, default_model from constructor is used."""
         provider = OpenAICompatProvider(
-            base_url=fake_server, api_key="test-key", model="default-model",
+            base_url=fake_server,
+            api_key="test-key",
+            model="default-model",
         )
 
         async for _ in provider.stream_chat(
             [{"role": "user", "content": "test"}],
             model="",  # empty → use default
-            max_tokens=100, timeout=10,
+            max_tokens=100,
+            timeout=10,
         ):
             pass
 
@@ -217,13 +242,16 @@ class TestOpenAICompatProvider:
         FakeOpenAIHandler.auth_required = "my-secret-key"
 
         provider = OpenAICompatProvider(
-            base_url=fake_server, api_key="my-secret-key", model="gpt-test",
+            base_url=fake_server,
+            api_key="my-secret-key",
+            model="gpt-test",
         )
 
         tokens = []
         async for token in provider.stream_chat(
             [{"role": "user", "content": "test"}],
-            max_tokens=100, timeout=10,
+            max_tokens=100,
+            timeout=10,
         ):
             tokens.append(token)
 
@@ -234,12 +262,15 @@ class TestOpenAICompatProvider:
     async def test_stream_true_in_request(self, fake_server):
         """Request payload must include stream=true."""
         provider = OpenAICompatProvider(
-            base_url=fake_server, api_key="test-key", model="gpt-test",
+            base_url=fake_server,
+            api_key="test-key",
+            model="gpt-test",
         )
 
         async for _ in provider.stream_chat(
             [{"role": "user", "content": "test"}],
-            max_tokens=100, timeout=10,
+            max_tokens=100,
+            timeout=10,
         ):
             pass
 
@@ -257,7 +288,9 @@ class TestBuildLLMProvider:
         from loko.bot.errors import ComponentUnavailableError
         from loko.bot.llm import build_llm_provider
 
-        with pytest.raises(ComponentUnavailableError, match="No LLM provider configured"):
+        with pytest.raises(
+            ComponentUnavailableError, match="No LLM provider configured"
+        ):
             build_llm_provider("test-bot")
 
     def test_missing_api_key(self, monkeypatch):

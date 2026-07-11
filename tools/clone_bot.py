@@ -104,7 +104,9 @@ def clone_bot(source_bot_id: str, name_suffix: str) -> str:
     print("\nClone created successfully!")
     print(f"Bot ID: {clone_bot_id}")
     print("\nNext steps (protocol v2.1):")
-    print(f"  1. Run V2-4 on this clone: loko-eval --bot-dir {clone_dir} --mode confusion")
+    print(
+        f"  1. Run V2-4 on this clone: loko-eval --bot-dir {clone_dir} --mode confusion"
+    )
     print(f"  2. Add examples via API: POST /api/bot/{clone_bot_id}/examples")
     print(f"  3. Retrain clone: POST /api/bot/{clone_bot_id}/train")
     print("  4. Run V2-5 comparison on this clone")

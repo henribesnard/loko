@@ -5,7 +5,6 @@ from __future__ import annotations
 import asyncio
 
 
-
 def test_purge_removes_orphan_locks(monkeypatch):
     """Locks for sessions not in the active set are removed."""
     monkeypatch.setenv("LOKO_ENV", "test")
@@ -63,7 +62,9 @@ def test_purge_respects_max_size(monkeypatch):
         for i in range(5):
             bp._SESSION_LOCKS[f"s-{i}"] = asyncio.Lock()
 
-        removed = bp.purge_session_locks(active_session_ids=set(bp._SESSION_LOCKS.keys()))
+        removed = bp.purge_session_locks(
+            active_session_ids=set(bp._SESSION_LOCKS.keys())
+        )
         # Should have evicted at least 2 to get from 5 to 3
         assert removed >= 2
         assert len(bp._SESSION_LOCKS) <= 3

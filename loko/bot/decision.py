@@ -16,16 +16,17 @@ from loko.bot.models import JourneyParams
 
 
 DecisionType = Literal[
-    "route",            # high-confidence -> direct routing
-    "clarify_inter",    # medium-confidence -> propose 2 options
-    "reject",           # hors_perimetre or below seuil_bas
-    "escalate",         # demande_conseiller detected
+    "route",  # high-confidence -> direct routing
+    "clarify_inter",  # medium-confidence -> propose 2 options
+    "reject",  # hors_perimetre or below seuil_bas
+    "escalate",  # demande_conseiller detected
 ]
 
 
 @dataclass
 class Decision:
     """Result of decide_l1()."""
+
     type: DecisionType
     intent: str | None = None
     score: float = 0.0

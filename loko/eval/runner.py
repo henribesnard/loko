@@ -31,6 +31,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class EvalRow:
     """One row from the evaluation."""
+
     text: str
     expected: str
     predicted: str | None = None
@@ -43,6 +44,7 @@ class EvalRow:
 @dataclass
 class EvalReport:
     """Full evaluation report."""
+
     mode: str
     dataset: str
     total: int = 0
@@ -50,7 +52,9 @@ class EvalReport:
     accuracy: float = 0.0
     per_class: dict[str, dict[str, Any]] = field(default_factory=dict)
     dataset_hash: str = ""  # W3.4: SHA256 of dataset file for traceability
-    manifest_reference: dict[str, str] = field(default_factory=dict)  # W3.4: bot_id + manifest hash
+    manifest_reference: dict[str, str] = field(
+        default_factory=dict
+    )  # W3.4: bot_id + manifest hash
     confusion: dict[str, dict[str, int]] = field(default_factory=dict)
     errors: list[EvalRow] = field(default_factory=list)
     all_rows: list[EvalRow] = field(default_factory=list)
@@ -178,8 +182,11 @@ def evaluate_raw(
         confusion[expected][predicted] += 1
 
         eval_row = EvalRow(
-            text=text, expected=expected, predicted=predicted,
-            score=pred_score, correct=correct,
+            text=text,
+            expected=expected,
+            predicted=predicted,
+            score=pred_score,
+            correct=correct,
         )
         report.all_rows.append(eval_row)
         if not correct:
@@ -192,7 +199,9 @@ def evaluate_raw(
         report.per_class[cls] = {
             "total": class_total[cls],
             "correct": class_correct[cls],
-            "accuracy": round(class_correct[cls] / class_total[cls], 4) if class_total[cls] > 0 else 0.0,
+            "accuracy": round(class_correct[cls] / class_total[cls], 4)
+            if class_total[cls] > 0
+            else 0.0,
         }
 
     report.duration_s = time.perf_counter() - start
@@ -267,7 +276,8 @@ def evaluate_decision(
             report.correct += 1
 
         eval_row = EvalRow(
-            text=text, expected=expected,
+            text=text,
+            expected=expected,
             predicted=decision.intent,
             score=decision.score,
             decision_type=decision.type,
@@ -377,7 +387,8 @@ def evaluate_pieges(
             predicted_str = f"{decision.type}:{cand_str}"
 
         eval_row = EvalRow(
-            text=text, expected=expected,
+            text=text,
+            expected=expected,
             predicted=predicted_str,
             score=decision.score,
             decision_type=decision.type,
@@ -445,12 +456,16 @@ def threshold_sweep(
                     if expected in candidate_ids:
                         n_correct += 1
 
-            results.append({
-                "seuil_haut": round(sh, 3),
-                "seuil_bas": round(sb, 3),
-                "accuracy": round(n_correct / len(all_scores), 4) if all_scores else 0,
-                **counts,
-            })
+            results.append(
+                {
+                    "seuil_haut": round(sh, 3),
+                    "seuil_bas": round(sb, 3),
+                    "accuracy": round(n_correct / len(all_scores), 4)
+                    if all_scores
+                    else 0,
+                    **counts,
+                }
+            )
 
             sb += seuil_bas_range[2]
         sh += seuil_haut_range[2]
@@ -510,7 +525,9 @@ def threshold_sweep_3axis(
                         "seuil_ecart_clarification": round(se, 4),
                     },
                 )
-                modified_config = config.model_copy(update={"journey": modified_journey})
+                modified_config = config.model_copy(
+                    update={"journey": modified_journey}
+                )
 
                 point: dict[str, Any] = {
                     "seuil_haut": round(sh, 3),
@@ -530,7 +547,10 @@ def threshold_sweep_3axis(
                         elif decision.type == "clarify_inter":
                             if expected in [c[0] for c in decision.candidates]:
                                 correct += 1
-                        elif decision.type == "escalate" and expected == "demande_conseiller":
+                        elif (
+                            decision.type == "escalate"
+                            and expected == "demande_conseiller"
+                        ):
                             correct += 1
                         elif decision.type == "reject" and expected == "hors_perimetre":
                             correct += 1
@@ -642,7 +662,9 @@ def select_best_thresholds_pareto(
         # Distance to feasibility (normalized)
         def constraint_distance(p: dict) -> float:
             gng3_violation = max(0, GNG3_MIN - p.get("gng3", 0))
-            routes_violation = max(0, p.get("gng3_routes_directes", 0) - ROUTES_DIRECTES_MAX)
+            routes_violation = max(
+                0, p.get("gng3_routes_directes", 0) - ROUTES_DIRECTES_MAX
+            )
             # Normalize: gng3 is [0,1], routes is count → scale routes by 0.01
             return gng3_violation + (routes_violation * 0.01)
 
@@ -653,9 +675,8 @@ def select_best_thresholds_pareto(
             "feasible_count": 0,
             "pareto_frontier": [],
             "closest_infeasible": closest,
-            "warnings": warnings + [
-                f"Reporting {len(closest)} closest points - manual review required"
-            ],
+            "warnings": warnings
+            + [f"Reporting {len(closest)} closest points - manual review required"],
             "selection_method": "pareto_constrained",
         }
 
@@ -675,8 +696,16 @@ def select_best_thresholds_pareto(
     # A point dominates another if it's >= on all objectives and > on at least one
     def dominates(a: dict, b: dict) -> bool:
         """Check if point a dominates point b on (gng1, gng2, pieges)."""
-        a_gng1, a_gng2, a_pieges = a.get("gng1", 0), a.get("gng2", 0), a.get("pieges_correct", 0)
-        b_gng1, b_gng2, b_pieges = b.get("gng1", 0), b.get("gng2", 0), b.get("pieges_correct", 0)
+        a_gng1, a_gng2, a_pieges = (
+            a.get("gng1", 0),
+            a.get("gng2", 0),
+            a.get("pieges_correct", 0),
+        )
+        b_gng1, b_gng2, b_pieges = (
+            b.get("gng1", 0),
+            b.get("gng2", 0),
+            b.get("pieges_correct", 0),
+        )
 
         # a >= b on all objectives
         if a_gng1 < b_gng1 or a_gng2 < b_gng2 or a_pieges < b_pieges:
@@ -725,7 +754,13 @@ def select_best_thresholds_pareto(
 
 
 _ERRORS_CSV_FIELDNAMES = [
-    "text", "expected", "predicted", "score", "decision_type", "correct", "detail",
+    "text",
+    "expected",
+    "predicted",
+    "score",
+    "decision_type",
+    "correct",
+    "detail",
 ]
 
 
@@ -766,13 +801,18 @@ def write_report(report: EvalReport, out_dir: Path) -> None:
     # confusion.csv (for raw mode)
     if report.confusion:
         confusion_path = out_dir / "confusion.csv"
-        all_labels = sorted(set(
-            list(report.confusion.keys()) +
-            [l for v in report.confusion.values() for l in v.keys()]
-        ))
+        all_labels = sorted(
+            set(
+                list(report.confusion.keys())
+                + [l for v in report.confusion.values() for l in v.keys()]
+            )
+        )
         with open(confusion_path, "w", encoding="utf-8", newline="") as f:
             writer = csv.writer(f)
             writer.writerow(["true\\predicted"] + all_labels)
             for true_label in all_labels:
-                row_data = [report.confusion.get(true_label, {}).get(pred, 0) for pred in all_labels]
+                row_data = [
+                    report.confusion.get(true_label, {}).get(pred, 0)
+                    for pred in all_labels
+                ]
                 writer.writerow([true_label] + row_data)

@@ -28,9 +28,14 @@ from pathlib import Path
 
 
 REQUIRED_INTENTS = {
-    "hors_perimetre", "demande_conseiller",
-    "help_leave", "help_contact", "help_billing",
-    "help_documents", "help_cancellation", "help_account",
+    "hors_perimetre",
+    "demande_conseiller",
+    "help_leave",
+    "help_contact",
+    "help_billing",
+    "help_documents",
+    "help_cancellation",
+    "help_account",
     "help_transfer",
 }
 
@@ -160,12 +165,14 @@ def check_conformity(config: dict) -> dict:
                     f"Sub-motif '{sub['id']}' has {n_sub_ex} examples (min {MIN_L2_EXAMPLES})"
                 )
     else:
-        report["checks"].append({
-            "id": "CE-9.4",
-            "name": "L2 help_account",
-            "pass": False,
-            "detail": {"error": "intent not found"},
-        })
+        report["checks"].append(
+            {
+                "id": "CE-9.4",
+                "name": "L2 help_account",
+                "pass": False,
+                "detail": {"error": "intent not found"},
+            }
+        )
         report["errors"].append("help_account intent not found")
 
     # ── Final verdict ──
@@ -179,9 +186,15 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         description="CE-9 Bot conformity checker (protocol v2.2)",
     )
-    parser.add_argument("bot_dir", help="Path to bot directory (containing config.json)")
-    parser.add_argument("--output", "-o", default=None,
-                        help="Write JSON report to file (default: stdout)")
+    parser.add_argument(
+        "bot_dir", help="Path to bot directory (containing config.json)"
+    )
+    parser.add_argument(
+        "--output",
+        "-o",
+        default=None,
+        help="Write JSON report to file (default: stdout)",
+    )
 
     args = parser.parse_args()
 
