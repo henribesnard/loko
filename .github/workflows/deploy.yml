@@ -1,0 +1,158 @@
+name: Deploy to Production
+# Implements C3 from PLAN_AMELIORATION_COMPLET_LOKO_2026-07-10.md
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'  # Trigger on version tags (v0.3.8, v1.0.0, etc.)
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build-and-deploy:
+    name: Build and Deploy
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag=$GITHUB_REF_NAME" >> $GITHUB_OUTPUT
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            VERSION=${{ steps.version.outputs.version }}
+
+      - name: Deploy to VPS
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+        run: |
+          # Setup SSH
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H $VPS_HOST >> ~/.ssh/known_hosts
+
+          # Deploy via SSH
+          ssh -i ~/.ssh/deploy_key $VPS_USER@$VPS_HOST << 'ENDSSH'
+            set -e
+            cd /opt/loko
+
+            # Pull latest code
+            git fetch --tags
+            git checkout ${{ steps.version.outputs.tag }}
+
+            # Pull new Docker image
+            docker compose pull
+
+            # Backup before deploy (safety)
+            ./tools/backup_loko.sh || echo "Warning: Backup failed"
+
+            # Deploy with zero-downtime (if possible)
+            docker compose up -d --no-deps --build
+
+            # Wait for health check
+            sleep 10
+
+            echo "Deployment complete: ${{ steps.version.outputs.tag }}"
+          ENDSSH
+
+      - name: Smoke test after deploy
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+        run: |
+          # Wait for service to be ready
+          for i in {1..30}; do
+            if curl -f -s https://$VPS_HOST/health > /dev/null; then
+              echo "✅ Health check passed"
+              exit 0
+            fi
+            echo "Waiting for service... ($i/30)"
+            sleep 2
+          done
+
+          echo "❌ Health check failed after deployment"
+          exit 1
+
+      - name: Rollback on failure
+        if: failure()
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+        run: |
+          echo "⚠️ Deployment failed, attempting rollback..."
+
+          ssh -i ~/.ssh/deploy_key $VPS_USER@$VPS_HOST << 'ENDSSH'
+            cd /opt/loko
+
+            # Rollback to previous tag
+            PREV_TAG=$(git describe --tags --abbrev=0 HEAD^)
+            echo "Rolling back to $PREV_TAG"
+
+            git checkout $PREV_TAG
+            docker compose up -d --no-deps
+
+            echo "Rollback complete"
+          ENDSSH
+
+      - name: Create GitHub Release
+        if: success()
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          release_name: Release ${{ steps.version.outputs.tag }}
+          body: |
+            Automated deployment of LOKO ${{ steps.version.outputs.version }}
+
+            Changes: See commit history
+
+            Deployment: ✅ Successful
+            Health check: ✅ Passed
+          draft: false
+          prerelease: false
+
+      - name: Notify deployment
+        if: always()
+        run: |
+          STATUS=${{ job.status }}
+          if [ "$STATUS" == "success" ]; then
+            echo "✅ Deployment successful: ${{ steps.version.outputs.tag }}"
+          else
+            echo "❌ Deployment failed: ${{ steps.version.outputs.tag }}"
+          fi
+
+          # TODO: Send notification (Slack, email, etc.)

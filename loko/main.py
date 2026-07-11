@@ -72,6 +72,51 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
 
 # ---------------------------------------------------------------------------
+# API Documentation Protection (C3)
+# ---------------------------------------------------------------------------
+
+class APIDocsMiddleware(BaseHTTPMiddleware):
+    """Protect API documentation endpoints with admin token (server mode only)."""
+
+    async def dispatch(self, request: Request, call_next):
+        from loko.config.env import get_env
+        import hmac
+
+        # Only protect docs in server mode
+        mode = get_env("MODE", "desktop")
+        docs_paths = ["/api/docs", "/api/redoc", "/api/openapi.json"]
+
+        if mode == "server" and any(request.url.path == path for path in docs_paths):
+            admin_token = os.environ.get("LOKO_ADMIN_TOKEN")
+
+            if not admin_token:
+                # Admin token not configured - deny access
+                return JSONResponse(
+                    status_code=503,
+                    content={"detail": "API documentation not configured (LOKO_ADMIN_TOKEN missing)"}
+                )
+
+            # Extract token from Authorization header or query param
+            auth_header = request.headers.get("Authorization", "")
+            token_from_header = None
+            if auth_header.startswith("Bearer "):
+                token_from_header = auth_header[7:]
+
+            # Allow token in query param for browser access (e.g., /api/docs?token=...)
+            token_from_query = request.query_params.get("token")
+
+            provided_token = token_from_header or token_from_query
+
+            if not provided_token or not hmac.compare_digest(provided_token, admin_token):
+                return JSONResponse(
+                    status_code=401,
+                    content={"detail": "Authentication required for API documentation"}
+                )
+
+        return await call_next(request)
+
+
+# ---------------------------------------------------------------------------
 # Rate limiting (P0-5)
 # ---------------------------------------------------------------------------
 
@@ -177,10 +222,14 @@ async def _session_purge_task() -> None:
 
 def create_app() -> FastAPI:
     """Create and configure the FastAPI application."""
+    # C3: Expose API documentation at /api/docs (protected by admin token)
     app = FastAPI(
-        title="LOKO Bot Service",
+        title="LOKO API",
         version=__version__,
         description="Deterministic chatbot platform for customer service.",
+        docs_url="/api/docs",       # Swagger UI
+        redoc_url="/api/redoc",     # ReDoc
+        openapi_url="/api/openapi.json",
     )
 
     # --- CORS (P0-3 + H2: credentials guard) ---
@@ -214,6 +263,9 @@ def create_app() -> FastAPI:
 
     # --- Security headers (P0-3) ---
     app.add_middleware(SecurityHeadersMiddleware)
+
+    # --- C3: API documentation protection ---
+    app.add_middleware(APIDocsMiddleware)
 
     # --- Rate limiting (P0-5) ---
     _setup_rate_limiting(app)
