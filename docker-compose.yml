@@ -5,22 +5,12 @@ services:
       - "8001:8000"
     volumes:
       - loko-data:/root/.loko
-    # K1: Docker secrets support (PLAN_AMELIORATION_COMPLET_LOKO_2026-07-10.md)
-    # Secrets are optional - fallback to env vars for dev/desktop compatibility
-    secrets:
-      - loko_admin_token
-      - smtp_password
-      - loko_llm_api_key
     environment:
       - PYTHONUNBUFFERED=1
       - LOKO_MODE=server
-      # K1: Prefer _FILE secrets, fallback to direct env var (dev/desktop)
       - LOKO_ADMIN_TOKEN=${LOKO_ADMIN_TOKEN:-}
-      - LOKO_ADMIN_TOKEN_FILE=/run/secrets/loko_admin_token
       - SMTP_PASSWORD=${SMTP_PASSWORD:-}
-      - SMTP_PASSWORD_FILE=/run/secrets/smtp_password
       - LOKO_LLM_API_KEY=${LOKO_LLM_API_KEY:-}
-      - LOKO_LLM_API_KEY_FILE=/run/secrets/loko_llm_api_key
       - LOKO_CORS_ORIGINS=${LOKO_CORS_ORIGINS:-}
       - LOKO_SESSION_RETENTION_DAYS=${LOKO_SESSION_RETENTION_DAYS:-30}
       # Rate limiting (R1) — values are slowapi rate strings
@@ -47,17 +37,6 @@ services:
       interval: 30s
       timeout: 5s
       start_period: 10s
-
-# K1: Docker secrets (optional, for production deployment)
-# Create secrets with: echo "your-secret" | docker secret create loko_admin_token -
-# Or use file-based secrets (see docs/SECRETS.md)
-secrets:
-  loko_admin_token:
-    file: ${LOKO_SECRETS_DIR:-.}/secrets/loko_admin_token.txt
-  smtp_password:
-    file: ${LOKO_SECRETS_DIR:-.}/secrets/smtp_password.txt
-  loko_llm_api_key:
-    file: ${LOKO_SECRETS_DIR:-.}/secrets/loko_llm_api_key.txt
 
 volumes:
   loko-data:

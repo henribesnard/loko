@@ -31,8 +31,9 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "tag=$GITHUB_REF_NAME" >> $GITHUB_OUTPUT
 
-          # Find previous version tag for rollback reference
-          PREV_TAG=$(git tag -l 'v*.*.*' --sort=-version:refname | grep -v "^${GITHUB_REF_NAME}$" | head -1)
+          # Find previous version tag for rollback (must be lower than current)
+          PREV_TAG=$(git tag -l 'v*.*.*' --sort=-version:refname \
+            | awk -v cur="$GITHUB_REF_NAME" 'found{print;exit} $0==cur{found=1}')
           echo "prev_tag=${PREV_TAG:-none}" >> $GITHUB_OUTPUT
           echo "Current: $GITHUB_REF_NAME, Previous: ${PREV_TAG:-none}"
 
@@ -81,6 +82,9 @@ jobs:
             # Pull latest code and tags
             git fetch --tags --force
             git checkout ${{ steps.version.outputs.tag }}
+
+            # Ensure scripts are executable
+            chmod +x tools/*.sh 2>/dev/null || true
 
             # Backup before deploy (safety)
             ./tools/backup_loko.sh || echo "Warning: Backup failed, continuing"
