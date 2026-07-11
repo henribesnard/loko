@@ -349,8 +349,34 @@ class BotOrchestrator:
         return step(session, event, config)
 
     # ------------------------------------------------------------------
-    # Retrieval + Generation
+    # Retrieval + Generation (O6: extracted pure helpers)
     # ------------------------------------------------------------------
+
+    @staticmethod
+    def _find_intent_labels(
+        config: BotConfig,
+        intent_id: str,
+        sub_motif_id: str | None,
+    ) -> tuple[str, str]:
+        """Pure helper: find intent and sub-motif labels from config.
+
+        Returns
+        -------
+        tuple[str, str]
+            (intent_label, sub_motif_label)
+        """
+        intent_label = ""
+        sub_motif_label = ""
+        for intent in config.intents:
+            if intent.id == intent_id:
+                intent_label = intent.label
+                if sub_motif_id:
+                    for sm in intent.sub_motifs:
+                        if sm.id == sub_motif_id:
+                            sub_motif_label = sm.label
+                            break
+                break
+        return intent_label, sub_motif_label
 
     async def _handle_generation(
         self,
@@ -361,17 +387,9 @@ class BotOrchestrator:
     ) -> AsyncIterator[tuple[BotSession, SSEEvent]]:
         """Handle EmitGeneration: retrieval → check → generate → satisfaction."""
         # Find intent/sub-motif labels for query augmentation
-        intent_label = ""
-        sub_motif_label = ""
-        for intent in config.intents:
-            if intent.id == action.intent:
-                intent_label = intent.label
-                if action.sub_motif:
-                    for sm in intent.sub_motifs:
-                        if sm.id == action.sub_motif:
-                            sub_motif_label = sm.label
-                            break
-                break
+        intent_label, sub_motif_label = self._find_intent_labels(
+            config, action.intent, action.sub_motif,
+        )
 
         # --- Retrieval ---
         with traces.measure("retrieval") as ctx:
@@ -457,8 +475,61 @@ class BotOrchestrator:
                 )
 
     # ------------------------------------------------------------------
-    # Escalation
+    # Escalation (O6: extracted pure helpers)
     # ------------------------------------------------------------------
+
+    @staticmethod
+    def _build_escalation_payload(
+        session: BotSession,
+        action: CallEscalation,
+        max_turns: int = 10,
+    ) -> EscalationPayload:
+        """Pure helper: build escalation payload from session.
+
+        Parameters
+        ----------
+        session : BotSession
+            Current session state
+        action : CallEscalation
+            Escalation action with motif
+        max_turns : int, optional
+            Maximum number of transcript turns to include (default: 10)
+
+        Returns
+        -------
+        EscalationPayload
+            Payload ready to send to escalation provider
+        """
+        return EscalationPayload(
+            conversation_id=session.session_id,
+            transcript=[
+                {"role": t.role, "content": t.content}
+                for t in session.transcript[-max_turns:]
+            ],
+            intention=session.current_intent,
+            sous_motif=session.current_sub_motif,
+            motif_escalade=action.motif,
+        )
+
+    @staticmethod
+    def _extract_temps_attente(result: Any, default: int = 4) -> int:
+        """Pure helper: extract wait time from escalation result.
+
+        Parameters
+        ----------
+        result : Any
+            Escalation provider result (dict or object)
+        default : int, optional
+            Default wait time if not found (default: 4)
+
+        Returns
+        -------
+        int
+            Estimated wait time in minutes
+        """
+        if isinstance(result, dict):
+            return result.get("temps_attente_estime_min", default)
+        return getattr(result, "temps_attente_estime_min", default)
 
     async def _handle_escalation(
         self,
@@ -468,26 +539,14 @@ class BotOrchestrator:
         traces: TraceCollector,
     ) -> AsyncIterator[tuple[BotSession, SSEEvent]]:
         """Handle CallEscalation: call provider, then emit template."""
-        payload = EscalationPayload(
-            conversation_id=session.session_id,
-            transcript=[
-                {"role": t.role, "content": t.content}
-                for t in session.transcript[-10:]  # last 10 turns
-            ],
-            intention=session.current_intent,
-            sous_motif=session.current_sub_motif,
-            motif_escalade=action.motif,
-        )
+        payload = self._build_escalation_payload(session, action)
 
         with traces.measure("escalation") as ctx:
             result = await self.escalation.escalate(payload)
             ctx["motif"] = action.motif.value
             ctx["result"] = result.model_dump() if hasattr(result, "model_dump") else result
 
-        if isinstance(result, dict):
-            temps_attente = result.get("temps_attente_estime_min", 4)
-        else:
-            temps_attente = getattr(result, "temps_attente_estime_min", 4)
+        temps_attente = self._extract_temps_attente(result)
         session, esc_actions = handle_escalation_result(session, config, temps_attente)
 
         yield session, SSEEvent(event="state", data={"state": session.state.value})
