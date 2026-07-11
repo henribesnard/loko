@@ -90,7 +90,7 @@ jobs:
           REGISTRY: ghcr.io
           IMAGE_NAME: ${{ github.repository }}
         run: |
-          LATEST_TAG=$(git tag -l 'v*.*.*' --sort=-version:refname | head -1)
+          LATEST_TAG=$(git tag -l 'v*.*.*' --sort=-creatordate | head -1)
           LATEST_VERSION="${LATEST_TAG#v}"
           echo "Redeploying $LATEST_TAG (version $LATEST_VERSION)"
 
@@ -99,6 +99,7 @@ jobs:
             cd /opt/loko
 
             git fetch --tags --force
+            git stash --include-untracked || true
             git checkout $LATEST_TAG
 
             chmod +x tools/*.sh 2>/dev/null || true

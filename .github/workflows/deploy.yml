@@ -81,6 +81,7 @@ jobs:
 
             # Pull latest code and tags
             git fetch --tags --force
+            git stash --include-untracked || true
             git checkout ${{ steps.version.outputs.tag }}
 
             # Ensure scripts are executable
@@ -146,6 +147,7 @@ jobs:
             cd /opt/loko
 
             git fetch --tags --force
+            git stash --include-untracked || true
             git checkout $PREV_TAG
 
             export LOKO_VERSION=$PREV_VERSION
