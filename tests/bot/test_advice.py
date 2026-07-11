@@ -11,7 +11,6 @@ from __future__ import annotations
 
 from typing import Any
 
-import pytest
 
 from loko.bot.classifier.training import (
     _generate_advice,

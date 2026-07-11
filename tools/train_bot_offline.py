@@ -163,7 +163,7 @@ def main() -> None:
 
     # Load config
     print(f"\n{'=' * 60}")
-    print(f"  LOKO Offline Trainer")
+    print("  LOKO Offline Trainer")
     print(f"{'=' * 60}")
     print(f"  Bot: {bot_dir.name}")
 
@@ -192,7 +192,7 @@ def main() -> None:
         )
         print(f"  Config saved to {config_path}")
 
-    print(f"\n  Training...")
+    print("\n  Training...")
     print(f"  {'=' * 50}")
 
     t_start = time.perf_counter()
@@ -201,7 +201,7 @@ def main() -> None:
         result = train(bot_dir, config, skip_eval=args.skip_eval)
     except ImportError as exc:
         print(f"\n  Error: ML dependencies not available: {exc}", file=sys.stderr)
-        print(f"  Install with: pip install setfit sentence-transformers", file=sys.stderr)
+        print("  Install with: pip install setfit sentence-transformers", file=sys.stderr)
         sys.exit(1)
     except Exception as exc:
         print(f"\n  Error: Training failed: {exc}", file=sys.stderr)
@@ -211,7 +211,7 @@ def main() -> None:
 
     # Display results
     print(f"\n  {'=' * 50}")
-    print(f"  TRAINING RESULTS")
+    print("  TRAINING RESULTS")
     print(f"  {'=' * 50}")
 
     l1 = result.get("level1", {})
@@ -229,7 +229,7 @@ def main() -> None:
 
     evaluation = result.get("evaluation")
     if evaluation:
-        print(f"\n  Evaluation:")
+        print("\n  Evaluation:")
         print(f"    Accuracy: {evaluation.get('accuracy', 0):.2%}")
         per_class = evaluation.get("per_class_f1", {})
         for cls in sorted(per_class.keys()):
@@ -243,7 +243,7 @@ def main() -> None:
 
     latency = result.get("inference_latency_ms", {})
     if latency:
-        print(f"\n  Inference latency:")
+        print("\n  Inference latency:")
         print(f"    P50={latency.get('p50', '?')}ms P95={latency.get('p95', '?')}ms")
 
     manifest = result.get("manifest", "unknown")

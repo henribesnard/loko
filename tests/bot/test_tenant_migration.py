@@ -7,7 +7,6 @@ from pathlib import Path
 
 import pytest
 
-from loko.bot.models import BotConfig
 
 
 @pytest.fixture()

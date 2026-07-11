@@ -25,7 +25,6 @@ from loko.bot.models import (
     EmitTemplate,
     EscalationMotif,
     TemplateKey,
-    JourneyParams,
 )
 
 
@@ -421,9 +420,6 @@ def on_satisfaction_positive(
     # ORC: at max_demandes, go to CLOTURE_DOUCE
     if new_count >= journey.max_demandes:
         resume = ", ".join(resolved) if resolved else ""
-        intent_labels = ", ".join(
-            i.label for i in config.intents if not i.is_system
-        )
         new = _update(
             new, state=BotState.CLOTURE_DOUCE, demandes_count=new_count,
         )

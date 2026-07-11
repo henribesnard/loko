@@ -222,7 +222,6 @@ class SimplePageFetcher:
     def fetch(self, url: str) -> tuple[str, int]:
         import http.client
         import ssl
-        import urllib.error
 
         current_url = url
         for hop in range(self.MAX_REDIRECTS + 1):

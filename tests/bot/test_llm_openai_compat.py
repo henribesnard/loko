@@ -6,11 +6,9 @@ streaming protocol.
 
 from __future__ import annotations
 
-import asyncio
 import json
 import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from typing import Any
 
 import pytest
 

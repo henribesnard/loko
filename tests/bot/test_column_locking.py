@@ -9,8 +9,6 @@ from loko.db.accounts import (
     create_user,
     update_account,
     update_user,
-    get_db,
-    _init_schema,
 )
 
 

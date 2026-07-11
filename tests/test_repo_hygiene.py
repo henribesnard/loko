@@ -95,7 +95,7 @@ def test_no_secrets_in_loko_source():
                     )
 
     assert not violations, (
-        f"Potential secret leaks in log statements:\n" +
+        "Potential secret leaks in log statements:\n" +
         "\n".join(f"  {v}" for v in violations)
     )
 

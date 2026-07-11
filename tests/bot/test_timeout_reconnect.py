@@ -6,7 +6,7 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from loko.bot.models import BotConfig, BotSession, BotState, Intent, JourneyParams
+from loko.bot.models import BotConfig, BotSession, BotState, JourneyParams
 
 
 @pytest.fixture

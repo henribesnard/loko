@@ -16,11 +16,7 @@ Covers:
 from __future__ import annotations
 
 import json
-import os
-import time
 from pathlib import Path
-from typing import Any
-from unittest.mock import patch
 
 import pytest
 from fastapi.testclient import TestClient

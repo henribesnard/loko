@@ -34,7 +34,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from loko.bot.config_store import load_bot_config, save_bot_config
-from loko.bot.session_store import get_bot_dir, get_bots_root
+from loko.bot.session_store import get_bot_dir
 
 
 def clone_bot(source_bot_id: str, name_suffix: str) -> str:
@@ -69,7 +69,7 @@ def clone_bot(source_bot_id: str, name_suffix: str) -> str:
     # Create clone directory
     clone_dir = get_bot_dir(clone_bot_id, create=True)
 
-    print(f"Cloning bot...")
+    print("Cloning bot...")
     print(f"  Source: {source_bot_id}")
     print(f"  Source name: {source_config.name}")
     print(f"  Clone: {clone_bot_id}")
@@ -101,13 +101,13 @@ def clone_bot(source_bot_id: str, name_suffix: str) -> str:
     for item in sorted(copied_items):
         print(f"  - {item}")
 
-    print(f"\nClone created successfully!")
+    print("\nClone created successfully!")
     print(f"Bot ID: {clone_bot_id}")
-    print(f"\nNext steps (protocol v2.1):")
+    print("\nNext steps (protocol v2.1):")
     print(f"  1. Run V2-4 on this clone: loko-eval --bot-dir {clone_dir} --mode confusion")
     print(f"  2. Add examples via API: POST /api/bot/{clone_bot_id}/examples")
     print(f"  3. Retrain clone: POST /api/bot/{clone_bot_id}/train")
-    print(f"  4. Run V2-5 comparison on this clone")
+    print("  4. Run V2-5 comparison on this clone")
     print(f"  5. Run V3 on ORIGINAL bot (frozen at V2-1): {source_bot_id}")
     print(f"  6. Delete clone after campaign: rm -rf {clone_dir}")
 

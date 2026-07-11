@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import pytest
-from pathlib import Path
 
 from loko.bot.classifier.builtin_examples import (
     DEMANDE_CONSEILLER_EXAMPLES,
@@ -19,7 +18,7 @@ from loko.bot.classifier.setfit_service import (
     prepare_l1_training_data,
     prepare_l2_training_data,
 )
-from loko.bot.models import BotConfig, Intent, SubMotif, ToneProfile
+from loko.bot.models import BotConfig, Intent, SubMotif
 
 
 # ---------------------------------------------------------------------------

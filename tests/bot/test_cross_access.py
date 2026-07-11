@@ -7,7 +7,6 @@ a bot belonging to account B.
 from __future__ import annotations
 
 import json
-from pathlib import Path
 
 import pytest
 
@@ -74,7 +73,7 @@ def env(tmp_path, monkeypatch):
 def test_user_a_can_read_own_bot(env):
     """User A can read bot-a."""
     from loko.api.session_middleware import require_tenant_or_ops
-    from unittest.mock import AsyncMock, MagicMock
+    from unittest.mock import MagicMock
     import asyncio
 
     request = MagicMock()

@@ -186,7 +186,7 @@ def main() -> None:
         # Report selection
         print(f"3-axis sweep: {len(results)} points written to {sweep_path}")
         print(f"Datasets: {', '.join(f'{k}={v}' for k, v in ds_dict.items())}")
-        print(f"\nPareto selection (v2.1):")
+        print("\nPareto selection (v2.1):")
         print(f"  Feasible points: {selection['feasible_count']}/{len(results)}")
         print(f"  Pareto frontier: {len(selection['pareto_frontier'])} points")
 
@@ -199,7 +199,7 @@ def main() -> None:
             print("  No feasible point found - see selection.json for closest candidates")
 
         if selection.get("warnings"):
-            print(f"\nWarnings:")
+            print("\nWarnings:")
             for w in selection["warnings"]:
                 print(f"  - {w}")
 

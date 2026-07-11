@@ -10,7 +10,6 @@ and per language (FR/EN).
 from __future__ import annotations
 
 import re
-from typing import Any
 
 from loko.bot.models import (
     ALLOWED_TEMPLATE_VARIABLES,

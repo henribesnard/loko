@@ -7,7 +7,6 @@ from pathlib import Path
 import pytest
 
 from loko.bot.metrics import (
-    BotMetrics,
     compute_metrics,
     get_misclassified_turns,
     get_session_replay,

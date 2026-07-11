@@ -4,7 +4,6 @@ Implements tests for PLAN_AMELIORATION_COMPLET_LOKO_2026-07-10.md
 """
 
 import tempfile
-import json
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 import pytest

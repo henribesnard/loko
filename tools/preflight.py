@@ -16,7 +16,6 @@ from __future__ import annotations
 
 import argparse
 import hashlib
-import os
 import subprocess
 import sys
 from pathlib import Path
@@ -293,7 +292,7 @@ def check_ce9_bot_conformity(bot_dir: str | None) -> bool:
         errors.append("services_en_ligne intent not found")
 
     ok = len(errors) == 0
-    detail = f"{len(intents)} intents, {len(errors)} issues" if errors else f"9 intents, L2 OK"
+    detail = f"{len(intents)} intents, {len(errors)} issues" if errors else "9 intents, L2 OK"
     if errors:
         detail += " — " + "; ".join(errors)
 

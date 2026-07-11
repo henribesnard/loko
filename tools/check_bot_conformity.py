@@ -213,7 +213,7 @@ def main() -> None:
     print(f"\nCE-9: {verdict} — {n_pass}/{n_total} checks passed", file=sys.stderr)
 
     if report["errors"]:
-        print(f"\nErrors:", file=sys.stderr)
+        print("\nErrors:", file=sys.stderr)
         for err in report["errors"]:
             print(f"  - {err}", file=sys.stderr)
 

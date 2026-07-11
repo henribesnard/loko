@@ -12,7 +12,6 @@ from loko.bot.models import (
     MessageTemplate,
     SubMotif,
     TemplateKey,
-    ToneProfile,
 )
 
 

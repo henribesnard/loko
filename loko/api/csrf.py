@@ -10,7 +10,6 @@ The frontend reads the cookie and sends it as a header.
 from __future__ import annotations
 
 import logging
-import os
 import secrets
 
 from starlette.middleware.base import BaseHTTPMiddleware

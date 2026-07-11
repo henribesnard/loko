@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "loko"
-version = "0.5.0"
+version = "0.5.1"
 description = "LOKO — deterministic chatbot platform for customer service"
 license = {text = "Proprietary"}
 requires-python = ">=3.10"
@@ -48,11 +48,16 @@ markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
 ]
 
-# C2: Coverage measurement (PLAN_AMELIORATION_COMPLET_LOKO_2026-07-10.md)
-# Note: No --cov-fail-under in first iteration, just measure
-addopts = [
-    "--cov=loko",
-    "--cov-report=term-missing",
-    "--cov-report=html:htmlcov",
-    "--cov-report=xml:coverage.xml",
+[tool.ruff.lint]
+ignore = [
+    "E741",   # ambiguous variable name (l in list comprehensions)
+    "E402",   # module-level import not at top (needed for sys.path manipulation)
 ]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["F841", "E721"]   # unused vars in test fixtures, type() comparisons
+"tools/*" = ["F841"]           # unused vars in CLI scripts
+
+# C2: Coverage — run explicitly with:
+#   pytest --cov=loko --cov-report=term-missing --cov-report=html:htmlcov --cov-report=xml:coverage.xml
+# Not in addopts because CI guard jobs install pytest without pytest-cov.

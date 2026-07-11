@@ -2,18 +2,14 @@
 
 from __future__ import annotations
 
-import pytest
 
 from loko.bot.engine import (
     add_turn_to_session,
-    create_session,
     handle_escalation_result,
     start_session,
     step,
 )
 from loko.bot.models import (
-    BotConfig,
-    BotSession,
     BotState,
     CallEscalation,
     CloseSession,

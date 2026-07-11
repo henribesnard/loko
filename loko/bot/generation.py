@@ -9,7 +9,7 @@ The LLM provider is injected via protocol for testability.
 from __future__ import annotations
 
 import logging
-from typing import Any, AsyncIterator, Protocol, runtime_checkable
+from typing import AsyncIterator, Protocol, runtime_checkable
 
 from loko.bot.models import BotConfig, BotLLMConfig, Chunk, ToneProfile
 

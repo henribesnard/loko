@@ -10,12 +10,11 @@ Covers:
 from __future__ import annotations
 
 import csv
-from pathlib import Path
 
 import pytest
 
 from loko.bot.models import BotConfig, Intent, JourneyParams
-from loko.eval.decision import Decision, decide
+from loko.eval.decision import decide
 from loko.eval.runner import threshold_sweep_3axis
 
 

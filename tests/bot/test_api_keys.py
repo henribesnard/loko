@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
 
 from loko.api.api_keys import (
     APIKeyRecord,

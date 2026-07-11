@@ -272,12 +272,12 @@ def main() -> None:
         print(f"  {status} {check['id']:6s} {check['name']}")
 
     if report["errors"]:
-        print(f"\nErrors:")
+        print("\nErrors:")
         for err in report["errors"]:
             print(f"  [FAIL] {err}")
 
     if report["warnings"]:
-        print(f"\nWarnings:")
+        print("\nWarnings:")
         for warn in report["warnings"]:
             print(f"  [WARN] {warn}")
 

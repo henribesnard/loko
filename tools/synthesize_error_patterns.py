@@ -66,11 +66,11 @@ def synthesize_patterns(errors_csv: Path, output_dir: Path) -> None:
         by_intent[expected].append(err)
 
     # Summary
-    print(f"\nError categories:")
+    print("\nError categories:")
     for cat, items in sorted(by_category.items(), key=lambda x: -len(x[1])):
         print(f"  {cat:20s} : {len(items):2d} errors")
 
-    print(f"\nIntents affected:")
+    print("\nIntents affected:")
     for intent, items in sorted(by_intent.items(), key=lambda x: -len(x[1])):
         print(f"  {intent:30s} : {len(items):2d} errors")
 

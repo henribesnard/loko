@@ -7,7 +7,6 @@ import tempfile
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 import pytest
-import json
 
 from loko.api.api_keys import (
     generate_api_key,

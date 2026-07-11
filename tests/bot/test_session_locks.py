@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import asyncio
 
-import pytest
 
 
 def test_purge_removes_orphan_locks(monkeypatch):

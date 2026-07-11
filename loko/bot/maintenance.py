@@ -77,7 +77,7 @@ def set_maintenance(
         "Maintenance mode %s for bot %s%s",
         "enabled" if enabled else "disabled",
         bot_id,
-        f" (custom message)" if message_override else "",
+        " (custom message)" if message_override else "",
     )
 
     return state

@@ -27,7 +27,7 @@ def main() -> None:
 
     os.environ.setdefault("LOKO_DATA_DIR", args.data_dir)
 
-    from loko.bot.config_store import load_bot_config, list_bots, _get_internal_account_id
+    from loko.bot.config_store import load_bot_config, _get_internal_account_id
 
     internal_id = _get_internal_account_id()
     print(f"Internal account ID: {internal_id}")

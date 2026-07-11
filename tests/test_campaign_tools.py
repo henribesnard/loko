@@ -15,10 +15,8 @@ from __future__ import annotations
 
 import csv
 import json
-import tempfile
 from pathlib import Path
 
-import pytest
 
 # Import from tools/ — add tools to path
 import sys
@@ -34,7 +32,6 @@ from run_campaign import (
     build_gates,
     calculate_gates,
     _mark_pass,
-    _mark_fail,
     generate_report_md,
     generate_report_json,
     exec_ce9,

@@ -31,15 +31,12 @@ from loko.bot.models import (
     BotSession,
     BotState,
     CallEscalation,
-    Chunk,
     CloseSession,
     EmitGeneration,
     EmitTemplate,
     EscalationMotif,
     EscalationPayload,
-    RetrievalResult,
     TemplateKey,
-    TraceEvent,
 )
 from loko.bot.guardrails import (
     GuardrailEngine,

@@ -60,7 +60,7 @@ _INTERNAL_ACCOUNT_ID = "wezon-internal"
 
 def _get_internal_account_id() -> str:
     """Return the internal account ID, creating it if needed."""
-    from loko.db.accounts import get_account, create_account, get_db
+    from loko.db.accounts import get_account, get_db
     try:
         account = get_account(_INTERNAL_ACCOUNT_ID)
         if account:

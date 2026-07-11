@@ -22,15 +22,13 @@ Exit code:
 from __future__ import annotations
 
 import argparse
-import csv
 import hashlib
 import json
 import logging
 import os
 import subprocess
 import sys
-import time
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -302,7 +300,7 @@ def exec_ce3(line: TestLine, campaign_dir: Path, **ctx: Any) -> None:
         if ok:
             _mark_pass(line, detail, str(campaign_dir / "CE-3.txt"))
         else:
-            _mark_fail(line, detail, f"exceeds 1600MB limit")
+            _mark_fail(line, detail, "exceeds 1600MB limit")
         _save_artifact(campaign_dir, "CE-3.txt", detail)
     except ValueError:
         _mark_fail(line, f"cannot parse size for {image}")
@@ -491,7 +489,7 @@ def exec_ce9(line: TestLine, campaign_dir: Path, **ctx: Any) -> None:
     if errors:
         _mark_fail(line, "; ".join(errors), str(artifact_path))
     else:
-        _mark_pass(line, f"9 intents, L2 OK", str(artifact_path))
+        _mark_pass(line, "9 intents, L2 OK", str(artifact_path))
 
 
 def exec_v0_1(line: TestLine, campaign_dir: Path, **ctx: Any) -> None:
@@ -527,7 +525,7 @@ def exec_v0_2(line: TestLine, campaign_dir: Path, **ctx: Any) -> None:
     if result.returncode == 0:
         _mark_pass(line, result.stdout.strip(), str(campaign_dir / "V0-2_imports.txt"))
     else:
-        _mark_fail(line, f"import error", result.stderr.strip()[:200])
+        _mark_fail(line, "import error", result.stderr.strip()[:200])
 
 
 def exec_v0_3(line: TestLine, campaign_dir: Path, **ctx: Any) -> None:
@@ -686,7 +684,7 @@ def exec_v3_0(line: TestLine, campaign_dir: Path, **ctx: Any) -> None:
         else:
             _mark_fail(line, "no feasible point found", str(selection_file))
     else:
-        _mark_fail(line, f"selection.json not produced", content[-500:])
+        _mark_fail(line, "selection.json not produced", content[-500:])
 
 
 def exec_v3_eval(line: TestLine, campaign_dir: Path, dataset_name: str,
@@ -1019,9 +1017,9 @@ def generate_report_md(report: CampaignReport) -> str:
         if g.gate_id in ("CE", "G-0", "G-1", "G-1b", "G-2", "G-3")
     )
     if report.dry_run:
-        md.append(f"**MODE DRY-RUN — Aucune validation opposable**")
+        md.append("**MODE DRY-RUN — Aucune validation opposable**")
     elif all_critical_pass:
-        md.append(f"**R0 + R1 : VALIDES**")
+        md.append("**R0 + R1 : VALIDES**")
         report.overall_verdict = "VALIDE"
     else:
         failed_gates = [g.gate_id for g in report.gates if g.verdict != "PASS"]
@@ -1031,7 +1029,7 @@ def generate_report_md(report: CampaignReport) -> str:
     md.append("")
     md.append("---")
     md.append(f"*Rapport généré automatiquement par le runner de campagne v{report.runner_version}*")
-    md.append(f"*Les verdicts de gates sont calculés, non rédigés (interdit n°9).*")
+    md.append("*Les verdicts de gates sont calculés, non rédigés (interdit n°9).*")
 
     return "\n".join(md)
 
@@ -1213,11 +1211,11 @@ def run_campaign(
     if dry_run:
         report.overall_verdict = "DRY-RUN"
         print(f"\n  {'=' * 50}")
-        print(f"  MODE DRY-RUN - resultat non opposable")
+        print("  MODE DRY-RUN - resultat non opposable")
     elif all_pass:
         report.overall_verdict = "VALIDE"
         print(f"\n  {'=' * 50}")
-        print(f"  \033[92mR0 + R1 : VALIDES\033[0m")
+        print("  \033[92mR0 + R1 : VALIDES\033[0m")
     else:
         report.overall_verdict = "NON VALIDE"
         failed = [g.gate_id for g in report.gates if g.verdict != "PASS"]

@@ -4,8 +4,6 @@ Implements tests for PLAN_AMELIORATION_COMPLET_LOKO_2026-07-10.md
 """
 
 import os
-import tempfile
-from pathlib import Path
 import pytest
 
 from loko.config.secrets import (

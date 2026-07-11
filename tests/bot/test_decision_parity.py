@@ -13,7 +13,7 @@ from pathlib import Path
 
 import pytest
 
-from loko.bot.decision import Decision, decide_l1
+from loko.bot.decision import decide_l1
 from loko.bot.models import BotConfig, JourneyParams
 
 

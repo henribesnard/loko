@@ -259,7 +259,7 @@ def main():
     # Verify conformity
     errors = verify_conformity(intents)
     if errors:
-        print(f"\n[FAIL] CE-9 conformity check FAILED:")
+        print("\n[FAIL] CE-9 conformity check FAILED:")
         for err in errors:
             print(f"   - {err}")
         sys.exit(1)
@@ -281,7 +281,7 @@ def main():
             config = {
                 "schema_version": 1,
                 "bot_id": args.bot_id,
-                "name": f"Demo Campaign v2.2",
+                "name": "Demo Campaign v2.2",
                 "channel": "both",
                 "language": "fr",
                 "tone_profile": "neutre",

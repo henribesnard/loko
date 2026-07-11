@@ -29,7 +29,7 @@ from loko.bot.classifier.setfit_service import (
     prepare_l2_training_data,
     resolve_base_model,
 )
-from loko.bot.models import BotConfig, Intent
+from loko.bot.models import BotConfig
 
 logger = logging.getLogger(__name__)
 

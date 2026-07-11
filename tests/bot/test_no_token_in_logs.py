@@ -8,7 +8,7 @@ from unittest import mock
 
 import pytest
 
-from loko.db.accounts import create_account, create_user, create_email_token
+from loko.db.accounts import create_account, create_user
 
 
 @pytest.fixture(autouse=True)

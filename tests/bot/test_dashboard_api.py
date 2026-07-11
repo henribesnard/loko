@@ -1,8 +1,6 @@
 """Tests for the dashboard API endpoints."""
 
-import json
 import sqlite3
-from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient

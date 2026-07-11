@@ -12,9 +12,8 @@ import hmac
 import logging
 import os
 import re
-from typing import Any
 
-from fastapi import Depends, HTTPException, Request
+from fastapi import HTTPException, Request
 
 from loko.api.api_keys import (
     APIKeyRecord,

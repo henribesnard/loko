@@ -4,8 +4,6 @@ These tests verify the behavior of the pure functions extracted from
 BotOrchestrator._handle_generation() and BotOrchestrator._handle_escalation().
 """
 
-import pytest
-from datetime import datetime, timezone
 
 from loko.bot.orchestrator import BotOrchestrator
 from loko.bot.models import (

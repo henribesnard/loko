@@ -5,9 +5,9 @@ Implements PLAN_AMELIORATION_COMPLET_LOKO_2026-07-10.md
 Detects partial degradations: disk full, model unloaded, LLM unreachable.
 """
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
 from fastapi.responses import JSONResponse
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 from pathlib import Path
 import os
 

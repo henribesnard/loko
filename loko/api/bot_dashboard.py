@@ -10,7 +10,7 @@ import logging
 from typing import Any
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from loko.api.session_middleware import require_tenant_or_ops
 from loko.bot.config_store import load_bot_config, save_bot_config

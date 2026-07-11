@@ -4,7 +4,6 @@ import pytest
 
 from loko.connectors.faq_web_crawler import (
     CrawlConfig,
-    CrawledDocument,
     FAQWebCrawler,
     SimplePageFetcher,
     content_hash,

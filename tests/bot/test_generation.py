@@ -10,7 +10,7 @@ from loko.bot.generation import (
     build_user_prompt,
 )
 from loko.testing.mocks import MockLLMProvider
-from loko.bot.models import BotConfig, BotLLMConfig, Chunk, ToneProfile
+from loko.bot.models import BotConfig, Chunk, ToneProfile
 
 
 # ---------------------------------------------------------------------------
