@@ -16,7 +16,7 @@ export default function PageErrorBoundary({ children, name }: PageErrorBoundaryP
 
   const handleError = (error: Error) => {
     // Log to console in development
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.DEV) {
       console.error('[PageErrorBoundary]', name, error);
     }
 
