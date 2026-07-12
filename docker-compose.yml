@@ -11,6 +11,7 @@ services:
       - LOKO_ADMIN_TOKEN=${LOKO_ADMIN_TOKEN:-}
       - SMTP_PASSWORD=${SMTP_PASSWORD:-}
       - LOKO_LLM_API_KEY=${LOKO_LLM_API_KEY:-}
+      - LOKO_SECRET_KEY=${LOKO_SECRET_KEY:-}
       - LOKO_CORS_ORIGINS=${LOKO_CORS_ORIGINS:-}
       - LOKO_SESSION_RETENTION_DAYS=${LOKO_SESSION_RETENTION_DAYS:-30}
       # Rate limiting (R1) — values are slowapi rate strings
