@@ -542,9 +542,12 @@ def create_app() -> FastAPI:
                 FRONTEND_DIR.resolve()
             ):
                 return FileResponse(static_path)
-            # Fallback to SPA index
+            # Fallback to SPA index — no-cache so CDN/proxy always fetches
+            # fresh HTML (asset filenames contain hashes for cache-busting)
             if index_html.exists():
-                return FileResponse(index_html)
+                resp = FileResponse(index_html)
+                resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+                return resp
             return JSONResponse({"detail": "Not found"}, status_code=404)
 
     return app
