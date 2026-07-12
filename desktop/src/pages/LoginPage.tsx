@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/Input";
 import { LokoLockup } from "@/components/ui/LokoLockup";
 
 interface LoginPageProps {
-  onLogin: (email: string, password: string) => Promise<boolean>;
+  onLogin: (email: string, password: string) => Promise<string | null>;
 }
 
 export function LoginPage({ onLogin }: LoginPageProps) {
@@ -24,14 +24,14 @@ export function LoginPage({ onLogin }: LoginPageProps) {
     setLoading(true);
     setError(null);
 
-    const ok = await onLogin(email.trim(), password);
-    if (ok) {
+    const loginError = await onLogin(email.trim(), password);
+    if (loginError === null) {
       // F3: honour ?next= redirect after login
       const next = searchParams.get("next") || "/bot";
       const safe = next.startsWith("/") && !next.startsWith("//") ? next : "/bot";
       navigate(safe, { replace: true });
     } else {
-      setError(t("auth.error"));
+      setError(loginError === "auth.error" ? t("auth.error") : loginError);
     }
     setLoading(false);
   };

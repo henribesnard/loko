@@ -26,7 +26,7 @@ interface AuthState {
   error: string | null;
   user: UserInfo | null;
   account: AccountInfo | null;
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<string | null>;
   logout: () => void;
 }
 
@@ -54,7 +54,7 @@ export function useAuth(): AuthState {
     setLoading(false);
   }
 
-  const login = useCallback(async (email: string, password: string): Promise<boolean> => {
+  const login = useCallback(async (email: string, password: string): Promise<string | null> => {
     setError(null);
     try {
       const data = await api<{ user: UserInfo; account: AccountInfo }>("/api/auth/login", {
@@ -64,19 +64,17 @@ export function useAuth(): AuthState {
       setUser(data.user);
       setAccount(data.account);
       setAuthenticated(true);
-      return true;
+      return null;
     } catch (err) {
+      let msg = "auth.error";
       if (err instanceof ApiError) {
         try {
           const body = JSON.parse(err.body);
-          setError(typeof body.detail === "string" ? body.detail : "auth.error");
-        } catch {
-          setError("auth.error");
-        }
-      } else {
-        setError("auth.error");
+          if (typeof body.detail === "string") msg = body.detail;
+        } catch { /* ignore parse error */ }
       }
-      return false;
+      setError(msg);
+      return msg;
     }
   }, []);
 
