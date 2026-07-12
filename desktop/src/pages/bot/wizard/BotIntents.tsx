@@ -1,17 +1,21 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
+  AlertCircle,
   ChevronDown,
   ChevronRight,
+  Download,
   Loader2,
   Plus,
   Trash2,
+  Upload,
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { cn } from "@/lib/cn";
 import { useBotTraining } from "@/hooks/useBotTraining";
+import { exportIntentsToCSV, parseIntentsCSV, downloadCSV } from "@/lib/csv-intents";
 import type { WizardStepProps } from "../BotWizard";
 import type { Intent, SubMotif } from "@/types/bot";
 
@@ -20,6 +24,11 @@ export function BotIntents({ botId, config, updateConfig }: WizardStepProps) {
   const { status, evaluation, isTraining, startTraining } = useBotTraining(botId);
   const [expandedIntent, setExpandedIntent] = useState<string | null>(null);
   const [showSubMotifs, setShowSubMotifs] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [importStatus, setImportStatus] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
 
   const intents = config.intents;
 
@@ -107,11 +116,62 @@ export function BotIntents({ botId, config, updateConfig }: WizardStepProps) {
     });
   };
 
+  // CSV export
+  const handleExport = () => {
+    const csv = exportIntentsToCSV(intents);
+    const date = new Date().toISOString().slice(0, 10);
+    downloadCSV(csv, `intents_${date}.csv`);
+  };
+
+  // CSV import
+  const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = "";
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const csvText = event.target?.result as string;
+        const merged = parseIntentsCSV(csvText, intents);
+        updateIntents(merged);
+
+        const added = merged.length - intents.length;
+        const msg = added > 0
+          ? t("bot.intents.importSuccessNew", { count: merged.length, new: added })
+          : t("bot.intents.importSuccess", { count: merged.length });
+        setImportStatus({ type: "success", message: msg });
+      } catch (err) {
+        setImportStatus({
+          type: "error",
+          message: t("bot.intents.importError", {
+            detail: err instanceof Error ? err.message : String(err),
+          }),
+        });
+      }
+    };
+    reader.onerror = () => {
+      setImportStatus({
+        type: "error",
+        message: t("bot.intents.importError", { detail: "Failed to read file" }),
+      });
+    };
+    reader.readAsText(file, "utf-8");
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h3 className="text-base font-semibold">{t("bot.intents.title")}</h3>
         <div className="flex gap-2">
+          <Button size="sm" variant="ghost" onClick={handleExport}>
+            <Download size={14} />
+            {t("bot.intents.exportCSV")}
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => fileInputRef.current?.click()}>
+            <Upload size={14} />
+            {t("bot.intents.importCSV")}
+          </Button>
           <Button size="sm" variant="ghost" onClick={addIntent}>
             <Plus size={14} />
             {t("bot.intents.add")}
@@ -132,6 +192,37 @@ export function BotIntents({ botId, config, updateConfig }: WizardStepProps) {
           </Button>
         </div>
       </div>
+
+      {/* Hidden file input for CSV import */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".csv,text/csv"
+        className="hidden"
+        onChange={handleFileSelected}
+      />
+
+      {/* Import feedback */}
+      {importStatus && (
+        <div
+          className={cn(
+            "px-3 py-2 rounded-lg text-xs flex items-center gap-2",
+            importStatus.type === "success" &&
+              "bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300",
+            importStatus.type === "error" &&
+              "bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300",
+          )}
+        >
+          {importStatus.type === "error" && <AlertCircle size={14} />}
+          {importStatus.message}
+          <button
+            onClick={() => setImportStatus(null)}
+            className="ml-auto p-0.5 rounded hover:bg-black/5 dark:hover:bg-white/10"
+          >
+            <X size={12} />
+          </button>
+        </div>
+      )}
 
       {/* Training status */}
       {status && status.status !== "idle" && (

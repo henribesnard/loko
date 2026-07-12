@@ -58,7 +58,12 @@
       "trained": "Trained",
       "evaluation": "Evaluation",
       "accuracy": "Accuracy",
-      "confusion": "Confusion matrix"
+      "confusion": "Confusion matrix",
+      "exportCSV": "Export CSV",
+      "importCSV": "Import CSV",
+      "importSuccess": "{{count}} intent(s) imported successfully.",
+      "importSuccessNew": "{{count}} intent(s) total, including {{new}} new.",
+      "importError": "CSV import error: {{detail}}"
     },
     "knowledge": {
       "title": "Knowledge base",
