@@ -8,6 +8,9 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - LOKO_MODE=server
+      # Persist accounts DB in the Docker volume alongside bots data
+      - LOKO_DATA_DIR=/root/.loko
+      - LOKO_AUDIT_DB_PATH=/root/.loko/audit.db
       - LOKO_ADMIN_TOKEN=${LOKO_ADMIN_TOKEN:-}
       - SMTP_PASSWORD=${SMTP_PASSWORD:-}
       - LOKO_LLM_API_KEY=${LOKO_LLM_API_KEY:-}
