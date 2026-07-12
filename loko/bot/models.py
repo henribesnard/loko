@@ -106,8 +106,8 @@ class SubMotif(BaseModel):
     """Sub-motif (level 2 intent refinement)."""
 
     id: str
-    label: str
-    definition: str
+    label: str = ""
+    definition: str = ""
     examples: list[str] = Field(default_factory=list)
 
     @field_validator("id")
@@ -117,22 +117,12 @@ class SubMotif(BaseModel):
             raise ValueError("Sub-motif id must not be empty")
         return v.strip()
 
-    @model_validator(mode="after")
-    def check_min_examples(self) -> SubMotif:
-        if len(self.examples) < 3:
-            raise ValueError(
-                f"Sub-motif '{self.id}' requires at least 3 examples, "
-                f"got {len(self.examples)}"
-            )
-        return self
-
-
 class Intent(BaseModel):
     """Intent (level 1 classification target)."""
 
     id: str
-    label: str
-    definition: str
+    label: str = ""
+    definition: str = ""
     examples: list[str] = Field(default_factory=list)
     sub_motifs: list[SubMotif] = Field(default_factory=list)
     is_system: bool = False  # hors_perimetre, demande_conseiller
@@ -143,15 +133,6 @@ class Intent(BaseModel):
         if not v.strip():
             raise ValueError("Intent id must not be empty")
         return v.strip()
-
-    @model_validator(mode="after")
-    def check_min_examples(self) -> Intent:
-        if not self.is_system and len(self.examples) < 8:
-            raise ValueError(
-                f"Intent '{self.id}' requires at least 8 examples, "
-                f"got {len(self.examples)}"
-            )
-        return self
 
 
 # ---------------------------------------------------------------------------

@@ -409,6 +409,21 @@ async def train_bot(
     if bot_id in _TRAINING_STATE and _TRAINING_STATE[bot_id].get("status") == "running":
         raise HTTPException(409, "Training already in progress")
 
+    # Validate intents have enough examples before starting training
+    errors = []
+    for intent in config.intents:
+        if intent.is_system:
+            continue
+        n = len([e for e in intent.examples if e.strip()])
+        if n < 8:
+            errors.append(f"Intent '{intent.label or intent.id}' : {n}/8 exemples minimum")
+        for sm in intent.sub_motifs:
+            sn = len([e for e in sm.examples if e.strip()])
+            if sn < 3:
+                errors.append(f"Sous-motif '{sm.label or sm.id}' : {sn}/3 exemples minimum")
+    if errors:
+        raise HTTPException(422, ". ".join(errors))
+
     _TRAINING_STATE[bot_id] = {
         "status": "running",
         "step": "queued",
