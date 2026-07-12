@@ -185,6 +185,7 @@
     "useEmail": "Connexion par email",
     "error": "Email ou mot de passe incorrect",
     "signupError": "Erreur lors de la création du compte",
+    "passwordHint": "12 caractères min., 1 majuscule, 1 chiffre, 1 caractère spécial",
     "signupSuccess": "Compte créé",
     "verifyEmailSent": "Un email de vérification a été envoyé. Vérifiez votre boîte de réception.",
     "verifyEmailPending": "Vérification de votre email",

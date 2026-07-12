@@ -37,7 +37,14 @@ export function SignupPage() {
         try {
           const body = JSON.parse(err.body);
           const detail = body.detail;
-          setError(typeof detail === "string" ? detail : t("auth.signupError"));
+          if (typeof detail === "string") {
+            setError(detail);
+          } else if (Array.isArray(detail) && detail.length > 0) {
+            // Pydantic 422 validation: extract first human-readable msg
+            setError(detail.map((e: { msg?: string }) => e.msg || "").filter(Boolean).join(". ") || t("auth.signupError"));
+          } else {
+            setError(t("auth.signupError"));
+          }
         } catch {
           setError(t("auth.signupError"));
         }
@@ -89,13 +96,17 @@ export function SignupPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
-          <Input
-            type="password"
-            label={t("auth.passwordLabel")}
-            placeholder={t("auth.passwordPlaceholder")}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
+          <div>
+            <Input
+              type="password"
+              label={t("auth.passwordLabel")}
+              placeholder={t("auth.passwordPlaceholder")}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              minLength={12}
+            />
+            <p className="mt-1 text-xs" style={{ color: "var(--text-tertiary)" }}>{t("auth.passwordHint")}</p>
+          </div>
 
           <label className="flex items-start gap-2 text-xs" style={{ color: "var(--text-secondary)" }}>
             <input
