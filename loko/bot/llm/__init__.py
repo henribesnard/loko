@@ -122,6 +122,8 @@ def _build_custom_provider(bot_id: str, llm_config):
         api_key=api_key,
         model=model,
         host_header=original_host,
+        # V2: pass original URL for per-request DNS re-resolution
+        original_url=base_url,
     )
 
 

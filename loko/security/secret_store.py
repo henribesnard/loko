@@ -76,6 +76,15 @@ def _get_master_key() -> bytes:
     return key
 
 
+def verify_master_key() -> None:
+    """Verify that the master key is available (fail-closed, B3).
+
+    Call at startup in server mode to ensure LOKO_SECRET_KEY is configured.
+    Raises RuntimeError if the key is missing or invalid.
+    """
+    _get_master_key()
+
+
 class SecretStore:
     """Encrypted secret storage backed by SQLite + Fernet."""
 

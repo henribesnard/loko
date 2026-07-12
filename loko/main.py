@@ -340,6 +340,12 @@ def create_app() -> FastAPI:
             "are not allowed in server mode with credentials."
         )
 
+    # B3: fail-closed — verify LOKO_SECRET_KEY at boot in server mode
+    if mode == "server":
+        from loko.security.secret_store import verify_master_key
+
+        verify_master_key()
+
     app.add_middleware(
         CORSMiddleware,
         allow_origins=origins,

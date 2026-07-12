@@ -12,7 +12,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, AsyncIterator, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -33,6 +33,7 @@ import time
 from collections import defaultdict
 from pathlib import Path
 from loko.bot.classifier.loader import load_classifier, load_search_backend
+from loko.bot.engine import add_turn_to_session
 from loko.bot.config_store import load_bot_config
 from loko.bot.errors import ComponentUnavailableError
 from loko.bot.timeout import check_and_apply_timeout
@@ -133,14 +134,23 @@ _SESSION_LOCKS_MAX = 10_000  # R4: bounded size to prevent unbounded memory grow
 
 @dataclass
 class _ActiveGeneration:
-    """Tracks an in-flight generation for interrupt support (INT)."""
+    """Tracks an in-flight generation for interrupt support (INT).
+
+    B1: `done` event is set AFTER the generator releases the session lock,
+    allowing the interrupt handler to safely wait for completion.
+    """
 
     cancel: asyncio.Event
+    done: asyncio.Event = field(default_factory=asyncio.Event)  # B1: set after lock release
     turn_id: str = ""
     tokens_emitted: int = 0
 
 
 _ACTIVE_GENERATIONS: dict[str, _ActiveGeneration] = {}  # session_id → generation state
+
+# B1: in-memory generation epoch for write-fencing against zombie tasks.
+# Incremented by _handle_interrupt; checked by event_stream's finally block.
+_GENERATION_EPOCHS: dict[str, int] = {}  # session_id → current epoch
 
 
 def _get_orchestrator(bot_id: str, config: BotConfig) -> BotOrchestrator:
@@ -452,6 +462,10 @@ async def send_message(
 
     async def event_stream() -> AsyncIterator[str]:
         current_session = session
+        # B1: capture generation epoch for write-fencing
+        my_epoch = _GENERATION_EPOCHS.get(session_id, 0)
+        partial_text_parts: list[str] = []  # B2: accumulate streamed tokens
+        was_cancelled = False
 
         async with lock:
             try:
@@ -471,16 +485,60 @@ async def send_message(
                 async for current_session, sse_event in event_iter:
                     # INT: check cancellation signal
                     if active_gen.cancel.is_set():
+                        was_cancelled = True
                         break
-                    # INT: track tokens for interrupt metadata
+                    # INT/B2: track tokens and accumulate partial text
                     if sse_event.event == "generation_delta":
                         active_gen.tokens_emitted += 1
+                        partial_text_parts.append(
+                            sse_event.data.get("token", "")
+                        )
                     yield _sse_encode(sse_event)
             finally:
-                # Persist session state even on client disconnect (P1-5)
-                store.update_session(current_session)
-                for turn in current_session.transcript[len(session.transcript) :]:
-                    store.add_turn(current_session.session_id, turn)
+                # B1: epoch check — if epoch advanced, we are a zombie; skip writes
+                current_epoch = _GENERATION_EPOCHS.get(session_id, 0)
+                if current_epoch != my_epoch:
+                    logger.info(
+                        "Zombie generation for session %s "
+                        "(epoch %d vs %d) — skipping write",
+                        session_id,
+                        my_epoch,
+                        current_epoch,
+                    )
+                else:
+                    # B2: if cancelled with partial text, persist interrupted turn
+                    if was_cancelled and partial_text_parts:
+                        partial_text = "".join(partial_text_parts)
+                        token_count = active_gen.tokens_emitted
+                        current_session = add_turn_to_session(
+                            current_session,
+                            role="bot",
+                            content=partial_text,
+                            interrupted=True,
+                            tokens_emitted=token_count,
+                        )
+                        # B2/ORC-3: update token budget with actual tokens emitted
+                        current_session = current_session.model_copy(
+                            update={
+                                "tokens_llm_cumul": (
+                                    current_session.tokens_llm_cumul + token_count
+                                ),
+                            }
+                        )
+
+                    # INT: reset session to listening state after cancel
+                    # so it can accept new messages
+                    if was_cancelled:
+                        current_session = current_session.model_copy(
+                            update={"state": BotState.ATTENTE_DEMANDE}
+                        )
+
+                    # Persist session state even on client disconnect (P1-5)
+                    store.update_session(current_session)
+                    for turn in current_session.transcript[
+                        len(session.transcript) :
+                    ]:
+                        store.add_turn(current_session.session_id, turn)
 
                 # R4: release session lock when session reaches terminal state
                 if current_session.state in (
@@ -492,6 +550,9 @@ async def send_message(
                     _SESSION_LOCKS.pop(session_id, None)
                 # INT: clean up active generation reference
                 _ACTIVE_GENERATIONS.pop(session_id, None)
+
+        # B1: signal done AFTER the lock is released
+        active_gen.done.set()
 
     return StreamingResponse(
         event_stream(),
@@ -586,6 +647,10 @@ async def _handle_interrupt(
 ) -> StreamingResponse:
     """Handle an interrupt request (INT lot).
 
+    B1-fix: bounded wait for generation completion (2s timeout),
+    epoch-based write fencing against zombie tasks, and new text
+    processed under the session lock.
+
     - Cancel any active generation task for this session
     - If text is empty: return to listening state
     - If text is non-empty: cancel then process the new text
@@ -613,47 +678,83 @@ async def _handle_interrupt(
             },
         )
 
-    # Signal cancellation to the active generation
+    # B1: signal cancellation and wait for generator to finish with bounded timeout
     tokens_emitted = active_gen.tokens_emitted
     active_gen.cancel.set()
-    # Give the generator a moment to notice and exit
-    await asyncio.sleep(0.1)
+
+    force_closed = False
+    try:
+        await asyncio.wait_for(active_gen.done.wait(), timeout=2.0)
+    except asyncio.TimeoutError:
+        force_closed = True
+        logger.warning(
+            "INT force_closed: session %s generation did not terminate "
+            "within 2s — zombie task may still write (epoch fencing active)",
+            session_id,
+        )
+
     _ACTIVE_GENERATIONS.pop(session_id, None)
 
+    # B1: increment generation epoch to fence zombie writes
+    _GENERATION_EPOCHS[session_id] = _GENERATION_EPOCHS.get(session_id, 0) + 1
+
+    lock = _SESSION_LOCKS.setdefault(session_id, asyncio.Lock())
+
     async def _interrupt_stream() -> AsyncIterator[str]:
-        # Emit generation_interrupted event with actual metadata
+        # Emit generation_interrupted event with metadata
         yield _sse_encode(
             SSEEvent(
                 event="generation_interrupted",
-                data={"tokens_emitted": tokens_emitted},
+                data={
+                    "tokens_emitted": tokens_emitted,
+                    "force_closed": force_closed,
+                },
             )
         )
 
-        # If text is provided, process it as a new message
+        # If text is provided, process it as a new message UNDER THE LOCK (B1)
         if req.text.strip():
             try:
                 orchestrator = _get_orchestrator(bot_id, config)
             except ComponentUnavailableError:
                 return
 
-            # Reload session (may have been updated by the cancelled task)
-            current_session = store.get_session(session_id)
-            if current_session is None:
-                return
+            # B1: acquire session lock before processing new text
+            async with lock:
+                # Reload session (freshest state, post-interrupt persistence)
+                current_session = store.get_session(session_id)
+                if current_session is None:
+                    return
 
-            # Reset to listening state for new classification
-            current_session = current_session.model_copy(
-                update={"state": BotState.ATTENTE_DEMANDE}
-            )
+                # Reset to listening state for new classification
+                current_session = current_session.model_copy(
+                    update={"state": BotState.ATTENTE_DEMANDE}
+                )
 
-            async for current_session, sse_event in orchestrator.process_message(
-                current_session,
-                req.text,
-                config,
-            ):
-                yield _sse_encode(sse_event)
+                # Register new active generation for the replacement message
+                new_gen = _ActiveGeneration(cancel=asyncio.Event())
+                _ACTIVE_GENERATIONS[session_id] = new_gen
+                baseline_len = len(current_session.transcript)
 
-            store.update_session(current_session)
+                try:
+                    async for current_session, sse_event in (
+                        orchestrator.process_message(
+                            current_session,
+                            req.text,
+                            config,
+                        )
+                    ):
+                        if new_gen.cancel.is_set():
+                            break
+                        yield _sse_encode(sse_event)
+                finally:
+                    store.update_session(current_session)
+                    for turn in current_session.transcript[baseline_len:]:
+                        store.add_turn(current_session.session_id, turn)
+                    _ACTIVE_GENERATIONS.pop(session_id, None)
+
+            # Signal done for the new generation (outside lock)
+            new_gen.done.set()
 
     return StreamingResponse(
         _interrupt_stream(),
@@ -664,9 +765,6 @@ async def _handle_interrupt(
             "X-Accel-Buffering": "no",
         },
     )
-
-    # Note: /traces endpoint removed from public API (P1-2).
-    # Traces are accessible via the admin dashboard API only.
 
 
 # ---------------------------------------------------------------------------

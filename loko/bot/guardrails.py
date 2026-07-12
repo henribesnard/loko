@@ -256,6 +256,25 @@ def check_response_leaks(response: str) -> str | None:
     return None
 
 
+# V1: Streaming-level leak detection — sliding window for per-token checking
+# The longest leak pattern needs ~60 chars to match; we keep a window of 200
+# to cover token boundaries safely.
+_LEAK_WINDOW_SIZE = 200
+
+
+def check_response_leaks_streaming(accumulated: str) -> str | None:
+    """Check for leaks in the tail of an accumulating response (V1).
+
+    Only scans the last _LEAK_WINDOW_SIZE characters for efficiency.
+    Returns the leak type if found, None if clean.
+    """
+    tail = accumulated[-_LEAK_WINDOW_SIZE:] if len(accumulated) > _LEAK_WINDOW_SIZE else accumulated
+    for pattern in _LEAK_PATTERNS:
+        if pattern.search(tail):
+            return pattern.pattern[:40]
+    return None
+
+
 def check_grounding(
     response: str,
     chunks: list[Any],

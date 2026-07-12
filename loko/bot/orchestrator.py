@@ -43,6 +43,7 @@ from loko.bot.guardrails import (
     GuardrailsConfig,
     check_grounding,
     check_response_leaks,
+    check_response_leaks_streaming,
     default_ruleset,
 )
 from loko.bot.retrieval_filter import FilteredRetriever
@@ -428,6 +429,14 @@ class BotOrchestrator:
         config: BotConfig,
     ) -> AsyncIterator[tuple[BotSession, SSEEvent]]:
         """Process a button click (clarification choice)."""
+        # V4: check session budgets before processing (same as process_message)
+        budget_result = self._check_session_budgets(session, config)
+        if budget_result is not None:
+            session, events = budget_result
+            for sse_event in events:
+                yield session, sse_event
+            return
+
         turn_id = str(uuid.uuid4())
         traces = TraceCollector(turn_id)
 
@@ -735,6 +744,7 @@ class BotOrchestrator:
 
         # --- Generation (streaming) ---
         tokens: list[str] = []
+        leak_detected_mid_stream: str | None = None
         with traces.measure("generation") as ctx:
             async for token in self.generator.generate(
                 query=action.query,
@@ -744,6 +754,19 @@ class BotOrchestrator:
                 config=config,
             ):
                 tokens.append(token)
+                # V1: streaming-level leak check (sliding window)
+                accumulated = "".join(tokens)
+                leak_detected_mid_stream = check_response_leaks_streaming(accumulated)
+                if leak_detected_mid_stream:
+                    logger.critical(
+                        "Leak detected mid-stream (V1): %s — halting generation",
+                        leak_detected_mid_stream,
+                    )
+                    traces.add("guardrail_leak_streaming", detail={
+                        "leak_pattern": leak_detected_mid_stream,
+                        "tokens_before_halt": len(tokens),
+                    })
+                    break
                 yield (
                     session,
                     SSEEvent(
@@ -772,7 +795,8 @@ class BotOrchestrator:
         )
 
         # --- GF Layer 3b: output validation (leak detection, always blocking) ---
-        leak = check_response_leaks(full_response)
+        # V1: if leak was caught mid-stream, skip full re-scan (already detected)
+        leak = leak_detected_mid_stream or check_response_leaks(full_response)
         if leak:
             logger.critical("Leak detected in LLM response: %s", leak)
             traces.add("guardrail_leak", detail={"leak_pattern": leak})
@@ -780,6 +804,14 @@ class BotOrchestrator:
             full_response = self._render_action_template(
                 EmitTemplate(key=TemplateKey.HORS_PERIMETRE),
                 config,
+            )
+            # V1: emit correction event so client replaces partial streamed content
+            yield (
+                session,
+                SSEEvent(
+                    event="generation_replace",
+                    data={"content": full_response, "reason": "leak_detected"},
+                ),
             )
 
         # GF Layer 3b: grounding check (V1 = marking only)

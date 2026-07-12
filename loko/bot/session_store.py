@@ -40,6 +40,21 @@ class SessionStore:
     def _ensure_schema(self) -> None:
         with self._connect() as conn:
             conn.executescript(_SCHEMA_SQL)
+            # B2: add interrupt tracking columns to turns table
+            self._migrate_interrupt_columns(conn)
+
+    def _migrate_interrupt_columns(self, conn: sqlite3.Connection) -> None:
+        """Add interrupted/tokens_emitted columns if missing (B2 migration)."""
+        cursor = conn.execute("PRAGMA table_info(turns)")
+        columns = {row[1] for row in cursor.fetchall()}
+        if "interrupted" not in columns:
+            conn.execute(
+                "ALTER TABLE turns ADD COLUMN interrupted INTEGER NOT NULL DEFAULT 0"
+            )
+        if "tokens_emitted" not in columns:
+            conn.execute(
+                "ALTER TABLE turns ADD COLUMN tokens_emitted INTEGER DEFAULT NULL"
+            )
 
     # ------------------------------------------------------------------
     # Sessions CRUD
@@ -151,8 +166,9 @@ class SessionStore:
                 """INSERT INTO turns
                    (turn_id, session_id, role, content, timestamp,
                     template_key, buttons, button_selected,
-                    intent, sub_motif, sources)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                    intent, sub_motif, sources,
+                    interrupted, tokens_emitted)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 (
                     turn.turn_id,
                     session_id,
@@ -165,6 +181,8 @@ class SessionStore:
                     turn.intent,
                     turn.sub_motif,
                     json.dumps(turn.sources) if turn.sources else None,
+                    1 if turn.interrupted else 0,
+                    turn.tokens_emitted,
                 ),
             )
 
@@ -312,6 +330,11 @@ def _row_to_turn(row: sqlite3.Row) -> Turn:
 
     template_key = TemplateKey(tk) if tk else None
 
+    # B2: read interrupt tracking columns (may not exist in old DBs)
+    row_keys = row.keys() if hasattr(row, "keys") else []
+    interrupted = bool(row["interrupted"]) if "interrupted" in row_keys else False
+    tokens_emitted = row["tokens_emitted"] if "tokens_emitted" in row_keys else None
+
     return Turn(
         turn_id=row["turn_id"],
         role=row["role"],
@@ -323,6 +346,8 @@ def _row_to_turn(row: sqlite3.Row) -> Turn:
         intent=row["intent"],
         sub_motif=row["sub_motif"],
         sources=sources,
+        interrupted=interrupted,
+        tokens_emitted=tokens_emitted,
     )
 
 

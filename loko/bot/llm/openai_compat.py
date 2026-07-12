@@ -47,12 +47,44 @@ class OpenAICompatProvider:
         api_key: str,
         model: str,
         host_header: str | None = None,
+        *,
+        original_url: str | None = None,
     ) -> None:
         self.base_url = base_url.rstrip("/")
         self.api_key = api_key
         self.default_model = model
         # DNS rebinding protection: override Host header when URL is IP-pinned
         self._host_header = host_header
+        # V2: store original URL for per-request DNS re-resolution
+        self._original_url = original_url
+
+    def _resolve_request_url(self) -> tuple[str, str | None]:
+        """Resolve the request URL with per-request DNS pinning (V2).
+
+        In server mode with an original URL stored, re-resolves DNS on each
+        call to prevent DNS rebinding attacks. Returns (url, host_header).
+        """
+        import os
+
+        if self._original_url and os.environ.get("LOKO_MODE", "desktop").lower() == "server":
+            from loko.security.ssrf import resolve_and_pin, SSRFError
+
+            try:
+                pinned_url, original_host = resolve_and_pin(self._original_url)
+                return pinned_url.rstrip("/"), original_host
+            except SSRFError:
+                # DNS rebinding detected (e.g., now resolves to private IP)
+                logger.error(
+                    "DNS rebinding detected for %s — blocking request",
+                    self._original_url,
+                )
+                raise LLMProviderError(
+                    "DNS rebinding detected: URL now resolves to a blocked address.",
+                    status_code=0,
+                )
+
+        # Desktop mode or no original URL: use stored base_url as-is
+        return self.base_url, self._host_header
 
     async def stream_chat(
         self,
@@ -70,7 +102,10 @@ class OpenAICompatProvider:
         (determinism requirement).
         """
         effective_model = model or self.default_model
-        url = f"{self.base_url}/chat/completions"
+
+        # V2: per-request DNS re-resolution to prevent DNS rebinding attacks
+        request_url, host_header = self._resolve_request_url()
+        url = f"{request_url}/chat/completions"
 
         payload = {
             "model": effective_model,
@@ -86,8 +121,8 @@ class OpenAICompatProvider:
             "Accept": "text/event-stream",
         }
         # DNS rebinding protection: set original Host header when IP-pinned
-        if self._host_header:
-            headers["Host"] = self._host_header
+        if host_header:
+            headers["Host"] = host_header
 
         # Request usage info from providers that support it (OpenAI, etc.)
         payload["stream_options"] = {"include_usage": True}
