@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { ChevronDown, ChevronRight, Database, Plus, Tag } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { api } from "@/lib/api";
 import { DocumentTagTable } from "./DocumentTagTable";
 import { CoverageBar } from "./CoverageBar";
@@ -30,6 +31,7 @@ export function BotKnowledge({ botId, config, updateConfig, saving }: WizardStep
   const [dirty, setDirty] = useState(false);
   const [addMode, setAddMode] = useState<AddMode>(null);
   const [docsExpanded, setDocsExpanded] = useState(false);
+  const [deleteSourceId, setDeleteSourceId] = useState<string | null>(null);
 
   const loadDocuments = async () => {
     if (!botId) return;
@@ -67,14 +69,14 @@ export function BotKnowledge({ botId, config, updateConfig, saving }: WizardStep
     setDirty(false);
   };
 
-  const handleDeleteSource = async (sourceId: string) => {
-    const source = sources.find((s) => s.id === sourceId);
-    if (!source) return;
-    const msg =
-      source.document_count > 0
-        ? t("bot.sources.deleteConfirm", { count: source.document_count })
-        : t("bot.sources.deleteSource");
-    if (!window.confirm(msg)) return;
+  const handleDeleteSource = (sourceId: string) => {
+    setDeleteSourceId(sourceId);
+  };
+
+  const confirmDeleteSource = async () => {
+    if (!deleteSourceId) return;
+    const sourceId = deleteSourceId;
+    setDeleteSourceId(null);
     try {
       await api(`/api/bot/${botId}/sources/${sourceId}?delete_documents=true`, {
         method: "DELETE",
@@ -212,6 +214,26 @@ export function BotKnowledge({ botId, config, updateConfig, saving }: WizardStep
           </>
         )}
       </div>
+
+      <ConfirmDialog
+        open={deleteSourceId !== null}
+        title={t("bot.sources.deleteSource")}
+        message={
+          deleteSourceId
+            ? (() => {
+                const s = sources.find((x) => x.id === deleteSourceId);
+                return s && s.document_count > 0
+                  ? t("bot.sources.deleteConfirm", { count: s.document_count })
+                  : t("bot.sources.deleteSource");
+              })()
+            : ""
+        }
+        confirmLabel={t("common.delete")}
+        cancelLabel={t("common.cancel")}
+        variant="danger"
+        onConfirm={confirmDeleteSource}
+        onCancel={() => setDeleteSourceId(null)}
+      />
     </div>
   );
 }

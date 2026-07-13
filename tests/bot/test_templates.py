@@ -123,3 +123,34 @@ class TestResolveTemplate:
         for key in TemplateKey:
             result = resolve_template({}, key, ToneProfile.CHALEUREUX)
             assert result.key == key
+
+    def test_empty_override_falls_back_to_default(self):
+        """Empty override text causes fallback to default."""
+        empty_override = MessageTemplate(
+            key=TemplateKey.FIN,
+            text_fr="",
+            text_en="",
+        )
+        result = resolve_template(
+            {TemplateKey.FIN: empty_override},
+            TemplateKey.FIN,
+            ToneProfile.NEUTRE,
+        )
+        # Should return the default, not the empty override
+        assert result.text_fr != ""
+        assert result.text_en != ""
+
+    def test_whitespace_only_override_falls_back(self):
+        """Whitespace-only override text causes fallback."""
+        ws_override = MessageTemplate(
+            key=TemplateKey.FIN,
+            text_fr="   ",
+            text_en="\t\n",
+        )
+        result = resolve_template(
+            {TemplateKey.FIN: ws_override},
+            TemplateKey.FIN,
+            ToneProfile.CHALEUREUX,
+        )
+        assert result.text_fr.strip() != ""
+        assert result.text_en.strip() != ""

@@ -223,6 +223,28 @@ async def get_bot(
     return config.model_dump(mode="json")
 
 
+@router.get("/{bot_id}/templates/defaults")
+async def get_template_defaults(
+    bot_id: str,
+    request: Request,
+    _auth=Depends(require_tenant_or_ops),
+) -> dict[str, Any]:
+    """Return default templates for the bot's tone profile."""
+    config = load_bot_config(bot_id)
+    if not config:
+        raise HTTPException(404, "Not found")
+
+    from loko.bot.templates import get_default_templates
+
+    defaults = get_default_templates(config.tone_profile)
+    return {
+        "tone": config.tone_profile.value,
+        "templates": {
+            k.value: t.model_dump(mode="json") for k, t in defaults.items()
+        },
+    }
+
+
 @router.put("/{bot_id}")
 async def update_bot(
     bot_id: str,
@@ -236,6 +258,19 @@ async def update_bot(
     _reject_demo_mutation(config, bot_id)
 
     updates = req.model_dump(exclude_none=True)
+
+    # Validate templates: reject empty text_fr or text_en
+    if "templates" in updates and updates["templates"]:
+        for tkey, tpl in updates["templates"].items():
+            text_fr = tpl.get("text_fr", "") if isinstance(tpl, dict) else ""
+            text_en = tpl.get("text_en", "") if isinstance(tpl, dict) else ""
+            if not text_fr.strip() or not text_en.strip():
+                raise HTTPException(
+                    422,
+                    f"Le template '{tkey}' a un texte vide — "
+                    "supprimez-le pour revenir au défaut, ou renseignez-le.",
+                )
+
     updated = config.model_copy(update=updates)
     save_bot_config(updated)
 

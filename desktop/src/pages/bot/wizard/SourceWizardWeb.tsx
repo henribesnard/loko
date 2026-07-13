@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { TagMultiSelect, type TagOption } from "./TagMultiSelect";
 import { api } from "@/lib/api";
 
@@ -155,6 +156,7 @@ export function SourceWizardWeb({
   const [ingesting, setIngesting] = useState(false);
   const [ingestResult, setIngestResult] = useState<CrawlResponse | null>(null);
   const [ingestError, setIngestError] = useState("");
+  const [showIngestConfirm, setShowIngestConfirm] = useState(false);
 
 
   // ---------- Screen 1: Discover ----------
@@ -232,11 +234,16 @@ export function SourceWizardWeb({
 
   // ---------- Screen 3: Ingest ----------
 
-  const handleIngest = async () => {
+  const handleIngest = () => {
     if (untaggedCount > 0) {
-      const msg = t("bot.sources.ingestConfirm", { untagged: untaggedCount });
-      if (!window.confirm(msg)) return;
+      setShowIngestConfirm(true);
+      return;
     }
+    doIngest();
+  };
+
+  const doIngest = async () => {
+    setShowIngestConfirm(false);
     setIngesting(true);
     setIngestError("");
     try {
@@ -492,6 +499,16 @@ export function SourceWizardWeb({
             <p className="text-xs text-red-600 dark:text-red-400">{ingestError}</p>
           )}
         </div>
+
+        <ConfirmDialog
+          open={showIngestConfirm}
+          title={t("bot.sources.ingest", { count: previewDocs.length })}
+          message={t("bot.sources.ingestConfirm", { untagged: untaggedCount })}
+          confirmLabel={t("bot.sources.ingest", { count: previewDocs.length })}
+          cancelLabel={t("common.cancel")}
+          onConfirm={doIngest}
+          onCancel={() => setShowIngestConfirm(false)}
+        />
       </div>
     );
   }

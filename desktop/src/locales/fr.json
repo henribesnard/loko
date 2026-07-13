@@ -201,7 +201,12 @@
       "title": "Messages et templates",
       "preview": "Aperçu",
       "resetDefault": "Réinitialiser au défaut",
-      "variables": "Variables disponibles"
+      "variables": "Variables disponibles",
+      "statusDefault": "Défaut",
+      "statusCustom": "Personnalisé",
+      "resetConfirm": "Réinitialiser ce template au texte par défaut ?",
+      "loadingDefaults": "Chargement des templates par défaut…",
+      "defaultsUnavailable": "Textes par défaut indisponibles"
     },
     "publish": {
       "title": "Publication",

@@ -9,6 +9,7 @@ and per language (FR/EN).
 
 from __future__ import annotations
 
+import logging
 import re
 
 from loko.bot.models import (
@@ -21,6 +22,8 @@ from loko.bot.models import (
 # ---------------------------------------------------------------------------
 # Safe renderer
 # ---------------------------------------------------------------------------
+
+logger = logging.getLogger(__name__)
 
 _VAR_PATTERN = re.compile(r"\{(\w+)\}")
 
@@ -307,7 +310,16 @@ def resolve_template(
 ) -> MessageTemplate:
     """Get a template from config, falling back to defaults."""
     if key in config_templates:
-        return config_templates[key]
+        override = config_templates[key]
+        # Guard: ignore empty overrides (legacy data safety net)
+        if override.text_fr.strip() and override.text_en.strip():
+            return override
+        logger.warning(
+            "Template override '%s' has empty text — "
+            "falling back to default (tone: %s)",
+            key.value,
+            tone.value,
+        )
     defaults = get_default_templates(tone)
     if key in defaults:
         return defaults[key]

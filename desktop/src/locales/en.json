@@ -201,7 +201,12 @@
       "title": "Messages and templates",
       "preview": "Preview",
       "resetDefault": "Reset to default",
-      "variables": "Available variables"
+      "variables": "Available variables",
+      "statusDefault": "Default",
+      "statusCustom": "Custom",
+      "resetConfirm": "Reset this template to the default text?",
+      "loadingDefaults": "Loading default templates…",
+      "defaultsUnavailable": "Default texts unavailable"
     },
     "publish": {
       "title": "Publish",

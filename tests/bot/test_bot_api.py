@@ -170,6 +170,111 @@ class TestAdminAPI:
 
 
 # ---------------------------------------------------------------------------
+# Template defaults & validation
+# ---------------------------------------------------------------------------
+
+
+class TestTemplateDefaults:
+    def test_get_defaults(self, client, sample_config, admin_headers):
+        """New endpoint returns default templates for the bot's tone."""
+        res = client.get(
+            f"/api/bot/{sample_config.bot_id}/templates/defaults",
+            headers=admin_headers,
+        )
+        assert res.status_code == 200
+        data = res.json()
+        assert "tone" in data
+        assert "templates" in data
+        templates = data["templates"]
+        assert "presentation" in templates
+        assert "fin" in templates
+        # Each template should have non-empty text_fr and text_en
+        for key, tpl in templates.items():
+            assert tpl["text_fr"], f"text_fr empty for {key}"
+            assert tpl["text_en"], f"text_en empty for {key}"
+
+    def test_get_defaults_404(self, client, admin_headers):
+        """Non-existent bot returns 404."""
+        res = client.get(
+            "/api/bot/nonexistent/templates/defaults",
+            headers=admin_headers,
+        )
+        assert res.status_code == 404
+
+    def test_get_defaults_no_auth(self, client, sample_config):
+        """Endpoint requires auth."""
+        res = client.get(
+            f"/api/bot/{sample_config.bot_id}/templates/defaults",
+        )
+        assert res.status_code == 401
+
+
+class TestTemplateValidation:
+    def test_reject_empty_text_fr(self, client, sample_config, admin_headers):
+        """422 when text_fr is empty."""
+        res = client.put(
+            f"/api/bot/{sample_config.bot_id}",
+            json={
+                "templates": {
+                    "fin": {
+                        "key": "fin",
+                        "text_fr": "",
+                        "text_en": "Goodbye",
+                        "variables": [],
+                    }
+                }
+            },
+            headers=admin_headers,
+        )
+        assert res.status_code == 422
+
+    def test_reject_empty_text_en(self, client, sample_config, admin_headers):
+        """422 when text_en is whitespace only."""
+        res = client.put(
+            f"/api/bot/{sample_config.bot_id}",
+            json={
+                "templates": {
+                    "fin": {
+                        "key": "fin",
+                        "text_fr": "Au revoir",
+                        "text_en": "   ",
+                        "variables": [],
+                    }
+                }
+            },
+            headers=admin_headers,
+        )
+        assert res.status_code == 422
+
+    def test_accept_valid_templates(self, client, sample_config, admin_headers):
+        """200 when both texts are non-empty."""
+        res = client.put(
+            f"/api/bot/{sample_config.bot_id}",
+            json={
+                "templates": {
+                    "fin": {
+                        "key": "fin",
+                        "text_fr": "Au revoir.",
+                        "text_en": "Goodbye.",
+                        "variables": [],
+                    }
+                }
+            },
+            headers=admin_headers,
+        )
+        assert res.status_code == 200
+
+    def test_accept_no_templates(self, client, sample_config, admin_headers):
+        """200 when templates field is not sent (no override)."""
+        res = client.put(
+            f"/api/bot/{sample_config.bot_id}",
+            json={"name": "StillTestBot"},
+            headers=admin_headers,
+        )
+        assert res.status_code == 200
+
+
+# ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
 
