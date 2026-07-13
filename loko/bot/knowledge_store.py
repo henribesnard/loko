@@ -139,6 +139,29 @@ class KnowledgeStore:
     def _ensure_schema(self) -> None:
         with self._connect() as conn:
             conn.executescript(_KNOWLEDGE_SCHEMA)
+            # §5.3: idempotent migration — add source_id column
+            self._migrate_source_id(conn)
+
+    @staticmethod
+    def _migrate_source_id(conn: sqlite3.Connection) -> None:
+        """Add source_id column to documents and chunks if missing."""
+        # Check if column already exists
+        cols = {r[1] for r in conn.execute("PRAGMA table_info(documents)").fetchall()}
+        if "source_id" not in cols:
+            conn.execute("ALTER TABLE documents ADD COLUMN source_id TEXT DEFAULT NULL")
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_docs_source ON documents(source_id)"
+            )
+            logger.info("Migrated documents table: added source_id column")
+        chunk_cols = {
+            r[1] for r in conn.execute("PRAGMA table_info(chunks)").fetchall()
+        }
+        if "source_id" not in chunk_cols:
+            conn.execute("ALTER TABLE chunks ADD COLUMN source_id TEXT DEFAULT NULL")
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_chunks_source ON chunks(source_id)"
+            )
+            logger.info("Migrated chunks table: added source_id column")
 
     # ------------------------------------------------------------------
     # Document CRUD
@@ -154,6 +177,7 @@ class KnowledgeStore:
         bot_sub_motifs: list[str] | None = None,
         confidentiality: str = "public",
         doc_id: str | None = None,
+        source_id: str | None = None,
     ) -> str:
         """Ingest a document: split into chunks and store.
 
@@ -173,8 +197,8 @@ class KnowledgeStore:
             conn.execute(
                 """INSERT INTO documents
                    (doc_id, source_url, source_title, raw_content, content_hash,
-                    bot_intents, bot_sub_motifs, confidentiality)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                    bot_intents, bot_sub_motifs, confidentiality, source_id)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 (
                     doc_id,
                     source_url,
@@ -184,6 +208,7 @@ class KnowledgeStore:
                     json.dumps(intents),
                     json.dumps(sub_motifs),
                     confidentiality,
+                    source_id,
                 ),
             )
 
@@ -194,8 +219,9 @@ class KnowledgeStore:
                 conn.execute(
                     """INSERT INTO chunks
                        (chunk_id, doc_id, text, source_url, source_title,
-                        bot_intents, bot_sub_motifs, confidentiality, chunk_index)
-                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                        bot_intents, bot_sub_motifs, confidentiality, chunk_index,
+                        source_id)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                     (
                         chunk_id,
                         doc_id,
@@ -206,6 +232,7 @@ class KnowledgeStore:
                         json.dumps(sub_motifs),
                         confidentiality,
                         i,
+                        source_id,
                     ),
                 )
 
@@ -225,30 +252,57 @@ class KnowledgeStore:
             )
             return cursor.rowcount > 0
 
+    def delete_by_source(self, source_id: str) -> int:
+        """Delete all documents (and their chunks) belonging to a source."""
+        with self._connect() as conn:
+            cursor = conn.execute(
+                "DELETE FROM documents WHERE source_id = ?",
+                (source_id,),
+            )
+            count = cursor.rowcount
+            if count:
+                logger.info("Deleted %d document(s) for source %s", count, source_id)
+            return count
+
+    def count_by_source(self, source_id: str) -> int:
+        """Count documents belonging to a source."""
+        with self._connect() as conn:
+            row = conn.execute(
+                "SELECT COUNT(*) as cnt FROM documents WHERE source_id = ?",
+                (source_id,),
+            ).fetchone()
+            return row["cnt"] if row else 0
+
     def list_documents(
         self,
         *,
         intent: str | None = None,
+        source_id: str | None = None,
         limit: int = 100,
     ) -> list[dict[str, Any]]:
         with self._connect() as conn:
+            where_parts: list[str] = []
+            params: list[Any] = []
             if intent:
-                rows = conn.execute(
-                    """SELECT doc_id, source_url, source_title, content_hash,
-                              bot_intents, bot_sub_motifs, confidentiality, created_at
-                       FROM documents
-                       WHERE bot_intents LIKE ?
-                       ORDER BY created_at DESC LIMIT ?""",
-                    (f'%"{intent}"%', limit),
-                ).fetchall()
-            else:
-                rows = conn.execute(
-                    """SELECT doc_id, source_url, source_title, content_hash,
-                              bot_intents, bot_sub_motifs, confidentiality, created_at
-                       FROM documents
-                       ORDER BY created_at DESC LIMIT ?""",
-                    (limit,),
-                ).fetchall()
+                where_parts.append("bot_intents LIKE ?")
+                params.append(f'%"{intent}"%')
+            if source_id:
+                where_parts.append("source_id = ?")
+                params.append(source_id)
+
+            where_clause = ""
+            if where_parts:
+                where_clause = "WHERE " + " AND ".join(where_parts)
+
+            rows = conn.execute(
+                f"""SELECT doc_id, source_url, source_title, content_hash,
+                           bot_intents, bot_sub_motifs, confidentiality,
+                           source_id, created_at
+                    FROM documents
+                    {where_clause}
+                    ORDER BY created_at DESC LIMIT ?""",
+                params + [limit],
+            ).fetchall()
 
             return [
                 {
@@ -258,6 +312,7 @@ class KnowledgeStore:
                     "bot_intents": json.loads(r["bot_intents"]),
                     "bot_sub_motifs": json.loads(r["bot_sub_motifs"]),
                     "confidentiality": r["confidentiality"],
+                    "source_id": r["source_id"],
                     "created_at": r["created_at"],
                 }
                 for r in rows

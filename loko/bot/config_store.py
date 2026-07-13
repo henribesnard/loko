@@ -40,6 +40,7 @@ def load_bot_config(bot_id: str) -> BotConfig | None:
     try:
         data = json.loads(config_path.read_text(encoding="utf-8"))
         config = BotConfig.model_validate(data)
+        migrated = False
         # T1: lazy migration for schema v1 → v2
         if data.get("schema_version", 1) < 2 or not config.account_id:
             config = config.model_copy(
@@ -48,12 +49,19 @@ def load_bot_config(bot_id: str) -> BotConfig | None:
                     "account_id": config.account_id or _get_internal_account_id(),
                 }
             )
-            save_bot_config(config)
+            migrated = True
             logger.info(
                 "Bot %s migrated to schema v2 (account_id=%s)",
                 bot_id,
                 config.account_id,
             )
+        # §5.2: lazy migration v3 → v4 (add knowledge_sources)
+        if data.get("schema_version", 1) < 4:
+            config = config.model_copy(update={"schema_version": 4})
+            migrated = True
+            logger.info("Bot %s migrated to schema v4 (knowledge_sources)", bot_id)
+        if migrated:
+            save_bot_config(config)
         return config
     except Exception:
         logger.exception("Failed to load bot config %s", config_path)

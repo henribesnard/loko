@@ -231,6 +231,7 @@ class SimplePageFetcher:
 
     def fetch(self, url: str) -> tuple[str, int]:
         import http.client
+        import socket
         import ssl
 
         current_url = url
@@ -252,18 +253,23 @@ class SimplePageFetcher:
             try:
                 if parsed.scheme == "https":
                     ctx = ssl.create_default_context()
-                    # Connect to the pinned IP but validate the cert
-                    # against the original hostname (SNI + cert check).
-                    ctx.check_hostname = True
-                    conn = http.client.HTTPSConnection(
-                        pinned_ip,
-                        port,
-                        timeout=self.timeout,
-                        context=ctx,
+                    # Connect TCP to the pinned IP (SSRF protection),
+                    # then wrap with TLS using the real hostname for
+                    # SNI + certificate validation.
+                    raw_sock = socket.create_connection(
+                        (pinned_ip, port), timeout=self.timeout
                     )
-                    # Override _host for SNI so TLS handshake sends the
-                    # real hostname, not the IP.
-                    conn._http_vsn_str = "HTTP/1.1"  # noqa: SLF001
+                    try:
+                        ssl_sock = ctx.wrap_socket(
+                            raw_sock, server_hostname=hostname
+                        )
+                    except Exception:
+                        raw_sock.close()
+                        raise
+                    conn = http.client.HTTPSConnection(
+                        hostname, port, timeout=self.timeout
+                    )
+                    conn.sock = ssl_sock
                     conn.request(
                         "GET",
                         path,
@@ -514,6 +520,8 @@ class FAQWebCrawler:
             try:
                 html, status = self.fetcher.fetch(url)
                 if status != 200 or not html:
+                    if status and status >= 400:
+                        state.errors.append(f"{url}: HTTP {status}")
                     state.skipped += 1
                     continue
 

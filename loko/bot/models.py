@@ -117,6 +117,7 @@ class SubMotif(BaseModel):
             raise ValueError("Sub-motif id must not be empty")
         return v.strip()
 
+
 class Intent(BaseModel):
     """Intent (level 1 classification target)."""
 
@@ -279,6 +280,61 @@ class TrainingParams(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# Knowledge sources
+# ---------------------------------------------------------------------------
+
+
+class SourceType(str, enum.Enum):
+    """Type of knowledge source."""
+
+    WEB = "web"  # FAQ web crawler
+    FILE = "file"  # uploaded document (pdf, docx, …)
+    TEXT = "text"  # pasted text
+
+
+class TagRule(BaseModel):
+    """URL-pattern based tagging applied at ingestion (WEB sources)."""
+
+    pattern: str  # glob on the URL path, e.g. "/aide/remboursements/*"
+    bot_intents: list[str] = Field(default_factory=list)
+    bot_sub_motifs: list[str] = Field(default_factory=list)
+    confidentiality: str | None = None  # override, e.g. "confidentiel"
+
+
+class IngestSummary(BaseModel):
+    """Summary of the last ingestion run for a source."""
+
+    at: str  # ISO datetime
+    discovered: int = 0
+    ingested: int = 0
+    untagged: int = 0
+    errors: int = 0
+
+
+class KnowledgeSource(BaseModel):
+    """A declared knowledge source (WEB, FILE, or TEXT)."""
+
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    type: SourceType
+    label: str
+    # WEB-specific
+    start_url: str = ""
+    document_url_patterns: list[str] = Field(default_factory=list)
+    tag_rules: list[TagRule] = Field(default_factory=list)
+    default_tags: TagRule | None = None
+    # FILE / TEXT
+    bot_intents: list[str] = Field(default_factory=list)
+    bot_sub_motifs: list[str] = Field(default_factory=list)
+    confidentiality: str = "public"
+    # common
+    resync_enabled: bool = False
+    created_at: str = Field(
+        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+    )
+    last_ingest: IngestSummary | None = None
+
+
+# ---------------------------------------------------------------------------
 # Bot config (top-level)
 # ---------------------------------------------------------------------------
 
@@ -286,7 +342,7 @@ class TrainingParams(BaseModel):
 class BotConfig(BaseModel):
     """Full bot configuration, persisted as config.json."""
 
-    schema_version: int = 3
+    schema_version: int = 4
     bot_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     name: str
     account_id: str = ""  # T1: tenant isolation — empty = legacy (migrated to internal)
@@ -300,6 +356,7 @@ class BotConfig(BaseModel):
     templates: dict[TemplateKey, MessageTemplate] = Field(default_factory=dict)
     knowledge_collection: str = ""
     confidentiality_filter: list[str] = Field(default_factory=lambda: ["public"])
+    knowledge_sources: list[KnowledgeSource] = Field(default_factory=list)
     llm: BotLLMConfig = Field(default_factory=BotLLMConfig)
     status: Literal["draft", "published"] = "draft"
 

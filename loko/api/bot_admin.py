@@ -26,7 +26,10 @@ from loko.bot.models import (
     BotConfig,
     Intent,
     JourneyParams,
+    KnowledgeSource,
     MessageTemplate,
+    SourceType,
+    TagRule,
     TemplateKey,
 )
 from loko.bot.session_store import get_bot_dir, get_bots_dir
@@ -416,11 +419,15 @@ async def train_bot(
             continue
         n = len([e for e in intent.examples if e.strip()])
         if n < 8:
-            errors.append(f"Intent '{intent.label or intent.id}' : {n}/8 exemples minimum")
+            errors.append(
+                f"Intent '{intent.label or intent.id}' : {n}/8 exemples minimum"
+            )
         for sm in intent.sub_motifs:
             sn = len([e for e in sm.examples if e.strip()])
             if sn < 3:
-                errors.append(f"Sous-motif '{sm.label or sm.id}' : {sn}/3 exemples minimum")
+                errors.append(
+                    f"Sous-motif '{sm.label or sm.id}' : {sn}/3 exemples minimum"
+                )
     if errors:
         raise HTTPException(422, ". ".join(errors))
 
@@ -534,6 +541,15 @@ class UpdateTagsRequest(BaseModel):
     bot_sub_motifs: list[str] | None = None
 
 
+class CrawlTagRule(BaseModel):
+    """URL-pattern based tagging applied at ingestion (WEB sources)."""
+
+    pattern: str  # glob on the URL path, e.g. "/aide/remboursements/*"
+    bot_intents: list[str] = Field(default_factory=list)
+    bot_sub_motifs: list[str] = Field(default_factory=list)
+    confidentiality: str | None = None  # override, e.g. "confidentiel"
+
+
 class CrawlFAQRequest(BaseModel):
     """Request body for FAQ web crawl + optional ingestion."""
 
@@ -547,6 +563,231 @@ class CrawlFAQRequest(BaseModel):
     ingest: bool = True
     document_url_patterns: list[str] = Field(default_factory=list)
     confidentiality: str = "public"
+    tag_rules: list[CrawlTagRule] = Field(default_factory=list)
+    default_tags: CrawlTagRule | None = None
+    source_id: str | None = None
+
+
+# ---------------------------------------------------------------------------
+# Knowledge sources CRUD  (§5.4)
+# ---------------------------------------------------------------------------
+
+
+class SourceCreateRequest(BaseModel):
+    """Request body for creating a knowledge source."""
+
+    type: SourceType
+    label: str = Field(..., min_length=1, max_length=200)
+    start_url: str = ""
+    document_url_patterns: list[str] = Field(default_factory=list)
+    tag_rules: list[TagRule] = Field(default_factory=list)
+    default_tags: TagRule | None = None
+    bot_intents: list[str] = Field(default_factory=list)
+    bot_sub_motifs: list[str] = Field(default_factory=list)
+    confidentiality: str = "public"
+    resync_enabled: bool = False
+
+    model_config = {"extra": "forbid"}
+
+
+class SourceUpdateRequest(BaseModel):
+    """Request body for updating a knowledge source."""
+
+    label: str | None = None
+    start_url: str | None = None
+    document_url_patterns: list[str] | None = None
+    tag_rules: list[TagRule] | None = None
+    default_tags: TagRule | None = Field(default=None)
+    bot_intents: list[str] | None = None
+    bot_sub_motifs: list[str] | None = None
+    confidentiality: str | None = None
+    resync_enabled: bool | None = None
+
+    model_config = {"extra": "forbid"}
+
+
+def _validate_source_intents(
+    config: BotConfig, bot_intents: list[str], bot_sub_motifs: list[str]
+) -> None:
+    """Validate that intent/sub-motif ids exist in the bot config (K1)."""
+    intent_ids = {i.id for i in config.intents}
+    sub_motif_map: dict[str, set[str]] = {}
+    for intent in config.intents:
+        sub_motif_map[intent.id] = {sm.id for sm in intent.sub_motifs}
+
+    for iid in bot_intents:
+        if iid not in intent_ids:
+            raise HTTPException(
+                422,
+                f"source_invalid: intent '{iid}' does not exist in bot config",
+            )
+    for smid in bot_sub_motifs:
+        found = False
+        for iid in bot_intents:
+            if iid in sub_motif_map and smid in sub_motif_map[iid]:
+                found = True
+                break
+        if not found:
+            raise HTTPException(
+                422,
+                f"source_invalid: sub-motif '{smid}' is not a child of "
+                f"the declared intents {bot_intents}",
+            )
+
+
+def _validate_tag_rules(config: BotConfig, rules: list[TagRule]) -> None:
+    """Validate tag rules: check glob syntax and intent existence."""
+    from fnmatch import translate
+
+    for rule in rules:
+        try:
+            translate(rule.pattern)
+        except Exception:
+            raise HTTPException(
+                422,
+                f"source_invalid: invalid glob pattern '{rule.pattern}'",
+            )
+        _validate_source_intents(config, rule.bot_intents, rule.bot_sub_motifs)
+
+
+@router.get("/{bot_id}/sources")
+async def list_sources(
+    bot_id: str,
+    request: Request,
+    _auth=Depends(require_tenant_or_ops),
+) -> list[dict[str, Any]]:
+    """List all knowledge sources for a bot."""
+    config = load_bot_config(bot_id)
+    if not config:
+        raise HTTPException(404, f"Bot {bot_id} not found")
+    from loko.bot.knowledge_store import get_knowledge_store
+
+    store = get_knowledge_store(bot_id)
+    result = []
+    for src in config.knowledge_sources:
+        doc_count = store.count_by_source(src.id)
+        data = src.model_dump(mode="json")
+        data["document_count"] = doc_count
+        result.append(data)
+    return result
+
+
+@router.post("/{bot_id}/sources", status_code=201)
+async def create_source(
+    bot_id: str,
+    req: SourceCreateRequest,
+    request: Request,
+    _auth=Depends(require_tenant_or_ops),
+) -> dict[str, Any]:
+    """Create a new knowledge source."""
+    config = load_bot_config(bot_id)
+    if not config:
+        raise HTTPException(404, f"Bot {bot_id} not found")
+    _reject_demo_mutation(config, bot_id)
+
+    # Validate intents/sub-motifs
+    _validate_source_intents(config, req.bot_intents, req.bot_sub_motifs)
+    if req.tag_rules:
+        _validate_tag_rules(config, req.tag_rules)
+    if req.default_tags:
+        _validate_source_intents(
+            config, req.default_tags.bot_intents, req.default_tags.bot_sub_motifs
+        )
+
+    source = KnowledgeSource(
+        type=req.type,
+        label=req.label,
+        start_url=req.start_url,
+        document_url_patterns=req.document_url_patterns,
+        tag_rules=req.tag_rules,
+        default_tags=req.default_tags,
+        bot_intents=req.bot_intents,
+        bot_sub_motifs=req.bot_sub_motifs,
+        confidentiality=req.confidentiality,
+        resync_enabled=req.resync_enabled,
+    )
+    config.knowledge_sources.append(source)
+    save_bot_config(config)
+    return source.model_dump(mode="json")
+
+
+@router.put("/{bot_id}/sources/{source_id}")
+async def update_source(
+    bot_id: str,
+    source_id: str,
+    req: SourceUpdateRequest,
+    request: Request,
+    _auth=Depends(require_tenant_or_ops),
+) -> dict[str, Any]:
+    """Update an existing knowledge source."""
+    config = load_bot_config(bot_id)
+    if not config:
+        raise HTTPException(404, f"Bot {bot_id} not found")
+    _reject_demo_mutation(config, bot_id)
+
+    source = next((s for s in config.knowledge_sources if s.id == source_id), None)
+    if not source:
+        raise HTTPException(404, f"Source {source_id} not found")
+
+    updates = req.model_dump(exclude_unset=True)
+
+    # Validate if intents/sub-motifs are being changed
+    new_intents = updates.get("bot_intents", source.bot_intents)
+    new_sub_motifs = updates.get("bot_sub_motifs", source.bot_sub_motifs)
+    _validate_source_intents(config, new_intents, new_sub_motifs)
+
+    if "tag_rules" in updates and updates["tag_rules"]:
+        rules = [
+            TagRule(**r) if isinstance(r, dict) else r for r in updates["tag_rules"]
+        ]
+        _validate_tag_rules(config, rules)
+    if "default_tags" in updates and updates["default_tags"]:
+        dt = updates["default_tags"]
+        if isinstance(dt, dict):
+            dt = TagRule(**dt)
+        _validate_source_intents(config, dt.bot_intents, dt.bot_sub_motifs)
+
+    for key, value in updates.items():
+        setattr(source, key, value)
+
+    save_bot_config(config)
+    return source.model_dump(mode="json")
+
+
+@router.delete("/{bot_id}/sources/{source_id}")
+async def delete_source(
+    bot_id: str,
+    source_id: str,
+    request: Request,
+    delete_documents: bool = False,
+    _auth=Depends(require_tenant_or_ops),
+) -> dict[str, Any]:
+    """Delete a knowledge source. Optionally delete its documents."""
+    config = load_bot_config(bot_id)
+    if not config:
+        raise HTTPException(404, f"Bot {bot_id} not found")
+    _reject_demo_mutation(config, bot_id)
+
+    source = next((s for s in config.knowledge_sources if s.id == source_id), None)
+    if not source:
+        raise HTTPException(404, f"Source {source_id} not found")
+
+    docs_deleted = 0
+    if delete_documents:
+        from loko.bot.knowledge_store import get_knowledge_store
+
+        store = get_knowledge_store(bot_id)
+        docs_deleted = store.delete_by_source(source_id)
+
+    config.knowledge_sources = [
+        s for s in config.knowledge_sources if s.id != source_id
+    ]
+    save_bot_config(config)
+
+    return {
+        "deleted": source_id,
+        "documents_deleted": docs_deleted,
+    }
 
 
 @router.post("/{bot_id}/documents", status_code=201)
@@ -637,18 +878,64 @@ async def crawl_faq_web(
             if any(pattern.search(doc.url) for pattern in patterns)
         ]
 
+    # -- Evaluate tag_rules for each document (first match wins) ----------
+    from fnmatch import fnmatch
+
+    def _resolve_tags(
+        doc_url: str,
+    ) -> tuple[list[str], list[str], str, bool]:
+        """Return (intents, sub_motifs, confidentiality, tagged)."""
+        doc_path = urlparse(doc_url).path
+        for rule in req.tag_rules:
+            if fnmatch(doc_path, rule.pattern):
+                return (
+                    rule.bot_intents,
+                    rule.bot_sub_motifs,
+                    rule.confidentiality or req.confidentiality,
+                    bool(rule.bot_intents),
+                )
+        if req.default_tags:
+            return (
+                req.default_tags.bot_intents,
+                req.default_tags.bot_sub_motifs,
+                req.default_tags.confidentiality or req.confidentiality,
+                bool(req.default_tags.bot_intents),
+            )
+        return [], [], req.confidentiality, False
+
+    untagged_paths: list[str] = []
+    tagged_docs: list[dict[str, Any]] = []
+    for doc in documents:
+        intents, sub_motifs, conf, is_tagged = _resolve_tags(doc.url)
+        tagged_docs.append(
+            {
+                "doc": doc,
+                "bot_intents": intents,
+                "bot_sub_motifs": sub_motifs,
+                "confidentiality": conf,
+                "tagged": is_tagged,
+            }
+        )
+        if not is_tagged:
+            untagged_paths.append(urlparse(doc.url).path)
+
+    # -- Ingestion ---------------------------------------------------------
     ingested: list[dict[str, str]] = []
     if req.ingest and documents:
         from loko.bot.knowledge_store import get_knowledge_store
 
         store = get_knowledge_store(bot_id)
-        for doc in documents:
+        for entry in tagged_docs:
+            doc = entry["doc"]
             doc_id = store.ingest_document(
                 doc.content,
                 source_url=doc.url,
                 source_title=doc.title,
-                confidentiality=req.confidentiality,
+                bot_intents=entry["bot_intents"] or None,
+                bot_sub_motifs=entry["bot_sub_motifs"] or None,
+                confidentiality=entry["confidentiality"],
                 doc_id=doc.doc_id,
+                source_id=req.source_id,
             )
             ingested.append(
                 {
@@ -657,8 +944,28 @@ async def crawl_faq_web(
                     "title": doc.title,
                 }
             )
+        config_changed = False
         if ingested and not config.knowledge_collection:
             config.knowledge_collection = bot_id
+            config_changed = True
+        # Update last_ingest on the source if source_id provided
+        if req.source_id and ingested:
+            from loko.bot.models import IngestSummary
+
+            source = next(
+                (s for s in config.knowledge_sources if s.id == req.source_id),
+                None,
+            )
+            if source:
+                source.last_ingest = IngestSummary(
+                    at=datetime.now(timezone.utc).isoformat(),
+                    discovered=len(result.documents),
+                    ingested=len(ingested),
+                    untagged=len(untagged_paths),
+                    errors=len(result.errors),
+                )
+                config_changed = True
+        if config_changed:
             save_bot_config(config)
 
     return {
@@ -669,15 +976,21 @@ async def crawl_faq_web(
         "documents_discovered": len(result.documents),
         "documents_selected": len(documents),
         "documents_ingested": len(ingested),
+        "documents_untagged": len(untagged_paths),
+        "untagged_paths": untagged_paths,
         "documents": [
             {
-                "doc_id": doc.doc_id,
-                "url": doc.url,
-                "title": doc.title,
-                "content_hash": doc.content_hash,
-                "content_preview": doc.content[:500],
+                "doc_id": entry["doc"].doc_id,
+                "url": entry["doc"].url,
+                "title": entry["doc"].title,
+                "content_hash": entry["doc"].content_hash,
+                "content_preview": entry["doc"].content[:500],
+                "bot_intents": entry["bot_intents"],
+                "bot_sub_motifs": entry["bot_sub_motifs"],
+                "confidentiality": entry["confidentiality"],
+                "tagged": entry["tagged"],
             }
-            for doc in documents
+            for entry in tagged_docs
         ],
         "ingested": ingested,
     }
