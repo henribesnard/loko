@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Database, Globe2, Loader2, Tag } from "lucide-react";
+import { ChevronDown, ChevronRight, Database, Plus, Tag } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { api } from "@/lib/api";
 import { DocumentTagTable } from "./DocumentTagTable";
 import { CoverageBar } from "./CoverageBar";
+import { SourceCard, type SourceData } from "./SourceCard";
+import { SourceWizardWeb } from "./SourceWizardWeb";
 import type { WizardStepProps } from "../BotWizard";
 
 interface KnowledgeDocument {
@@ -17,24 +19,17 @@ interface KnowledgeDocument {
   confidentiality: string;
 }
 
-interface CrawlResult {
-  documents_discovered: number;
-  documents_selected: number;
-  documents_ingested: number;
-  errors: string[];
-}
+type AddMode = null | "choose" | "web";
 
 export function BotKnowledge({ botId, config, updateConfig, saving }: WizardStepProps) {
   const { t } = useTranslation();
   const [collection, setCollection] = useState(config.knowledge_collection);
   const [filter, setFilter] = useState(config.confidentiality_filter.join(", "));
-  const [crawlUrl, setCrawlUrl] = useState("");
-  const [docPattern, setDocPattern] = useState("");
-  const [crawling, setCrawling] = useState(false);
-  const [crawlResult, setCrawlResult] = useState<CrawlResult | null>(null);
-  const [crawlError, setCrawlError] = useState("");
   const [documents, setDocuments] = useState<KnowledgeDocument[]>([]);
+  const [sources, setSources] = useState<SourceData[]>([]);
   const [dirty, setDirty] = useState(false);
+  const [addMode, setAddMode] = useState<AddMode>(null);
+  const [docsExpanded, setDocsExpanded] = useState(false);
 
   const loadDocuments = async () => {
     if (!botId) return;
@@ -46,8 +41,19 @@ export function BotKnowledge({ botId, config, updateConfig, saving }: WizardStep
     }
   };
 
+  const loadSources = async () => {
+    if (!botId) return;
+    try {
+      const data = await api<SourceData[]>(`/api/bot/${botId}/sources`);
+      setSources(data);
+    } catch {
+      setSources([]);
+    }
+  };
+
   useEffect(() => {
     loadDocuments();
+    loadSources();
   }, [botId]);
 
   const handleSave = async () => {
@@ -61,35 +67,54 @@ export function BotKnowledge({ botId, config, updateConfig, saving }: WizardStep
     setDirty(false);
   };
 
-  const handleCrawl = async () => {
-    if (!botId || !crawlUrl.trim()) return;
-    setCrawling(true);
-    setCrawlError("");
-    setCrawlResult(null);
+  const handleDeleteSource = async (sourceId: string) => {
+    const source = sources.find((s) => s.id === sourceId);
+    if (!source) return;
+    const msg =
+      source.document_count > 0
+        ? t("bot.sources.deleteConfirm", { count: source.document_count })
+        : t("bot.sources.deleteSource");
+    if (!window.confirm(msg)) return;
     try {
-      const result = await api<CrawlResult>(`/api/bot/${botId}/knowledge/crawl`, {
-        method: "POST",
-        body: JSON.stringify({
-          start_url: crawlUrl.trim(),
-          use_playwright: true,
-          follow_iframes: true,
-          document_url_patterns: docPattern.trim() ? [docPattern.trim()] : [],
-          ingest: true,
-        }),
+      await api(`/api/bot/${botId}/sources/${sourceId}?delete_documents=true`, {
+        method: "DELETE",
       });
-      setCrawlResult(result);
+      await loadSources();
       await loadDocuments();
-    } catch (err) {
-      setCrawlError(err instanceof Error ? err.message : "Crawl failed");
-    } finally {
-      setCrawling(false);
+    } catch {
+      // silently fail
     }
+  };
+
+  const handleRediscover = (_sourceId: string) => {
+    setAddMode("web");
+  };
+
+  const handleSourceDone = async () => {
+    setAddMode(null);
+    await loadSources();
+    await loadDocuments();
   };
 
   const confidentialityFilter = filter
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean);
+
+  // If we're in add-source mode, show the wizard
+  if (addMode === "web") {
+    return (
+      <div className="space-y-6">
+        <h3 className="text-base font-semibold">{t("bot.knowledge.title")}</h3>
+        <SourceWizardWeb
+          botId={botId}
+          intents={config.intents}
+          onDone={handleSourceDone}
+          onCancel={() => setAddMode(null)}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -125,9 +150,6 @@ export function BotKnowledge({ botId, config, updateConfig, saving }: WizardStep
             setDirty(true);
           }}
         />
-        <p className="text-xs text-gray-400">
-          Tags séparés par virgule. Seuls les documents avec ces tags seront utilisés.
-        </p>
       </div>
 
       {dirty && (
@@ -136,52 +158,59 @@ export function BotKnowledge({ botId, config, updateConfig, saving }: WizardStep
         </Button>
       )}
 
-      {/* FAQ web crawler */}
+      {/* Sources list */}
       <div className="space-y-3 pt-4 border-t border-gray-100 dark:border-gray-800">
-        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-          <Globe2 size={14} />
-          Connecteur FAQ web
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-medium">{t("bot.sources.title")}</p>
+          <div className="flex gap-2">
+            <Button size="sm" onClick={() => setAddMode("web")}>
+              <Plus size={14} />
+              {t("bot.sources.typeWeb")}
+            </Button>
+          </div>
         </div>
-        <Input
-          placeholder="https://exemple.com/aide/index.html"
-          value={crawlUrl}
-          onChange={(e) => setCrawlUrl(e.target.value)}
-        />
-        <Input
-          placeholder="Filtre URL documents, ex: /articles/"
-          value={docPattern}
-          onChange={(e) => setDocPattern(e.target.value)}
-        />
-        <Button size="sm" onClick={handleCrawl} disabled={crawling || !crawlUrl.trim()}>
-          {crawling && <Loader2 size={14} className="animate-spin" />}
-          Crawler et ingerer
-        </Button>
-        {crawlError && (
-          <p className="text-xs text-red-600 dark:text-red-400">{crawlError}</p>
-        )}
-        {crawlResult && (
-          <div className="text-xs text-gray-500 dark:text-gray-400">
-            {crawlResult.documents_ingested} document(s) ingere(s) sur {crawlResult.documents_selected} selectionne(s)
-            {crawlResult.errors.length > 0 && ` - ${crawlResult.errors.length} erreur(s)`}
+
+        {sources.length === 0 && (
+          <div className="text-center py-6 text-sm text-gray-400">
+            <p>{t("bot.sources.empty")}</p>
+            <p className="text-xs mt-1">{t("bot.sources.emptyDesc")}</p>
           </div>
         )}
+
+        <div className="space-y-2">
+          {sources.map((source) => (
+            <SourceCard
+              key={source.id}
+              source={source}
+              onRediscover={handleRediscover}
+              onDelete={handleDeleteSource}
+            />
+          ))}
+        </div>
       </div>
 
-      {/* Document tagging table */}
+      {/* Document tagging table — collapsible fallback */}
       <div className="space-y-4 pt-4 border-t border-gray-100 dark:border-gray-800">
-        <p className="text-xs font-medium text-gray-600 dark:text-gray-400">
-          {t("bot.knowledge.tagging")} ({documents.length})
-        </p>
+        <button
+          className="flex items-center gap-2 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200"
+          onClick={() => setDocsExpanded(!docsExpanded)}
+        >
+          {docsExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+          {t("bot.sources.allDocuments")} ({documents.length})
+        </button>
 
-        <DocumentTagTable
-          documents={documents}
-          intents={config.intents}
-          confidentialityFilter={confidentialityFilter}
-          botId={botId}
-          onUpdated={loadDocuments}
-        />
-
-        <CoverageBar intents={config.intents} documents={documents} />
+        {docsExpanded && (
+          <>
+            <DocumentTagTable
+              documents={documents}
+              intents={config.intents}
+              confidentialityFilter={confidentialityFilter}
+              botId={botId}
+              onUpdated={loadDocuments}
+            />
+            <CoverageBar intents={config.intents} documents={documents} />
+          </>
+        )}
       </div>
     </div>
   );
