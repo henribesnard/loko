@@ -4,6 +4,8 @@ import { Database, Globe2, Loader2, Tag } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { api } from "@/lib/api";
+import { DocumentTagTable } from "./DocumentTagTable";
+import { CoverageBar } from "./CoverageBar";
 import type { WizardStepProps } from "../BotWizard";
 
 interface KnowledgeDocument {
@@ -84,6 +86,11 @@ export function BotKnowledge({ botId, config, updateConfig, saving }: WizardStep
     }
   };
 
+  const confidentialityFilter = filter
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+
   return (
     <div className="space-y-6">
       <h3 className="text-base font-semibold">{t("bot.knowledge.title")}</h3>
@@ -123,28 +130,6 @@ export function BotKnowledge({ botId, config, updateConfig, saving }: WizardStep
         </p>
       </div>
 
-      {/* Document tagging overview */}
-      {config.intents.length > 0 && (
-        <div className="space-y-2">
-          <p className="text-xs font-medium text-gray-600 dark:text-gray-400">
-            {t("bot.knowledge.tagging")}
-          </p>
-          <div className="grid grid-cols-2 gap-2">
-            {config.intents
-              .filter((i) => !i.is_system)
-              .map((intent) => (
-                <div
-                  key={intent.id}
-                  className="flex items-center gap-2 px-3 py-2 rounded border border-gray-200 dark:border-gray-700 text-xs"
-                >
-                  <span className="w-2 h-2 rounded-full bg-brand-400" />
-                  <span className="font-medium">{intent.label || intent.id}</span>
-                </div>
-              ))}
-          </div>
-        </div>
-      )}
-
       {dirty && (
         <Button size="sm" onClick={handleSave} disabled={saving}>
           {t("bot.wizard.save")}
@@ -182,30 +167,22 @@ export function BotKnowledge({ botId, config, updateConfig, saving }: WizardStep
         )}
       </div>
 
-      {/* Documents */}
-      {documents.length > 0 && (
-        <div className="space-y-2">
-          <p className="text-xs font-medium text-gray-600 dark:text-gray-400">
-            Documents ingeres ({documents.length})
-          </p>
-          <div className="space-y-1.5">
-            {documents.map((doc) => (
-              <div
-                key={doc.doc_id}
-                className="px-3 py-2 rounded border border-gray-200 dark:border-gray-700 text-xs"
-              >
-                <p className="font-medium truncate">{doc.source_title || doc.source_url}</p>
-                <p className="text-gray-400 truncate">{doc.source_url}</p>
-                {(doc.bot_intents.length > 0 || doc.bot_sub_motifs.length > 0) && (
-                  <p className="mt-1 text-gray-500">
-                    {[...doc.bot_intents, ...doc.bot_sub_motifs].join(", ")}
-                  </p>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Document tagging table */}
+      <div className="space-y-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+        <p className="text-xs font-medium text-gray-600 dark:text-gray-400">
+          {t("bot.knowledge.tagging")} ({documents.length})
+        </p>
+
+        <DocumentTagTable
+          documents={documents}
+          intents={config.intents}
+          confidentialityFilter={confidentialityFilter}
+          botId={botId}
+          onUpdated={loadDocuments}
+        />
+
+        <CoverageBar intents={config.intents} documents={documents} />
+      </div>
     </div>
   );
 }

@@ -70,7 +70,29 @@
       "collection": "Collection de documents",
       "collectionPlaceholder": "Nom de la collection",
       "confidentiality": "Filtre de confidentialité",
-      "tagging": "Taggage des documents par intention"
+      "tagging": "Documents ingérés",
+      "table": {
+        "selectAll": "Tout sélectionner",
+        "selected": "{{count}} sélectionné(s)",
+        "selectAllDocs": "Sélectionner les {{count}} documents",
+        "intents": "Intentions",
+        "subMotifs": "Sous-motifs",
+        "confidentiality": "Confid.",
+        "modeReplace": "Remplacer",
+        "modeAdd": "Ajouter",
+        "apply": "Appliquer",
+        "cancel": "Annuler",
+        "updated": "{{count}} document(s) mis à jour",
+        "groupsApplied": "groupe(s) appliqué(s)",
+        "noTags": "—",
+        "excludedTooltip": "Exclu du bot par le filtre de confidentialité",
+        "deletedIntent": "supprimée"
+      },
+      "coverage": {
+        "title": "Couverture par intention",
+        "warn": "{{label}} : {{count}} document(s) — les réponses risquent d'être pauvres",
+        "empty": "Aucun document"
+      }
     },
     "journey": {
       "title": "Paramètres du parcours",

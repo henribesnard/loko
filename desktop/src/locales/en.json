@@ -70,7 +70,29 @@
       "collection": "Document collection",
       "collectionPlaceholder": "Collection name",
       "confidentiality": "Confidentiality filter",
-      "tagging": "Tag documents by intent"
+      "tagging": "Ingested documents",
+      "table": {
+        "selectAll": "Select all",
+        "selected": "{{count}} selected",
+        "selectAllDocs": "Select all {{count}} documents",
+        "intents": "Intents",
+        "subMotifs": "Sub-motifs",
+        "confidentiality": "Confid.",
+        "modeReplace": "Replace",
+        "modeAdd": "Add",
+        "apply": "Apply",
+        "cancel": "Cancel",
+        "updated": "{{count}} document(s) updated",
+        "groupsApplied": "group(s) applied",
+        "noTags": "—",
+        "excludedTooltip": "Excluded from bot by confidentiality filter",
+        "deletedIntent": "deleted"
+      },
+      "coverage": {
+        "title": "Coverage by intent",
+        "warn": "{{label}}: {{count}} document(s) — responses may be poor",
+        "empty": "No documents"
+      }
     },
     "journey": {
       "title": "Journey parameters",
