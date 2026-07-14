@@ -6,6 +6,7 @@ import {
   CheckCircle,
   Copy,
   Key,
+  Plus,
   Rocket,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
@@ -19,6 +20,8 @@ interface PublishCheck {
   ok: boolean;
 }
 
+const REQUIRED_SYSTEM_INTENTS = ["hors_perimetre", "demande_conseiller"];
+
 export function BotPublish({ botId, config, updateConfig }: WizardStepProps) {
   const { t } = useTranslation();
   const [publishing, setPublishing] = useState(false);
@@ -26,9 +29,22 @@ export function BotPublish({ botId, config, updateConfig }: WizardStepProps) {
   const [publishSuccess, setPublishSuccess] = useState(false);
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [addingSystemIntents, setAddingSystemIntents] = useState(false);
+  const [systemIntentsAdded, setSystemIntentsAdded] = useState(false);
+
+  const intentIds = new Set(config.intents.map((i) => i.id));
+  const missingSystemIntents = REQUIRED_SYSTEM_INTENTS.filter(
+    (id) => !intentIds.has(id),
+  );
+  const hasAllSystemIntents = missingSystemIntents.length === 0;
 
   // Pre-publish checks
   const checks: PublishCheck[] = [
+    {
+      key: "systemIntents",
+      labelKey: "bot.publish.checkSystemIntents",
+      ok: hasAllSystemIntents,
+    },
     {
       key: "intents",
       labelKey: "bot.publish.checkIntents",
@@ -47,6 +63,29 @@ export function BotPublish({ botId, config, updateConfig }: WizardStepProps) {
       ok: config.status === "published", // Approximation — la vraie vérif est backend
     },
   ];
+
+  const handleAddSystemIntents = async () => {
+    setAddingSystemIntents(true);
+    setPublishError(null);
+    try {
+      const res = await api<{ added: string[] }>(
+        `/api/bot/${botId}/system-intents/ensure`,
+        { method: "POST" },
+      );
+      if (res.added.length > 0) {
+        setSystemIntentsAdded(true);
+        // Refresh config to reflect new intents
+        const updated = await api<typeof config>(`/api/bot/${botId}`);
+        updateConfig({ intents: updated.intents });
+      }
+    } catch (err) {
+      if (err instanceof Error) {
+        setPublishError(err.message);
+      }
+    } finally {
+      setAddingSystemIntents(false);
+    }
+  };
 
   const handlePublish = async () => {
     setPublishing(true);
@@ -127,6 +166,34 @@ export function BotPublish({ botId, config, updateConfig }: WizardStepProps) {
           </div>
         ))}
       </div>
+
+      {/* Missing system intents: explanation + auto-add button */}
+      {!hasAllSystemIntents && (
+        <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 space-y-2">
+          <p className="text-xs text-amber-700 dark:text-amber-400">
+            {t("bot.publish.missingSystemIntents", {
+              missing: missingSystemIntents.join(", "),
+            })}
+          </p>
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={handleAddSystemIntents}
+            disabled={addingSystemIntents}
+          >
+            <Plus size={14} />
+            {t("bot.publish.addSystemIntents")}
+          </Button>
+        </div>
+      )}
+
+      {/* System intents added success message */}
+      {systemIntentsAdded && hasAllSystemIntents && (
+        <div className="p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-xs text-green-700 dark:text-green-400 flex items-center gap-2">
+          <Check size={14} />
+          {t("bot.publish.systemIntentsAdded")}
+        </div>
+      )}
 
       {/* Publish button */}
       <div className="flex items-center gap-3">

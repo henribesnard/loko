@@ -245,6 +245,60 @@ async def get_template_defaults(
     }
 
 
+@router.post("/{bot_id}/system-intents/ensure")
+async def ensure_system_intents(
+    bot_id: str,
+    request: Request,
+    _auth=Depends(require_tenant_or_ops),
+) -> dict[str, Any]:
+    """Add missing system intents (hors_perimetre, demande_conseiller) with default examples."""
+    config = load_bot_config(bot_id)
+    if not config:
+        raise HTTPException(404, "Not found")
+    _reject_demo_mutation(config, bot_id)
+
+    from loko.bot.classifier.builtin_examples import (
+        DEMANDE_CONSEILLER_EXAMPLES,
+        HORS_PERIMETRE_FALLBACK_EXAMPLES,
+    )
+
+    intent_ids = {i.id for i in config.intents}
+    added: list[str] = []
+
+    if "hors_perimetre" not in intent_ids:
+        config.intents.append(
+            Intent(
+                id="hors_perimetre",
+                label="Hors périmètre",
+                definition="Demande hors du périmètre des intentions gérées par le bot.",
+                examples=list(HORS_PERIMETRE_FALLBACK_EXAMPLES),
+                is_system=True,
+            )
+        )
+        added.append("hors_perimetre")
+
+    if "demande_conseiller" not in intent_ids:
+        config.intents.append(
+            Intent(
+                id="demande_conseiller",
+                label="Demande conseiller",
+                definition="L'utilisateur demande explicitement à parler à un conseiller ou un humain.",
+                examples=list(DEMANDE_CONSEILLER_EXAMPLES),
+                is_system=True,
+            )
+        )
+        added.append("demande_conseiller")
+
+    if added:
+        save_bot_config(config)
+        logger.info("Bot %s: added system intents %s", bot_id, added)
+
+    return {
+        "added": added,
+        "intents": [i.model_dump(mode="json") for i in config.intents],
+    }
+
+
 @router.put("/{bot_id}")
 async def update_bot(
     bot_id: str,
@@ -317,6 +371,9 @@ async def publish_bot(
 
     if "hors_perimetre" not in intent_ids:
         errors.append("L'intention systeme 'hors_perimetre' est requise.")
+
+    if "demande_conseiller" not in intent_ids:
+        errors.append("L'intention systeme 'demande_conseiller' est requise.")
 
     for intent in config.intents:
         if not intent.is_system and len(intent.examples) < 8:

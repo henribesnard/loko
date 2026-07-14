@@ -214,6 +214,10 @@
       "checkIntents": "Intentions configurées",
       "checkExamples": "Exemples suffisants",
       "checkTrained": "Classifieur entraîné",
+      "checkSystemIntents": "Intentions système configurées",
+      "missingSystemIntents": "Les intentions système {{missing}} sont requises pour la publication.",
+      "addSystemIntents": "Ajouter les intentions système",
+      "systemIntentsAdded": "Intentions système ajoutées. Relancez l'entraînement (étape 2).",
       "publishBtn": "Publier le bot",
       "publishSuccess": "Bot publié avec succès",
       "apiKey": "Clé API",
@@ -222,7 +226,7 @@
       "copySnippet": "Copier"
     },
     "playground": {
-      "title": "Playground",
+      "title": "Terrain d'essai",
       "trace": "Trace de diagnostic",
       "noTrace": "Envoyez un message pour voir la trace."
     },

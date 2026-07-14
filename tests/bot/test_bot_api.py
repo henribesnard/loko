@@ -488,3 +488,90 @@ class TestHealth:
         res = client.get("/health")
         assert res.status_code == 200
         assert res.json()["status"] == "ok"
+
+
+# ---------------------------------------------------------------------------
+# System intents
+# ---------------------------------------------------------------------------
+
+
+class TestEnsureSystemIntents:
+    def test_adds_missing_intents(self, client, app, tmp_path, admin_headers):
+        """Endpoint adds both system intents when missing."""
+        from loko.bot.config_store import save_bot_config as _save
+
+        config = BotConfig(
+            name="NoSystem",
+            intents=[
+                Intent(
+                    id="livraison",
+                    label="Livraison",
+                    definition="Livraison",
+                    examples=[f"ex {i}" for i in range(10)],
+                ),
+            ],
+        )
+        _save(config)
+
+        res = client.post(
+            f"/api/bot/{config.bot_id}/system-intents/ensure",
+            headers=admin_headers,
+        )
+        assert res.status_code == 200
+        data = res.json()
+        assert "hors_perimetre" in data["added"]
+        assert "demande_conseiller" in data["added"]
+        # Verify they show up in the intents list
+        intent_ids = {i["id"] for i in data["intents"]}
+        assert "hors_perimetre" in intent_ids
+        assert "demande_conseiller" in intent_ids
+
+    def test_idempotent(self, client, sample_config, admin_headers):
+        """Calling ensure when system intents already exist adds nothing."""
+        res = client.post(
+            f"/api/bot/{sample_config.bot_id}/system-intents/ensure",
+            headers=admin_headers,
+        )
+        assert res.status_code == 200
+        assert res.json()["added"] == []
+
+    def test_no_auth(self, client, sample_config):
+        """Endpoint requires auth."""
+        res = client.post(
+            f"/api/bot/{sample_config.bot_id}/system-intents/ensure",
+        )
+        assert res.status_code == 401
+
+    def test_publish_requires_demande_conseiller(
+        self, client, app, tmp_path, admin_headers
+    ):
+        """Publish returns 400 if demande_conseiller is missing."""
+        from loko.bot.config_store import save_bot_config as _save
+
+        config = BotConfig(
+            name="MissingDC",
+            intents=[
+                Intent(
+                    id="livraison",
+                    label="Livraison",
+                    definition="Livraison",
+                    examples=[f"ex {i}" for i in range(10)],
+                ),
+                Intent(
+                    id="hors_perimetre",
+                    label="HP",
+                    definition="HP",
+                    examples=["hp"],
+                    is_system=True,
+                ),
+            ],
+        )
+        _save(config)
+
+        res = client.post(
+            f"/api/bot/{config.bot_id}/publish",
+            headers=admin_headers,
+        )
+        assert res.status_code == 400
+        detail = res.json()["detail"]
+        assert any("demande_conseiller" in e for e in detail["errors"])
