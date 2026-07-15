@@ -517,7 +517,7 @@ def on_autre_demande_oui(
         reformulation_count_current_demande=0,
         tours_demande=0,
     )
-    return new, []
+    return new, [EmitTemplate(key=TemplateKey.RELANCE)]
 
 
 def on_autre_demande_non(

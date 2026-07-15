@@ -72,6 +72,8 @@ class TemplateKey(str, enum.Enum):
     # GF: guardrail refusal and firm close
     DEMANDE_INAPPROPRIEE = "demande_inappropriee"
     FIN_FERME = "fin_ferme"
+    # Follow-up prompt after user confirms another question
+    RELANCE = "relance"
     # PRO: maintenance mode
     MAINTENANCE = "maintenance"
 

@@ -15,6 +15,7 @@ const TEMPLATE_LABEL: Record<string, string> = {
   hors_perimetre: "Hors périmètre",
   enquete_satisfaction: "Enquête satisfaction",
   autre_demande: "Autre demande ?",
+  relance: "Relance",
   fin: "Fin de conversation",
   mise_en_relation: "Mise en relation",
   timeout: "Timeout",

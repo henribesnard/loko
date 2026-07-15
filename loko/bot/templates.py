@@ -122,6 +122,12 @@ _DEFAULTS: dict[ToneProfile, dict[TemplateKey, tuple[str, str, list[str]]]] = {
             "We have covered together: {resume_demandes}. For any other request, an advisor is available: {lien_escalade}. Have a good day!",
             ["nom_bot", "resume_demandes", "lien_escalade"],
         ),
+        # Follow-up prompt after user confirms another question
+        TemplateKey.RELANCE: (
+            "Je vous ecoute. Quelle est votre demande ?",
+            "I'm listening. What is your request?",
+            [],
+        ),
         # GF: guardrail refusal and firm close
         TemplateKey.DEMANDE_INAPPROPRIEE: (
             "Je ne peux pas repondre a cette demande. Je peux vous aider sur : {intentions_gerees}.",
@@ -196,6 +202,11 @@ _DEFAULTS: dict[ToneProfile, dict[TemplateKey, tuple[str, str, list[str]]]] = {
             "We have covered the following topics together: {resume_demandes}. For any other request, an advisor remains at your disposal: {lien_escalade}. Good day.",
             ["nom_bot", "resume_demandes", "lien_escalade"],
         ),
+        TemplateKey.RELANCE: (
+            "Je vous ecoute. Veuillez formuler votre demande.",
+            "I am listening. Please state your request.",
+            [],
+        ),
         TemplateKey.DEMANDE_INAPPROPRIEE: (
             "Je ne suis pas en mesure de traiter cette demande. Mon perimetre de competence couvre : {intentions_gerees}.",
             "I am not able to process this request. My area of competence covers: {intentions_gerees}.",
@@ -267,6 +278,11 @@ _DEFAULTS: dict[ToneProfile, dict[TemplateKey, tuple[str, str, list[str]]]] = {
             "On a bien avance ensemble ! Voici ce qu'on a couvert : {resume_demandes}. Si vous avez besoin d'autre chose, un conseiller est disponible : {lien_escalade}. A bientot !",
             "We made good progress together! Here's what we covered: {resume_demandes}. If you need anything else, an advisor is available: {lien_escalade}. See you soon!",
             ["nom_bot", "resume_demandes", "lien_escalade"],
+        ),
+        TemplateKey.RELANCE: (
+            "Bien sur ! Dites-moi, quelle est votre question ?",
+            "Of course! Tell me, what's your question?",
+            [],
         ),
         TemplateKey.DEMANDE_INAPPROPRIEE: (
             "Je ne peux malheureusement pas vous aider la-dessus. En revanche, je suis la pour : {intentions_gerees}.",
