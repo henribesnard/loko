@@ -225,16 +225,20 @@ class BotGenerator:
 
         llm = config.llm
 
+        # Only pass the bot-level model when using a custom provider;
+        # for platform provider the model is set via env vars.
+        effective_model = llm.model if llm.provider_source == "custom" else ""
+
         logger.info(
             "Starting generation: model=%s, chunks=%d, intent=%s",
-            llm.model,
+            effective_model or "(platform default)",
             len(chunks),
             intent,
         )
 
         async for token in self.provider.stream_chat(
             messages,
-            model=llm.model,
+            model=effective_model,
             temperature=0.0,  # always frozen
             max_tokens=llm.max_tokens,
             timeout=llm.timeout,
