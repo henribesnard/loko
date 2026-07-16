@@ -744,6 +744,7 @@ class BotOrchestrator:
 
         # --- Generation (streaming) ---
         tokens: list[str] = []
+        accumulated = ""
         leak_detected_mid_stream: str | None = None
         with traces.measure("generation") as ctx:
             async for token in self.generator.generate(
@@ -754,8 +755,8 @@ class BotOrchestrator:
                 config=config,
             ):
                 tokens.append(token)
-                # V1: streaming-level leak check (sliding window)
-                accumulated = "".join(tokens)
+                # V1: streaming-level leak check
+                accumulated += token
                 leak_detected_mid_stream = check_response_leaks_streaming(accumulated)
                 if leak_detected_mid_stream:
                     logger.critical(

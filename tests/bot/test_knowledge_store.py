@@ -39,7 +39,7 @@ class TestChunking:
         assert len(chunks) == 1
 
     def test_long_text_multiple_chunks(self):
-        long_text = " ".join(["Phrase numéro {i}." for i in range(50)])
+        long_text = " ".join([f"Phrase numéro {i}." for i in range(50)])
         chunks = _chunk_text(long_text, max_chunk_size=100)
         assert len(chunks) > 1
 

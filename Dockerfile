@@ -32,7 +32,7 @@ RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/wh
 # Two-step: deps first (cached layer), then package install with source
 COPY pyproject.toml constraints-ml.txt ./
 RUN mkdir -p loko && touch loko/__init__.py && \
-    pip install --no-cache-dir -c constraints-ml.txt ".[server,ml,dev]" && \
+    pip install --no-cache-dir -c constraints-ml.txt ".[server,ml]" && \
     rm -rf loko/
 
 # Remove build-essential (only needed for compiling C extensions above)
@@ -54,10 +54,14 @@ COPY --from=frontend-build /app/desktop/dist ./desktop/dist
 # REMOVED: eval/ datasets (MGEN-specific, purged)
 # Generic evaluation tools remain in loko/eval/ (copied with loko/ below)
 COPY tools/ ./tools/
-COPY tests/ ./tests/
+
+# Create non-root user for security
+RUN groupadd --gid 1000 loko && \
+    useradd --uid 1000 --gid loko --create-home loko && \
+    mkdir -p /home/loko/.loko && chown -R loko:loko /home/loko/.loko
 
 # Data volume for bot configs & sessions
-VOLUME /root/.loko
+VOLUME /home/loko/.loko
 
 # Environment variables (A2, A6)
 # Required:
@@ -83,7 +87,6 @@ ENV HF_HOME=/app/.hf_cache
 
 EXPOSE 8000
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')" || exit 1
+USER loko
 
 CMD ["uvicorn", "loko.main:app", "--host", "0.0.0.0", "--port", "8000"]

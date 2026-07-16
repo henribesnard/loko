@@ -17,16 +17,18 @@ Usage:
     # 3. Raises ValueError if not found and required=True
 """
 
+import logging
 import os
 from pathlib import Path
-from typing import Optional
+
+logger = logging.getLogger(__name__)
 
 
 def get_secret(
     env_var_name: str,
     required: bool = False,
-    default: Optional[str] = None,
-) -> Optional[str]:
+    default: str | None = None,
+) -> str | None:
     """
     Get a secret value from Docker secrets or environment variables.
 
@@ -57,7 +59,7 @@ def get_secret(
                     return secret_value
             except (IOError, PermissionError) as e:
                 # Log error but continue to fallback
-                print(f"Warning: Could not read secret file {secret_path}: {e}")
+                logger.warning("Could not read secret file %s: %s", secret_path, e)
 
     # 2. Fallback to environment variable
     secret_value = os.getenv(env_var_name)
@@ -77,8 +79,8 @@ def get_secret(
 def get_secret_bytes(
     env_var_name: str,
     required: bool = False,
-    default: Optional[bytes] = None,
-) -> Optional[bytes]:
+    default: bytes | None = None,
+) -> bytes | None:
     """
     Get a secret value as bytes (for binary secrets like keys).
 
@@ -100,7 +102,7 @@ def get_secret_bytes(
                 with open(secret_path, "rb") as f:
                     return f.read()
             except (IOError, PermissionError) as e:
-                print(f"Warning: Could not read secret file {secret_path}: {e}")
+                logger.warning("Could not read secret file %s: %s", secret_path, e)
 
     # Fallback to environment variable (decode from string)
     secret_value = os.getenv(env_var_name)
@@ -140,12 +142,12 @@ def verify_secret_file_permissions(secret_file_path: str) -> bool:
         if mode in (0o600, 0o400):
             return True
 
-        print(
-            f"Warning: Secret file {secret_path} has insecure permissions: {oct(mode)}"
+        logger.warning(
+            "Secret file %s has insecure permissions: %s. Recommended: chmod 600",
+            secret_path, oct(mode),
         )
-        print(f"Recommended: chmod 600 {secret_path}")
         return False
 
     except Exception as e:
-        print(f"Warning: Could not check permissions for {secret_file_path}: {e}")
+        logger.warning("Could not check permissions for %s: %s", secret_file_path, e)
         return False

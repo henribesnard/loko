@@ -351,7 +351,6 @@ export function BotMessages({ botId, config, updateConfig, saving }: WizardStepP
 
       {/* Guardrails configuration (GF lot) */}
       <BotGuardrails
-        botId={botId}
         onSave={updateConfig}
         saving={saving}
       />

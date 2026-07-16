@@ -132,9 +132,6 @@ def _validate_password(password: str) -> list[str]:
 # Request/Response models
 # ---------------------------------------------------------------------------
 
-_CURRENT_TERMS_VERSION = "2026-07-09-v1"
-
-
 class SignupRequest(BaseModel):
     email: str = Field(..., min_length=3)
     password: str = Field(..., min_length=12)

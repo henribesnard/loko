@@ -18,8 +18,10 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
+import { api } from "@/lib/api";
 import { useBotDashboard } from "@/hooks/useBotDashboard";
 import type { MisclassifiedTurn, Suggestion } from "@/hooks/useBotDashboard";
+import type { Release } from "@/types/bot";
 
 export function BotDashboard() {
   const { t } = useTranslation();
@@ -39,14 +41,14 @@ export function BotDashboard() {
   const [addingExample, setAddingExample] = useState<string | null>(null);
   const [targetIntent, setTargetIntent] = useState("");
   const [maintenanceEnabled, setMaintenanceEnabled] = useState(false);
-  const [releases, setReleases] = useState<Array<Record<string, unknown>>>([]);
+  const [releases, setReleases] = useState<Release[]>([]);
 
   // Load maintenance status and releases
   useEffect(() => {
     if (!botId) return;
     Promise.all([
-      fetch(`/api/bot/${botId}/maintenance`).then((r) => r.ok ? r.json() : null),
-      fetch(`/api/bot/${botId}/releases`).then((r) => r.ok ? r.json() : []),
+      api<{ maintenance: boolean }>(`/api/bot/${botId}/maintenance`).catch(() => null),
+      api<Release[]>(`/api/bot/${botId}/releases`).catch(() => []),
     ])
       .then(([maint, rels]) => {
         if (maint) setMaintenanceEnabled(maint.maintenance);
@@ -58,27 +60,27 @@ export function BotDashboard() {
   const toggleMaintenance = async () => {
     const newState = !maintenanceEnabled;
     try {
-      const res = await fetch(`/api/bot/${botId}/maintenance`, {
+      await api(`/api/bot/${botId}/maintenance`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ enabled: newState }),
       });
-      if (res.ok) setMaintenanceEnabled(newState);
-    } catch {}
+      setMaintenanceEnabled(newState);
+    } catch {
+      // Maintenance toggle failed — state unchanged
+    }
   };
 
   const rollback = async (version: number) => {
     try {
-      const res = await fetch(`/api/bot/${botId}/rollback/${version}`, {
+      await api(`/api/bot/${botId}/rollback/${version}`, {
         method: "POST",
       });
-      if (res.ok) {
-        refresh();
-        // Reload releases
-        const rels = await fetch(`/api/bot/${botId}/releases`).then((r) => r.json());
-        setReleases(rels);
-      }
-    } catch {}
+      refresh();
+      const rels = await api<Release[]>(`/api/bot/${botId}/releases`);
+      setReleases(rels);
+    } catch {
+      // Rollback failed — state unchanged
+    }
   };
 
   if (loading) {
@@ -114,6 +116,7 @@ export function BotDashboard() {
           <div className="flex items-center gap-3">
             <button
               onClick={() => navigate(`/bot/${botId}/wizard`)}
+              aria-label={t("common.back")}
               className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
             >
               <ArrowLeft size={16} />
@@ -295,12 +298,20 @@ export function BotDashboard() {
               {metrics.recent_sessions.map((s) => (
                 <div
                   key={s.session_id as string}
+                  role="button"
+                  tabIndex={0}
                   className="flex items-center justify-between px-3 py-2 rounded hover:bg-gray-50 dark:hover:bg-gray-800/50 text-xs cursor-pointer"
                   onClick={() =>
                     navigate(
                       `/bot/${botId}/dashboard/session/${s.session_id}`,
                     )
                   }
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      navigate(`/bot/${botId}/dashboard/session/${s.session_id}`);
+                    }
+                  }}
                 >
                   <span className="font-mono text-gray-400 w-20 truncate">
                     {(s.session_id as string).slice(0, 8)}
@@ -365,15 +376,15 @@ export function BotDashboard() {
             <div className="space-y-1">
               {releases.map((rel) => (
                 <div
-                  key={rel.version as number}
+                  key={rel.version}
                   className="flex items-center justify-between px-3 py-2 rounded text-xs hover:bg-gray-50 dark:hover:bg-gray-800/50"
                 >
-                  <span className="font-mono font-medium">v{rel.version as number}</span>
+                  <span className="font-mono font-medium">v{rel.version}</span>
                   <span className="text-gray-400">
-                    {(rel.created_at as string).slice(0, 16).replace("T", " ")}
+                    {rel.created_at.slice(0, 16).replace("T", " ")}
                   </span>
                   <span className="font-mono text-[10px] text-gray-400 w-16 truncate">
-                    {(rel.config_hash as string).slice(0, 8)}
+                    {rel.config_hash.slice(0, 8)}
                   </span>
                   {rel.active ? (
                     <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
@@ -383,7 +394,7 @@ export function BotDashboard() {
                     <Button
                       size="sm"
                       variant="ghost"
-                      onClick={() => rollback(rel.version as number)}
+                      onClick={() => rollback(rel.version)}
                     >
                       Restaurer
                     </Button>

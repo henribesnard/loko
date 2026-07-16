@@ -8,3 +8,42 @@ desktop/dist
 .env
 *.egg-info
 loko-handoff
+
+# Python build artifacts
+dist
+build
+*.egg
+.eggs
+
+# Virtual environments
+.venv
+venv
+
+# Coverage
+htmlcov
+.coverage
+coverage.xml
+
+# IDE / OS
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+
+# Claude Code metadata
+.claude
+
+# Local data
+*.db
+*.sqlite3
+.loko
+data
+
+# ML checkpoints (large)
+checkpoints
+
+# Archives
+*.tgz
+
+# Tests (not needed in production image)
+tests

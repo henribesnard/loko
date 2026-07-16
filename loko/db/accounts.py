@@ -121,7 +121,8 @@ def verify_password(password: str, stored_hash: str) -> bool:
             return ph.verify(stored_hash, password)
         except (ImportError, VerifyMismatchError):
             return False
-        except Exception:
+        except Exception as exc:
+            logging.getLogger(__name__).warning("Password verification error: %s", exc)
             return False
 
     # Legacy PBKDF2

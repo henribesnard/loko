@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/Input";
 import type { GuardrailRule, GuardrailsConfig } from "@/types/bot";
 
 interface BotGuardrailsProps {
-  botId: string;
   guardrails?: GuardrailsConfig;
   onSave: (config: Record<string, unknown>) => Promise<unknown>;
   saving: boolean;
@@ -76,7 +75,7 @@ export function BotGuardrails({ guardrails, onSave, saving }: BotGuardrailsProps
   };
 
   const handleSave = async () => {
-    await onSave({ guardrails: config } as any);
+    await onSave({ guardrails: config });
     setDirty(false);
   };
 

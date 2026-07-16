@@ -193,6 +193,19 @@ export const JOURNEY_DEFAULTS: JourneyParams = {
 };
 
 // ---------------------------------------------------------------------------
+// Knowledge (documents)
+// ---------------------------------------------------------------------------
+
+export interface KnowledgeDocument {
+  doc_id: string;
+  source_url: string;
+  source_title: string;
+  bot_intents: string[];
+  bot_sub_motifs: string[];
+  confidentiality: string;
+}
+
+// ---------------------------------------------------------------------------
 // Guardrails (GF lot)
 // ---------------------------------------------------------------------------
 

@@ -10,15 +10,7 @@ import { CoverageBar } from "./CoverageBar";
 import { SourceCard, type SourceData } from "./SourceCard";
 import { SourceWizardWeb } from "./SourceWizardWeb";
 import type { WizardStepProps } from "../BotWizard";
-
-interface KnowledgeDocument {
-  doc_id: string;
-  source_url: string;
-  source_title: string;
-  bot_intents: string[];
-  bot_sub_motifs: string[];
-  confidentiality: string;
-}
+import type { KnowledgeDocument } from "@/types/bot";
 
 type AddMode = null | "choose" | "web";
 

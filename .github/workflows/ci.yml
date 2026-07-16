@@ -116,7 +116,7 @@ jobs:
             -e HF_HUB_OFFLINE=1 \
             -e TRANSFORMERS_OFFLINE=1 \
             loko:test \
-            sh -c "pytest tests/ -v --tb=short && cp coverage.xml htmlcov /app/coverage/ 2>/dev/null || true"
+            sh -c "pytest tests/ -v --tb=short --cov=loko --cov-report=xml:coverage.xml --cov-report=html:htmlcov && cp coverage.xml htmlcov /app/coverage/ 2>/dev/null || true"
 
       - name: Upload coverage reports
         uses: actions/upload-artifact@v4

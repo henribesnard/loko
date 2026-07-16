@@ -75,14 +75,18 @@ jobs:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
         run: |
-          ssh -i ~/.ssh/deploy_key $VPS_USER@$VPS_HOST << ENDSSH
+          TAG="${{ steps.version.outputs.tag }}"
+          VERSION="${{ steps.version.outputs.version }}"
+          ssh -i ~/.ssh/deploy_key $VPS_USER@$VPS_HOST bash -s -- "$TAG" "$VERSION" << 'ENDSSH'
+            TAG="$1"
+            VERSION="$2"
             set -e
             cd /opt/loko
 
             # Pull latest code and tags
             git fetch --tags --force
             git stash --include-untracked || true
-            git checkout ${{ steps.version.outputs.tag }}
+            git checkout "$TAG"
 
             # Ensure scripts are executable
             chmod +x tools/*.sh 2>/dev/null || true
@@ -91,11 +95,11 @@ jobs:
             ./tools/backup_loko.sh || echo "Warning: Backup failed, continuing"
 
             # Pull pre-built image from GHCR (not --build)
-            export LOKO_VERSION=${{ steps.version.outputs.version }}
+            export LOKO_VERSION="$VERSION"
             docker compose -f docker-compose.yml -f docker-compose.prod.yml pull
             docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 
-            echo "Deployment started: ${{ steps.version.outputs.tag }}"
+            echo "Deployment started: $TAG"
           ENDSSH
 
       - name: Smoke test
@@ -142,21 +146,23 @@ jobs:
           PREV_VERSION="${PREV_TAG#v}"
           echo "Deployment failed, rolling back to $PREV_TAG..."
 
-          ssh -i ~/.ssh/deploy_key $VPS_USER@$VPS_HOST << ENDSSH
+          ssh -i ~/.ssh/deploy_key $VPS_USER@$VPS_HOST bash -s -- "$PREV_TAG" "$PREV_VERSION" << 'ENDSSH'
+            PREV_TAG="$1"
+            PREV_VERSION="$2"
             set -e
             cd /opt/loko
 
             git fetch --tags --force
             git stash --include-untracked || true
-            git checkout $PREV_TAG
+            git checkout "$PREV_TAG"
 
-            export LOKO_VERSION=$PREV_VERSION
+            export LOKO_VERSION="$PREV_VERSION"
             docker compose -f docker-compose.yml -f docker-compose.prod.yml pull
             docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 
             # Verify rollback health
             sleep 10
-            for i in \$(seq 1 15); do
+            for i in $(seq 1 15); do
               if curl -sf http://localhost:8001/health > /dev/null 2>&1; then
                 echo "Rollback to $PREV_TAG successful"
                 exit 0
@@ -168,12 +174,10 @@ jobs:
 
       - name: Create GitHub Release
         if: success()
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version.outputs.tag }}
-          release_name: Release ${{ steps.version.outputs.tag }}
+          name: Release ${{ steps.version.outputs.tag }}
           body: |
             ## LOKO ${{ steps.version.outputs.version }}
 

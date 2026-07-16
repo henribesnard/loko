@@ -4,20 +4,20 @@ services:
     ports:
       - "8001:8000"
     volumes:
-      - loko-data:/root/.loko
+      - loko-data:/home/loko/.loko
     environment:
       - PYTHONUNBUFFERED=1
       - LOKO_MODE=server
       # Persist accounts DB in the Docker volume alongside bots data
-      - LOKO_DATA_DIR=/root/.loko
-      - LOKO_AUDIT_DB_PATH=/root/.loko/audit.db
-      - LOKO_ADMIN_TOKEN=${LOKO_ADMIN_TOKEN:-}
+      - LOKO_DATA_DIR=/home/loko/.loko
+      - LOKO_AUDIT_DB_PATH=/home/loko/.loko/audit.db
+      - LOKO_ADMIN_TOKEN=${LOKO_ADMIN_TOKEN:?LOKO_ADMIN_TOKEN is required}
       - SMTP_PASSWORD=${SMTP_PASSWORD:-}
       - LOKO_LLM_API_KEY=${LOKO_LLM_API_KEY:-}
       - LOKO_LLM_BASE_URL=${LOKO_LLM_BASE_URL:-}
       - LOKO_LLM_MODEL=${LOKO_LLM_MODEL:-}
       - LOKO_LLM_PROVIDER=${LOKO_LLM_PROVIDER:-openai_compat}
-      - LOKO_SECRET_KEY=${LOKO_SECRET_KEY:-}
+      - LOKO_SECRET_KEY=${LOKO_SECRET_KEY:?LOKO_SECRET_KEY is required}
       - LOKO_CORS_ORIGINS=${LOKO_CORS_ORIGINS:-}
       - LOKO_SESSION_RETENTION_DAYS=${LOKO_SESSION_RETENTION_DAYS:-30}
       # Rate limiting (R1) — values are slowapi rate strings

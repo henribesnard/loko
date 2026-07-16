@@ -6,16 +6,7 @@ import { TagMultiSelect } from "./TagMultiSelect";
 import type { TagOption } from "./TagMultiSelect";
 import { cn } from "@/lib/cn";
 import { api } from "@/lib/api";
-import type { Intent } from "@/types/bot";
-
-interface KnowledgeDocument {
-  doc_id: string;
-  source_url: string;
-  source_title: string;
-  bot_intents: string[];
-  bot_sub_motifs: string[];
-  confidentiality: string;
-}
+import type { Intent, KnowledgeDocument } from "@/types/bot";
 
 interface DocumentTagTableProps {
   documents: KnowledgeDocument[];

@@ -6,10 +6,24 @@ Provides append-only audit trail for administrative actions and authentication e
 """
 
 import sqlite3
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 import json
+
+
+_SENSITIVE_KEYS = frozenset({
+    "password",
+    "password_hash",
+    "token",
+    "api_key",
+    "secret",
+    "message",  # User messages (RGPD)
+    "content",  # User content
+    "session_token",
+    "auth_token",
+    "bearer_token",
+})
 
 
 class AuditLogger:
@@ -118,10 +132,10 @@ class AuditLogger:
     def log(
         self,
         action: str,
-        user_id: Optional[str] = None,
-        resource_id: Optional[str] = None,
-        ip_address: Optional[str] = None,
-        details: Optional[dict[str, Any]] = None,
+        user_id: str | None = None,
+        resource_id: str | None = None,
+        ip_address: str | None = None,
+        details: dict[str, Any] | None = None,
     ):
         """
         Log an audit event.
@@ -180,24 +194,10 @@ class AuditLogger:
         Returns:
             Sanitized details dict (copy)
         """
-        # Keys that should never appear in audit logs
-        SENSITIVE_KEYS = {
-            "password",
-            "password_hash",
-            "token",
-            "api_key",
-            "secret",
-            "message",  # User messages (RGPD)
-            "content",  # User content
-            "session_token",
-            "auth_token",
-            "bearer_token",
-        }
-
         sanitized = {}
         for key, value in details.items():
             # Skip sensitive keys
-            if key.lower() in SENSITIVE_KEYS or any(
+            if key.lower() in _SENSITIVE_KEYS or any(
                 sensitive in key.lower()
                 for sensitive in ["password", "token", "secret", "key"]
             ):
@@ -212,9 +212,9 @@ class AuditLogger:
 
     def get_logs(
         self,
-        user_id: Optional[str] = None,
-        action: Optional[str] = None,
-        since: Optional[datetime] = None,
+        user_id: str | None = None,
+        action: str | None = None,
+        since: datetime | None = None,
         limit: int = 100,
     ) -> list[dict[str, Any]]:
         """
@@ -269,8 +269,8 @@ class AuditLogger:
     def export_csv(
         self,
         output_path: str,
-        since: Optional[datetime] = None,
-        until: Optional[datetime] = None,
+        since: datetime | None = None,
+        until: datetime | None = None,
     ):
         """
         Export audit logs to CSV file.
@@ -349,8 +349,7 @@ class AuditLogger:
         """
         cutoff_date = datetime.now(timezone.utc).replace(
             hour=0, minute=0, second=0, microsecond=0
-        )
-        cutoff_date = cutoff_date.replace(day=cutoff_date.day - days)
+        ) - timedelta(days=days)
 
         conn = sqlite3.connect(self.db_path)
         try:

@@ -57,4 +57,5 @@ def test_torch_cpu_only():
     # This test documents the expectation; it may legitimately pass
     # on a dev machine with a GPU — that's fine.
     # The key invariant is that the Docker image uses CPU-only torch.
-    assert not torch.cuda.is_available() or True  # informational on dev
+    if torch.cuda.is_available():
+        pytest.skip("CUDA available (dev machine with GPU) — not a CI failure")

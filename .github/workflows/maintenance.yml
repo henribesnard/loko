@@ -47,7 +47,7 @@ jobs:
             docker system df
             echo ""
             echo "=== Pruning unused Docker resources ==="
-            docker system prune -af --volumes
+            docker system prune -af
             echo ""
             echo "=== Cleaning old backups (keep last 3) ==="
             cd /opt/loko/backups 2>/dev/null && ls -t *.tar.gz 2>/dev/null | tail -n +4 | xargs rm -f || true
@@ -94,24 +94,26 @@ jobs:
           LATEST_VERSION="${LATEST_TAG#v}"
           echo "Redeploying $LATEST_TAG (version $LATEST_VERSION)"
 
-          ssh -i ~/.ssh/deploy_key $VPS_USER@$VPS_HOST << ENDSSH
+          ssh -i ~/.ssh/deploy_key $VPS_USER@$VPS_HOST bash -s -- "$LATEST_TAG" "$LATEST_VERSION" << 'ENDSSH'
+            LATEST_TAG="$1"
+            LATEST_VERSION="$2"
             set -e
             cd /opt/loko
 
             git fetch --tags --force
             git stash --include-untracked || true
-            git checkout $LATEST_TAG
+            git checkout "$LATEST_TAG"
 
             chmod +x tools/*.sh 2>/dev/null || true
 
-            export LOKO_VERSION=$LATEST_VERSION
+            export LOKO_VERSION="$LATEST_VERSION"
             docker compose -f docker-compose.yml -f docker-compose.prod.yml pull
             docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 
             echo "Redeployment of $LATEST_TAG complete"
 
             sleep 5
-            for i in \$(seq 1 15); do
+            for i in $(seq 1 15); do
               if curl -sf http://localhost:8001/health > /dev/null 2>&1; then
                 echo "Health check passed"
                 exit 0

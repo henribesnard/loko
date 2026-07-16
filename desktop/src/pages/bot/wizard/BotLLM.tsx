@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { api } from "@/lib/api";
 import type { WizardStepProps } from "../BotWizard";
 
 const PRESETS = [
@@ -48,16 +49,14 @@ export function BotLLM({ botId, config, saving }: WizardStepProps) {
     setTesting(true);
     setTestResult(null);
     try {
-      const res = await fetch(`/api/bot/${botId}/llm/test`, {
+      const data = await api<TestResult>(`/api/bot/${botId}/llm/test`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           base_url: baseUrl,
           model: model,
           api_key: apiKey,
         }),
       });
-      const data = await res.json();
       setTestResult(data);
     } catch {
       setTestResult({ ok: false, error_code: "unreachable", detail: "Network error" });
@@ -80,15 +79,14 @@ export function BotLLM({ botId, config, saving }: WizardStepProps) {
     }
 
     try {
-      await fetch(`/api/bot/${botId}/llm`, {
+      await api(`/api/bot/${botId}/llm`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
       setApiKey("");
       setDirty(false);
     } catch {
-      // Error handling via useBotConfig
+      // Save failed — dirty state preserved so user can retry
     }
   };
 

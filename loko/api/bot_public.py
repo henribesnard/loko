@@ -203,7 +203,7 @@ def _get_orchestrator(bot_id: str, config: BotConfig) -> BotOrchestrator:
 
                 secret_store = get_secret_store()
             except Exception:
-                pass
+                logger.debug("Secret store unavailable, continuing without it")
 
             escalation = build_escalation_provider(esc_config, secret_store)
         except Exception as exc:
@@ -276,9 +276,6 @@ def purge_session_locks(active_session_ids: set[str] | None = None) -> int:
 # ---------------------------------------------------------------------------
 # SSE helpers
 # ---------------------------------------------------------------------------
-
-SSE_KEEPALIVE_INTERVAL = 15  # seconds
-
 
 def _sse_encode(event: SSEEvent) -> str:
     """Encode an SSEEvent as an SSE text frame."""
@@ -843,7 +840,7 @@ def _get_quota_config(bot_id: str) -> Any:
             data = json.loads(config_path.read_text(encoding="utf-8"))
             return QuotaConfig(**data)
     except Exception:
-        pass
+        logger.debug("Could not load quota config for bot %s", bot_id)
     return None
 
 

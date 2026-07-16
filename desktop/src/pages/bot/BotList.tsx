@@ -125,7 +125,15 @@ export function BotList() {
             {bots.map((bot) => (
               <div
                 key={bot.bot_id}
+                role="button"
+                tabIndex={0}
                 onClick={() => navigate(`/bot/${bot.bot_id}/wizard`)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    navigate(`/bot/${bot.bot_id}/wizard`);
+                  }
+                }}
                 className="flex items-center justify-between p-4 cursor-pointer transition-colors"
                 style={{
                   borderRadius: "var(--radius-lg)",
@@ -154,6 +162,7 @@ export function BotList() {
                 </div>
                 <button
                   onClick={(e) => handleDelete(e, bot.bot_id)}
+                  aria-label={t("bot.delete")}
                   className="p-1.5 rounded transition-colors hover:text-red-500"
                   style={{ color: "var(--text-tertiary)" }}
                 >
