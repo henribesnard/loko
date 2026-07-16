@@ -248,6 +248,108 @@ class OpenAICompatProvider:
             elapsed,
         )
 
+    async def complete_chat(
+        self,
+        messages: list[dict[str, str]],
+        *,
+        model: str = "",
+        temperature: float = 0.0,
+        max_tokens: int = 800,
+        timeout: int = 60,
+    ) -> str:
+        """Non-streaming chat completion for assistant use cases.
+
+        Same provider/model resolution as ``stream_chat`` but returns
+        the full response text in one call (``stream=False``).
+        """
+        effective_model = model or self.default_model
+
+        request_url, host_header = self._resolve_request_url()
+        url = f"{request_url}/chat/completions"
+
+        payload = {
+            "model": effective_model,
+            "messages": messages,
+            "temperature": 0,  # hardcoded — determinism
+            "max_tokens": max_tokens,
+            "stream": False,
+        }
+
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+        }
+        if host_header:
+            headers["Host"] = host_header
+
+        transport_timeout = httpx.Timeout(
+            connect=_DEFAULT_CONNECT_TIMEOUT,
+            read=float(timeout),
+            write=30.0,
+            pool=10.0,
+        )
+
+        t0 = time.perf_counter()
+        self._last_usage = None
+
+        async with httpx.AsyncClient(timeout=transport_timeout) as client:
+            try:
+                response = await client.post(url, json=payload, headers=headers)
+            except httpx.TimeoutException:
+                elapsed = time.perf_counter() - t0
+                logger.error(
+                    "LLM provider timeout after %.1fs (limit=%ds)",
+                    elapsed,
+                    timeout,
+                )
+                raise LLMProviderError(
+                    f"LLM provider timeout after {elapsed:.0f}s",
+                    status_code=0,
+                )
+            except httpx.HTTPError as exc:
+                logger.error("LLM HTTP error: %s", exc)
+                raise LLMProviderError(
+                    f"LLM provider connection error: {exc}",
+                    status_code=0,
+                ) from exc
+
+        if response.status_code == 401:
+            raise LLMProviderError(
+                "LLM provider authentication failed (401).",
+                status_code=401,
+            )
+        if response.status_code == 429:
+            raise LLMProviderError(
+                "LLM provider rate-limited (429). Retry later.",
+                status_code=429,
+            )
+        if response.status_code >= 400:
+            logger.error(
+                "LLM provider error %d: %s",
+                response.status_code,
+                response.text[:500],
+            )
+            raise LLMProviderError(
+                f"LLM provider error ({response.status_code})",
+                status_code=response.status_code,
+            )
+
+        data = response.json()
+        usage = data.get("usage")
+        if usage and isinstance(usage, dict):
+            self._last_usage = usage
+
+        choices = data.get("choices", [])
+        content = choices[0]["message"]["content"] if choices else ""
+
+        elapsed = time.perf_counter() - t0
+        logger.info(
+            "LLM completion done: model=%s elapsed=%.2fs",
+            effective_model,
+            elapsed,
+        )
+        return content
+
     def get_last_usage(self) -> dict[str, int] | None:
         """Return provider-reported usage from the last generation, if available.
 

@@ -7,6 +7,7 @@ import {
   Download,
   Loader2,
   Plus,
+  Sparkles,
   Trash2,
   Upload,
   X,
@@ -16,6 +17,7 @@ import { Input } from "@/components/ui/Input";
 import { cn } from "@/lib/cn";
 import { useBotTraining } from "@/hooks/useBotTraining";
 import { exportIntentsToCSV, parseIntentsCSV, downloadCSV } from "@/lib/csv-intents";
+import { AssistantPanel } from "@/components/AssistantPanel";
 import type { WizardStepProps } from "../BotWizard";
 import type { Intent, SubMotif } from "@/types/bot";
 
@@ -24,6 +26,7 @@ export function BotIntents({ botId, config, updateConfig }: WizardStepProps) {
   const { status, evaluation, isTraining, startTraining } = useBotTraining(botId);
   const [expandedIntent, setExpandedIntent] = useState<string | null>(null);
   const [showSubMotifs, setShowSubMotifs] = useState<string | null>(null);
+  const [assistantIntentId, setAssistantIntentId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [importStatus, setImportStatus] = useState<{
     type: "success" | "error";
@@ -45,6 +48,7 @@ export function BotIntents({ botId, config, updateConfig }: WizardStepProps) {
       examples: [],
       sub_motifs: [],
       is_system: false,
+      examples_metadata: [],
     };
     updateIntents([...intents, newIntent]);
     setExpandedIntent(id);
@@ -159,8 +163,13 @@ export function BotIntents({ botId, config, updateConfig }: WizardStepProps) {
     reader.readAsText(file, "utf-8");
   };
 
+  const assistantIntent = assistantIntentId
+    ? intents.find((i) => i.id === assistantIntentId)
+    : null;
+
   return (
-    <div className="space-y-6">
+    <div className="flex gap-0">
+    <div className="flex-1 space-y-6">
       <div className="flex items-center justify-between">
         <h3 className="text-base font-semibold">{t("bot.intents.title")}</h3>
         <div className="flex gap-2">
@@ -306,6 +315,18 @@ export function BotIntents({ botId, config, updateConfig }: WizardStepProps) {
                   <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-500">
                     system
                   </span>
+                )}
+                {!intent.is_system && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setAssistantIntentId(intent.id);
+                    }}
+                    className="p-1 rounded text-gray-400 hover:text-brand-500"
+                    title={t("bot.assistant.openAssistant")}
+                  >
+                    <Sparkles size={12} />
+                  </button>
                 )}
                 {!intent.is_system && (
                   <button
@@ -472,6 +493,19 @@ export function BotIntents({ botId, config, updateConfig }: WizardStepProps) {
           );
         })}
       </div>
+    </div>
+    {assistantIntent && (
+      <AssistantPanel
+        botId={botId}
+        intentId={assistantIntent.id}
+        intentLabel={assistantIntent.label || assistantIntent.id}
+        onAccepted={() => {
+          // Re-fetch config to get updated examples
+          updateConfig({});
+        }}
+        onClose={() => setAssistantIntentId(null)}
+      />
+    )}
     </div>
   );
 }

@@ -409,6 +409,13 @@ def create_app() -> FastAPI:
         # Desktop mode: mount ops without mandatory token
         app.include_router(ops_router)
 
+    # --- Assistant (feature-flagged) ---
+    if os.environ.get("LOKO_ASSISTANT_ENABLED", "").lower() in ("1", "true", "yes"):
+        from loko.assistant.router import router as assistant_router
+
+        app.include_router(assistant_router)
+        logger.info("Assistant router mounted (LOKO_ASSISTANT_ENABLED=true)")
+
     # --- API key management routes ---
     _mount_api_key_routes(app, mode, admin_token)
 

@@ -14,6 +14,11 @@ export interface SubMotif {
   examples: string[];
 }
 
+export interface ExampleMeta {
+  index: number;
+  origin: "user" | "assistant" | "import";
+}
+
 export interface Intent {
   id: string;
   label: string;
@@ -21,6 +26,7 @@ export interface Intent {
   examples: string[];
   sub_motifs: SubMotif[];
   is_system: boolean;
+  examples_metadata: ExampleMeta[];
 }
 
 export interface JourneyParams {
@@ -261,4 +267,31 @@ export interface AlertRule {
   channel: "email" | "webhook";
   enabled: boolean;
   silence_min: number;
+}
+
+// ---------------------------------------------------------------------------
+// Assistant copilot
+// ---------------------------------------------------------------------------
+
+export interface Proposal {
+  id: string;
+  use_case: string;
+  sub_mode: string;
+  intent_id: string;
+  content: string;
+  rationale: string;
+  confidence: number;
+  status: "pending" | "accepted" | "rejected";
+}
+
+export interface AssistantRequest {
+  use_case: string;
+  sub_mode: string;
+  intent_id: string;
+  context: Record<string, unknown>;
+}
+
+export interface AssistantResponse {
+  proposals: Proposal[];
+  usage: Record<string, number>;
 }

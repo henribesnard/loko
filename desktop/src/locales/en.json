@@ -197,6 +197,24 @@
       "active": "Under maintenance",
       "inactive": "Operational"
     },
+    "assistant": {
+      "title": "Assistant",
+      "generate": "Generate",
+      "discriminate": "Evaluate",
+      "review": "Review",
+      "generating": "Generating…",
+      "accept": "Accept",
+      "reject": "Reject",
+      "acceptSelected": "Accept selected",
+      "rejectAll": "Reject all",
+      "selectAll": "Select all ({{count}})",
+      "noProposals": "No proposals",
+      "quotaExceeded": "Assistant call quota reached for this month.",
+      "llmUnavailable": "LLM service unavailable",
+      "accepted": "{{count}} example(s) added",
+      "rationale": "Rationale",
+      "openAssistant": "AI Assistant"
+    },
     "messages": {
       "title": "Messages and templates",
       "preview": "Preview",

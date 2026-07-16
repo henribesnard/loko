@@ -63,6 +63,10 @@ class AuditLogger:
     ACTION_MODEL_TRAIN = "model.train"
     ACTION_MODEL_DELETE = "model.delete"
 
+    # Assistant copilot
+    ACTION_ASSISTANT_ASK = "assistant.ask"
+    ACTION_ASSISTANT_ACCEPT = "assistant.accept"
+
     def __init__(self, db_path: str = ".loko/audit.db"):
         """
         Initialize audit logger.

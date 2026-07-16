@@ -120,6 +120,13 @@ class SubMotif(BaseModel):
         return v.strip()
 
 
+class ExampleMeta(BaseModel):
+    """Provenance metadata for a single training example."""
+
+    index: int
+    origin: Literal["user", "assistant", "import"] = "user"
+
+
 class Intent(BaseModel):
     """Intent (level 1 classification target)."""
 
@@ -129,6 +136,7 @@ class Intent(BaseModel):
     examples: list[str] = Field(default_factory=list)
     sub_motifs: list[SubMotif] = Field(default_factory=list)
     is_system: bool = False  # hors_perimetre, demande_conseiller
+    examples_metadata: list[ExampleMeta] = Field(default_factory=list)
 
     @field_validator("id")
     @classmethod
