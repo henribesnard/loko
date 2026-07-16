@@ -26,7 +26,7 @@ export interface Intent {
   examples: string[];
   sub_motifs: SubMotif[];
   is_system: boolean;
-  examples_metadata: ExampleMeta[];
+  examples_metadata?: ExampleMeta[];
 }
 
 export interface JourneyParams {
