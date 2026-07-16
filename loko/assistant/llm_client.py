@@ -9,7 +9,6 @@ from __future__ import annotations
 import logging
 
 from loko.bot.llm import build_llm_provider
-from loko.bot.llm.openai_compat import LLMProviderError
 from loko.bot.models import BotConfig
 
 logger = logging.getLogger(__name__)

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "loko"
-version = "0.5.5"
+version = "1.2.2"
 description = "LOKO — deterministic chatbot platform for customer service"
 license = {text = "Proprietary"}
 requires-python = ">=3.10"

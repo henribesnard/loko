@@ -310,7 +310,7 @@ curl -H "Authorization: Bearer $LOKO_ADMIN_TOKEN" \
 
 | Version | Date | Changements principaux |
 |---------|------|------------------------|
-| v0.3.7 | 2026-07-09 | Scrub MGEN mentions, CI guard |
+| v0.3.7 | 2026-07-09 | Scrub client mentions, CI guard |
 | v0.3.8 | 2026-07-10 | Improvement plan waves 0-2 |
 
 ## Runbook E8

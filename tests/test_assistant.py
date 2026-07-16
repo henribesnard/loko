@@ -6,8 +6,6 @@ import json
 import pytest
 
 from loko.assistant.proposals import (
-    AcceptItem,
-    AcceptRequest,
     AssistantRequest,
     Proposal,
     SubMode,

@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import asyncio
 import json
-import os
 from typing import AsyncIterator
 from unittest.mock import patch
 
@@ -20,7 +19,6 @@ from loko.api.api_keys import generate_api_key
 from loko.bot.config_store import save_bot_config
 from loko.bot.generation import BotGenerator
 from loko.bot.guardrails import (
-    check_response_leaks,
     check_response_leaks_streaming,
 )
 from loko.bot.models import BotConfig, Chunk, Intent, RetrievalResult

@@ -1,7 +1,7 @@
-"""Anti-regression guard: No MGEN mentions allowed in codebase.
+"""Anti-regression guard: No client-specific mentions allowed in codebase.
 
-This test ensures that no references to the MGEN client remain in the codebase
-(code, tests, tools, frontend, configuration files).
+This test ensures that no references to specific client names remain in the
+codebase (code, tests, tools, frontend, configuration files).
 
 Allowed exceptions:
 - This guard file itself
@@ -29,16 +29,14 @@ SCAN_DIRS = [
 
 # Files to exclude (this guard itself + ignorable files)
 EXCLUDE_PATTERNS = [
-    "test_no_mgen_mention.py",  # This file
+    "test_no_client_mention.py",  # This file
     "dataset.csv",  # Client data (gitignored)
     ".gitignore",
-    "PURGE_MGEN_RAPPORT.md",  # Purge report (transient)
-    "SCRUB_MGEN_PLAN.md",  # Scrubbing plan (transient)
 ]
 
 
-def test_no_mgen_mention_in_codebase():
-    """Scan codebase for any mention of MGEN (case-insensitive)."""
+def test_no_client_mention_in_codebase():
+    """Scan codebase for any mention of specific client names (case-insensitive)."""
     violations: list[str] = []
     search_term = "m" + "gen"  # Avoid self-match
 
@@ -98,8 +96,8 @@ def test_no_mgen_mention_in_codebase():
             violation_list += f"\n  ... and {len(violations) - 20} more"
 
         pytest.fail(
-            f"Found {len(violations)} MGEN mention(s) in codebase:\n{violation_list}\n\n"
-            f"MGEN is a specific client and must not appear in the codebase. "
+            f"Found {len(violations)} client-specific mention(s) in codebase:\n{violation_list}\n\n"
+            f"Client names must not appear in the codebase. "
             f"Use neutral/generic terms instead."
         )
 

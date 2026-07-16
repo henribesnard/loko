@@ -51,7 +51,7 @@ COPY widget/ ./widget/
 # Copy built frontend
 COPY --from=frontend-build /app/desktop/dist ./desktop/dist
 
-# REMOVED: eval/ datasets (MGEN-specific, purged)
+# REMOVED: eval/ datasets (client-specific, purged)
 # Generic evaluation tools remain in loko/eval/ (copied with loko/ below)
 COPY tools/ ./tools/
 

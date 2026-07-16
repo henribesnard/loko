@@ -53,9 +53,9 @@ jobs:
             exit 1
           fi
 
-  # H1: Guard against MGEN mentions
-  guard-mgen:
-    name: Guard MGEN Mentions
+  # H1: Guard against client-specific mentions
+  guard-client-mentions:
+    name: Guard Client Mentions
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -70,9 +70,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install pytest
 
-      - name: Run MGEN mention guard
+      - name: Run client mention guard
         run: |
-          pytest tests/test_no_mgen_mention.py -v
+          pytest tests/test_no_client_mention.py -v
 
   # Ruff linting
   lint-python:
@@ -99,7 +99,7 @@ jobs:
   test-python:
     name: Test Python (in-container)
     runs-on: ubuntu-latest
-    needs: [guard-datasets, guard-mgen, lint-python]
+    needs: [guard-datasets, guard-client-mentions, lint-python]
     steps:
       - uses: actions/checkout@v4
 
@@ -216,13 +216,13 @@ jobs:
   ci-success:
     name: CI Success
     runs-on: ubuntu-latest
-    needs: [guard-datasets, guard-mgen, test-python, test-frontend, build-docker]
+    needs: [guard-datasets, guard-client-mentions, test-python, test-frontend, build-docker]
     if: always()
     steps:
       - name: Check all jobs
         run: |
           if [ "${{ needs.guard-datasets.result }}" != "success" ] || \
-             [ "${{ needs.guard-mgen.result }}" != "success" ] || \
+             [ "${{ needs.guard-client-mentions.result }}" != "success" ] || \
              [ "${{ needs.test-python.result }}" != "success" ] || \
              [ "${{ needs.test-frontend.result }}" != "success" ] || \
              [ "${{ needs.build-docker.result }}" != "success" ]; then
