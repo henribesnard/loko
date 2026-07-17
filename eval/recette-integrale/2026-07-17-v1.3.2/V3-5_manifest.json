@@ -1,0 +1,266 @@
+{
+  "manifest_hash": "8aca9bca264bee6400fcb1eb883c1f008eba1df635eb9ba8deb35c426954cca2",
+  "manifest": {
+    "schema": 1,
+    "created_at": "2026-07-17T21:32:38.995740+00:00",
+    "bot_id": "fa4d8b2d-548f-457b-bf65-acbc61a39cbb",
+    "levels": {
+      "level1": {
+        "files": {
+          "README.md": "751f6a8c2d7e10ed0c67ebed7b701559b0ba2e715e6659d82093c3dfb7a588b3",
+          "config.json": "63b35202ff33b93efdfbcda8fdb7c962edf9747be28b11a94603a8ff2d914e17",
+          "config_sentence_transformers.json": "e4245393402267fdf64fd238a54024aae0c10d5116ae115a2fa29c05898b94a9",
+          "config_setfit.json": "40c19cbfda13fec2ffee7425254abc3de5e0aabc72a8aba102bd4ef3fe4b44e8",
+          "label_map.json": "ab2b8f76bbb1c95f70609743aff8071879865ca40dac1c7a741e0d8ef869282f",
+          "model.safetensors": "f4e514aa49ca970c85e6db6aa028205b577ea7f13f977cd05cfdf16dc3072fff",
+          "model_head.pkl": "a86336f8cd460d78c5a3a5cb2ecd16c041f6dd66efd44315b2691c5558275828",
+          "modules.json": "8f4b264b80206c830bebbdcae377e137925650a433b689343a63bdc9b3145460",
+          "sentence_bert_config.json": "70f4448f31320443fe3557cacea5abf2dcc4915dda8c80646bec9f3bb0aa5a1f",
+          "special_tokens_map.json": "8c785abebea9ae3257b61681b4e6fd8365ceafde980c21970d001e834cf10835",
+          "tokenizer.json": "cad551d5600a84242d0973327029452a1e3672ba6313c2a3c3d69c4310e12719",
+          "tokenizer_config.json": "a551429f3c0a8bb9f7ade9c324b144c5de8a0f8f96e16a807b73526507a0cc2f"
+        },
+        "labels": [
+          "demande_conseiller",
+          "help_account",
+          "help_billing",
+          "help_cancellation",
+          "help_contact",
+          "help_documents",
+          "help_leave",
+          "help_transfer",
+          "hors_perimetre"
+        ],
+        "n_train_examples": 175
+      },
+      "level2_help_account": {
+        "files": {
+          "README.md": "0cc35c2cf34eb444b51e5b9d2f1778e179afac5135e2c07a8651a60aaa733197",
+          "config.json": "63b35202ff33b93efdfbcda8fdb7c962edf9747be28b11a94603a8ff2d914e17",
+          "config_sentence_transformers.json": "e4245393402267fdf64fd238a54024aae0c10d5116ae115a2fa29c05898b94a9",
+          "config_setfit.json": "7b2260a3209bb0889037b014d5c732adc77567a3f57a46e0e9f9e9bef5490abb",
+          "label_map.json": "fea311a0703fd0c50e332300ac59f20d9db84ab6ba787e157c2558c2778900ad",
+          "model.safetensors": "8dd722ecf58934195b92742a5e8c746bddc06511249a7cf0a2a827dea224d9a0",
+          "model_head.pkl": "23ec2cb33b83d31f273663436af223ed65060efbadc0d3941e0bc8f01a409823",
+          "modules.json": "8f4b264b80206c830bebbdcae377e137925650a433b689343a63bdc9b3145460",
+          "sentence_bert_config.json": "70f4448f31320443fe3557cacea5abf2dcc4915dda8c80646bec9f3bb0aa5a1f",
+          "special_tokens_map.json": "8c785abebea9ae3257b61681b4e6fd8365ceafde980c21970d001e834cf10835",
+          "tokenizer.json": "cad551d5600a84242d0973327029452a1e3672ba6313c2a3c3d69c4310e12719",
+          "tokenizer_config.json": "a551429f3c0a8bb9f7ade9c324b144c5de8a0f8f96e16a807b73526507a0cc2f"
+        },
+        "labels": [
+          "compte_bloque",
+          "identifiants_perdus",
+          "mot_de_passe_oublie",
+          "premiere_connexion",
+          "probleme_technique"
+        ],
+        "n_train_examples": 25
+      }
+    },
+    "dataset_hash": "ed5915a50296bb8ec80dd260c215f9b4bfbde8bf054af79194205cf6c2526e19",
+    "train_metrics": {
+      "class_names": [
+        "demande_conseiller",
+        "help_account",
+        "help_billing",
+        "help_cancellation",
+        "help_contact",
+        "help_documents",
+        "help_leave",
+        "help_transfer",
+        "hors_perimetre"
+      ],
+      "confusion_matrix": [
+        [
+          24,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          39,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          15,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          15,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          15,
+          0,
+          0,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          1,
+          0,
+          0,
+          15,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          14,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          14,
+          0
+        ],
+        [
+          0,
+          0,
+          1,
+          0,
+          1,
+          1,
+          3,
+          0,
+          9
+        ]
+      ],
+      "accuracy": 0.9249,
+      "per_class_f1": {
+        "demande_conseiller": 0.9796,
+        "help_account": 1.0,
+        "help_billing": 0.9091,
+        "help_cancellation": 0.9677,
+        "help_contact": 0.9375,
+        "help_documents": 0.8824,
+        "help_leave": 0.8235,
+        "help_transfer": 0.9655,
+        "hors_perimetre": 0.6923
+      },
+      "advice": [
+        {
+          "type": "confused_pair",
+          "pair": [
+            "help_leave",
+            "hors_perimetre"
+          ],
+          "evidence": "cv",
+          "n_exemples_faibles": 3,
+          "suggestion": "'hors_perimetre' et 'help_leave' se confondent en CV base (3/15 erreurs). Ajoutez des exemples discriminants entre ces deux intentions."
+        },
+        {
+          "type": "confused_pair",
+          "pair": [
+            "help_documents",
+            "hors_perimetre"
+          ],
+          "evidence": "margins",
+          "n_exemples_faibles": 1,
+          "avg_margin": 0.0225,
+          "suggestion": "Les intentions 'help_documents' et 'hors_perimetre' sont proches en marge (1 exemples avec ecart top1-top2 < 0.15, marge moyenne 0.022). Ajoutez des exemples discriminants entre ces deux intentions. Exemples a faible marge : \"aide pour la carte tiers payant\".",
+          "verbatims": [
+            "aide pour la carte tiers payant"
+          ]
+        },
+        {
+          "type": "confused_pair",
+          "pair": [
+            "help_documents",
+            "help_leave"
+          ],
+          "evidence": "margins",
+          "n_exemples_faibles": 1,
+          "avg_margin": 0.144,
+          "suggestion": "Les intentions 'help_documents' et 'help_leave' sont proches en marge (1 exemples avec ecart top1-top2 < 0.15, marge moyenne 0.144). Ajoutez des exemples discriminants entre ces deux intentions. Exemples a faible marge : \"attestation à remplir pour le versement de l'ijss\".",
+          "verbatims": [
+            "attestation à remplir pour le versement de l'ijss"
+          ]
+        }
+      ],
+      "cv_method": "base_model_frozen_3seeds",
+      "duration_s": 5.11,
+      "n_seeds": 3,
+      "margin_weak_pairs": [
+        {
+          "pair": [
+            "help_documents",
+            "hors_perimetre"
+          ],
+          "count": 1,
+          "avg_margin": 0.0225,
+          "verbatims": [
+            "aide pour la carte tiers payant"
+          ]
+        },
+        {
+          "pair": [
+            "help_documents",
+            "help_leave"
+          ],
+          "count": 1,
+          "avg_margin": 0.144,
+          "verbatims": [
+            "attestation à remplir pour le versement de l'ijss"
+          ]
+        }
+      ]
+    },
+    "inference_latency_ms": {
+      "p50": 42.86,
+      "p95": 71.68,
+      "methodology": {
+        "warmup": 10,
+        "measured": 100,
+        "gc_before": true,
+        "threads_reset": true
+      }
+    }
+  }
+}

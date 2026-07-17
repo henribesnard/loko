@@ -1,0 +1,8 @@
+text,expected,predicted,score,decision_type,correct,detail
+modification mot de passe,route:help_account,clarify_inter:help_account|help_contact,0.7946287393569946,clarify_inter,False,T02: help_account/mot_de_passe_oublie sans clarification | intent=help_account
+RIB coordonnées bancaires,clarify_inter:help_contact|help_billing,route:help_contact,0.9335944056510925,route,False,T04: ambigu help_contact/cotisations | intent=help_contact
+changement de banque pour les prélèvements de cotisations,clarify_inter:help_contact|help_billing,route:help_billing,0.9556547999382019,route,False,T05: zone grise RIB/prélèvement | intent=help_billing
+attestation de paiement,clarify_inter:help_leave|help_billing|help_documents,clarify_inter:help_documents|help_billing,0.7920199632644653,clarify_inter,False,T06: ambigu help_leave/help_billing/justificatif_droits | intent=help_documents
+est-ce qu'il y a une télétransmission entre vous et la mutuelle,route:help_transfer,clarify_inter:help_transfer|demande_conseiller,0.8467811942100525,clarify_inter,False,T09: help_transfer direct (contrôle positif) | intent=help_transfer
+bilan bucco-dentaire détartrage,reject,clarify_inter:help_billing|help_leave,0.6997182369232178,clarify_inter,False,T13: hors_périmètre — dentaire non retenu | intent=help_billing
+la référence iban et le numéro de carte vitale ne sont pas reconnus,route:help_account,clarify_inter:help_contact|hors_perimetre,0.4554748237133026,clarify_inter,False,T15: piège IBAN+carte vitale — services_en_ligne | intent=help_contact

@@ -1,0 +1,162 @@
+{
+  "mode": "decision",
+  "dataset": "heldout_horsscope.csv",
+  "total": 100,
+  "correct": 84,
+  "accuracy": 0.84,
+  "per_class": {},
+  "confusion": {},
+  "n_errors": 16,
+  "errors": [
+    {
+      "text": "demander une attestation CPAM accident",
+      "expected": "accident",
+      "predicted": "help_documents",
+      "score": 0.652743935585022,
+      "decision_type": "clarify_inter",
+      "correct": false,
+      "detail": "candidates=[('help_documents', 0.652743935585022), ('hors_perimetre', 0.2896710932254791)]"
+    },
+    {
+      "text": "Information sur aide exceptionnelle pour perte de salaire",
+      "expected": "action_sociale",
+      "predicted": "help_leave",
+      "score": 0.5049821734428406,
+      "decision_type": "clarify_inter",
+      "correct": false,
+      "detail": "candidates=[('help_leave', 0.5049821734428406), ('hors_perimetre', 0.2747611403465271)]"
+    },
+    {
+      "text": "attestation de droits ALD cent-pourcent",
+      "expected": "ald_exotm",
+      "predicted": "help_documents",
+      "score": 0.8213717937469482,
+      "decision_type": "clarify_inter",
+      "correct": false,
+      "detail": "candidates=[('help_documents', 0.8213717937469482), ('help_leave', 0.08828073740005493)]"
+    },
+    {
+      "text": "information sur le check-up",
+      "expected": "bilan_prevention",
+      "predicted": "help_documents",
+      "score": 0.5464891791343689,
+      "decision_type": "clarify_inter",
+      "correct": false,
+      "detail": "candidates=[('help_documents', 0.5464891791343689), ('help_billing', 0.2252449095249176)]"
+    },
+    {
+      "text": "attestation de carte assurance européenne maladie",
+      "expected": "ceam",
+      "predicted": "help_documents",
+      "score": 0.8468565940856934,
+      "decision_type": "clarify_inter",
+      "correct": false,
+      "detail": "candidates=[('help_documents', 0.8468565940856934), ('hors_perimetre', 0.08250012248754501)]"
+    },
+    {
+      "text": "où envoyer les remboursements pour la section",
+      "expected": "contact",
+      "predicted": "help_billing",
+      "score": 0.5123519897460938,
+      "decision_type": "clarify_inter",
+      "correct": false,
+      "detail": "candidates=[('help_billing', 0.5123519897460938), ('hors_perimetre', 0.22931839525699615)]"
+    },
+    {
+      "text": "problème courrier MT-Dents",
+      "expected": "dentaire",
+      "predicted": "help_contact",
+      "score": 0.5261138677597046,
+      "decision_type": "clarify_inter",
+      "correct": false,
+      "detail": "candidates=[('help_contact', 0.5261138677597046), ('help_account', 0.12258357554674149)]"
+    },
+    {
+      "text": "changement de prénom",
+      "expected": "donnees_personne",
+      "predicted": "help_contact",
+      "score": 0.9280309081077576,
+      "decision_type": "route",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "attestation assurance voyage",
+      "expected": "offres_essentielles",
+      "predicted": "help_documents",
+      "score": 0.9787521958351135,
+      "decision_type": "route",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "erreur de versement pour remboursement",
+      "expected": "pec_soins_courants",
+      "predicted": "help_billing",
+      "score": 0.9027281999588013,
+      "decision_type": "route",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "remboursement d'une somme du",
+      "expected": "pec_soins_courants",
+      "predicted": "help_billing",
+      "score": 0.7855714559555054,
+      "decision_type": "clarify_inter",
+      "correct": false,
+      "detail": "candidates=[('help_billing', 0.7855714559555054), ('help_leave', 0.07780386507511139)]"
+    },
+    {
+      "text": "remboursement de facture acquittée que je ne comprends pas",
+      "expected": "pec_soins_courants",
+      "predicted": "help_billing",
+      "score": 0.7310780882835388,
+      "decision_type": "clarify_inter",
+      "correct": false,
+      "detail": "candidates=[('help_billing', 0.7310780882835388), ('hors_perimetre', 0.0827530100941658)]"
+    },
+    {
+      "text": "j'ai un souci avec le prélèvement des franchises sécurité sociale",
+      "expected": "pf_fr",
+      "predicted": "help_billing",
+      "score": 0.7079193592071533,
+      "decision_type": "clarify_inter",
+      "correct": false,
+      "detail": "candidates=[('help_billing', 0.7079193592071533), ('help_leave', 0.10275354981422424)]"
+    },
+    {
+      "text": "problème de rejet facture",
+      "expected": "professionel_sante",
+      "predicted": "help_billing",
+      "score": 0.539108157157898,
+      "decision_type": "clarify_inter",
+      "correct": false,
+      "detail": "candidates=[('help_billing', 0.539108157157898), ('help_leave', 0.24744050204753876)]"
+    },
+    {
+      "text": "transport en VSL",
+      "expected": "transport",
+      "predicted": "help_transfer",
+      "score": 0.41311705112457275,
+      "decision_type": "clarify_inter",
+      "correct": false,
+      "detail": "candidates=[('help_transfer', 0.41311705112457275), ('hors_perimetre', 0.27581581473350525)]"
+    },
+    {
+      "text": "mise à jour de mes ayants droit",
+      "expected": "vie_du_contrat",
+      "predicted": "help_contact",
+      "score": 0.5326906442642212,
+      "decision_type": "clarify_inter",
+      "correct": false,
+      "detail": "candidates=[('help_contact', 0.5326906442642212), ('hors_perimetre', 0.1630355715751648)]"
+    }
+  ],
+  "dataset_hash": "da82b54eff9957a534cfd9b83a842c5da0c8a5da52f0941d5de1f0465e6b8c95",
+  "manifest_reference": {
+    "bot_id": "fa4d8b2d-548f-457b-bf65-acbc61a39cbb",
+    "dataset_hash": "ed5915a50296bb8ec80dd260c215f9b4bfbde8bf054af79194205cf6c2526e19",
+    "trained_at": "2026-07-17T21:32:38.995740+00:00"
+  }
+}

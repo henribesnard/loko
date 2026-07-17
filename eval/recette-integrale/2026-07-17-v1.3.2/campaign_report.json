@@ -1,0 +1,423 @@
+{
+  "version": "1.3.2",
+  "tag": "v1.3.2",
+  "commit": "21b1fbf",
+  "image_digest": "sha256:fc4a926b910b6",
+  "bot_id": "fa4d8b2d-548f-457b-bf65-acbc61a39cbb",
+  "manifest_hash": "",
+  "protocol_version": "v2.2",
+  "runner_version": "1.1.0",
+  "machine_reference": "poste-ref-ryzen7-5800HS-win11-docker28.5-wsl2",
+  "dry_run": false,
+  "started_at": "2026-07-17T21:24:22.353309+00:00",
+  "completed_at": "2026-07-17T21:45:51.281045+00:00",
+  "overall_verdict": "NON VALIDE",
+  "lines": [
+    {
+      "id": "CE-1",
+      "description": "Worktree clean, main branch",
+      "gate": "CE",
+      "phase": "CE",
+      "verdict": "PASS",
+      "measured": "branch=main, clean=yes",
+      "artifact": "eval\\recette-integrale\\2026-07-17-v1.3.2\\CE-1.txt",
+      "detail": "",
+      "executed": true
+    },
+    {
+      "id": "CE-2",
+      "description": "Tag present + triple version check",
+      "gate": "CE",
+      "phase": "CE",
+      "verdict": "PASS",
+      "measured": "tag=v1.3.2, pyproject=1.3.2",
+      "artifact": "eval\\recette-integrale\\2026-07-17-v1.3.2\\CE-2.txt",
+      "detail": "",
+      "executed": true
+    },
+    {
+      "id": "CE-3",
+      "description": "Docker image built + size <= 1.6 Go",
+      "gate": "CE",
+      "phase": "CE",
+      "verdict": "PASS",
+      "measured": "image=loko:v1.3.2, size=1001MB",
+      "artifact": "eval\\recette-integrale\\2026-07-17-v1.3.2\\CE-3.txt",
+      "detail": "",
+      "executed": true
+    },
+    {
+      "id": "CE-4",
+      "description": "Frozen datasets present + hashes match",
+      "gate": "CE",
+      "phase": "CE",
+      "verdict": "PASS",
+      "measured": "5 files verified",
+      "artifact": "eval\\recette-integrale\\2026-07-17-v1.3.2\\CE-4.txt",
+      "detail": "",
+      "executed": true
+    },
+    {
+      "id": "CE-5",
+      "description": "Dataset intersection check (no leakage)",
+      "gate": "CE",
+      "phase": "CE",
+      "verdict": "PASS",
+      "measured": "exit 0 - no intersection",
+      "artifact": "eval\\recette-integrale\\2026-07-17-v1.3.2\\CE-5.txt",
+      "detail": "",
+      "executed": true
+    },
+    {
+      "id": "CE-6",
+      "description": "loko-eval installed and importable",
+      "gate": "CE",
+      "phase": "CE",
+      "verdict": "PASS",
+      "measured": "loko-eval importable",
+      "artifact": "eval\\recette-integrale\\2026-07-17-v1.3.2\\CE-6.txt",
+      "detail": "",
+      "executed": true
+    },
+    {
+      "id": "CE-7",
+      "description": "Campaign artifacts directory exists",
+      "gate": "CE",
+      "phase": "CE",
+      "verdict": "PASS",
+      "measured": "eval\\recette-integrale\\2026-07-17-v1.3.2",
+      "artifact": "eval\\recette-integrale\\2026-07-17-v1.3.2",
+      "detail": "",
+      "executed": true
+    },
+    {
+      "id": "CE-8",
+      "description": "LLM provider ping (temp 0)",
+      "gate": "CE",
+      "phase": "CE",
+      "verdict": "PASS",
+      "measured": "LLM config present",
+      "artifact": "eval\\recette-integrale\\2026-07-17-v1.3.2\\CE-8.txt",
+      "detail": "",
+      "executed": true
+    },
+    {
+      "id": "CE-9",
+      "description": "Bot conformity: 9 intents + L2 labels",
+      "gate": "CE",
+      "phase": "CE",
+      "verdict": "PASS",
+      "measured": "9 intents, L2 OK",
+      "artifact": "eval\\recette-integrale\\2026-07-17-v1.3.2\\CE-9_conformity.json",
+      "detail": "",
+      "executed": true
+    },
+    {
+      "id": "V0-1",
+      "description": "pytest: all tests pass",
+      "gate": "G-0",
+      "phase": "V0",
+      "verdict": "FAIL",
+      "measured": "exit 1 (in-container)",
+      "artifact": "",
+      "detail": "\n/usr/local/bin/python: No module named pytest\n",
+      "executed": true
+    },
+    {
+      "id": "V0-2",
+      "description": "ML imports (PyTorch, SetFit)",
+      "gate": "G-0",
+      "phase": "V0",
+      "verdict": "PASS",
+      "measured": "in-container: torch=2.12.1+cpu, cuda=False setfit=ok st=ok",
+      "artifact": "eval\\recette-integrale\\2026-07-17-v1.3.2\\V0-2_imports.txt",
+      "detail": "",
+      "executed": true
+    },
+    {
+      "id": "V0-3",
+      "description": "Anti-mock grep (0 occurrences)",
+      "gate": "G-0",
+      "phase": "V0",
+      "verdict": "PASS",
+      "measured": "0 occurrences",
+      "artifact": "eval\\recette-integrale\\2026-07-17-v1.3.2\\V0-3_grep.txt",
+      "detail": "",
+      "executed": true
+    },
+    {
+      "id": "V0-4",
+      "description": "npm/pip audit (0 vulnerabilities)",
+      "gate": "G-0",
+      "phase": "V0",
+      "verdict": "PASS",
+      "measured": "pip check in-container OK (pip-audit absent de l'image)",
+      "artifact": "eval\\recette-integrale\\2026-07-17-v1.3.2\\V0-4_audit.txt",
+      "detail": "",
+      "executed": true
+    },
+    {
+      "id": "V0-5",
+      "description": "Image size by inspect <= 1.6 Go",
+      "gate": "G-0",
+      "phase": "V0",
+      "verdict": "PASS",
+      "measured": "1001MB",
+      "artifact": "eval\\recette-integrale\\2026-07-17-v1.3.2\\V0-5_size.txt",
+      "detail": "",
+      "executed": true
+    },
+    {
+      "id": "V1-1",
+      "description": "Server startup + health check",
+      "gate": "G-1",
+      "phase": "V1",
+      "verdict": "PASS",
+      "measured": "health 200: {\"status\":\"ok\",\"service\":\"loko-bot\",\"version\":\"1.3.2\"}",
+      "artifact": "eval\\recette-integrale\\2026-07-17-v1.3.2\\V1-1_boot.txt",
+      "detail": "",
+      "executed": true
+    },
+    {
+      "id": "V1-2",
+      "description": "No-mock guard active at runtime",
+      "gate": "G-1",
+      "phase": "V1",
+      "verdict": "PASS",
+      "measured": "garde active: RuntimeError levée hors env test",
+      "artifact": "eval\\recette-integrale\\2026-07-17-v1.3.2\\V1-2_nomock.txt",
+      "detail": "",
+      "executed": true
+    },
+    {
+      "id": "V1-3",
+      "description": "Classifier loader integrity",
+      "gate": "G-1",
+      "phase": "V1",
+      "verdict": "PASS",
+      "measured": "fail-fast: exception typée, aucun fallback loader",
+      "artifact": "eval\\recette-integrale\\2026-07-17-v1.3.2\\V1-3_loader.txt",
+      "detail": "",
+      "executed": true
+    },
+    {
+      "id": "V1-4",
+      "description": "CRITICAL log at boot (check_published_bots)",
+      "gate": "G-1",
+      "phase": "V1",
+      "verdict": "PASS",
+      "measured": "CRITICAL loggé au boot pour bot publié sans modèle (v14-4005fa6b)",
+      "artifact": "eval\\recette-integrale\\2026-07-17-v1.3.2\\V1-4_boot_critical.txt",
+      "detail": "",
+      "executed": true
+    },
+    {
+      "id": "V1-5",
+      "description": "Offline mode (HF_HUB_OFFLINE=1)",
+      "gate": "G-1b",
+      "phase": "V1",
+      "verdict": "PASS",
+      "measured": "service OK sous --network none: {\"status\":\"ok\",\"service\":\"loko-bot\",\"version\":\"1.3.2\"}",
+      "artifact": "eval\\recette-integrale\\2026-07-17-v1.3.2\\V1-5_offline.txt",
+      "detail": "",
+      "executed": true
+    },
+    {
+      "id": "V2-1",
+      "description": "Training time <= 300s",
+      "gate": "G-2",
+      "phase": "V2",
+      "verdict": "FAIL",
+      "measured": "EXCEPTION: can only concatenate str (not \"NoneType\") to str",
+      "artifact": "",
+      "detail": "",
+      "executed": true
+    },
+    {
+      "id": "V2-2",
+      "description": "L2 coverage (help_account 5 labels)",
+      "gate": "G-2",
+      "phase": "V2",
+      "verdict": "PASS",
+      "measured": "L2 help_account: 5 labels",
+      "artifact": "eval\\recette-integrale\\2026-07-17-v1.3.2\\V2-2_l2.txt",
+      "detail": "",
+      "executed": true
+    },
+    {
+      "id": "V2-3",
+      "description": "Atomicity (train -> publish -> restart -> identical)",
+      "gate": "G-2",
+      "phase": "V2",
+      "verdict": "PASS",
+      "measured": "état antérieur intact après kill, modèle rechargeable",
+      "artifact": "eval\\recette-integrale\\2026-07-17-v1.3.2\\V2-3_atomicity.txt",
+      "detail": "",
+      "executed": true
+    },
+    {
+      "id": "V2-4",
+      "description": "Improvement cycle: pair detected + re-train",
+      "gate": "G-2",
+      "phase": "V2",
+      "verdict": "FAIL",
+      "measured": "EXCEPTION: can only concatenate str (not \"NoneType\") to str",
+      "artifact": "",
+      "detail": "",
+      "executed": true
+    },
+    {
+      "id": "V2-5",
+      "description": "Improvement cycle: verify pair resolved",
+      "gate": "G-2",
+      "phase": "V2",
+      "verdict": "FAIL",
+      "measured": "artefacts V2-4 absents",
+      "artifact": "",
+      "detail": "",
+      "executed": true
+    },
+    {
+      "id": "V2-6",
+      "description": "Classification P95 <= 50ms (machine de reference)",
+      "gate": "G-2",
+      "phase": "V2",
+      "verdict": "FAIL",
+      "measured": "P95=230.13ms (contre-mesure 50.68ms, écart 78%), n=200, in-container",
+      "artifact": "",
+      "detail": "",
+      "executed": true
+    },
+    {
+      "id": "V3-0",
+      "description": "Sweep Pareto 3-axis + selection",
+      "gate": "G-3",
+      "phase": "V3",
+      "verdict": "PASS",
+      "measured": "haut=0.90 bas=0.40 ecart=0.00 | GNG-1=78.0% GNG-2=85.6% GNG-3=84.0%",
+      "artifact": "eval\\recette-integrale\\2026-07-17-v1.3.2\\sweep\\selection.json",
+      "detail": "",
+      "executed": true
+    },
+    {
+      "id": "V3-1",
+      "description": "GNG-1 >= 85% (heldout_metier)",
+      "gate": "G-3",
+      "phase": "V3",
+      "verdict": "FAIL",
+      "measured": "GNG-1=78.0% (78/100)",
+      "artifact": "",
+      "detail": "below 85% threshold",
+      "executed": true
+    },
+    {
+      "id": "V3-2",
+      "description": "GNG-2 >= 90% (heldout_conseiller)",
+      "gate": "G-3",
+      "phase": "V3",
+      "verdict": "FAIL",
+      "measured": "GNG-2=85.6% (107/125)",
+      "artifact": "",
+      "detail": "below 90% threshold",
+      "executed": true
+    },
+    {
+      "id": "V3-3",
+      "description": "GNG-3 >= 80%, routes directes <= 5 (heldout_horsscope)",
+      "gate": "G-3",
+      "phase": "V3",
+      "verdict": "PASS",
+      "measured": "GNG-3=84.0% (84/100)",
+      "artifact": "eval\\recette-integrale\\2026-07-17-v1.3.2\\V3_heldout_horsscope\\report.json",
+      "detail": "",
+      "executed": true
+    },
+    {
+      "id": "V3-4",
+      "description": "Pieges >= 12/15 commentes",
+      "gate": "G-3",
+      "phase": "V3",
+      "verdict": "FAIL",
+      "measured": "pieges=53.3% (8/15)",
+      "artifact": "",
+      "detail": "below 80% threshold",
+      "executed": true
+    },
+    {
+      "id": "V3-5",
+      "description": "Modele + seuils + manifeste geles",
+      "gate": "G-3",
+      "phase": "V3",
+      "verdict": "PASS",
+      "measured": "manifest_hash=8aca9bca264bee64...",
+      "artifact": "data\\bots\\fa4d8b2d-548f-457b-bf65-acbc61a39cbb\\models\\manifest.json",
+      "detail": "",
+      "executed": true
+    },
+    {
+      "id": "V3-6",
+      "description": "Reproducibility: diff vide sur 2 runs",
+      "gate": "G-3",
+      "phase": "V3",
+      "verdict": "PASS",
+      "measured": "2 runs in-container identiques",
+      "artifact": "eval\\recette-integrale\\2026-07-17-v1.3.2\\V3-6_diff.txt",
+      "detail": "",
+      "executed": true
+    }
+  ],
+  "gates": [
+    {
+      "gate_id": "CE",
+      "description": "Conditions d'entree (bloquant)",
+      "verdict": "PASS",
+      "pass_count": 9,
+      "fail_count": 0,
+      "detail": "9/9 passed"
+    },
+    {
+      "gate_id": "G-0",
+      "description": "Build validation",
+      "verdict": "FAIL",
+      "pass_count": 4,
+      "fail_count": 1,
+      "detail": "4/5 passed"
+    },
+    {
+      "gate_id": "G-1",
+      "description": "Runtime R0 (eliminatoire)",
+      "verdict": "PASS",
+      "pass_count": 4,
+      "fail_count": 0,
+      "detail": "4/4 passed"
+    },
+    {
+      "gate_id": "G-1b",
+      "description": "Offline mode",
+      "verdict": "PASS",
+      "pass_count": 1,
+      "fail_count": 0,
+      "detail": "1/1 passed"
+    },
+    {
+      "gate_id": "G-2",
+      "description": "Training R1.a",
+      "verdict": "FAIL",
+      "pass_count": 2,
+      "fail_count": 4,
+      "detail": "2/6 passed"
+    },
+    {
+      "gate_id": "G-3",
+      "description": "Evaluation R1.b (verrou qualite)",
+      "verdict": "FAIL",
+      "pass_count": 4,
+      "fail_count": 3,
+      "detail": "4/7 passed"
+    }
+  ],
+  "anomalies_protocole": [
+    "V2-1: exception during execution: can only concatenate str (not \"NoneType\") to str",
+    "V2-4: exception during execution: can only concatenate str (not \"NoneType\") to str"
+  ]
+}

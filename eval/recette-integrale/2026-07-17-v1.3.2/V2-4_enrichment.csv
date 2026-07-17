@@ -1,0 +1,11 @@
+text,intent
+absence au travail congé maladie,help_leave
+allocation demi-traitement congé longue durée,help_leave
+allocation invalidité,help_leave
+allocation journalière congé longue durée,help_leave
+allocation journalière pour passage à mi-traitement,help_leave
+allocation pour congé longue durée,help_leave
+allocations journalières,help_leave
+arrêt longue maladie,help_leave
+arrêter mon congé parental,help_leave
+attestation de paiement mutuelle de mes AJ,help_leave

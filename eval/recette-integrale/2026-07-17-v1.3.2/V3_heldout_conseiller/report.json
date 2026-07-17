@@ -1,0 +1,180 @@
+{
+  "mode": "decision",
+  "dataset": "heldout_conseiller.csv",
+  "total": 125,
+  "correct": 107,
+  "accuracy": 0.856,
+  "per_class": {},
+  "confusion": {},
+  "n_errors": 18,
+  "errors": [
+    {
+      "text": "Passez moi le standard",
+      "expected": "parler_conseiller",
+      "predicted": "hors_perimetre",
+      "score": 0.24871636927127838,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "c'est au sujet de la mutuelle",
+      "expected": "parler_conseiller",
+      "predicted": "hors_perimetre",
+      "score": 0.3214356005191803,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "c'est au sujet de la mutuelle et la mutuelle",
+      "expected": "parler_conseiller",
+      "predicted": "hors_perimetre",
+      "score": 0.3189794719219208,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "demandes d'informations",
+      "expected": "parler_conseiller",
+      "predicted": "hors_perimetre",
+      "score": 0.32703709602355957,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "je ne peux pas calculer la mutuelle je suis en demi-traitement",
+      "expected": "parler_conseiller",
+      "predicted": "help_billing",
+      "score": 0.22271427512168884,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "je voudrais avoir une explication",
+      "expected": "parler_conseiller",
+      "predicted": "hors_perimetre",
+      "score": 0.30352523922920227,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "modification en mutuelle santé",
+      "expected": "parler_conseiller",
+      "predicted": "hors_perimetre",
+      "score": 0.6044809818267822,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "mon appel mutuelle a été coupé",
+      "expected": "parler_conseiller",
+      "predicted": "hors_perimetre",
+      "score": 0.31231606006622314,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "mutuelle",
+      "expected": "parler_conseiller",
+      "predicted": "hors_perimetre",
+      "score": 0.45375576615333557,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "mutuelle obligatoire",
+      "expected": "parler_conseiller",
+      "predicted": "hors_perimetre",
+      "score": 0.4891372621059418,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "perte de carte mutuelle",
+      "expected": "parler_conseiller",
+      "predicted": "help_billing",
+      "score": 0.2024591863155365,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "qu'est-ce que ça entraîne le fait d'avoir la mutuelle et sécu mutuelle",
+      "expected": "parler_conseiller",
+      "predicted": "help_transfer",
+      "score": 0.3346692621707916,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "renseignement sur la dématérialisation",
+      "expected": "parler_conseiller",
+      "predicted": "hors_perimetre",
+      "score": 0.25761234760284424,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "renseignement sur la prise de la mutuelle",
+      "expected": "parler_conseiller",
+      "predicted": "help_transfer",
+      "score": 0.46689295768737793,
+      "decision_type": "clarify_inter",
+      "correct": false,
+      "detail": "candidates=[('help_transfer', 0.46689295768737793), ('help_documents', 0.1628848761320114)]"
+    },
+    {
+      "text": "résiliation de mutuelle",
+      "expected": "parler_conseiller",
+      "predicted": "help_cancellation",
+      "score": 0.9963261485099792,
+      "decision_type": "route",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "sans mutuelle",
+      "expected": "parler_conseiller",
+      "predicted": "hors_perimetre",
+      "score": 0.36388662457466125,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "souscrire une mutuelle",
+      "expected": "parler_conseiller",
+      "predicted": "hors_perimetre",
+      "score": 0.4038577377796173,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "vous bénéficiez des services de mutuelle de la mutuelle",
+      "expected": "parler_conseiller",
+      "predicted": "hors_perimetre",
+      "score": 0.2906372845172882,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    }
+  ],
+  "dataset_hash": "1200de4b01be1b4debec0a7499f1e0fc15a7499dd9d4198ac01bf65eb4b89499",
+  "manifest_reference": {
+    "bot_id": "fa4d8b2d-548f-457b-bf65-acbc61a39cbb",
+    "dataset_hash": "ed5915a50296bb8ec80dd260c215f9b4bfbde8bf054af79194205cf6c2526e19",
+    "trained_at": "2026-07-17T21:32:38.995740+00:00"
+  }
+}

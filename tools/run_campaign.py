@@ -205,6 +205,8 @@ def _run_cmd(
         cmd,
         capture_output=True,
         text=True,
+        encoding="utf-8",
+        errors="replace",
         timeout=timeout,
         cwd=cwd or ROOT,
     )
@@ -1023,7 +1025,7 @@ try:
     sys.path.insert(0, str(Path(__file__).resolve().parent))
     import campaign_container as _cc
 
-    _cc.register(EXECUTORS)
+    _cc.register(EXECUTORS, sys.modules[__name__])
 except Exception as _exc:  # noqa: BLE001
     logger.warning("executeurs in-container indisponibles: %s", _exc)
 

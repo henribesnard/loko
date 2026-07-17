@@ -24,7 +24,7 @@ import uuid
 from pathlib import Path
 from typing import Any
 
-import run_campaign as rc
+rc = None  # module run_campaign, injecte par register()
 
 APP = "/app"
 CAMP = "/campaign"
@@ -146,9 +146,22 @@ def exec_v0_1(line, campaign_dir: Path, **ctx: Any) -> None:
         return
     res = _docker(
         image,
-        ["python", "-m", "pytest", "tests/", "-q", "--tb=short"],
-        env={"LOKO_MODE": "test"},
+        [
+            "sh",
+            "-c",
+            "pip install --no-cache-dir -q pytest pytest-asyncio pytest-cov "
+            "&& python -m pytest tests/ -q --tb=short -p no:cacheprovider",
+        ],
+        env={"LOKO_MODE": "test", "HOME": "/tmp"},
         use_mounts=False,
+        extra_docker=[
+            "-v",
+            str((rc.ROOT / "tests").resolve()) + ":/app/tests:ro",
+            "-w",
+            "/app",
+            "--user",
+            "root",
+        ],
         timeout=3600,
     )
     content = res.stdout + "\n" + res.stderr
@@ -797,21 +810,20 @@ from loko.bot.classifier.loader import load_classifier
 clf = load_classifier(bot)
 texts = [r["text"] for r in csv.DictReader(open("/app/eval/datasets/train.csv", encoding="utf-8"))]
 texts = (texts * 3)[:200]
-for t in texts[:10]:
+for t in texts[:50]:
     clf.classify_l1(t)
 def p95(vals):
     s = sorted(vals)
     return s[max(0, int(round(0.95 * len(s))) - 1)]
-a = []
+a, b = [], []
 for t in texts:
-    t0 = time.perf_counter()
+    t0p = time.perf_counter()
+    t0m = time.monotonic_ns()
     clf.classify_l1(t)
-    a.append((time.perf_counter() - t0) * 1000)
-b = []
-for t in texts:
-    t0 = time.monotonic_ns()
-    clf.classify_l1(t)
-    b.append((time.monotonic_ns() - t0) / 1e6)
+    t1m = time.monotonic_ns()
+    t1p = time.perf_counter()
+    a.append((t1p - t0p) * 1000)
+    b.append((t1m - t0m) / 1e6)
 res = {"n": len(texts), "p95_perf_ms": round(p95(a), 2), "p95_mono_ms": round(p95(b), 2)}
 res["ecart_rel"] = round(abs(res["p95_perf_ms"] - res["p95_mono_ms"]) / max(res["p95_perf_ms"], 1e-9), 3)
 print(json.dumps(res))
@@ -1025,7 +1037,9 @@ def exec_v3_6(line, campaign_dir: Path, **ctx: Any) -> None:
 # ──────────────────────────────────────────────────────────────────────
 
 
-def register(executors: dict) -> None:
+def register(executors: dict, rc_module) -> None:
+    global rc
+    rc = rc_module
     executors.update(
         {
             "V0-1": exec_v0_1,

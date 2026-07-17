@@ -1,0 +1,99 @@
+text,intent
+je veux joindre quelqu'un du service adhérent,demande_conseiller
+passez-moi une personne du service s'il vous plaît,demande_conseiller
+je voudrais discuter avec un agent en direct,demande_conseiller
+mettez-moi en relation avec votre équipe,demande_conseiller
+puis-je échanger avec un conseiller de la mutuelle,demande_conseiller
+je souhaite un rendez-vous téléphonique avec un conseiller,demande_conseiller
+un humain peut-il reprendre cette conversation,demande_conseiller
+j'aimerais qu'on me rappelle pour en parler,demande_conseiller
+"ce sujet est compliqué, je préfère l'expliquer à une personne",demande_conseiller
+"votre assistant ne comprend pas, donnez-moi un interlocuteur",demande_conseiller
+comment obtenir un contact direct avec le service,demande_conseiller
+besoin d'une aide humaine pour mon dossier,demande_conseiller
+accès application,help_account
+accès compte en ligne Ameli,help_account
+accès espace personnel en ligne,help_account
+accès site internet impossible,help_account
+accès à mon espace en ligne,help_account
+accès à mon espace personnel Ameli point FR,help_account
+accès à mon espace personnel sur internet,help_account
+accéder au site internet,help_account
+accéder à mon compte Ameli,help_account
+accéder à mon compte adhérent,help_account
+actualiser ma cotisation,help_billing
+aide cotisation mutuelle,help_billing
+aide sur mon prélèvement,help_billing
+annuler mes cotisations mutuelle,help_billing
+arrêt retenue sur salaire,help_billing
+arrêt règlement de la cotisation,help_billing
+au sujet de ma cotisation mutualiste,help_billing
+augmentation du montant de ma cotisation,help_billing
+annuler une demande de résiliation,help_cancellation
+arrêter résiliation,help_cancellation
+attestation employeur pour résilier ma mutuelle,help_cancellation
+besoin d'une lettre de résiliation de prévoyance,help_cancellation
+besoin de la preuve du contrat collectif obligatoire pour résilier,help_cancellation
+certificat de résiliation,help_cancellation
+comment résilier la mutuelle actuelle,help_cancellation
+conseiller pour une résiliation de contrat,help_cancellation
+accéder à mes coordonnées bancaires,help_contact
+adresse postale pour les remboursements,help_contact
+adresse sur mon contrat,help_contact
+avoir conseiller au téléphone pour un changement d'adresse,help_contact
+avoir conseiller pour un problème d'adresse postale,help_contact
+avoir un conseiller pour un changement de RIB,help_contact
+avoir un détail sur un changement de RIB,help_contact
+changement adresse postale retour de courrier,help_contact
+changement d'adresse d'un assuré,help_contact
+changement d'adresse de contact,help_contact
+attestation affiliation sécurité sociale,help_documents
+attestation carte d'assuré social,help_documents
+attestation d'affiliation,help_documents
+attestation d'affiliation sécurité sociale,help_documents
+attestation d'affiliation à l'assurance maladie,help_documents
+attestation d'assurance,help_documents
+attestation d'assurance de la mutuelle,help_documents
+attestation d'assurance de sécurité sociale,help_documents
+attestation d'assurance mutuelle,help_documents
+attestation d'assuré social actualisée,help_documents
+attestation d'ayant droit mutuelle,help_documents
+attestation d'ouverture des droits à l'assurance maladie,help_documents
+attestation d'un ayant droit,help_documents
+attestation de carte d'assuré social,help_documents
+attestation de carte vitale pour mon fils,help_documents
+absence au travail congé maladie,help_leave
+allocation demi-traitement congé longue durée,help_leave
+allocation invalidité,help_leave
+allocation journalière congé longue durée,help_leave
+allocation journalière pour passage à mi-traitement,help_leave
+allocation pour congé longue durée,help_leave
+allocations journalières,help_leave
+arrêt longue maladie,help_leave
+arrêter mon congé parental,help_leave
+attestation de paiement mutuelle de mes AJ,help_leave
+attestation de salaire,help_leave
+attestation de salaire pour congé maternité,help_leave
+attestation maladie longue durée,help_leave
+autorisation d'absence pendant mon arrêt maladie,help_leave
+avancement dossier allocation journalière,help_leave
+adresse pour la télétransmission,help_transfer
+annuler la demande de télétransmission chez la mutuelle,help_transfer
+annuler une télétransmission,help_transfer
+arrêt télétransmission,help_transfer
+au sujet du remboursement par télétransmission,help_transfer
+automatisation de la télétransmission,help_transfer
+automatisation des transferts complémentaire santé,help_transfer
+avoir des renseignements pour mes télétransmissions,help_transfer
+avoir la transmission Noemie,help_transfer
+besoin d'un lien de télétransmission,help_transfer
+ADMR,hors_perimetre
+ALD ambulance,hors_perimetre
+ALD à renouveler,hors_perimetre
+Attestation exonération ticket modérateur,hors_perimetre
+Audistya agréés,hors_perimetre
+C 2 S,hors_perimetre
+C M U,hors_perimetre
+C M U C,hors_perimetre
+C S S,hors_perimetre
+C deux S,hors_perimetre

@@ -1,0 +1,23 @@
+text,expected,predicted,score,decision_type,correct,detail
+espace mutuelle disponibles,help_account,help_transfer,0.32342052459716797,reject,False,
+pour pouvoir créer mon espace Ameli,help_account,help_account,0.3074245750904083,reject,False,
+reçu un courrier pour mettre sur internet j'ai pas internet,help_account,demande_conseiller,0.2766638696193695,escalate,False,
+démarche à faire pour un déménagement changement de département,help_contact,hors_perimetre,0.45127323269844055,reject,False,
+je souhaite savoir comment rentrer mon numéro d'iban,help_contact,help_contact,0.30833330750465393,reject,False,
+carte de mutuelle pas reçu,help_documents,hors_perimetre,0.4003947079181671,reject,False,
+carte mutuelle,help_documents,hors_perimetre,0.4186733663082123,reject,False,
+certificat d'appartenance à la mutuelle,help_documents,hors_perimetre,0.5237430930137634,reject,False,
+certificat d'inscription,help_documents,hors_perimetre,0.43773365020751953,reject,False,
+demande d'attestation de carte vitale,help_documents,hors_perimetre,0.6648067831993103,reject,False,
+information concernant ma carte mutuelle,help_documents,help_account,0.2589593231678009,reject,False,
+justificatif d'affiliation,help_documents,hors_perimetre,0.36663132905960083,reject,False,
+perdu carte adhérent,help_documents,help_account,0.6585720181465149,clarify_inter,False,"candidates=[('help_account', 0.6585720181465149), ('help_contact', 0.12441077828407288)]"
+renseignement pour la carte de mutuelle,help_documents,help_transfer,0.2756003737449646,reject,False,
+télécharger ma carte mutuelle,help_documents,help_account,0.8631834387779236,clarify_inter,False,"candidates=[('help_account', 0.8631834387779236), ('help_transfer', 0.03804320842027664)]"
+information sur la retraite invalidité,help_leave,hors_perimetre,0.49576327204704285,reject,False,
+refus administratif de prestation en espèces,help_leave,help_billing,0.35753798484802246,reject,False,
+renseignement sur le temps partiel thérapeutique,help_leave,hors_perimetre,0.2553301751613617,reject,False,
+renseignements concernant mon arrêt maladie,help_leave,hors_perimetre,0.49385157227516174,reject,False,
+signaler un cld,help_leave,hors_perimetre,0.28702205419540405,reject,False,
+avoir des renseignements sur le dispositif noémie,help_transfer,hors_perimetre,0.49580439925193787,reject,False,
+pas de lien avec ma mutuelle,help_transfer,help_account,0.29216626286506653,reject,False,

@@ -1,0 +1,228 @@
+{
+  "level1": {
+    "num_classes": 9,
+    "num_samples": 185,
+    "duration_s": 278.59,
+    "classes": [
+      "demande_conseiller",
+      "help_account",
+      "help_billing",
+      "help_cancellation",
+      "help_contact",
+      "help_documents",
+      "help_leave",
+      "help_transfer",
+      "hors_perimetre"
+    ]
+  },
+  "level2": {
+    "help_account": {
+      "num_classes": 5,
+      "num_samples": 25,
+      "duration_s": 63.04,
+      "classes": [
+        "compte_bloque",
+        "identifiants_perdus",
+        "mot_de_passe_oublie",
+        "premiere_connexion",
+        "probleme_technique"
+      ]
+    }
+  },
+  "evaluation": {
+    "class_names": [
+      "demande_conseiller",
+      "help_account",
+      "help_billing",
+      "help_cancellation",
+      "help_contact",
+      "help_documents",
+      "help_leave",
+      "help_transfer",
+      "hors_perimetre"
+    ],
+    "confusion_matrix": [
+      [
+        24,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0
+      ],
+      [
+        1,
+        38,
+        0,
+        0,
+        0,
+        1,
+        0,
+        1,
+        0
+      ],
+      [
+        0,
+        0,
+        15,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        14,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        15,
+        0,
+        0,
+        0,
+        1
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        15,
+        0,
+        0,
+        1
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        2,
+        23,
+        0,
+        1
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        14,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        2,
+        1,
+        3,
+        1,
+        9
+      ]
+    ],
+    "accuracy": 0.9027,
+    "per_class_f1": {
+      "demande_conseiller": 0.96,
+      "help_account": 0.962,
+      "help_billing": 0.9677,
+      "help_cancellation": 0.9655,
+      "help_contact": 0.9091,
+      "help_documents": 0.8333,
+      "help_leave": 0.8679,
+      "help_transfer": 0.9032,
+      "hors_perimetre": 0.6429
+    },
+    "advice": [
+      {
+        "type": "confused_pair",
+        "pair": [
+          "help_leave",
+          "hors_perimetre"
+        ],
+        "evidence": "cv",
+        "n_exemples_faibles": 3,
+        "suggestion": "'hors_perimetre' et 'help_leave' se confondent en CV base (3/16 erreurs). Ajoutez des exemples discriminants entre ces deux intentions."
+      },
+      {
+        "type": "confused_pair",
+        "pair": [
+          "help_documents",
+          "help_leave"
+        ],
+        "evidence": "both",
+        "n_exemples_faibles": 2,
+        "avg_margin": 0.063,
+        "suggestion": "Les intentions 'help_documents' et 'help_leave' sont proches en marge (1 exemples avec ecart top1-top2 < 0.15, marge moyenne 0.063). Ajoutez des exemples discriminants entre ces deux intentions. Exemples a faible marge : \"attestation de paiement mutuelle de mes AJ\".",
+        "verbatims": [
+          "attestation de paiement mutuelle de mes AJ"
+        ]
+      },
+      {
+        "type": "confused_pair",
+        "pair": [
+          "help_contact",
+          "hors_perimetre"
+        ],
+        "evidence": "cv",
+        "n_exemples_faibles": 2,
+        "suggestion": "'hors_perimetre' et 'help_contact' se confondent en CV base (2/16 erreurs). Ajoutez des exemples discriminants entre ces deux intentions."
+      }
+    ],
+    "cv_method": "base_model_frozen_3seeds",
+    "duration_s": 4.54,
+    "n_seeds": 3,
+    "margin_weak_pairs": [
+      {
+        "pair": [
+          "help_documents",
+          "help_leave"
+        ],
+        "count": 1,
+        "avg_margin": 0.063,
+        "verbatims": [
+          "attestation de paiement mutuelle de mes AJ"
+        ]
+      }
+    ]
+  },
+  "inference_latency_ms": {
+    "p50": 42.79,
+    "p95": 70.75,
+    "methodology": {
+      "warmup": 10,
+      "measured": 100,
+      "gc_before": true,
+      "threads_reset": true
+    }
+  },
+  "manifest": "written",
+  "profile": {
+    "l1_train_s": 288.73,
+    "eval_s": 12.28,
+    "l2_train_s": 63.04,
+    "latency_measure_s": 15.66,
+    "total_s": 403.1
+  }
+}
