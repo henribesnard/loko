@@ -146,7 +146,7 @@ def exec_v0_1(line, campaign_dir: Path, **ctx: Any) -> None:
         return
     res = _docker(
         image,
-        ["pytest", "tests/", "-q", "--tb=short"],
+        ["python", "-m", "pytest", "tests/", "-q", "--tb=short"],
         env={"LOKO_MODE": "test"},
         use_mounts=False,
         timeout=3600,
@@ -373,9 +373,16 @@ def exec_v1_4(line, campaign_dir: Path, **ctx: Any) -> None:
     name = "loko-camp-v14"
     _rm_container(name)
     try:
+        boot_cmd = (
+            "import logging; "
+            "logging.basicConfig(level=logging.INFO, "
+            "format='%(levelname)s %(name)s %(message)s'); "
+            "import uvicorn; "
+            "uvicorn.run('loko.main:app', host='0.0.0.0', port=8000)"
+        )
         res = _docker(
             image,
-            [],
+            ["python", "-c", boot_cmd],
             campaign_dir=campaign_dir,
             env=_server_env() | {"LOKO_DATA_DIR": f"{APP}/data"},
             name=name,
@@ -476,7 +483,7 @@ def _train(
 ):
     args = [
         "python",
-        "tools/train_bot_offline.py",
+        f"{APP}/tools/train_bot_offline.py",
         "--bot-dir",
         f"{APP}/data/bots/{bot_id}",
         "--output",
@@ -488,6 +495,12 @@ def _train(
         image,
         args,
         campaign_dir=campaign_dir,
+        env={
+            "LOKO_DATA_DIR": f"{APP}/data",
+            "HF_HOME": "/tmp/hf",
+            "TRANSFORMERS_CACHE": "/tmp/hf",
+        },
+        extra_docker=["-w", "/tmp"],  # cwd inscriptible (checkpoints/)
         timeout=1500,
         detach=detach,
         name=name,
