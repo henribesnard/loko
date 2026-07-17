@@ -215,4 +215,4 @@ jobs:
             echo "❌ ERROR: Version v$VERSION already exists (Interdit V1)"
             echo "You must bump the version in pyproject.toml"
             exit 1
-          fi
+          fi
