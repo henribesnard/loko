@@ -1,0 +1,8 @@
+
+Traceback (most recent call last):
+  File "/campaign/v26_measure.py", line 5, in <module>
+    clf = load_classifier(bot)
+          ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/loko/bot/classifier/loader.py", line 36, in load_classifier
+    raise ComponentUnavailableError(
+loko.bot.errors.ComponentUnavailableError: classifier_l1 unavailable for bot fa4d8b2d-548f-457b-bf65-acbc61a39cbb: Level 1 classifier not trained

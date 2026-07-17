@@ -1,0 +1,72 @@
+{
+  "bot_id": "fa4d8b2d-548f-457b-bf65-acbc61a39cbb",
+  "n_intents": 9,
+  "intent_ids": [
+    "demande_conseiller",
+    "help_account",
+    "help_billing",
+    "help_cancellation",
+    "help_contact",
+    "help_documents",
+    "help_leave",
+    "help_transfer",
+    "hors_perimetre"
+  ],
+  "checks": [
+    {
+      "check": "9_intents",
+      "pass": true,
+      "detail": "found 9, missing: []"
+    },
+    {
+      "check": "examples_help_account",
+      "pass": true,
+      "detail": "15 examples"
+    },
+    {
+      "check": "examples_help_billing",
+      "pass": true,
+      "detail": "16 examples"
+    },
+    {
+      "check": "examples_help_cancellation",
+      "pass": true,
+      "detail": "15 examples"
+    },
+    {
+      "check": "examples_help_contact",
+      "pass": true,
+      "detail": "16 examples"
+    },
+    {
+      "check": "examples_help_documents",
+      "pass": true,
+      "detail": "16 examples"
+    },
+    {
+      "check": "examples_help_leave",
+      "pass": true,
+      "detail": "16 examples"
+    },
+    {
+      "check": "examples_help_transfer",
+      "pass": true,
+      "detail": "15 examples"
+    },
+    {
+      "check": "examples_hors_perimetre",
+      "pass": true,
+      "detail": "16 examples (system)"
+    },
+    {
+      "check": "examples_demande_conseiller",
+      "pass": true,
+      "detail": "15 examples (system)"
+    },
+    {
+      "check": "l2_help_account",
+      "pass": true,
+      "detail": "5 sub-motifs: ['mot_de_passe_oublie', 'identifiants_perdus', 'compte_bloque', 'premiere_connexion', 'probleme_technique']"
+    }
+  ]
+}

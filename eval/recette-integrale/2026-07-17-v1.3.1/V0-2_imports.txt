@@ -1,0 +1,5 @@
+torch=2.12.1+cpu, cuda=False
+setfit=ok
+st=ok
+
+There was a problem when trying to write in your cache folder (/app/.hf_cache/hub). You should set the environment variable TRANSFORMERS_CACHE to a writable directory.

@@ -1,0 +1,16 @@
+
+============================================================
+  LOKO Offline Trainer
+============================================================
+  Bot: fa4d8b2d-548f-457b-bf65-acbc61a39cbb
+  Config: 9 intents, 140 examples
+
+  Training...
+  ==================================================
+  [L1] Preparing training data...
+  [L1] Training: 175 samples, 9 classes
+
+There was a problem when trying to write in your cache folder (/app/.hf_cache/hub). You should set the environment variable TRANSFORMERS_CACHE to a writable directory.
+model_head.pkl not found in /app/models/base/minilm, initialising classification head with random weights. You should TRAIN this model on a downstream task to use it for predictions and inference.
+
+  Error: Training failed: [Errno 13] Permission denied: 'checkpoints'

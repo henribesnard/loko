@@ -1,0 +1,8 @@
+
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "/app/loko/testing/mocks.py", line 158, in __init__
+    _check_test_env("MockEscalationProvider")
+  File "/app/loko/testing/mocks.py", line 31, in _check_test_env
+    raise RuntimeError(
+RuntimeError: MockEscalationProvider cannot be used outside test environment. Set LOKO_ENV=test or configure a real provider.

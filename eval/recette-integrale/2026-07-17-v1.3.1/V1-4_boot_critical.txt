@@ -1,0 +1,8 @@
+INFO:     172.17.0.1:52004 - "GET /health HTTP/1.1" 200 OK
+
+INFO:     Started server process [1]
+INFO:     Waiting for application startup.
+Published bot unavailable at startup: bot_id=v14-62a9d784 name='V1-4 jetable (publiÃ© sans modÃ¨le)' error=classifier_l1_unavailable code=unknown
+STARTUP CHECK: 1/1 published bot(s) have unavailable models - they will fail-fast on requests
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)

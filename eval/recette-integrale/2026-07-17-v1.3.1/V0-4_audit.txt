@@ -1,0 +1,10 @@
+=== pip audit (in-container) ===
+
+/usr/local/bin/python: No module named pip_audit
+
+=== fallback pip check ===
+No broken requirements found.
+
+
+=== npm audit (hôte, informatif) ===
+npm audit indisponible sur l'hôte: [WinError 2] Le fichier spécifié est introuvable

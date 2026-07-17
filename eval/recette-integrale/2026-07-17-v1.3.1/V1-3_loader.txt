@@ -1,0 +1,6 @@
+
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "/app/loko/bot/classifier/loader.py", line 36, in load_classifier
+    raise ComponentUnavailableError(
+loko.bot.errors.ComponentUnavailableError: classifier_l1 unavailable for bot v13-ef443cd9: Level 1 classifier not trained
