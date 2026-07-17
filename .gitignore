@@ -78,3 +78,6 @@ nul
 
 # Runtime data (bots, comptes, modèles) — jamais versionné (préparation campagne 2026-07-17)
 data/
+
+# Campagne en cours : artefacts non trackés pour CE-1 ; archivage post-verdict via git add -f
+eval/recette-integrale/
