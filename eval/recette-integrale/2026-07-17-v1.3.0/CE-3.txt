@@ -1,0 +1,1 @@
+image=loko:v1.3.0, size=1001MB

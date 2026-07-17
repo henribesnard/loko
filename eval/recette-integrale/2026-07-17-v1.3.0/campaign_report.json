@@ -1,0 +1,422 @@
+{
+  "version": "1.3.0",
+  "tag": "v1.3.0",
+  "commit": "a89cac3",
+  "image_digest": "sha256:c0b31e001bfed",
+  "bot_id": "fa4d8b2d-548f-457b-bf65-acbc61a39cbb",
+  "manifest_hash": "",
+  "protocol_version": "v2.2",
+  "runner_version": "1.0.0",
+  "machine_reference": "poste-ref-ryzen7-5800HS-win11-docker28.5-wsl2",
+  "dry_run": false,
+  "started_at": "2026-07-17T20:30:24.770678+00:00",
+  "completed_at": "2026-07-17T20:32:50.153952+00:00",
+  "overall_verdict": "NON VALIDE",
+  "lines": [
+    {
+      "id": "CE-1",
+      "description": "Worktree clean, main branch",
+      "gate": "CE",
+      "phase": "CE",
+      "verdict": "PASS",
+      "measured": "branch=main, clean=yes",
+      "artifact": "eval\\recette-integrale\\2026-07-17-v1.3.0\\CE-1.txt",
+      "detail": "",
+      "executed": true
+    },
+    {
+      "id": "CE-2",
+      "description": "Tag present + triple version check",
+      "gate": "CE",
+      "phase": "CE",
+      "verdict": "PASS",
+      "measured": "tag=v1.3.0, pyproject=1.3.0",
+      "artifact": "eval\\recette-integrale\\2026-07-17-v1.3.0\\CE-2.txt",
+      "detail": "",
+      "executed": true
+    },
+    {
+      "id": "CE-3",
+      "description": "Docker image built + size <= 1.6 Go",
+      "gate": "CE",
+      "phase": "CE",
+      "verdict": "PASS",
+      "measured": "image=loko:v1.3.0, size=1001MB",
+      "artifact": "eval\\recette-integrale\\2026-07-17-v1.3.0\\CE-3.txt",
+      "detail": "",
+      "executed": true
+    },
+    {
+      "id": "CE-4",
+      "description": "Frozen datasets present + hashes match",
+      "gate": "CE",
+      "phase": "CE",
+      "verdict": "PASS",
+      "measured": "5 files verified",
+      "artifact": "eval\\recette-integrale\\2026-07-17-v1.3.0\\CE-4.txt",
+      "detail": "",
+      "executed": true
+    },
+    {
+      "id": "CE-5",
+      "description": "Dataset intersection check (no leakage)",
+      "gate": "CE",
+      "phase": "CE",
+      "verdict": "PASS",
+      "measured": "exit 0 - no intersection",
+      "artifact": "eval\\recette-integrale\\2026-07-17-v1.3.0\\CE-5.txt",
+      "detail": "",
+      "executed": true
+    },
+    {
+      "id": "CE-6",
+      "description": "loko-eval installed and importable",
+      "gate": "CE",
+      "phase": "CE",
+      "verdict": "PASS",
+      "measured": "loko-eval importable",
+      "artifact": "eval\\recette-integrale\\2026-07-17-v1.3.0\\CE-6.txt",
+      "detail": "",
+      "executed": true
+    },
+    {
+      "id": "CE-7",
+      "description": "Campaign artifacts directory exists",
+      "gate": "CE",
+      "phase": "CE",
+      "verdict": "PASS",
+      "measured": "eval\\recette-integrale\\2026-07-17-v1.3.0",
+      "artifact": "eval\\recette-integrale\\2026-07-17-v1.3.0",
+      "detail": "",
+      "executed": true
+    },
+    {
+      "id": "CE-8",
+      "description": "LLM provider ping (temp 0)",
+      "gate": "CE",
+      "phase": "CE",
+      "verdict": "PASS",
+      "measured": "LLM config present",
+      "artifact": "eval\\recette-integrale\\2026-07-17-v1.3.0\\CE-8.txt",
+      "detail": "",
+      "executed": true
+    },
+    {
+      "id": "CE-9",
+      "description": "Bot conformity: 9 intents + L2 labels",
+      "gate": "CE",
+      "phase": "CE",
+      "verdict": "PASS",
+      "measured": "9 intents, L2 OK",
+      "artifact": "eval\\recette-integrale\\2026-07-17-v1.3.0\\CE-9_conformity.json",
+      "detail": "",
+      "executed": true
+    },
+    {
+      "id": "V0-1",
+      "description": "pytest: all tests pass",
+      "gate": "G-0",
+      "phase": "V0",
+      "verdict": "FAIL",
+      "measured": "exit 1",
+      "artifact": "",
+      "detail": " fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: \"function\", \"class\", \"module\", \"package\", \"session\"\n\n  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))\nsys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute\n",
+      "executed": true
+    },
+    {
+      "id": "V0-2",
+      "description": "ML imports (PyTorch, SetFit)",
+      "gate": "G-0",
+      "phase": "V0",
+      "verdict": "PASS",
+      "measured": "torch=2.10.0+cpu, cuda=False\nsetfit=ok\nst=ok",
+      "artifact": "eval\\recette-integrale\\2026-07-17-v1.3.0\\V0-2_imports.txt",
+      "detail": "",
+      "executed": true
+    },
+    {
+      "id": "V0-3",
+      "description": "Anti-mock grep (0 occurrences)",
+      "gate": "G-0",
+      "phase": "V0",
+      "verdict": "PASS",
+      "measured": "0 occurrences",
+      "artifact": "eval\\recette-integrale\\2026-07-17-v1.3.0\\V0-3_grep.txt",
+      "detail": "",
+      "executed": true
+    },
+    {
+      "id": "V0-4",
+      "description": "npm/pip audit (0 vulnerabilities)",
+      "gate": "G-0",
+      "phase": "V0",
+      "verdict": "FAIL",
+      "measured": "EXCEPTION: [WinError 2] Le fichier spécifié est introuvable",
+      "artifact": "",
+      "detail": "",
+      "executed": true
+    },
+    {
+      "id": "V0-5",
+      "description": "Image size by inspect <= 1.6 Go",
+      "gate": "G-0",
+      "phase": "V0",
+      "verdict": "PASS",
+      "measured": "1001MB",
+      "artifact": "eval\\recette-integrale\\2026-07-17-v1.3.0\\V0-5_size.txt",
+      "detail": "",
+      "executed": true
+    },
+    {
+      "id": "V1-1",
+      "description": "Server startup + health check",
+      "gate": "G-1",
+      "phase": "V1",
+      "verdict": "FAIL",
+      "measured": "",
+      "artifact": "",
+      "detail": "NON EXECUTE - requires running container or manual execution",
+      "executed": false
+    },
+    {
+      "id": "V1-2",
+      "description": "No-mock guard active at runtime",
+      "gate": "G-1",
+      "phase": "V1",
+      "verdict": "FAIL",
+      "measured": "",
+      "artifact": "",
+      "detail": "NON EXECUTE - requires running container or manual execution",
+      "executed": false
+    },
+    {
+      "id": "V1-3",
+      "description": "Classifier loader integrity",
+      "gate": "G-1",
+      "phase": "V1",
+      "verdict": "FAIL",
+      "measured": "",
+      "artifact": "",
+      "detail": "NON EXECUTE - requires running container or manual execution",
+      "executed": false
+    },
+    {
+      "id": "V1-4",
+      "description": "CRITICAL log at boot (check_published_bots)",
+      "gate": "G-1",
+      "phase": "V1",
+      "verdict": "FAIL",
+      "measured": "",
+      "artifact": "",
+      "detail": "NON EXECUTE - requires running container or manual execution",
+      "executed": false
+    },
+    {
+      "id": "V1-5",
+      "description": "Offline mode (HF_HUB_OFFLINE=1)",
+      "gate": "G-1b",
+      "phase": "V1",
+      "verdict": "FAIL",
+      "measured": "",
+      "artifact": "",
+      "detail": "NON EXECUTE - requires running container or manual execution",
+      "executed": false
+    },
+    {
+      "id": "V2-1",
+      "description": "Training time <= 300s",
+      "gate": "G-2",
+      "phase": "V2",
+      "verdict": "FAIL",
+      "measured": "",
+      "artifact": "",
+      "detail": "NON EXECUTE - requires running container or manual execution",
+      "executed": false
+    },
+    {
+      "id": "V2-2",
+      "description": "L2 coverage (help_account 5 labels)",
+      "gate": "G-2",
+      "phase": "V2",
+      "verdict": "FAIL",
+      "measured": "",
+      "artifact": "",
+      "detail": "NON EXECUTE - requires running container or manual execution",
+      "executed": false
+    },
+    {
+      "id": "V2-3",
+      "description": "Atomicity (train -> publish -> restart -> identical)",
+      "gate": "G-2",
+      "phase": "V2",
+      "verdict": "FAIL",
+      "measured": "",
+      "artifact": "",
+      "detail": "NON EXECUTE - requires running container or manual execution",
+      "executed": false
+    },
+    {
+      "id": "V2-4",
+      "description": "Improvement cycle: pair detected + re-train",
+      "gate": "G-2",
+      "phase": "V2",
+      "verdict": "FAIL",
+      "measured": "",
+      "artifact": "",
+      "detail": "NON EXECUTE - requires running container or manual execution",
+      "executed": false
+    },
+    {
+      "id": "V2-5",
+      "description": "Improvement cycle: verify pair resolved",
+      "gate": "G-2",
+      "phase": "V2",
+      "verdict": "FAIL",
+      "measured": "",
+      "artifact": "",
+      "detail": "NON EXECUTE - requires running container or manual execution",
+      "executed": false
+    },
+    {
+      "id": "V2-6",
+      "description": "Classification P95 <= 50ms (machine de reference)",
+      "gate": "G-2",
+      "phase": "V2",
+      "verdict": "FAIL",
+      "measured": "",
+      "artifact": "",
+      "detail": "NON EXECUTE - requires running container or manual execution",
+      "executed": false
+    },
+    {
+      "id": "V3-0",
+      "description": "Sweep Pareto 3-axis + selection",
+      "gate": "G-3",
+      "phase": "V3",
+      "verdict": "FAIL",
+      "measured": "selection.json not produced",
+      "artifact": "",
+      "detail": "\nError: classifier_l1 unavailable for bot fa4d8b2d-548f-457b-bf65-acbc61a39cbb: Level 1 classifier not trained\n",
+      "executed": true
+    },
+    {
+      "id": "V3-1",
+      "description": "GNG-1 >= 85% (heldout_metier)",
+      "gate": "G-3",
+      "phase": "V3",
+      "verdict": "FAIL",
+      "measured": "report.json not produced",
+      "artifact": "",
+      "detail": "\nError: classifier_l1 unavailable for bot fa4d8b2d-548f-457b-bf65-acbc61a39cbb: Level 1 classifier not trained\n",
+      "executed": true
+    },
+    {
+      "id": "V3-2",
+      "description": "GNG-2 >= 90% (heldout_conseiller)",
+      "gate": "G-3",
+      "phase": "V3",
+      "verdict": "FAIL",
+      "measured": "report.json not produced",
+      "artifact": "",
+      "detail": "\nError: classifier_l1 unavailable for bot fa4d8b2d-548f-457b-bf65-acbc61a39cbb: Level 1 classifier not trained\n",
+      "executed": true
+    },
+    {
+      "id": "V3-3",
+      "description": "GNG-3 >= 80%, routes directes <= 5 (heldout_horsscope)",
+      "gate": "G-3",
+      "phase": "V3",
+      "verdict": "FAIL",
+      "measured": "report.json not produced",
+      "artifact": "",
+      "detail": "\nError: classifier_l1 unavailable for bot fa4d8b2d-548f-457b-bf65-acbc61a39cbb: Level 1 classifier not trained\n",
+      "executed": true
+    },
+    {
+      "id": "V3-4",
+      "description": "Pieges >= 12/15 commentes",
+      "gate": "G-3",
+      "phase": "V3",
+      "verdict": "FAIL",
+      "measured": "report.json not produced",
+      "artifact": "",
+      "detail": "\nError: classifier_l1 unavailable for bot fa4d8b2d-548f-457b-bf65-acbc61a39cbb: Level 1 classifier not trained\n",
+      "executed": true
+    },
+    {
+      "id": "V3-5",
+      "description": "Modele + seuils + manifeste geles",
+      "gate": "G-3",
+      "phase": "V3",
+      "verdict": "FAIL",
+      "measured": "manifest.json not found",
+      "artifact": "",
+      "detail": "",
+      "executed": true
+    },
+    {
+      "id": "V3-6",
+      "description": "Reproducibility: diff vide sur 2 runs",
+      "gate": "G-3",
+      "phase": "V3",
+      "verdict": "FAIL",
+      "measured": "run 1 did not produce report.json",
+      "artifact": "",
+      "detail": "",
+      "executed": true
+    }
+  ],
+  "gates": [
+    {
+      "gate_id": "CE",
+      "description": "Conditions d'entree (bloquant)",
+      "verdict": "PASS",
+      "pass_count": 9,
+      "fail_count": 0,
+      "detail": "9/9 passed"
+    },
+    {
+      "gate_id": "G-0",
+      "description": "Build validation",
+      "verdict": "FAIL",
+      "pass_count": 3,
+      "fail_count": 2,
+      "detail": "3/5 passed"
+    },
+    {
+      "gate_id": "G-1",
+      "description": "Runtime R0 (eliminatoire)",
+      "verdict": "FAIL",
+      "pass_count": 0,
+      "fail_count": 4,
+      "detail": "0/4 passed"
+    },
+    {
+      "gate_id": "G-1b",
+      "description": "Offline mode",
+      "verdict": "FAIL",
+      "pass_count": 0,
+      "fail_count": 1,
+      "detail": "0/1 passed"
+    },
+    {
+      "gate_id": "G-2",
+      "description": "Training R1.a",
+      "verdict": "FAIL",
+      "pass_count": 0,
+      "fail_count": 6,
+      "detail": "0/6 passed"
+    },
+    {
+      "gate_id": "G-3",
+      "description": "Evaluation R1.b (verrou qualite)",
+      "verdict": "FAIL",
+      "pass_count": 0,
+      "fail_count": 7,
+      "detail": "0/7 passed"
+    }
+  ],
+  "anomalies_protocole": [
+    "V0-4: exception during execution: [WinError 2] Le fichier spécifié est introuvable"
+  ]
+}

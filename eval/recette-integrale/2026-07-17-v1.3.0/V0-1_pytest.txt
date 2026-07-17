@@ -1,0 +1,100 @@
+..................................................................F
+================================== FAILURES ===================================
+________________ TestSetFitIntegration.test_train_and_classify ________________
+tests\bot\test_classifier.py:236: in test_train_and_classify
+    result = clf.train(texts, labels, num_iterations=5, num_epochs=1)
+loko\bot\classifier\setfit_service.py:119: in train
+    model = SetFitModel.from_pretrained(
+..\..\AppData\Local\Programs\Python\Python310\lib\site-packages\huggingface_hub\utils\_validators.py:114: in _inner_fn
+    return fn(*args, **kwargs)
+..\..\AppData\Local\Programs\Python\Python310\lib\site-packages\huggingface_hub\hub_mixin.py:568: in from_pretrained
+    instance = cls._from_pretrained(
+..\..\AppData\Local\Programs\Python\Python310\lib\site-packages\huggingface_hub\utils\_validators.py:114: in _inner_fn
+    return fn(*args, **kwargs)
+..\..\AppData\Local\Programs\Python\Python310\lib\site-packages\setfit\modeling.py:752: in _from_pretrained
+    model_body = SentenceTransformer(model_id, **sentence_transformers_kwargs)
+..\..\AppData\Local\Programs\Python\Python310\lib\site-packages\sentence_transformers\SentenceTransformer.py:327: in __init__
+    modules, self.module_kwargs = self._load_sbert_model(
+..\..\AppData\Local\Programs\Python\Python310\lib\site-packages\sentence_transformers\SentenceTransformer.py:2305: in _load_sbert_model
+    module = module_class.load(
+..\..\AppData\Local\Programs\Python\Python310\lib\site-packages\sentence_transformers\models\Transformer.py:366: in load
+    return cls(model_name_or_path=model_name_or_path, **init_kwargs)
+..\..\AppData\Local\Programs\Python\Python310\lib\site-packages\sentence_transformers\models\Transformer.py:89: in __init__
+    self._load_model(model_name_or_path, config, cache_dir, backend, is_peft_model, **model_args)
+..\..\AppData\Local\Programs\Python\Python310\lib\site-packages\sentence_transformers\models\Transformer.py:197: in _load_model
+    self.auto_model = AutoModel.from_pretrained(
+..\..\AppData\Local\Programs\Python\Python310\lib\site-packages\transformers\models\auto\auto_factory.py:564: in from_pretrained
+    return model_class.from_pretrained(
+..\..\AppData\Local\Programs\Python\Python310\lib\site-packages\transformers\modeling_utils.py:3994: in from_pretrained
+    with safe_open(resolved_archive_file, framework="pt") as f:
+E   OSError: Le fichier de pagination est insuffisant pour terminer cette opération. (os error 1455)
+============================== warnings summary ===============================
+tools\run_campaign.py:64
+  C:\Users\henri\Projets\loko\tools\run_campaign.py:64: PytestCollectionWarning: cannot collect test class 'TestLine' because it has a __init__ constructor (from: tests/test_campaign_tools.py)
+    @dataclass
+
+tests/bot/test_bot_api.py: 35 warnings
+  C:\Users\henri\Projets\loko\loko\main.py:436: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    @app.on_event("startup")
+
+tests/bot/test_bot_api.py: 140 warnings
+  C:\Users\henri\AppData\Local\Programs\Python\Python310\lib\site-packages\fastapi\applications.py:4547: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    return self.router.on_event(event_type)
+
+tests/bot/test_bot_api.py: 35 warnings
+  C:\Users\henri\Projets\loko\loko\main.py:443: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    @app.on_event("startup")
+
+tests/bot/test_bot_api.py: 35 warnings
+  C:\Users\henri\Projets\loko\loko\main.py:521: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    @app.on_event("startup")
+
+tests/bot/test_bot_api.py: 35 warnings
+  C:\Users\henri\Projets\loko\loko\main.py:526: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    @app.on_event("startup")
+
+tests/bot/test_bot_api.py: 34 warnings
+  C:\Users\henri\AppData\Local\Programs\Python\Python310\lib\site-packages\httpx\_client.py:690: DeprecationWarning: The 'app' shortcut is now deprecated. Use the explicit style 'transport=WSGITransport(app=...)' instead.
+    warnings.warn(message, DeprecationWarning)
+
+tests/bot/test_bot_api.py::TestTemplateValidation::test_accept_valid_templates
+  C:\Users\henri\AppData\Local\Programs\Python\Python310\lib\site-packages\pydantic\main.py:389: UserWarning: Pydantic serializer warnings:
+    Expected `MessageTemplate` but got `dict` with value `{'key': <TemplateKey.FIN:...dbye.', 'variables': []}` - serialized value may not be as expected
+    return self.__pydantic_serializer__.to_python(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/bot/test_classifier.py::TestSetFitIntegration::test_train_and_classify
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 66 passed, 316 warnings in 80.33s (0:01:20)
+
+C:\Users\henri\AppData\Local\Programs\Python\Python310\lib\site-packages\pytest_asyncio\plugin.py:208: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+sys:1: DeprecationWarning: builtin type swigvarlink has no __module__ attribute
