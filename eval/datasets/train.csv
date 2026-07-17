@@ -1,0 +1,126 @@
+text,intent
+accès au compte Ameli point FR,help_account
+accès compte personnel sur mon site mutuelle,help_account
+accès en ligne,help_account
+accès espace perso,help_account
+accès site mutuelle,help_account
+accès à l'espace personnel internet de ma fille,help_account
+accès à mon application mutuelle,help_account
+accès à mon compte en ligne,help_account
+accès à mon compte mutuelle,help_account
+accès à mon espace adhérent,help_account
+accès à mon espace client,help_account
+accès à mon espace internet,help_account
+accès à mon espace personnel,help_account
+accéder au compte internet,help_account
+mutuelle connexion au compte Ameli,help_account
+appel de cotisation mutuelle,help_billing
+attestation de paiement des cotisations,help_billing
+augmentation des cotisations,help_billing
+calcul de mes cotisations,help_billing
+calcul montant de la cotisation conjoint,help_billing
+changement du montant de ma cotisation,help_billing
+comment effectuer le paiement de mes cotisations,help_billing
+comprendre le mode de calcul des cotisations,help_billing
+comprendre le prélèvement sur mon salaire,help_billing
+comprendre mes cotisations,help_billing
+comprendre mon échéancier,help_billing
+concernant le prélèvement de la mutuelle,help_billing
+connaître le coût de la mutuelle,help_billing
+connaître le montant de ma cotisation,help_billing
+contestation cotisation,help_billing
+cotisation mutuelle au prélèvement automatique,help_billing
+annuler ma résiliation,help_cancellation
+attestation de résiliation,help_cancellation
+changement de mutuelle,help_cancellation
+comment résilier la mutuelle,help_cancellation
+conditions de résiliation mutuelle,help_cancellation
+courrier résiliation mutuelle,help_cancellation
+demande de résiliation de contrat mutuelle,help_cancellation
+demande résiliation prévoyance,help_cancellation
+délai de résiliation,help_cancellation
+effectuer une résiliation,help_cancellation
+information sur la résiliation d'un bénéficiaire,help_cancellation
+justificatif résiliation mutuelle obligatoire,help_cancellation
+où en est la résiliation de mon contrat,help_cancellation
+pouvoir résilier ma mutuelle,help_cancellation
+procédure de résiliation,help_cancellation
+actualiser mon adresse email,help_contact
+actualiser mon adresse postale,help_contact
+adresse postale erronée,help_contact
+ajouter un RIB,help_contact
+besoin de changer d'adresse courriel,help_contact
+besoin de changer mon RIB,help_contact
+changement RIB assurance maladie,help_contact
+changement coordonnées bancaires familiale,help_contact
+changement d'adresse après déménagement,help_contact
+changement d'adresse courriel,help_contact
+changement d'adresse dans mon dossier,help_contact
+changement d'adresse de domicile,help_contact
+changement d'adresse et de RIB,help_contact
+changement de IBAN,help_contact
+changement de RIB pour les remboursements,help_contact
+changement de coordonnées personnelles,help_contact
+aide pour la carte tiers payant,help_documents
+attestation CPAM,help_documents
+attestation avec la date d'effet,help_documents
+attestation d'affiliation à la sécurité sociale,help_documents
+attestation d'assurance maladie,help_documents
+attestation d'assuré social,help_documents
+attestation d'ayant droit,help_documents
+attestation d'ouverture de droits à la sécurité sociale,help_documents
+attestation de carte vitale,help_documents
+attestation de couverture sociale,help_documents
+attestation de droits,help_documents
+attestation de droits de la sécurité sociale,help_documents
+attestation de droits en urgence,help_documents
+attestation de droits perdue,help_documents
+attestation mutuelle,help_documents
+attestation mutuelle pour ma fille,help_documents
+allocation d'invalidité,help_leave
+allocation journalière,help_leave
+allocation journalière pour arrêt de travail prolongé,help_leave
+allocation longue maladie,help_leave
+arrêt de maladie,help_leave
+arrêt de travail,help_leave
+arrêt maladie passage à demi-traitement,help_leave
+attestation de salaire à remplir,help_leave
+attestation indemnité journalière,help_leave
+attestation à remplir pour le versement de l'ijss,help_leave
+autorisation de sortie pendant un congé maladie,help_leave
+comment activer le maintien de salaire,help_leave
+comment déclarer un arrêt de travail,help_leave
+compensation perte salaire,help_leave
+complément de salaire en arrêt maladie,help_leave
+indemnités journalières,help_leave
+activer le lien Noemie,help_transfer
+annuler la télétransmission,help_transfer
+arrêter la télétransmission,help_transfer
+au sujet des télétransmissions,help_transfer
+bénéficier de la télétransmission,help_transfer
+codes de télétransmission,help_transfer
+comment faire une télétrans,help_transfer
+comment mettre en place la télétransmission Noemie,help_transfer
+comment se fait la télétransmission entre le mutuelle et la sécu,help_transfer
+connexion Noemie,help_transfer
+contrat Noemie,help_transfer
+déconnecter la mutuelle de ma sécurité sociale,help_transfer
+déconnexion du service Noemie,help_transfer
+est-ce que le lien Noemie est créé avec ma nouvelle mutuelle,help_transfer
+explications fonctionnement Noemie,help_transfer
+accord préalable pour une prescription médicale de transport,hors_perimetre
+accusé réception de ma déclaration de grossesse,hors_perimetre
+achat de fauteuil roulant remboursement,hors_perimetre
+achat de lentilles de contact,hors_perimetre
+activer un contrat logement,hors_perimetre
+adhérer à une complémentaire santé,hors_perimetre
+adresse postale de la mutuelle,hors_perimetre
+adresse pour envoyer un devis dentaire,hors_perimetre
+agrément pour une cure thermale,hors_perimetre
+aide pour le remboursement pour une prothèse dentaire,hors_perimetre
+bénéficiaire capital décès,hors_perimetre
+changer les verres,hors_perimetre
+comment déclarer un décès,hors_perimetre
+déclaration accident de travail,hors_perimetre
+déclarer un accident corporel,hors_perimetre
+prise en charge hospitalisation,hors_perimetre

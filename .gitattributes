@@ -1,0 +1,10 @@
+# Normalisation des fins de ligne (assainissement P3, préparation campagne 2026-07-17)
+# Évite les faux "75 fichiers modifiés" CRLF/LF entre checkout Windows et conteneur Linux.
+* text=auto
+
+# Scripts shell : LF obligatoire (exécution in-container)
+*.sh text eol=lf
+
+# Datasets figés : AUCUNE conversion (byte-exact sur toutes plateformes) —
+# les fichiers sont générés en LF natif et les hash CE-3 (HASHES.sha256) portent sur ces octets
+eval/datasets/** -te
