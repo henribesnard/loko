@@ -75,3 +75,6 @@ data/bots/*/models/level2_*/model_head.pkl
 
 # Windows artifacts
 nul
+
+# Runtime data (bots, comptes, modèles) — jamais versionné (préparation campagne 2026-07-17)
+data/
