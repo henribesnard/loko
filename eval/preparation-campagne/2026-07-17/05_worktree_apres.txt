@@ -1,0 +1,9 @@
+# P3 — Worktree après assainissement — 2026-07-17
+# Diagnostic : les 75 'M' du dry-run étaient des artefacts CRLF (0 diff de contenu réel, preuve : comparaison sha256 après tr -d '\r' sur les 75 fichiers).
+# Remède : .gitattributes (text=auto global, eval/datasets/** -text, *.sh eol=lf) — aucun contenu committé depuis les 'modifiés'.
+# Secrets : git ls-files data/ = vide (H4) ; garde-datasets présente en CI (.github/workflows/ci.yml:17) ; garde client-mentions présente.
+# Restant volontairement non tracké : artefacts de mission (committés en fin de mission) :
+?? eval/preparation-campagne/
+?? eval/recette-integrale/
+
+HEAD: 94005b3 chore(datasets): re-figeage 2026-07-17 — jeux dé-clientélisés (CAS B), LF canonique

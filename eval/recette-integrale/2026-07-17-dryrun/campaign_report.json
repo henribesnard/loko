@@ -1,0 +1,420 @@
+{
+  "version": "1.2.2",
+  "tag": "",
+  "commit": "0c00423",
+  "image_digest": "",
+  "bot_id": "reference",
+  "manifest_hash": "",
+  "protocol_version": "v2.2",
+  "runner_version": "1.0.0",
+  "machine_reference": "(non declare)",
+  "dry_run": true,
+  "started_at": "2026-07-17T13:11:19.133986+00:00",
+  "completed_at": "2026-07-17T13:11:22.580350+00:00",
+  "overall_verdict": "DRY-RUN",
+  "lines": [
+    {
+      "id": "CE-1",
+      "description": "Worktree clean, main branch",
+      "gate": "CE",
+      "phase": "CE",
+      "verdict": "FAIL",
+      "measured": "branch=main, dirty=75",
+      "artifact": "",
+      "detail": "M .github/workflows/ci.yml\n M .github/workflows/deploy.yml\n M .gitignore\n M DEPLOIEMENT.md\n M Dockerfile\n M desktop/src/App.tsx\n M desktop/src/components/ErrorBoundary.tsx\n M desktop/src/components/PageErrorBoundary.tsx\n M desktop/src/components/ui/ConfirmDialog.tsx\n M desktop/src/hooks/useBotPlayground.ts\n M desktop/src/lib/accessibility.ts\n M desktop/src/lib/csv-intents.ts\n M desktop/src/lib/storage.ts\n M desktop/src/locales/en.json\n M desktop/src/locales/fr.json\n M desktop/src/pages/auth/SignupPage.tsx\n M desktop/src/pages/auth/VerifyEmailPage.tsx\n M desktop/src/pages/bot/BotPlayground.tsx\n M desktop/src/pages/bot/wizard/BotKnowledge.tsx\n M desktop/src/pages/bot/wizard/BotPublish.tsx\n M desktop/src/pages/bot/wizard/CoverageBar.tsx\n M desktop/src/pages/bot/wizard/DocumentTagTable.tsx\n M desktop/src/pages/bot/wizard/SourceCard.tsx\n M desktop/src/pages/bot/wizard/SourceWizardWeb.tsx\n M desktop/src/pages/bot/wizard/TagMultiSelect.tsx\n M desktop/src/test/BotWizard.test.tsx\n M desktop/src/test/ErrorBoundary.test.tsx\n M desktop/src/types/bot.ts\n M docker-compose.prod.yml\n M docker-compose.yml\n M docs/ALERTING_O4.md\n M docs/API_DOCUMENTATION_C3.md\n M docs/AUDIT_LOGGING_INTEGRATION.md\n M docs/DEPLOYMENT.md\n M docs/K4_RATE_LIMITING_COMPOSITE.md\n M docs/PROMETHEUS_METRICS.md\n M loko/api/api_keys.py\n M loko/api/audit_middleware.py\n M loko/api/bot_admin.py\n M loko/api/bot_public.py\n M loko/api/csp_middleware.py\n M loko/api/health_detailed.py\n M loko/api/metrics_endpoint.py\n M loko/bot/classifier/setfit_service.py\n M loko/bot/knowledge_store.py\n M loko/bot/models.py\n M loko/bot/orchestrator.py\n M loko/bot/states.py\n M loko/config/env.py\n M loko/config/secrets.py\n M loko/connectors/playwright_fetcher.py\n M loko/db/audit.py\n M loko/main.py\n M loko/monitoring/metrics.py\n M pyproject.toml\n M tests/bot/test_orchestrator_pure_helpers.py\n M tests/e2e_intents.json\n M tests/test_api_key_rotation.py\n M tests/test_audit.py\n M tests/test_campaign_tools.py\n M tests/test_e2e_protocol.py\n M tests/test_interrupt.py\n M tests/test_repo_hygiene.py\n M tests/test_secrets.py\n M tests/test_v_corrections.py\n M tools/audit_constants.py\n M tools/backup_loko.sh\n M tools/check_bot_conformity.py\n M tools/deploy_version.sh\n M tools/restore_loko.sh\n M tools/rollback_loko.sh\n M tools/run_campaign.py\n M tools/setup_backup_cron.sh\n M tools/setup_campaign_bot.py\n M tools/train_bot_offline.py",
+      "executed": true
+    },
+    {
+      "id": "CE-2",
+      "description": "Tag present + triple version check",
+      "gate": "CE",
+      "phase": "CE",
+      "verdict": "PASS",
+      "measured": "tag=v1.2.2, pyproject=1.2.2",
+      "artifact": "/tmp/campagne-dryrun/CE-2.txt",
+      "detail": "",
+      "executed": true
+    },
+    {
+      "id": "CE-3",
+      "description": "Docker image built + size <= 1.6 Go",
+      "gate": "CE",
+      "phase": "CE",
+      "verdict": "FAIL",
+      "measured": "no image specified",
+      "artifact": "",
+      "detail": "",
+      "executed": true
+    },
+    {
+      "id": "CE-4",
+      "description": "Frozen datasets present + hashes match",
+      "gate": "CE",
+      "phase": "CE",
+      "verdict": "FAIL",
+      "measured": "HASHES.sha256 missing",
+      "artifact": "",
+      "detail": "",
+      "executed": true
+    },
+    {
+      "id": "CE-5",
+      "description": "Dataset intersection check (no leakage)",
+      "gate": "CE",
+      "phase": "CE",
+      "verdict": "FAIL",
+      "measured": "make_datasets.py not found",
+      "artifact": "",
+      "detail": "",
+      "executed": true
+    },
+    {
+      "id": "CE-6",
+      "description": "loko-eval installed and importable",
+      "gate": "CE",
+      "phase": "CE",
+      "verdict": "PASS",
+      "measured": "loko-eval importable",
+      "artifact": "/tmp/campagne-dryrun/CE-6.txt",
+      "detail": "",
+      "executed": true
+    },
+    {
+      "id": "CE-7",
+      "description": "Campaign artifacts directory exists",
+      "gate": "CE",
+      "phase": "CE",
+      "verdict": "PASS",
+      "measured": "/tmp/campagne-dryrun",
+      "artifact": "/tmp/campagne-dryrun",
+      "detail": "",
+      "executed": true
+    },
+    {
+      "id": "CE-8",
+      "description": "LLM provider ping (temp 0)",
+      "gate": "CE",
+      "phase": "CE",
+      "verdict": "FAIL",
+      "measured": "config.json not found",
+      "artifact": "",
+      "detail": "",
+      "executed": true
+    },
+    {
+      "id": "CE-9",
+      "description": "Bot conformity: 9 intents + L2 labels",
+      "gate": "CE",
+      "phase": "CE",
+      "verdict": "FAIL",
+      "measured": "config.json not found",
+      "artifact": "",
+      "detail": "",
+      "executed": true
+    },
+    {
+      "id": "V0-1",
+      "description": "pytest: all tests pass",
+      "gate": "G-0",
+      "phase": "V0",
+      "verdict": "FAIL",
+      "measured": "exit 1",
+      "artifact": "",
+      "detail": "\n/usr/bin/python3: No module named pytest\n",
+      "executed": true
+    },
+    {
+      "id": "V0-2",
+      "description": "ML imports (PyTorch, SetFit)",
+      "gate": "G-0",
+      "phase": "V0",
+      "verdict": "FAIL",
+      "measured": "import error",
+      "artifact": "",
+      "detail": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\nModuleNotFoundError: No module named 'torch'",
+      "executed": true
+    },
+    {
+      "id": "V0-3",
+      "description": "Anti-mock grep (0 occurrences)",
+      "gate": "G-0",
+      "phase": "V0",
+      "verdict": "PASS",
+      "measured": "0 occurrences",
+      "artifact": "/tmp/campagne-dryrun/V0-3_grep.txt",
+      "detail": "",
+      "executed": true
+    },
+    {
+      "id": "V0-4",
+      "description": "npm/pip audit (0 vulnerabilities)",
+      "gate": "G-0",
+      "phase": "V0",
+      "verdict": "FAIL",
+      "measured": "vulnerabilities found",
+      "artifact": "",
+      "detail": "",
+      "executed": true
+    },
+    {
+      "id": "V0-5",
+      "description": "Image size by inspect <= 1.6 Go",
+      "gate": "G-0",
+      "phase": "V0",
+      "verdict": "FAIL",
+      "measured": "no image specified",
+      "artifact": "",
+      "detail": "",
+      "executed": true
+    },
+    {
+      "id": "V1-1",
+      "description": "Server startup + health check",
+      "gate": "G-1",
+      "phase": "V1",
+      "verdict": "FAIL",
+      "measured": "",
+      "artifact": "",
+      "detail": "DRY-RUN - non execute",
+      "executed": false
+    },
+    {
+      "id": "V1-2",
+      "description": "No-mock guard active at runtime",
+      "gate": "G-1",
+      "phase": "V1",
+      "verdict": "FAIL",
+      "measured": "",
+      "artifact": "",
+      "detail": "DRY-RUN - non execute",
+      "executed": false
+    },
+    {
+      "id": "V1-3",
+      "description": "Classifier loader integrity",
+      "gate": "G-1",
+      "phase": "V1",
+      "verdict": "FAIL",
+      "measured": "",
+      "artifact": "",
+      "detail": "DRY-RUN - non execute",
+      "executed": false
+    },
+    {
+      "id": "V1-4",
+      "description": "CRITICAL log at boot (check_published_bots)",
+      "gate": "G-1",
+      "phase": "V1",
+      "verdict": "FAIL",
+      "measured": "",
+      "artifact": "",
+      "detail": "DRY-RUN - non execute",
+      "executed": false
+    },
+    {
+      "id": "V1-5",
+      "description": "Offline mode (HF_HUB_OFFLINE=1)",
+      "gate": "G-1b",
+      "phase": "V1",
+      "verdict": "FAIL",
+      "measured": "",
+      "artifact": "",
+      "detail": "DRY-RUN - non execute",
+      "executed": false
+    },
+    {
+      "id": "V2-1",
+      "description": "Training time <= 300s",
+      "gate": "G-2",
+      "phase": "V2",
+      "verdict": "FAIL",
+      "measured": "",
+      "artifact": "",
+      "detail": "DRY-RUN - non execute",
+      "executed": false
+    },
+    {
+      "id": "V2-2",
+      "description": "L2 coverage (help_account 5 labels)",
+      "gate": "G-2",
+      "phase": "V2",
+      "verdict": "FAIL",
+      "measured": "",
+      "artifact": "",
+      "detail": "DRY-RUN - non execute",
+      "executed": false
+    },
+    {
+      "id": "V2-3",
+      "description": "Atomicity (train -> publish -> restart -> identical)",
+      "gate": "G-2",
+      "phase": "V2",
+      "verdict": "FAIL",
+      "measured": "",
+      "artifact": "",
+      "detail": "DRY-RUN - non execute",
+      "executed": false
+    },
+    {
+      "id": "V2-4",
+      "description": "Improvement cycle: pair detected + re-train",
+      "gate": "G-2",
+      "phase": "V2",
+      "verdict": "FAIL",
+      "measured": "",
+      "artifact": "",
+      "detail": "DRY-RUN - non execute",
+      "executed": false
+    },
+    {
+      "id": "V2-5",
+      "description": "Improvement cycle: verify pair resolved",
+      "gate": "G-2",
+      "phase": "V2",
+      "verdict": "FAIL",
+      "measured": "",
+      "artifact": "",
+      "detail": "DRY-RUN - non execute",
+      "executed": false
+    },
+    {
+      "id": "V2-6",
+      "description": "Classification P95 <= 50ms (machine de reference)",
+      "gate": "G-2",
+      "phase": "V2",
+      "verdict": "FAIL",
+      "measured": "",
+      "artifact": "",
+      "detail": "DRY-RUN - non execute",
+      "executed": false
+    },
+    {
+      "id": "V3-0",
+      "description": "Sweep Pareto 3-axis + selection",
+      "gate": "G-3",
+      "phase": "V3",
+      "verdict": "FAIL",
+      "measured": "",
+      "artifact": "",
+      "detail": "DRY-RUN - non execute",
+      "executed": false
+    },
+    {
+      "id": "V3-1",
+      "description": "GNG-1 >= 85% (heldout_metier)",
+      "gate": "G-3",
+      "phase": "V3",
+      "verdict": "FAIL",
+      "measured": "",
+      "artifact": "",
+      "detail": "DRY-RUN - non execute",
+      "executed": false
+    },
+    {
+      "id": "V3-2",
+      "description": "GNG-2 >= 90% (heldout_conseiller)",
+      "gate": "G-3",
+      "phase": "V3",
+      "verdict": "FAIL",
+      "measured": "",
+      "artifact": "",
+      "detail": "DRY-RUN - non execute",
+      "executed": false
+    },
+    {
+      "id": "V3-3",
+      "description": "GNG-3 >= 80%, routes directes <= 5 (heldout_horsscope)",
+      "gate": "G-3",
+      "phase": "V3",
+      "verdict": "FAIL",
+      "measured": "",
+      "artifact": "",
+      "detail": "DRY-RUN - non execute",
+      "executed": false
+    },
+    {
+      "id": "V3-4",
+      "description": "Pieges >= 12/15 commentes",
+      "gate": "G-3",
+      "phase": "V3",
+      "verdict": "FAIL",
+      "measured": "",
+      "artifact": "",
+      "detail": "DRY-RUN - non execute",
+      "executed": false
+    },
+    {
+      "id": "V3-5",
+      "description": "Modele + seuils + manifeste geles",
+      "gate": "G-3",
+      "phase": "V3",
+      "verdict": "FAIL",
+      "measured": "",
+      "artifact": "",
+      "detail": "DRY-RUN - non execute",
+      "executed": false
+    },
+    {
+      "id": "V3-6",
+      "description": "Reproducibility: diff vide sur 2 runs",
+      "gate": "G-3",
+      "phase": "V3",
+      "verdict": "FAIL",
+      "measured": "",
+      "artifact": "",
+      "detail": "DRY-RUN - non execute",
+      "executed": false
+    }
+  ],
+  "gates": [
+    {
+      "gate_id": "CE",
+      "description": "Conditions d'entree (bloquant)",
+      "verdict": "FAIL",
+      "pass_count": 3,
+      "fail_count": 6,
+      "detail": "3/9 passed"
+    },
+    {
+      "gate_id": "G-0",
+      "description": "Build validation",
+      "verdict": "FAIL",
+      "pass_count": 1,
+      "fail_count": 4,
+      "detail": "1/5 passed"
+    },
+    {
+      "gate_id": "G-1",
+      "description": "Runtime R0 (eliminatoire)",
+      "verdict": "FAIL",
+      "pass_count": 0,
+      "fail_count": 4,
+      "detail": "0/4 passed"
+    },
+    {
+      "gate_id": "G-1b",
+      "description": "Offline mode",
+      "verdict": "FAIL",
+      "pass_count": 0,
+      "fail_count": 1,
+      "detail": "0/1 passed"
+    },
+    {
+      "gate_id": "G-2",
+      "description": "Training R1.a",
+      "verdict": "FAIL",
+      "pass_count": 0,
+      "fail_count": 6,
+      "detail": "0/6 passed"
+    },
+    {
+      "gate_id": "G-3",
+      "description": "Evaluation R1.b (verrou qualite)",
+      "verdict": "FAIL",
+      "pass_count": 0,
+      "fail_count": 7,
+      "detail": "0/7 passed"
+    }
+  ],
+  "anomalies_protocole": []
+}

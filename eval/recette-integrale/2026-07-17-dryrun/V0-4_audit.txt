@@ -1,0 +1,15 @@
+=== pip audit ===
+
+ERROR: unknown command "audit"
+
+
+=== npm audit ===
+found 0 vulnerabilities
+
+npm warn config production Use `--omit=dev` instead.
+npm notice
+npm notice New major version of npm available! 10.9.8 -> 12.0.1
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.0.1
+npm notice To update run: npm install -g npm@12.0.1
+npm notice
+

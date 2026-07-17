@@ -1,0 +1,200 @@
+{
+  "check": "CE-9",
+  "description": "Bot conformity (protocol v2.2)",
+  "bot_id": "fa4d8b2d-548f-457b-bf65-acbc61a39cbb",
+  "bot_name": "Demo Campaign v2.2",
+  "n_intents": 9,
+  "intent_ids": [
+    "demande_conseiller",
+    "help_account",
+    "help_billing",
+    "help_cancellation",
+    "help_contact",
+    "help_documents",
+    "help_leave",
+    "help_transfer",
+    "hors_perimetre"
+  ],
+  "checks": [
+    {
+      "id": "CE-9.1",
+      "name": "9 required intents",
+      "pass": true,
+      "detail": {
+        "expected": 9,
+        "found": 9,
+        "missing": [],
+        "extra": []
+      }
+    },
+    {
+      "id": "CE-9.2/help_account",
+      "name": "examples for help_account",
+      "pass": true,
+      "detail": {
+        "examples": 15,
+        "minimum": 8,
+        "is_system": false
+      }
+    },
+    {
+      "id": "CE-9.2/help_billing",
+      "name": "examples for help_billing",
+      "pass": true,
+      "detail": {
+        "examples": 16,
+        "minimum": 8,
+        "is_system": false
+      }
+    },
+    {
+      "id": "CE-9.2/help_cancellation",
+      "name": "examples for help_cancellation",
+      "pass": true,
+      "detail": {
+        "examples": 15,
+        "minimum": 8,
+        "is_system": false
+      }
+    },
+    {
+      "id": "CE-9.2/help_contact",
+      "name": "examples for help_contact",
+      "pass": true,
+      "detail": {
+        "examples": 16,
+        "minimum": 8,
+        "is_system": false
+      }
+    },
+    {
+      "id": "CE-9.2/help_documents",
+      "name": "examples for help_documents",
+      "pass": true,
+      "detail": {
+        "examples": 16,
+        "minimum": 8,
+        "is_system": false
+      }
+    },
+    {
+      "id": "CE-9.2/help_leave",
+      "name": "examples for help_leave",
+      "pass": true,
+      "detail": {
+        "examples": 16,
+        "minimum": 8,
+        "is_system": false
+      }
+    },
+    {
+      "id": "CE-9.2/help_transfer",
+      "name": "examples for help_transfer",
+      "pass": true,
+      "detail": {
+        "examples": 15,
+        "minimum": 8,
+        "is_system": false
+      }
+    },
+    {
+      "id": "CE-9.2/hors_perimetre",
+      "name": "examples for hors_perimetre",
+      "pass": true,
+      "detail": {
+        "examples": 16,
+        "minimum": 0,
+        "is_system": true
+      }
+    },
+    {
+      "id": "CE-9.2/demande_conseiller",
+      "name": "examples for demande_conseiller",
+      "pass": true,
+      "detail": {
+        "examples": 15,
+        "minimum": 0,
+        "is_system": true
+      }
+    },
+    {
+      "id": "CE-9.3/hors_perimetre",
+      "name": "is_system flag for hors_perimetre",
+      "pass": true,
+      "detail": {
+        "is_system": true
+      }
+    },
+    {
+      "id": "CE-9.3/demande_conseiller",
+      "name": "is_system flag for demande_conseiller",
+      "pass": true,
+      "detail": {
+        "is_system": true
+      }
+    },
+    {
+      "id": "CE-9.4",
+      "name": "L2 help_account",
+      "pass": true,
+      "detail": {
+        "n_labels": 5,
+        "minimum": 5,
+        "label_ids": [
+          "mot_de_passe_oublie",
+          "identifiants_perdus",
+          "compte_bloque",
+          "premiere_connexion",
+          "probleme_technique"
+        ]
+      }
+    },
+    {
+      "id": "CE-9.5/mot_de_passe_oublie",
+      "name": "L2 examples for mot_de_passe_oublie",
+      "pass": true,
+      "detail": {
+        "examples": 5,
+        "minimum": 3
+      }
+    },
+    {
+      "id": "CE-9.5/identifiants_perdus",
+      "name": "L2 examples for identifiants_perdus",
+      "pass": true,
+      "detail": {
+        "examples": 5,
+        "minimum": 3
+      }
+    },
+    {
+      "id": "CE-9.5/compte_bloque",
+      "name": "L2 examples for compte_bloque",
+      "pass": true,
+      "detail": {
+        "examples": 5,
+        "minimum": 3
+      }
+    },
+    {
+      "id": "CE-9.5/premiere_connexion",
+      "name": "L2 examples for premiere_connexion",
+      "pass": true,
+      "detail": {
+        "examples": 5,
+        "minimum": 3
+      }
+    },
+    {
+      "id": "CE-9.5/probleme_technique",
+      "name": "L2 examples for probleme_technique",
+      "pass": true,
+      "detail": {
+        "examples": 5,
+        "minimum": 3
+      }
+    }
+  ],
+  "errors": [],
+  "verdict": "PASS"
+}
