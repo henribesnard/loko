@@ -1,0 +1,4 @@
+﻿CE-8 - Ping provider LLM reel - 2026-07-17T16:09:49.3705624+02:00
+provider=deepseek (custom, openai_compat)  model=deepseek-v4-flash
+http=200  ttfb_total_ms=1268
+completion_tokens=5  temp=0

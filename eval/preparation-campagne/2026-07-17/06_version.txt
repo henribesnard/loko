@@ -1,0 +1,9 @@
+﻿06 - Version de campagne - 2026-07-17T16:16:52.5391832+02:00
+tag=v1.3.0  git_describe=v1.3.0
+commit=0aa900ae8ddd7fa233b8157ca4c49360b301f475
+digest=sha256:6025ead01519dbdcf5e603613f0b9508eea08e588088d070835e810035b816fb
+taille_bytes=1049564313 (=1.05 Go, docker inspect sur digest)
+pyproject=1.3.0
+loko.__version__ (in-container)=1.3.0
+openapi app.version (in-container)=1.3.0
+Triple verification tag / loko --version / OpenAPI : COHERENTES

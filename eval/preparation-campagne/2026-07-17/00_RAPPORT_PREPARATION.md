@@ -75,3 +75,17 @@
 | P5/P6 sur le poste | **PRÊT À LANCER** | `tools/prepare_campagne_poste.ps1` : ping CE-8 + build + inspect ≤ 1,6 Go + tag v1.3.0 + triple vérification (`pyproject` bumpé à 1.3.0) + fiche machine → `CE-8_ping.txt`, `06_version.txt`, `07_machine_reference.txt` |
 
 Anomalie restante non corrigée (hors demande) : `tools/audit_label_mapping.py` toujours sur labels français pré-scrub.
+
+---
+
+## Clôture de mission — 2026-07-17
+
+P4-ping/P5/P6 exécutés sur la machine de référence via `tools/prepare_campagne_poste.ps1` :
+
+- **CE-8** : ping DeepSeek réel HTTP 200, 5 completion tokens, temp 0, TTFB 1268 ms (`CE-8_ping.txt`)
+- **P5** : image `loko:v1.3.0` = 1,05 Go (docker inspect sur digest, gate ≤ 1,6 Go OK) ; digest `sha256:6025ead0…` ; tag `v1.3.0` posé sur `0aa900a` ; triple vérification tag / `loko.__version__` / OpenAPI : **COHÉRENTES** (`06_version.txt`)
+- **P6** : machine de référence = AMD Ryzen 7 5800HS (8c/16t), 15,4 Go RAM, Windows 11 Famille 26200, Docker 28.5.1 backend WSL2/Ubuntu (`07_machine_reference.txt`)
+
+Écart consigné : le présent commit de clôture (artefacts documentaires uniquement) est postérieur au tag `v1.3.0` ; le commit tagué `0aa900a` reste le commit de build de l'image (aucun fichier produit modifié depuis). Contrôle secrets sur les 3 artefacts : 0 occurrence.
+
+**Mission 1 : TERMINÉE — P1→P6 FAIT.** Critère de succès atteint : CE-1→CE-11 passeraient au vert sur la machine de référence (CE-7 miroir FAQ = volet C, hors périmètre). Prête pour revue humaine avant ouverture de la mission 2 (campagne volets A+B). Le tag n'est pas pushé.
