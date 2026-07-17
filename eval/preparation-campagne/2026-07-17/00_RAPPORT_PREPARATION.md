@@ -61,3 +61,17 @@
 | CE-11 squelette rapport | Généré par le runner au lancement |
 
 **Conclusion** : dépôt prêt côté datasets/outillage/bot ; la campagne (mission 2) ne peut démarrer qu'après P5/P6 + clé LLM sur la machine de référence, et revue humaine de ce rapport.
+
+---
+
+## Addendum — Compléments validés par Besnard (2026-07-17, après revue)
+
+| Complément | État | Artefact |
+|---|---|---|
+| Diff de preuve du re-figeage | **FAIT** | `08_diff_refigeage.md` (générateur c95035d~1→d18df72 ; datasets 2c8f58d~1→d18df72 ; marque : 37→0 occurrences ; hash avant/après) |
+| Garde CI `eval/datasets/**` | **FAIT** | `ci.yml` : modification d'un CSV figé sans mise à jour de `HASHES.sha256` → FAIL + vérification `sha256sum -c` systématique à chaque CI |
+| Vérification `preflight.py` | **FAIT** | Migré vers les IDs `help_*` ; exécuté : CE-4/CE-5/CE-6/CE-7 PASS (échecs restants = arguments tag/image/bot non fournis, attendus) |
+| Provider LLM DeepSeek | **FAIT (config) / ping délégué au poste** | Clé lue depuis `.env` (jamais copiée), chiffrée au SecretStore (Fernet, `ref_91d9…`), `LOKO_SECRET_KEY` générée et ajoutée à `.env` (compose la charge) ; bot : `provider_source=custom`, `preset=deepseek`, `model=deepseek-chat`, `base_url=https://api.deepseek.com`, `api_key_set=true`. Le proxy de l'environnement agent bloque `api.deepseek.com` (403) — le ping TTFB (CE-8) s'exécute sur le poste via le script ci-dessous, là où la mesure est recevable. |
+| P5/P6 sur le poste | **PRÊT À LANCER** | `tools/prepare_campagne_poste.ps1` : ping CE-8 + build + inspect ≤ 1,6 Go + tag v1.3.0 + triple vérification (`pyproject` bumpé à 1.3.0) + fiche machine → `CE-8_ping.txt`, `06_version.txt`, `07_machine_reference.txt` |
+
+Anomalie restante non corrigée (hors demande) : `tools/audit_label_mapping.py` toujours sur labels français pré-scrub.

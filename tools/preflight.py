@@ -265,7 +265,7 @@ def check_ce9_bot_conformity(bot_dir: str | None) -> bool:
     Verifies BEFORE V2:
     - 9 intentions (7 métier + hors_perimetre + demande_conseiller)
     - ≥ 8 examples per non-system intent
-    - L2 services_en_ligne declared with ≥ 5 sub-motif labels
+    - L2 help_account declared with ≥ 5 sub-motif labels
     Output: machine-readable JSON conformity report.
     """
     if not bot_dir:
@@ -294,13 +294,13 @@ def check_ce9_bot_conformity(bot_dir: str | None) -> bool:
     required = {
         "hors_perimetre",
         "demande_conseiller",
-        "arret_travail",
-        "changement_coordonnees",
-        "cotisations",
-        "justificatif_droits",
-        "resiliation",
-        "services_en_ligne",
-        "teletransmission_noemie",
+        "help_leave",
+        "help_contact",
+        "help_billing",
+        "help_documents",
+        "help_cancellation",
+        "help_account",
+        "help_transfer",
     }
     missing = required - intent_ids
     if missing:
@@ -315,14 +315,14 @@ def check_ce9_bot_conformity(bot_dir: str | None) -> bool:
         if not is_sys and n_ex < 8:
             errors.append(f"'{intent['id']}' has {n_ex} examples (min 8)")
 
-    # Check L2 services_en_ligne
-    sel = next((i for i in intents if i["id"] == "services_en_ligne"), None)
+    # Check L2 help_account (IDs génériques post-scrub, re-figeage 2026-07-17)
+    sel = next((i for i in intents if i["id"] == "help_account"), None)
     if sel:
         subs = sel.get("sub_motifs", [])
         if len(subs) < 5:
-            errors.append(f"services_en_ligne L2 has {len(subs)} labels (need ≥ 5)")
+            errors.append(f"help_account L2 has {len(subs)} labels (need ≥ 5)")
     else:
-        errors.append("services_en_ligne intent not found")
+        errors.append("help_account intent not found")
 
     ok = len(errors) == 0
     detail = (
