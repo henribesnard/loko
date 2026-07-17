@@ -103,7 +103,7 @@ class CampaignReport:
     bot_id: str = ""
     manifest_hash: str = ""
     protocol_version: str = "v2.2"
-    runner_version: str = "1.0.0"
+    runner_version: str = "1.1.0"
     machine_reference: str = ""
     started_at: str = ""
     completed_at: str = ""
@@ -1017,6 +1017,16 @@ EXECUTORS: dict[str, Any] = {
     "V3-6": exec_v3_6,
 }
 
+# Runner 1.1.0 — remplace les stubs et les mesures hote par des executeurs
+# in-container (interdit n°2). Voir tools/campaign_container.py.
+try:
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import campaign_container as _cc
+
+    _cc.register(EXECUTORS)
+except Exception as _exc:  # noqa: BLE001
+    logger.warning("executeurs in-container indisponibles: %s", _exc)
+
 
 # ──────────────────────────────────────────────────────────────────────
 # Gate calculation — COMPUTED, never editable
@@ -1272,7 +1282,7 @@ def run_campaign(
 
     # Display interdits
     print("\n" + "=" * 70)
-    print("  LOKO Campaign Runner v1.0.0 - Protocole v2.2")
+    print("  LOKO Campaign Runner v1.1.0 - Protocole v2.2")
     print("=" * 70)
     print("\n  INTERDITS OPPOSABLES (rappel avant execution) :")
     for interdit in INTERDITS_V22:
