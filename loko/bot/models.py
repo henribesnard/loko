@@ -299,9 +299,9 @@ class BotLLMConfig(BaseModel):
 class TrainingParams(BaseModel):
     """L2: configurable training hyperparameters."""
 
-    num_iterations: int = Field(default=5, ge=1, le=100)
+    num_iterations: int = Field(default=3, ge=1, le=100)  # M4: 5→3 (budget 300s)
     num_epochs: int = Field(default=1, ge=1, le=10)
-    batch_size: int = Field(default=16, ge=4, le=128)
+    batch_size: int = Field(default=32, ge=4, le=128)  # M4: 16→32 (budget 300s)
 
 
 # ---------------------------------------------------------------------------
