@@ -78,7 +78,7 @@ HELP_ACCOUNT_SUB_MOTIFS = [
             "création d'un compte en ligne",
             "comment créer un compte Ameli",
             "activation de mon espace client",
-            "activation compte mutuelle",
+            "activation compte Santelis",
         ],
     },
     {
@@ -127,9 +127,9 @@ INTENT_DEFINITIONS = {
     "help_billing": "L'adhérent a une question sur ses cotisations (montant, calcul, paiement).",
     "hors_perimetre": "Demande hors du périmètre des intentions gérées par le bot.",
     "help_documents": "L'adhérent demande un document attestant de ses droits ou de sa couverture.",
-    "help_cancellation": "L'adhérent veut résilier son contrat mutuelle.",
+    "help_cancellation": "L'adhérent veut résilier son contrat Santelis.",
     "help_account": "L'adhérent rencontre un besoin lié à son espace personnel en ligne ou à l'mobile app.",
-    "help_transfer": "L'adhérent a une question sur la télétransmission Noemie entre mutuelle et sécurité sociale.",
+    "help_transfer": "L'adhérent a une question sur la télétransmission Noemie entre Santelis et sécurité sociale.",
     "demande_conseiller": "L'adhérent demande explicitement à parler à un conseiller ou à un humain.",
 }
 

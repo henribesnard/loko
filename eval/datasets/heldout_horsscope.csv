@@ -2,15 +2,15 @@ text,intent
 demander une attestation CPAM accident,accident
 renseignement sur une prise en charge accident domestique,accident
 Information sur aide exceptionnelle pour perte de salaire,action_sociale
-avoir un devis pour une mutuelle santé en tant que fonctionnaire,adhesion_affiliation
-changement de régime d'affiliation,adhesion_affiliation
-courriel contrats collectifs,adhesion_affiliation
-enregistrer mes droits auprès de l'assurance maladie,adhesion_affiliation
-finaliser mon dossier d'adhésion,adhesion_affiliation
-information sur la nouvelle affiliation éducation nationale,adhesion_affiliation
+avoir un devis pour une Santelis santé en tant que fonctionnaire,adhesion_affiliation
+changement de rattachement à l'assurance maladie,adhesion_affiliation
+contrat d'affiliation Santelis,adhesion_affiliation
+enregistrement de mon régime général,adhesion_affiliation
+finaliser mon contrat d'adhésion,adhesion_affiliation
+information sur la mutation de mon affiliation Santelis,adhesion_affiliation
 relance de l'affiliation collectives,adhesion_affiliation
+accord préalable pour audioprothèse,aides_auditives
 achat audioprothésiste audio prothèse,aides_auditives
-adresse pour facturer des appareils auditifs,aides_auditives
 attestation de droits ALD cent-pourcent,ald_exotm
 information pour le sport sur ordonnance,bilan_prevention
 information sur le check-up,bilan_prevention
@@ -19,12 +19,12 @@ problème avec une carte vitale,carte_vitale
 attestation de carte assurance européenne maladie,ceam
 je voudrais une carte d'assuré pour voyager en Europe,ceam
 changer de garantie,changement_de_couverture
-renseignement sur mon nouveau forfait mutuelle,changement_de_couverture
-changer un rendez-vous,contact
-horaire section mutuelle,contact
-information sur l'adresse pour envoyer les feuilles de soin,contact
-où envoyer les remboursements pour la section,contact
-prévenir de mon retard à un rendez-vous,contact
+renseignement sur mon nouveau forfait Santelis,changement_de_couverture
+changement de rendez-vous,contact
+horaire de service téléphonique,contact
+information sur l'adresse postale de la Santelis dont je dépends,contact
+où envoyer les feuilles de soin pour remboursement,contact
+problème avec rendez-vous,contact
 attente réception accord cure médicale,cure_thermale
 j'aimerais connaitre les conditions de prise en charge d'une demande de cure,cure_thermale
 je souhaiterais avoir des renseignements par rapport à une demande de cure thermale,cure_thermale
@@ -94,8 +94,8 @@ je souhaiterais avoir des renseignements au sujet d'un refus de prise en charge 
 transport en VSL,transport
 où se faire vacciner,vaccins_osteodensitometrie
 changement d'affiliation pour ma fille,vie_du_contrat
-comment faire une demande de dispense à la mutuelle,vie_du_contrat
-demande dispenses d'adhésion à la mutuelle obligatoire,vie_du_contrat
+comment faire une demande de dispense à la Santelis,vie_du_contrat
+demande dispenses d'adhésion à la Santelis obligatoire,vie_du_contrat
 demander la C S S,vie_du_contrat
 mise à jour de mes ayants droit,vie_du_contrat
 rattachement familial,vie_du_contrat

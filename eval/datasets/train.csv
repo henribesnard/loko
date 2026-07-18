@@ -1,20 +1,20 @@
 text,intent
+Santelis connexion au compte Ameli,help_account
 accès au compte Ameli point FR,help_account
-accès compte personnel sur mon site mutuelle,help_account
+accès compte personnel sur mon site Santelis,help_account
 accès en ligne,help_account
 accès espace perso,help_account
-accès site mutuelle,help_account
+accès site Santelis,help_account
 accès à l'espace personnel internet de ma fille,help_account
-accès à mon application mutuelle,help_account
+accès à mon application Santelis,help_account
+accès à mon compte Santelis,help_account
 accès à mon compte en ligne,help_account
-accès à mon compte mutuelle,help_account
 accès à mon espace adhérent,help_account
 accès à mon espace client,help_account
 accès à mon espace internet,help_account
 accès à mon espace personnel,help_account
 accéder au compte internet,help_account
-mutuelle connexion au compte Ameli,help_account
-appel de cotisation mutuelle,help_billing
+appel de cotisation Santelis,help_billing
 attestation de paiement des cotisations,help_billing
 augmentation des cotisations,help_billing
 calcul de mes cotisations,help_billing
@@ -25,25 +25,25 @@ comprendre le mode de calcul des cotisations,help_billing
 comprendre le prélèvement sur mon salaire,help_billing
 comprendre mes cotisations,help_billing
 comprendre mon échéancier,help_billing
-concernant le prélèvement de la mutuelle,help_billing
-connaître le coût de la mutuelle,help_billing
+concernant le prélèvement de Santelis,help_billing
+connaître le coût de Santelis,help_billing
 connaître le montant de ma cotisation,help_billing
 contestation cotisation,help_billing
-cotisation mutuelle au prélèvement automatique,help_billing
+cotisation Santelis au prélèvement automatique,help_billing
 annuler ma résiliation,help_cancellation
 attestation de résiliation,help_cancellation
-changement de mutuelle,help_cancellation
-comment résilier la mutuelle,help_cancellation
-conditions de résiliation mutuelle,help_cancellation
-courrier résiliation mutuelle,help_cancellation
-demande de résiliation de contrat mutuelle,help_cancellation
+changement de Santelis,help_cancellation
+comment résilier Santelis,help_cancellation
+conditions de résiliation Santelis,help_cancellation
+courrier résiliation Santelis,help_cancellation
+demande de résiliation de contrat Santelis,help_cancellation
 demande résiliation prévoyance,help_cancellation
 délai de résiliation,help_cancellation
 effectuer une résiliation,help_cancellation
 information sur la résiliation d'un bénéficiaire,help_cancellation
-justificatif résiliation mutuelle obligatoire,help_cancellation
+justificatif résiliation Santelis obligatoire,help_cancellation
 où en est la résiliation de mon contrat,help_cancellation
-pouvoir résilier ma mutuelle,help_cancellation
+pouvoir résilier Santelis,help_cancellation
 procédure de résiliation,help_cancellation
 actualiser mon adresse email,help_contact
 actualiser mon adresse postale,help_contact
@@ -63,6 +63,8 @@ changement de RIB pour les remboursements,help_contact
 changement de coordonnées personnelles,help_contact
 aide pour la carte tiers payant,help_documents
 attestation CPAM,help_documents
+attestation Santelis,help_documents
+attestation Santelis pour ma fille,help_documents
 attestation avec la date d'effet,help_documents
 attestation d'affiliation à la sécurité sociale,help_documents
 attestation d'assurance maladie,help_documents
@@ -75,8 +77,6 @@ attestation de droits,help_documents
 attestation de droits de la sécurité sociale,help_documents
 attestation de droits en urgence,help_documents
 attestation de droits perdue,help_documents
-attestation mutuelle,help_documents
-attestation mutuelle pour ma fille,help_documents
 allocation d'invalidité,help_leave
 allocation journalière,help_leave
 allocation journalière pour arrêt de travail prolongé,help_leave
@@ -101,12 +101,12 @@ bénéficier de la télétransmission,help_transfer
 codes de télétransmission,help_transfer
 comment faire une télétrans,help_transfer
 comment mettre en place la télétransmission Noemie,help_transfer
-comment se fait la télétransmission entre le mutuelle et la sécu,help_transfer
+comment se fait la télétransmission entre Santelis et la sécu,help_transfer
 connexion Noemie,help_transfer
 contrat Noemie,help_transfer
-déconnecter la mutuelle de ma sécurité sociale,help_transfer
+déconnecter Santelis de ma sécurité sociale,help_transfer
 déconnexion du service Noemie,help_transfer
-est-ce que le lien Noemie est créé avec ma nouvelle mutuelle,help_transfer
+est-ce que le lien Noemie est créé avec ma nouvelle Santelis,help_transfer
 explications fonctionnement Noemie,help_transfer
 accord préalable pour une prescription médicale de transport,hors_perimetre
 accusé réception de ma déclaration de grossesse,hors_perimetre
@@ -114,7 +114,7 @@ achat de fauteuil roulant remboursement,hors_perimetre
 achat de lentilles de contact,hors_perimetre
 activer un contrat logement,hors_perimetre
 adhérer à une complémentaire santé,hors_perimetre
-adresse postale de la mutuelle,hors_perimetre
+adresse postale de Santelis,hors_perimetre
 adresse pour envoyer un devis dentaire,hors_perimetre
 agrément pour une cure thermale,hors_perimetre
 aide pour le remboursement pour une prothèse dentaire,hors_perimetre

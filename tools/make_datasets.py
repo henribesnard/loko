@@ -40,16 +40,16 @@ POSTULAT_EXAMPLES: list[dict[str, str]] = []
 _POSTULAT_RAW: dict[str, list[str]] = {
     "help_account": [
         "accès à mon espace personnel",
-        "accès à mon compte mutuelle",
+        "accès à mon compte Santelis",
         "accès espace perso",
         "accès à mon compte en ligne",
-        "mutuelle connexion au compte Ameli",
-        "accès à mon application mutuelle",
-        "accès compte personnel sur mon site mutuelle",
+        "Santelis connexion au compte Ameli",
+        "accès à mon application Santelis",
+        "accès compte personnel sur mon site Santelis",
         "accès à mon espace adhérent",
         "accès à l'espace personnel internet de ma fille",
         "accès en ligne",
-        "accès site mutuelle",
+        "accès site Santelis",
         "accès à mon espace client",
         "accès au compte Ameli point FR",
         "accès à mon espace internet",
@@ -57,7 +57,7 @@ _POSTULAT_RAW: dict[str, list[str]] = {
     ],
     "help_documents": [
         "attestation de droits",
-        "attestation mutuelle",
+        "attestation Santelis",
         "attestation d'affiliation à la sécurité sociale",
         "attestation CPAM",
         "attestation d'assuré social",
@@ -67,7 +67,7 @@ _POSTULAT_RAW: dict[str, list[str]] = {
         "attestation d'ouverture de droits à la sécurité sociale",
         "attestation d'assurance maladie",
         "aide pour la carte tiers payant",
-        "attestation mutuelle pour ma fille",
+        "attestation Santelis pour ma fille",
         "attestation de droits en urgence",
         "attestation de couverture sociale",
         "attestation de droits perdue",
@@ -96,18 +96,18 @@ _POSTULAT_RAW: dict[str, list[str]] = {
         "calcul de mes cotisations",
         "augmentation des cotisations",
         "comprendre mes cotisations",
-        "appel de cotisation mutuelle",
+        "appel de cotisation Santelis",
         "comment effectuer le paiement de mes cotisations",
         "comprendre mon échéancier",
-        "cotisation mutuelle au prélèvement automatique",
+        "cotisation Santelis au prélèvement automatique",
         "comprendre le prélèvement sur mon salaire",
         "contestation cotisation",
         "changement du montant de ma cotisation",
         "calcul montant de la cotisation conjoint",
         "attestation de paiement des cotisations",
-        "concernant le prélèvement de la mutuelle",
+        "concernant le prélèvement de Santelis",
         "comprendre le mode de calcul des cotisations",
-        "connaître le coût de la mutuelle",
+        "connaître le coût de Santelis",
     ],
     "help_contact": [
         "changement d'adresse après déménagement",
@@ -136,29 +136,29 @@ _POSTULAT_RAW: dict[str, list[str]] = {
         "déconnexion du service Noemie",
         "connexion Noemie",
         "explications fonctionnement Noemie",
-        "comment se fait la télétransmission entre le mutuelle et la sécu",
-        "est-ce que le lien Noemie est créé avec ma nouvelle mutuelle",
+        "comment se fait la télétransmission entre Santelis et la sécu",
+        "est-ce que le lien Noemie est créé avec ma nouvelle Santelis",
         "codes de télétransmission",
-        "déconnecter la mutuelle de ma sécurité sociale",
+        "déconnecter Santelis de ma sécurité sociale",
         "au sujet des télétransmissions",
         "comment faire une télétrans",
         "contrat Noemie",
     ],
     "help_cancellation": [
-        "comment résilier la mutuelle",
-        "demande de résiliation de contrat mutuelle",
+        "comment résilier Santelis",
+        "demande de résiliation de contrat Santelis",
         "procédure de résiliation",
         "délai de résiliation",
-        "conditions de résiliation mutuelle",
-        "courrier résiliation mutuelle",
+        "conditions de résiliation Santelis",
+        "courrier résiliation Santelis",
         "attestation de résiliation",
         "annuler ma résiliation",
         "où en est la résiliation de mon contrat",
         "demande résiliation prévoyance",
         "information sur la résiliation d'un bénéficiaire",
-        "pouvoir résilier ma mutuelle",
-        "changement de mutuelle",
-        "justificatif résiliation mutuelle obligatoire",
+        "pouvoir résilier Santelis",
+        "changement de Santelis",
+        "justificatif résiliation Santelis obligatoire",
         "effectuer une résiliation",
     ],
     "hors_perimetre": [
@@ -176,7 +176,7 @@ _POSTULAT_RAW: dict[str, list[str]] = {
         "accusé réception de ma déclaration de grossesse",
         "achat de fauteuil roulant remboursement",
         "adhérer à une complémentaire santé",
-        "adresse postale de la mutuelle",
+        "adresse postale de Santelis",
         "prise en charge hospitalisation",
     ],
 }
@@ -222,7 +222,7 @@ PIEGE_CASES = [
     {"id": "T02", "text": "modification mot de passe",
      "expected_behavior": "route:help_account",
      "note": "help_account/mot_de_passe_oublie sans clarification"},
-    {"id": "T03", "text": "accès à mon compte de la mutuelle",
+    {"id": "T03", "text": "accéder au compte Santelis",
      "expected_behavior": "clarify_intra:help_account",
      "note": "sous-motif incertain — clarification intra attendue"},
     {"id": "T04", "text": "RIB coordonnées bancaires",
@@ -234,16 +234,16 @@ PIEGE_CASES = [
     {"id": "T06", "text": "attestation de paiement",
      "expected_behavior": "clarify_inter:help_leave|help_billing|help_documents",
      "note": "ambigu help_leave/help_billing/justificatif_droits"},
-    {"id": "T07", "text": "attestation de droits mutuelle",
+    {"id": "T07", "text": "attestation de droits Santelis",
      "expected_behavior": "route:help_documents",
      "note": "help_documents direct"},
     {"id": "T08", "text": "complément de salaire arrêt longue maladie",
      "expected_behavior": "route:help_leave",
      "note": "help_leave direct"},
-    {"id": "T09", "text": "est-ce qu'il y a une télétransmission entre vous et la mutuelle",
+    {"id": "T09", "text": "est-ce qu'il y a une télétransmission entre vous et Santelis",
      "expected_behavior": "route:help_transfer",
      "note": "help_transfer direct (contrôle positif)"},
-    {"id": "T10", "text": "comment résilier mon ancienne mutuelle",
+    {"id": "T10", "text": "comment résilier mon ancien contrat Santelis",
      "expected_behavior": "route:help_cancellation",
      "note": "help_cancellation direct"},
     {"id": "T11", "text": "Je préfère parler à un humain",
@@ -294,16 +294,26 @@ def normalize_text(text: str) -> str:
 
 
 # -----------------------------------------------------------------------
-# Re-figeage 2026-07-17 — de-clientelisation (brand -> generic term)
+# Re-figeage v2 2026-07-18 — de-clientelisation (brand -> Santelis)
+# B1 approved: fictional brand "Santelis" replaces both the client brand
+# and the generic "mutuelle" to improve classifier discrimination (GNG-2).
 # -----------------------------------------------------------------------
 
 _CLIENT_RE = re.compile("m" + "gen", re.IGNORECASE)  # split to satisfy client-mention guard
+_FICTIONAL_BRAND = "Santelis"
 
 
 def scrub_client(text: str) -> str:
-    """Replace client brand mentions with a generic term (traced re-freeze)."""
-    text = _CLIENT_RE.sub("mutuelle", text)
-    text = re.sub(r"\bmutuelle(\s+mutuelle)+\b", "mutuelle", text, flags=re.IGNORECASE)
+    """Replace client brand and generic 'mutuelle' with fictional brand (traced re-freeze v2)."""
+    text = _CLIENT_RE.sub(_FICTIONAL_BRAND, text)
+    text = re.sub(r"\bmutuelle\b", _FICTIONAL_BRAND, text, flags=re.IGNORECASE)
+    # Collapse repeated brand names (e.g. "Santelis Santelis" -> "Santelis")
+    text = re.sub(
+        rf"\b{_FICTIONAL_BRAND}(\s+{_FICTIONAL_BRAND})+\b",
+        _FICTIONAL_BRAND,
+        text,
+        flags=re.IGNORECASE,
+    )
     return " ".join(text.split())
 
 

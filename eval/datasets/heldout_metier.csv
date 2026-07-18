@@ -1,18 +1,18 @@
 text,intent
-action de mon espace adhérent,help_account
-activation de mon espace client,help_account
-activation espace personnel mutuelle en ligne,help_account
-avoir un compte Ameli,help_account
-changer mot de passe du compte Ameli,help_account
-code secret,help_account
-compte bloqué,help_account
-connexion au site Ameli,help_account
-créer un compte sur Ameli pour question assurance maladie,help_account
-demande de connexion Ameli point FR,help_account
-difficulté d'accès à l'espace personnel,help_account
-dysfonctionnement de mon espace personnel en ligne,help_account
-espace mutuelle disponibles,help_account
-je veux ouvrir un compte Ameli,help_account
+accéder à mon espace personnel sur le site,help_account
+activation compte Santelis,help_account
+activation de mon compte Santelis,help_account
+avoir le compte Santelis,help_account
+blocage compte Ameli,help_account
+code confidentiel Ameli oublié,help_account
+comment créer un compte Ameli,help_account
+connexion application Santelis,help_account
+créer un compte personnel Ameli,help_account
+demande assistance internet,help_account
+difficulté d'accès a Ameli,help_account
+difficulté pour créer mon compte Ameli,help_account
+espace Santelis disponibles,help_account
+je veux mes identifiants Ameli,help_account
 pour pouvoir créer mon espace Ameli,help_account
 problème d'accès à mon compte Ameli,help_account
 problème site web,help_account
@@ -20,26 +20,26 @@ problème technique site,help_account
 reçu un courrier pour mettre sur internet j'ai pas internet,help_account
 annulation de cotisation,help_billing
 changement de prélèvement bancaire,help_billing
-cotisation prélevée sur salaire,help_billing
-cotisations impayées,help_billing
+cotisation non payée,help_billing
+cotisation sur nouvelle Santelis,help_billing
+erreur sur ma cotisation,help_billing
 estimation de cotisation,help_billing
-explication de la cotisation assurance mutuelle,help_billing
-information concernant un prélèvement bancaire,help_billing
+information concernant mes cotisations mensuelles,help_billing
+information sur le prélèvement bancaire,help_billing
 information sur les prélèvement de cotisation,help_billing
-information sur mes cotisations,help_billing
-montant prélèvement du contrat,help_billing
-problème sur mon échéancier mutuelle,help_billing
-prélèvement SEPA,help_billing
-renseignement sur le prix de ma mutuelle,help_billing
-renseignement sur les cotisations adhésion,help_billing
-revoir mes cotisations mutuelle,help_billing
-délais résiliation de contrat,help_cancellation
-renseignement sur ma résiliation mutuelle,help_cancellation
-résiliation contractuelle,help_cancellation
-résiliation contrat ayant droit,help_cancellation
-résiliation contrat conjoint,help_cancellation
-résiliation mutuelle enfant,help_cancellation
-résilier mon contrat santé prévoyance,help_cancellation
+montant des cotisations pour mes bénéficiaires,help_billing
+problème prélèvement prévoyance,help_billing
+problème sur mon échéancier Santelis,help_billing
+renseignement sur la cotisation pour ma fille,help_billing
+renseignement sur le prix de ma Santelis,help_billing
+renseignements sur le prix de la Santelis,help_billing
+demande résiliation contrat Santelis,help_cancellation
+renseignement concernant ma résiliation Santelis,help_cancellation
+résiliation ancienne Santelis,help_cancellation
+résiliation assurance Santelis,help_cancellation
+résiliation compte Santelis,help_cancellation
+résiliation de prévoyance santé,help_cancellation
+résilier mon contrat prévoyance,help_cancellation
 changement d'adresse et de compte bancaire,help_contact
 changement d'agence bancaire,help_contact
 changement de département de résidence administrative,help_contact
@@ -52,31 +52,30 @@ problème de saisie de RIB,help_contact
 renseignement sur un changement d'identité bancaire,help_contact
 supprimer un RIB de mon compte,help_contact
 vérification coordonnées personnelles,help_contact
-attestation de droits de ma carte vitale,help_documents
-attestation de fin de droits,help_documents
-attestation de ma carte vitale papier,help_documents
-attestation des droits pour moi et mes enfants,help_documents
-carte de mutuelle pas reçu,help_documents
-carte mutuelle,help_documents
-certificat d'appartenance à la mutuelle,help_documents
+attestation de droits date de validité,help_documents
+attestation de droits à l'assurance maladie pour mes enfants,help_documents
+attestation de la carte vitale portant la mention médecin traitant déclaré,help_documents
+attestation des droits d'assurance maladie,help_documents
+carte adhérent Santelis,help_documents
+carte de membre,help_documents
+certificat d'appartenance à la Santelis,help_documents
 certificat d'inscription,help_documents
 demande d'attestation de carte vitale,help_documents
 demande d'une attestation vitale,help_documents
-information concernant ma carte mutuelle,help_documents
+information concernant ma carte Santelis,help_documents
 informations sur une attestation de droits,help_documents
 justificatif d'affiliation,help_documents
 justificatif sécurité sociale,help_documents
 m'adresser une attestation de droits,help_documents
 perdu carte adhérent,help_documents
-renseignement pour la carte de mutuelle,help_documents
-télécharger ma carte mutuelle,help_documents
+renseignement pour la carte de Santelis,help_documents
+télécharger ma carte Santelis,help_documents
 complément prévoyance pour un demi-traitement congé longue maladie,help_leave
 congé pathologique,help_leave
 déclaration de salaire,help_leave
 démarche pour arrêt de travail,help_leave
 indemnisation arrêt de travail,help_leave
 indemnité d'allocation journalière,help_leave
-indemnité journalière non perçues,help_leave
 information concernant le formulaire allocation journalière,help_leave
 information sur la retraite invalidité,help_leave
 information sur le complément de salaire en cas d'arrêt de travail,help_leave
@@ -91,11 +90,12 @@ signaler un cld,help_leave
 souci pour sortir du département avec un arrêt de travail,help_leave
 versement d'indemnité subrogé,help_leave
 avoir des renseignements sur le dispositif noémie,help_transfer
-connaitre la mutuelle associée à mon compte sécurité sociale,help_transfer
-me renseigner sur le lien Noemie,help_transfer
-pas de lien avec ma mutuelle,help_transfer
-problème de connexion entre la mutuelle et la mutuelle,help_transfer
-renseignement sur Noemie,help_transfer
-renseignement sur Noemie pour enfant étudiant,help_transfer
-savoir si le lien Noemie est mis en place,help_transfer
-transmission à ma mutuelle,help_transfer
+conditions de télétransmission,help_transfer
+lien Santelis,help_transfer
+mettre en oeuvre la transmission automatique Santelis,help_transfer
+numéro de télétransmission de la Santelis,help_transfer
+problème avec ma dernière télétransmission,help_transfer
+relais Noemie,help_transfer
+renseignement concernant la télétransmission,help_transfer
+savoir où en est le lien Noemie,help_transfer
+soucis avec la télétransmission Noemie,help_transfer

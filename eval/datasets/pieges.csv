@@ -1,14 +1,14 @@
 id,text,expected_behavior,note
 T01,je souhaiterais débloquer mon compte Ameli,route:help_account,help_account/compte_bloque sans clarification
 T02,modification mot de passe,route:help_account,help_account/mot_de_passe_oublie sans clarification
-T03,accès à mon compte de la mutuelle,clarify_intra:help_account,sous-motif incertain — clarification intra attendue
+T03,accéder au compte Santelis,clarify_intra:help_account,sous-motif incertain — clarification intra attendue
 T04,RIB coordonnées bancaires,clarify_inter:help_contact|help_billing,ambigu help_contact/cotisations
 T05,changement de banque pour les prélèvements de cotisations,clarify_inter:help_contact|help_billing,zone grise RIB/prélèvement
 T06,attestation de paiement,clarify_inter:help_leave|help_billing|help_documents,ambigu help_leave/help_billing/justificatif_droits
-T07,attestation de droits mutuelle,route:help_documents,help_documents direct
+T07,attestation de droits Santelis,route:help_documents,help_documents direct
 T08,complément de salaire arrêt longue maladie,route:help_leave,help_leave direct
-T09,est-ce qu'il y a une télétransmission entre vous et la mutuelle,route:help_transfer,help_transfer direct (contrôle positif)
-T10,comment résilier mon ancienne mutuelle,route:help_cancellation,help_cancellation direct
+T09,est-ce qu'il y a une télétransmission entre vous et Santelis,route:help_transfer,help_transfer direct (contrôle positif)
+T10,comment résilier mon ancien contrat Santelis,route:help_cancellation,help_cancellation direct
 T11,Je préfère parler à un humain,escalate:demande_explicite,sortie transverse demande_conseiller
 T12,déclarer un accident de ski,reject,hors_périmètre — accident non retenu
 T13,bilan bucco-dentaire détartrage,reject,hors_périmètre — dentaire non retenu
