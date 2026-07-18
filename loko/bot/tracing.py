@@ -17,9 +17,10 @@ from loko.bot.models import TraceEvent
 class TraceCollector:
     """Accumulates trace events for a single turn."""
 
-    def __init__(self, turn_id: str) -> None:
+    def __init__(self, turn_id: str, observer: Any | None = None) -> None:
         self.turn_id = turn_id
         self.events: list[TraceEvent] = []
+        self._observer = observer  # AnalyticsObserver (OBS-1)
 
     def add(
         self,
@@ -34,6 +35,8 @@ class TraceCollector:
             latency_ms=latency_ms,
         )
         self.events.append(event)
+        if self._observer is not None:
+            self._observer.on_trace(event)
         return event
 
     @contextmanager

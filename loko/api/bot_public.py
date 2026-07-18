@@ -339,6 +339,14 @@ async def create_session(
     # PRO-6: increment session counter
     _increment_api_key_quota(_key, "sessions")
 
+    # OBS-1: emit session_start event
+    _emit_analytics(
+        "session_start",
+        config=config,
+        session_id=session.session_id,
+        channel=_key.label if hasattr(_key, "label") else None,
+    )
+
     return {
         "session_id": session.session_id,
         "bot_id": bot_id,
@@ -545,8 +553,19 @@ async def send_message(
                     BotState.FIN_FERME,
                 ):
                     _SESSION_LOCKS.pop(session_id, None)
+                    # OBS-1: emit terminal session event
+                    _emit_session_end(current_session, config)
                 # INT: clean up active generation reference
                 _ACTIVE_GENERATIONS.pop(session_id, None)
+
+                # OBS-1: emit message_in event (post-response, non-blocking)
+                _emit_analytics(
+                    "message_in",
+                    config=config,
+                    session_id=session_id,
+                    intent_id=current_session.current_intent,
+                    sub_motif_id=current_session.current_sub_motif,
+                )
 
         # B1: signal done AFTER the lock is released
         active_gen.done.set()
@@ -626,6 +645,15 @@ async def add_feedback(
             turn_id = latest_bot_turn.turn_id
 
     store.add_feedback(session_id, turn_id, req.rating, req.comment)
+
+    # OBS-1: emit feedback event
+    config = load_bot_config(bot_id)
+    _emit_analytics(
+        "feedback_up" if req.rating == "positive" else "feedback_down",
+        config=config,
+        session_id=session_id,
+    )
+
     return {"status": "recorded"}
 
 
@@ -934,5 +962,65 @@ def _maintenance_message_response(
             "Cache-Control": "no-cache",
             "Connection": "keep-alive",
             "X-Accel-Buffering": "no",
+        },
+    )
+
+
+# ---------------------------------------------------------------------------
+# OBS-1: Analytics helpers (fail-open — never affect bot responses)
+# ---------------------------------------------------------------------------
+
+_STATE_TO_EVENT_TYPE: dict[BotState, str] = {
+    BotState.FIN: "session_end",
+    BotState.TIMEOUT: "timeout",
+    BotState.CLOTURE_DOUCE: "cloture_douce",
+    BotState.FIN_FERME: "fin_ferme",
+}
+
+
+def _emit_analytics(
+    event_type: str,
+    *,
+    config: BotConfig | None,
+    session_id: str,
+    intent_id: str | None = None,
+    sub_motif_id: str | None = None,
+    decision: str | None = None,
+    channel: str | None = None,
+    meta: dict | None = None,
+) -> None:
+    """Emit a single analytics event.  Fail-open — never raises."""
+    try:
+        from loko.analytics.emitter import emit
+
+        if config is None:
+            return
+        emit(
+            event_type,
+            account_id=config.account_id or config.bot_id,
+            bot_id=config.bot_id,
+            session_id=session_id,
+            intent_id=intent_id,
+            sub_motif_id=sub_motif_id,
+            decision=decision,
+            channel=channel,
+            meta=meta,
+        )
+    except Exception:
+        pass
+
+
+def _emit_session_end(session: Any, config: BotConfig) -> None:
+    """Emit the appropriate terminal event based on session state."""
+    event_type = _STATE_TO_EVENT_TYPE.get(session.state, "session_end")
+    _emit_analytics(
+        event_type,
+        config=config,
+        session_id=session.session_id,
+        intent_id=session.current_intent,
+        sub_motif_id=session.current_sub_motif,
+        meta={
+            "demandes_count": session.demandes_count,
+            "tokens_llm_cumul": session.tokens_llm_cumul,
         },
     )

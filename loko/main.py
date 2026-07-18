@@ -306,6 +306,51 @@ async def _alert_evaluation_task() -> None:
 
 
 # ---------------------------------------------------------------------------
+# OBS-1: Analytics rollup + purge background task
+# ---------------------------------------------------------------------------
+
+
+async def _analytics_rollup_task() -> None:
+    """Compute daily rollups and purge expired raw events (nightly)."""
+    # Run at ~02:00 UTC every day (approximate: check every 30 min)
+    interval_s = 1800  # 30 min
+    retention_days = int(os.environ.get("LOKO_ANALYTICS_RETENTION_DAYS", "395"))
+
+    while True:
+        try:
+            await asyncio.sleep(interval_s)
+
+            now = datetime.now(timezone.utc)
+            # Only run rollup between 02:00 and 02:30 UTC
+            if not (2 <= now.hour < 3 and now.minute < 30):
+                continue
+
+            from loko.analytics.db import compute_daily_rollups, purge_events
+
+            # Rollup yesterday
+            yesterday = (now - timedelta(days=1)).strftime("%Y-%m-%d")
+            try:
+                count = compute_daily_rollups(yesterday)
+                logger.info("Analytics rollup for %s: %d rows", yesterday, count)
+            except Exception:
+                logger.exception("Analytics rollup failed for %s", yesterday)
+
+            # Purge raw events older than retention
+            cutoff = (now - timedelta(days=retention_days)).isoformat()
+            try:
+                deleted = purge_events(cutoff)
+                if deleted > 0:
+                    logger.info("Analytics purge: %d events deleted (before %s)", deleted, cutoff)
+            except Exception:
+                logger.exception("Analytics purge failed")
+
+        except asyncio.CancelledError:
+            break
+        except Exception:
+            logger.exception("Analytics rollup task error")
+
+
+# ---------------------------------------------------------------------------
 # App factory
 # ---------------------------------------------------------------------------
 
@@ -526,6 +571,32 @@ def create_app() -> FastAPI:
     @app.on_event("startup")
     async def start_alert_task():
         asyncio.create_task(_alert_evaluation_task())
+
+    # --- OBS-1: Analytics emitter ---
+    @app.on_event("startup")
+    async def start_analytics_emitter():
+        try:
+            from loko.analytics.emitter import get_emitter
+
+            emitter = get_emitter()
+            emitter.start()
+            logger.info("Analytics emitter started")
+        except Exception:
+            logger.warning("Analytics emitter failed to start (non-critical)")
+
+    @app.on_event("shutdown")
+    async def stop_analytics_emitter():
+        try:
+            from loko.analytics.emitter import get_emitter
+
+            emitter = get_emitter()
+            await emitter.stop()
+        except Exception:
+            pass
+
+    @app.on_event("startup")
+    async def start_analytics_rollup_task():
+        asyncio.create_task(_analytics_rollup_task())
 
     # --- SPA fallback (C4) ---
     if FRONTEND_DIR.exists():

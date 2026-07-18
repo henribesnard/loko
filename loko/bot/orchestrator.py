@@ -55,6 +55,33 @@ logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
+# OBS-1: analytics observer factory
+# ---------------------------------------------------------------------------
+
+
+def _make_analytics_observer(
+    session: BotSession, config: BotConfig
+) -> Any | None:
+    """Create an AnalyticsObserver for the current turn, or None if analytics
+    is not running.  Fail-open: returns None on any error."""
+    try:
+        from loko.analytics.emitter import analytics_enabled
+        from loko.analytics.observer import AnalyticsObserver
+
+        if not analytics_enabled():
+            return None
+        return AnalyticsObserver(
+            account_id=config.account_id or config.bot_id,
+            bot_id=config.bot_id,
+            session_id=session.session_id,
+            channel=config.channel if config.channel != "both" else None,
+            turn=session.demandes_count,
+        )
+    except Exception:
+        return None
+
+
+# ---------------------------------------------------------------------------
 # Classifier protocol
 # ---------------------------------------------------------------------------
 
@@ -270,7 +297,8 @@ class BotOrchestrator:
             return
 
         turn_id = str(uuid.uuid4())
-        traces = TraceCollector(turn_id)
+        observer = _make_analytics_observer(session, config)
+        traces = TraceCollector(turn_id, observer=observer)
 
         # --- GF Layer 1: deterministic pre-filter (before classification) ---
         guardrail_result = self._guardrail_engine.check(user_text)
@@ -438,7 +466,8 @@ class BotOrchestrator:
             return
 
         turn_id = str(uuid.uuid4())
-        traces = TraceCollector(turn_id)
+        observer = _make_analytics_observer(session, config)
+        traces = TraceCollector(turn_id, observer=observer)
 
         session = add_turn_to_session(
             session,
