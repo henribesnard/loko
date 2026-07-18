@@ -119,6 +119,13 @@ class SubMotif(BaseModel):
             raise ValueError("Sub-motif id must not be empty")
         return v.strip()
 
+    @field_validator("examples")
+    @classmethod
+    def min_examples(cls, v: list[str]) -> list[str]:
+        if len(v) < 3:
+            raise ValueError("Sub-motif must have at least 3 examples")
+        return v
+
 
 class ExampleMeta(BaseModel):
     """Provenance metadata for a single training example."""
@@ -144,6 +151,14 @@ class Intent(BaseModel):
         if not v.strip():
             raise ValueError("Intent id must not be empty")
         return v.strip()
+
+    @model_validator(mode="after")
+    def min_examples(self) -> "Intent":
+        if not self.is_system and len(self.examples) < 8:
+            raise ValueError(
+                f"Intent must have at least 8 examples (got {len(self.examples)})"
+            )
+        return self
 
 
 # ---------------------------------------------------------------------------
