@@ -72,6 +72,27 @@ _POSTULAT_RAW: dict[str, list[str]] = {
         "attestation de couverture sociale",
         "attestation de droits perdue",
         "attestation avec la date d'effet",
+        # M3: enrichissement — cartes, certificats, justificatifs
+        "carte Santelis",
+        "carte Santelis pas reçue",
+        "carte de tiers payant",
+        "carte adhérent perdue",
+        "renouvellement de carte Santelis",
+        "télécharger ma carte Santelis",
+        "certificat d'appartenance Santelis",
+        "certificat d'inscription",
+        "certificat d'adhésion",
+        "justificatif d'affiliation",
+        "justificatif de droits",
+        "justificatif sécurité sociale",
+        "justificatif pour mon employeur",
+        "document attestant de ma couverture",
+        "preuve d'affiliation Santelis",
+        "obtenir un relevé de prestations",
+        "relevé de remboursements",
+        "duplicata de carte Santelis",
+        "demande de carte de tiers payant",
+        "besoin d'une attestation pour mon dossier",
     ],
     "help_leave": [
         "arrêt de travail",
@@ -265,7 +286,7 @@ PIEGE_CASES = [
 
 # Expected counts
 EXPECTED_COUNTS = {
-    "train.csv": len(POSTULAT_EXAMPLES),  # 125
+    "train.csv": len(POSTULAT_EXAMPLES),  # 145 (post M3 enrichissement)
     "heldout_metier.csv": 100,
     "heldout_conseiller.csv": 125,
     "heldout_horsscope.csv": 100,

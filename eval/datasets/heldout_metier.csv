@@ -56,26 +56,27 @@ attestation de droits date de validité,help_documents
 attestation de droits à l'assurance maladie pour mes enfants,help_documents
 attestation de la carte vitale portant la mention médecin traitant déclaré,help_documents
 attestation des droits d'assurance maladie,help_documents
-carte adhérent Santelis,help_documents
-carte de membre,help_documents
-certificat d'appartenance à la Santelis,help_documents
-certificat d'inscription,help_documents
-demande d'attestation de carte vitale,help_documents
-demande d'une attestation vitale,help_documents
-information concernant ma carte Santelis,help_documents
-informations sur une attestation de droits,help_documents
-justificatif d'affiliation,help_documents
-justificatif sécurité sociale,help_documents
-m'adresser une attestation de droits,help_documents
-perdu carte adhérent,help_documents
-renseignement pour la carte de Santelis,help_documents
-télécharger ma carte Santelis,help_documents
+carte adhérent non reçue,help_documents
+carte de tiers payant mutualiste,help_documents
+carte tiers payant mutualiste,help_documents
+comment accéder à la carte Santelis,help_documents
+comment obtenir une attestation,help_documents
+demande d'une attestation Santelis,help_documents
+demande de carte de tiers payant mutualiste,help_documents
+justificatif des droits,help_documents
+l'envoi d'une attestation de droits,help_documents
+la fiche reflet,help_documents
+me renseigner sur l'attestation de droits,help_documents
+modifier ma carte de Santelis,help_documents
+photocopie de mon assurance sociale,help_documents
+renseignements sur l'attestation vitale,help_documents
+besoin d'un imprimé trente-trois seize,help_leave
 complément prévoyance pour un demi-traitement congé longue maladie,help_leave
 congé pathologique,help_leave
 déclaration de salaire,help_leave
 démarche pour arrêt de travail,help_leave
-indemnisation arrêt de travail,help_leave
 indemnité d'allocation journalière,help_leave
+indemnité journalière non perçues,help_leave
 information concernant le formulaire allocation journalière,help_leave
 information sur la retraite invalidité,help_leave
 information sur le complément de salaire en cas d'arrêt de travail,help_leave
@@ -89,13 +90,12 @@ service indemnité journalière,help_leave
 signaler un cld,help_leave
 souci pour sortir du département avec un arrêt de travail,help_leave
 versement d'indemnité subrogé,help_leave
-avoir des renseignements sur le dispositif noémie,help_transfer
 conditions de télétransmission,help_transfer
 lien Santelis,help_transfer
-mettre en oeuvre la transmission automatique Santelis,help_transfer
 numéro de télétransmission de la Santelis,help_transfer
 problème avec ma dernière télétransmission,help_transfer
 relais Noemie,help_transfer
 renseignement concernant la télétransmission,help_transfer
 savoir où en est le lien Noemie,help_transfer
 soucis avec la télétransmission Noemie,help_transfer
+établir le lien Noemie avec la sécurité sociale,help_transfer
