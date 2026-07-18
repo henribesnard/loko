@@ -1,0 +1,26 @@
+Source: C:\Users\henri\Projets\loko\dataset.csv (6063 unique texts)
+
+--- train.csv (125 rows) ---
+  Scrub modifications: 0
+  Rows containing 'mutuelle': 0
+
+--- heldout_metier.csv (100 rows) ---
+  Scrub modifications: 0
+  Rows containing 'mutuelle': 0
+
+--- heldout_conseiller.csv (125 rows) ---
+  Scrub modifications: 0
+  Rows containing 'mutuelle': 0
+
+--- heldout_horsscope.csv (100 rows) ---
+  Scrub modifications: 0
+  Rows containing 'mutuelle': 0
+
+--- pieges.csv (15 rows) ---
+  Rows containing 'mutuelle': 0
+
+=== Summary ===
+  Total scrub modifications: 0
+  Total rows with 'mutuelle': 0
+  Impact: 'mutuelle' is a common French word that reduces discriminative
+  power for the classifier, especially for parler_conseiller in GNG-2.

@@ -22,12 +22,19 @@ ROOT = Path(__file__).resolve().parent.parent
 
 # Mirror the scrub pattern from make_datasets.py
 _CLIENT_RE = re.compile("m" + "gen", re.IGNORECASE)
+_FICTIONAL_BRAND = "Santelis"
 
 
 def scrub_current(text: str) -> str:
-    """Apply the current scrub (v1: brand -> mutuelle)."""
-    text = _CLIENT_RE.sub("mutuelle", text)
-    text = re.sub(r"\bmutuelle(\s+mutuelle)+\b", "mutuelle", text, flags=re.IGNORECASE)
+    """Apply the current scrub (v2: brand + mutuelle -> Santelis)."""
+    text = _CLIENT_RE.sub(_FICTIONAL_BRAND, text)
+    text = re.sub(r"\bmutuelle\b", _FICTIONAL_BRAND, text, flags=re.IGNORECASE)
+    text = re.sub(
+        rf"\b{_FICTIONAL_BRAND}(\s+{_FICTIONAL_BRAND})+\b",
+        _FICTIONAL_BRAND,
+        text,
+        flags=re.IGNORECASE,
+    )
     return " ".join(text.split())
 
 
