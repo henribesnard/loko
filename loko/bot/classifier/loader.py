@@ -74,13 +74,19 @@ def load_search_backend(bot_id: str) -> Any:
 class SetFitClassifierAdapter:
     """Adapts SetFitClassifier to the ClassifierProtocol."""
 
-    def __init__(self, bot_id: str, l1_classifier: Any):
+    def __init__(self, bot_id: str, l1_classifier: Any, temperature: float = 1.0):
         self.bot_id = bot_id
         self._l1 = l1_classifier
         self._l2_cache: dict[str, Any] = {}
+        self.temperature = temperature
 
     def classify_l1(self, text: str) -> list[tuple[str, float]]:
-        return self._l1.classify(text)
+        scores = self._l1.classify(text)
+        if self.temperature != 1.0:
+            from loko.bot.classifier.calibration import apply_temperature_scaling
+
+            scores = apply_temperature_scaling(scores, self.temperature)
+        return scores
 
     def classify_l2(self, intent_id: str, text: str) -> list[tuple[str, float]]:
         if intent_id not in self._l2_cache:
