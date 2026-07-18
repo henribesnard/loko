@@ -17,6 +17,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from loko.api.bot_admin import router as bot_admin_router
+from loko.api.analytics_dashboard import router as analytics_dashboard_router
 from loko.api.bot_dashboard import router as bot_dashboard_router
 from loko.api.bot_public import router as bot_public_router
 from loko.api.user_auth import router as user_auth_router
@@ -441,6 +442,7 @@ def create_app() -> FastAPI:
     # (require_tenant_or_ops does session-based tenant check or ops token)
     app.include_router(bot_admin_router)
     app.include_router(bot_dashboard_router)
+    app.include_router(analytics_dashboard_router)
 
     app.include_router(bot_public_router)
 
