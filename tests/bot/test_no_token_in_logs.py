@@ -63,7 +63,7 @@ def test_signup_no_token_in_logs(caplog):
                 # The log should only say "verify_token created"
                 assert "Verify token for" not in msg, f"Token leaked in log: {msg}"
 
-        asyncio.get_event_loop().run_until_complete(_run())
+        asyncio.run(_run())
 
 
 def test_reset_no_token_in_logs(caplog):
@@ -96,4 +96,4 @@ def test_reset_no_token_in_logs(caplog):
             msg = record.getMessage()
             assert "Reset token for" not in msg, f"Token leaked in log: {msg}"
 
-    asyncio.get_event_loop().run_until_complete(_run())
+    asyncio.run(_run())
