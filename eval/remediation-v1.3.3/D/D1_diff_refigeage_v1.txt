@@ -1,0 +1,96 @@
+Source: C:\Users\henri\Projets\loko\dataset.csv (6063 unique texts)
+
+--- train.csv (125 rows) ---
+  Scrub modifications: 9
+  Rows containing 'mutuelle': 22
+    [services_en_ligne] "accès compte personnel sur mon site MGEN"
+      -> "accès compte personnel sur mon site mutuelle"
+    [services_en_ligne] "accès à mon application MGEN"
+      -> "accès à mon application mutuelle"
+    [services_en_ligne] "accès à mon compte MGEN"
+      -> "accès à mon compte mutuelle"
+    [services_en_ligne] "MGEN connexion au compte Ameli"
+      -> "mutuelle connexion au compte Ameli"
+    [resiliation] "comment résilier la MGEN"
+      -> "comment résilier la mutuelle"
+    [justificatif_droits] "attestation MGEN"
+      -> "attestation mutuelle"
+    [justificatif_droits] "attestation MGEN pour ma fille"
+      -> "attestation mutuelle pour ma fille"
+    [teletransmission_noemie] "déconnecter la mutuelle MGEN de ma sécurité sociale"
+      -> "déconnecter la mutuelle de ma sécurité sociale"
+    [contact] "adresse postale de la MGEN"
+      -> "adresse postale de la mutuelle"
+
+--- heldout_metier.csv (100 rows) ---
+  Scrub modifications: 7
+  Rows containing 'mutuelle': 18
+    [services_en_ligne] "activation espace personnel MGEN en ligne"
+      -> "activation espace personnel mutuelle en ligne"
+    [services_en_ligne] "espace MGEN disponibles"
+      -> "espace mutuelle disponibles"
+    [cotisations] "explication de la cotisation assurance MGEN"
+      -> "explication de la cotisation assurance mutuelle"
+    [cotisations] "revoir mes cotisations MGEN"
+      -> "revoir mes cotisations mutuelle"
+    [justificatif_droits] "carte MGEN mutuelle"
+      -> "carte mutuelle"
+    [justificatif_droits] "certificat d'appartenance à la MGEN"
+      -> "certificat d'appartenance à la mutuelle"
+    [teletransmission_noemie] "problème de connexion entre la mutuelle et la MGEN"
+      -> "problème de connexion entre la mutuelle et la mutuelle"
+
+--- heldout_conseiller.csv (125 rows) ---
+  Scrub modifications: 16
+  Rows containing 'mutuelle': 24
+    [parler_conseiller] "Je dois parler à la personne qui a repris mon dossier MGEN"
+      -> "Je dois parler à la personne qui a repris mon dossier mutuelle"
+    [parler_conseiller] "Je veux joindre la MGEN"
+      -> "Je veux joindre la mutuelle"
+    [parler_conseiller] "Je veux échanger avec un conseiller MGEN"
+      -> "Je veux échanger avec un conseiller mutuelle"
+    [parler_conseiller] "besoin de parler à un correspondant MGEN"
+      -> "besoin de parler à un correspondant mutuelle"
+    [parler_conseiller] "c'est au sujet de la mutuelle mgen"
+      -> "c'est au sujet de la mutuelle"
+    [parler_conseiller] "c'est au sujet de la mgen et la mutuelle"
+      -> "c'est au sujet de la mutuelle et la mutuelle"
+    [parler_conseiller] "j'ai besoin de joindre MGEN service"
+      -> "j'ai besoin de joindre mutuelle service"
+    [parler_conseiller] "je peux avoir un conseiller MGEN téléphone"
+      -> "je peux avoir un conseiller mutuelle téléphone"
+    [parler_conseiller] "je souhaite savoir comment contacter mgen"
+      -> "je souhaite savoir comment contacter mutuelle"
+    [parler_conseiller] "je veux prendre contact avec MGEN"
+      -> "je veux prendre contact avec mutuelle"
+    [parler_conseiller] "je veux reprendre contact avec un délégué MGEN qui m'a téléphoné vendredi"
+      -> "je veux reprendre contact avec un délégué mutuelle qui m'a téléphoné vendredi"
+    [parler_conseiller] "je voudrais parler à un conseiller pour euh justement le la la la nouvelle mise à jour de de toulouse pour la mgen le douze novembre"
+      -> "je voudrais parler à un conseiller pour euh justement le la la la nouvelle mise à jour de de toulouse pour la mutuelle le douze novembre"
+    [parler_conseiller] "mon appel MGEN a été coupé"
+      -> "mon appel mutuelle a été coupé"
+    [parler_conseiller] "qu'est-ce que ça entraîne le fait d'avoir la mutuelle et sécu mgen"
+      -> "qu'est-ce que ça entraîne le fait d'avoir la mutuelle et sécu mutuelle"
+    [parler_conseiller] "résiliation de mutuelle mgen"
+      -> "résiliation de mutuelle"
+    [parler_conseiller] "vous bénéficiez des services de mutuelle de la mgen"
+      -> "vous bénéficiez des services de mutuelle de la mutuelle"
+
+--- heldout_horsscope.csv (100 rows) ---
+  Scrub modifications: 1
+  Rows containing 'mutuelle': 5
+    [contact] "horaire section MGEN"
+      -> "horaire section mutuelle"
+
+--- pieges.csv (15 rows) ---
+  Rows containing 'mutuelle': 4
+    [T03] "accès à mon compte de la mutuelle"
+    [T07] "attestation de droits mutuelle"
+    [T09] "est-ce qu'il y a une télétransmission entre vous et la mutuelle"
+    [T10] "comment résilier mon ancienne mutuelle"
+
+=== Summary ===
+  Total scrub modifications: 33
+  Total rows with 'mutuelle': 73
+  Impact: 'mutuelle' is a common French word that reduces discriminative
+  power for the classifier, especially for parler_conseiller in GNG-2.
