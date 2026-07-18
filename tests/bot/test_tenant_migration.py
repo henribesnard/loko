@@ -73,12 +73,12 @@ def test_lazy_migration_assigns_internal_account(bots_dir):
 
     assert config is not None
     assert config.account_id == "wezon-internal"
-    assert config.schema_version == 2
+    assert config.schema_version == 4
 
     # Verify persisted
     data = json.loads((bots_dir / "bot-a" / "config.json").read_text(encoding="utf-8"))
     assert data["account_id"] == "wezon-internal"
-    assert data["schema_version"] == 2
+    assert data["schema_version"] == 4
 
 
 def test_existing_v2_bot_unchanged(bots_dir):
