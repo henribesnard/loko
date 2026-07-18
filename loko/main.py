@@ -620,7 +620,7 @@ def create_app() -> FastAPI:
         async def spa_fallback(path: str) -> Response:
             """Serve SPA — return index.html for non-API/non-static routes."""
             # Don't intercept API requests — let them 404 normally
-            if path.startswith("api/") or path.startswith("health"):
+            if path.startswith("api/") or path.startswith("health") or path == "metrics":
                 return JSONResponse({"detail": "Not found"}, status_code=404)
 
             # Try to serve static file first
