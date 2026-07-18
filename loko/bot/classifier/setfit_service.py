@@ -178,7 +178,14 @@ class SetFitClassifier:
             )
 
         start = time.perf_counter()
-        probs = self._model.predict_proba([text])[0]
+        # M5: inference with torch.no_grad() for P95 latency optimization
+        try:
+            import torch
+
+            with torch.no_grad():
+                probs = self._model.predict_proba([text])[0]
+        except ImportError:
+            probs = self._model.predict_proba([text])[0]
         elapsed_ms = (time.perf_counter() - start) * 1000
 
         # Build scored list
@@ -213,6 +220,11 @@ class SetFitClassifier:
         model_dir = get_model_dir(self.bot_id, self.level, self.intent_id)
         try:
             self._model = SetFitModel.from_pretrained(str(model_dir))
+            # M5: set eval mode for faster inference (disables dropout, batch norm)
+            try:
+                self._model.model_body.eval()
+            except Exception:
+                pass
             self._load_label_map(model_dir)
             logger.info("Loaded %s model from %s", self.level, model_dir)
             return True
