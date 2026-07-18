@@ -6,14 +6,14 @@ SECURITY: /metrics endpoint is admin-only, never exposed publicly.
 """
 
 from fastapi import APIRouter, Depends, Response
-from loko.api.auth import verify_admin_token
+from loko.api.auth import require_admin
 from loko.monitoring.metrics import get_metrics
 
 router = APIRouter(tags=["monitoring"])
 
 
 @router.get("/metrics")
-async def prometheus_metrics(_admin: str = Depends(verify_admin_token)) -> Response:
+async def prometheus_metrics(_admin=Depends(require_admin)) -> Response:
     """
     Prometheus metrics endpoint (admin-only).
 

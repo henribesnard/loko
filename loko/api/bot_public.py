@@ -48,6 +48,20 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/v1/bot", tags=["bot-runtime"])
 
+
+# ---------------------------------------------------------------------------
+# OBS-3: Prometheus metrics helper (fail-open — never affects bot responses)
+# ---------------------------------------------------------------------------
+
+
+def _record_metric(fn_name: str, *args, **kwargs) -> None:
+    """Call a monitoring.metrics helper, fail-open."""
+    try:
+        from loko.monitoring import metrics
+        getattr(metrics, fn_name)(*args, **kwargs)
+    except Exception:
+        pass
+
 # Rate limiter (None if slowapi not installed — desktop mode)
 _limiter = get_limiter()
 
@@ -454,11 +468,16 @@ async def send_message(
             409, "A message is already being processed for this session"
         )
 
+    # OBS-3: start timing for message latency
+    _msg_start = time.monotonic()
+
     # A5: ComponentUnavailableError → 503
     try:
         orchestrator = _get_orchestrator(bot_id, config)
     except ComponentUnavailableError as exc:
         logger.error("Bot %s unavailable: %s", bot_id, exc)
+        _record_metric("record_message", bot_id, "error")
+        _record_metric("record_error", "bot_unavailable", bot_id)
         raise HTTPException(503, {"error": "bot_unavailable", "detail": exc.reason})
 
     # INT: register active generation for interrupt support
@@ -499,6 +518,11 @@ async def send_message(
                             sse_event.data.get("token", "")
                         )
                     yield _sse_encode(sse_event)
+            except Exception:
+                # OBS-3: record processing error (fail-open)
+                _record_metric("record_message", bot_id, "error")
+                _record_metric("record_error", "processing_error", bot_id)
+                raise
             finally:
                 # B1: epoch check — if epoch advanced, we are a zombie; skip writes
                 current_epoch = _GENERATION_EPOCHS.get(session_id, 0)
@@ -566,6 +590,11 @@ async def send_message(
                     intent_id=current_session.current_intent,
                     sub_motif_id=current_session.current_sub_motif,
                 )
+
+                # OBS-3: record Prometheus metrics (fail-open)
+                _record_metric("record_message", bot_id, "success")
+                _elapsed = time.monotonic() - _msg_start
+                _record_metric("record_message_latency", bot_id, _elapsed)
 
         # B1: signal done AFTER the lock is released
         active_gen.done.set()

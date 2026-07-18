@@ -1,0 +1,35 @@
+# Prometheus alert rules for LOKO (OBS-3)
+
+groups:
+  - name: loko
+    interval: 30s
+    rules:
+      # R1: High error rate on messages
+      - alert: HighErrorRate
+        expr: rate(loko_messages_total{status="error"}[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Taux d'erreur messages eleve"
+          description: "{{ $value | printf \"%.2f\" }} erreurs/sec sur 5 min"
+
+      # R2: High P95 latency
+      - alert: HighLatency
+        expr: histogram_quantile(0.95, rate(loko_message_latency_seconds_bucket[5m])) > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Latence P95 > 10s"
+          description: "P95 latence: {{ $value | printf \"%.1f\" }}s"
+
+      # R3: LOKO service down
+      - alert: LokoDown
+        expr: up{job="loko"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "LOKO est indisponible"
+          description: "Le service LOKO ne repond plus depuis 2 minutes"

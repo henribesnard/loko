@@ -22,6 +22,7 @@ from loko.api.bot_dashboard import router as bot_dashboard_router
 from loko.api.bot_public import router as bot_public_router
 from loko.api.user_auth import router as user_auth_router
 from loko import __version__
+from loko.api.metrics_endpoint import router as metrics_router
 from loko.api.ops import router as ops_router
 
 logger = logging.getLogger(__name__)
@@ -448,6 +449,9 @@ def create_app() -> FastAPI:
 
     # --- User auth (always mounted) ---
     app.include_router(user_auth_router)
+
+    # --- OBS-3: Prometheus metrics (admin-only, always mounted) ---
+    app.include_router(metrics_router)
 
     # --- Ops (super-admin, guarded by LOKO_ADMIN_TOKEN) ---
     if mode == "server" and admin_token:

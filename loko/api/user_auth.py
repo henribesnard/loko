@@ -37,6 +37,20 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
+
+# ---------------------------------------------------------------------------
+# OBS-3: Prometheus metrics helper (fail-open)
+# ---------------------------------------------------------------------------
+
+
+def _record_metric(fn_name: str, *args, **kwargs) -> None:
+    """Call a monitoring.metrics helper, fail-open."""
+    try:
+        from loko.monitoring import metrics
+        getattr(metrics, fn_name)(*args, **kwargs)
+    except Exception:
+        pass
+
 # ---------------------------------------------------------------------------
 # Rate limiting (in-memory, per IP)
 # ---------------------------------------------------------------------------
@@ -57,6 +71,7 @@ def _check_rate_limit(ip: str) -> None:
     attempts = _AUTH_ATTEMPTS[ip]
     _AUTH_ATTEMPTS[ip] = [t for t in attempts if now - t < _AUTH_WINDOW_SECONDS]
     if len(_AUTH_ATTEMPTS[ip]) >= _MAX_AUTH_ATTEMPTS:
+        _record_metric("record_auth_attempt", "rate_limited")
         raise HTTPException(429, "Trop de tentatives. Reessayez dans quelques minutes.")
 
 
@@ -243,12 +258,14 @@ async def login(
 
     if not user:
         _record_attempt(ip)
+        _record_metric("record_auth_attempt", "failed")
         raise HTTPException(401, "Email ou mot de passe incorrect.")
 
     from loko.db.accounts import verify_password
 
     if not verify_password(req.password, user["password_hash"]):
         _record_attempt(ip)
+        _record_metric("record_auth_attempt", "failed")
         raise HTTPException(401, "Email ou mot de passe incorrect.")
 
     # T4: check account not suspended before creating session
@@ -274,6 +291,9 @@ async def login(
 
     # Update last_login_at
     update_user(user["id"], last_login_at=datetime.now(timezone.utc).isoformat())
+
+    # OBS-3: record successful auth
+    _record_metric("record_auth_attempt", "success")
 
     return {
         "status": "ok",
