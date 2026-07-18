@@ -256,12 +256,12 @@ async def login(
     if account and account.get("status") == "suspended":
         raise HTTPException(403, "Compte suspendu. Contactez le support.")
 
-    # ACC-4: email verification — disabled until SMTP is configured
-    # if user.get("email_verified_at") is None:
-    #     raise HTTPException(
-    #         status_code=403,
-    #         detail="Email non verifie. Verifiez votre boite mail ou demandez un nouveau lien.",
-    #     )
+    # ACC-4: email verification
+    if user.get("email_verified_at") is None:
+        raise HTTPException(
+            status_code=403,
+            detail="Email non verifie. Verifiez votre boite mail ou demandez un nouveau lien.",
+        )
 
     # Create session
     session_id = create_session(user["id"])
