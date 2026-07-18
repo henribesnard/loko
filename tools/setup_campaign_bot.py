@@ -5,7 +5,7 @@ Reads train.csv and configures bot with ALL required intents:
   - 7 métier intents from train.csv
   - hors_perimetre (system) from train.csv
   - demande_conseiller (system, transverse) with built-in examples
-  - L2 sub-motifs for services_en_ligne (5 labels)
+  - L2 sub-motifs for help_account (5 labels)
 
 This fixes the v0.3.7 config bug: bot had 8 intents instead of 9,
 and no L2 sub-motifs, causing GNG-2 = 0% and L2 coverage failure.
@@ -28,11 +28,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 
 # ──────────────────────────────────────────────────────────────────────
-# L2 sub-motifs for services_en_ligne (5 labels, ≥ 3 examples each)
+# L2 sub-motifs for help_account (5 labels, ≥ 3 examples each)
 # Source: v0.3.6 campaign config (last valid campaign)
 # ──────────────────────────────────────────────────────────────────────
 
-SERVICES_EN_LIGNE_SUB_MOTIFS = [
+HELP_ACCOUNT_SUB_MOTIFS = [
     {
         "id": "mot_de_passe_oublie",
         "label": "Mot de passe oublié",
@@ -142,7 +142,7 @@ def build_intents_from_train(train_csv: Path) -> list[dict]:
     Fixes the v0.3.7 bug:
     - Adds demande_conseiller as system intent with built-in examples
     - Marks hors_perimetre as system
-    - Adds L2 sub-motifs to services_en_ligne
+    - Adds L2 sub-motifs to help_account
     """
     examples_by_intent: dict[str, list[str]] = defaultdict(list)
 
@@ -169,11 +169,11 @@ def build_intents_from_train(train_csv: Path) -> list[dict]:
             "is_system": intent_name in SYSTEM_INTENTS,
         }
 
-        # Add L2 sub-motifs for services_en_ligne
+        # Add L2 sub-motifs for help_account
         if intent_name == "help_account":
-            intent["sub_motifs"] = SERVICES_EN_LIGNE_SUB_MOTIFS
+            intent["sub_motifs"] = HELP_ACCOUNT_SUB_MOTIFS
             print(
-                f"  + services_en_ligne: {len(SERVICES_EN_LIGNE_SUB_MOTIFS)} L2 sub-motifs added"
+                f"  + help_account: {len(HELP_ACCOUNT_SUB_MOTIFS)} L2 sub-motifs added"
             )
 
         intents.append(intent)
@@ -229,9 +229,9 @@ def verify_conformity(intents: list[dict]) -> list[str]:
     if sel:
         subs = sel.get("sub_motifs", [])
         if len(subs) < 5:
-            errors.append(f"services_en_ligne L2 has {len(subs)} labels (need ≥ 5)")
+            errors.append(f"help_account L2 has {len(subs)} labels (need ≥ 5)")
     else:
-        errors.append("services_en_ligne intent not found")
+        errors.append("help_account intent not found")
 
     # System flags
     for i in intents:

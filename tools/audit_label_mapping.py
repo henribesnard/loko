@@ -36,13 +36,13 @@ DATASETS_DIR = ROOT / "eval" / "datasets"
 REQUIRED_MODEL_LABELS = {
     "hors_perimetre",
     "demande_conseiller",
-    "arret_travail",
-    "changement_coordonnees",
-    "cotisations",
-    "justificatif_droits",
-    "resiliation",
-    "services_en_ligne",
-    "teletransmission_noemie",
+    "help_leave",
+    "help_contact",
+    "help_billing",
+    "help_documents",
+    "help_cancellation",
+    "help_account",
+    "help_transfer",
 }
 
 # Known mapping: heldout_conseiller uses 'parler_conseiller' as the expected
