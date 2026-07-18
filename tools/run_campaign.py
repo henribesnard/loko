@@ -1231,6 +1231,7 @@ def run_campaign(
     dry_run: bool = False,
     phases: list[str] | None = None,
     allowed_tests: set[str] | None = None,
+    diagnostic: bool = False,
 ) -> CampaignReport:
     """Execute a full campaign and produce the report.
 
@@ -1291,6 +1292,10 @@ def run_campaign(
         print(f"    {interdit}")
     print()
 
+    if diagnostic:
+        report.anomalies_protocole.append(
+            "MODE DIAGNOSTIC — CAMPAGNE NON OPPOSABLE (CE FAIL bypass via --diagnostic)"
+        )
     if dry_run:
         print("  *** MODE DRY-RUN - les tests V1+ restent NON EXECUTE ***\n")
 
@@ -1306,12 +1311,62 @@ def run_campaign(
         # In dry-run, only run CE and V0 (unless specific tests are requested)
         allowed_phases = {"CE", "V0"}
 
+    ce_done = False
     for test_line in report.lines:
         # Filter by phase
         if test_line.phase not in allowed_phases:
             if dry_run:
                 test_line.detail = "DRY-RUN - non execute"
             continue
+
+        # T2: After all CE lines, check CE gate — abort if FAIL (unless --diagnostic)
+        if test_line.phase != "CE" and not ce_done:
+            ce_done = True
+            if "CE" in allowed_phases and not diagnostic:
+                # Compute intermediate CE verdict
+                ce_lines = [l for l in report.lines if l.phase == "CE"]
+                ce_failed = any(
+                    l.verdict != "PASS" and not (l.verdict == "SKIP" and l.skippable)
+                    for l in ce_lines
+                )
+                if ce_failed:
+                    # Mark remaining lines as non-executed (they stay FAIL by default)
+                    for remaining in report.lines:
+                        if remaining.phase != "CE" and not remaining.executed:
+                            remaining.detail = "CE FAIL — non execute (bloquant)"
+                    # Calculate gates and write report before aborting
+                    calculate_gates(report.lines, report.gates)
+                    report.completed_at = datetime.now(timezone.utc).isoformat()
+                    report.overall_verdict = "NON VALIDE"
+
+                    md_report = generate_report_md(report)
+                    md_path = campaign_path / "RAPPORT_CAMPAGNE.md"
+                    md_path.write_text(md_report, encoding="utf-8")
+
+                    json_report = generate_report_json(report)
+                    json_path = campaign_path / "campaign_report.json"
+                    json_path.write_text(
+                        json.dumps(json_report, ensure_ascii=False, indent=2),
+                        encoding="utf-8",
+                    )
+
+                    ce_fail_ids = [l.id for l in ce_lines if l.verdict != "PASS"]
+                    print(
+                        f"\n  \033[91mCE BLOQUANT — arret de la campagne "
+                        f"(lignes en echec : {', '.join(ce_fail_ids)})\033[0m"
+                    )
+                    print(f"  Rapport : {md_path}")
+                    print(
+                        "  Utilisez --diagnostic pour forcer l'execution "
+                        "(campagne non opposable).\n"
+                    )
+                    report._ce_aborted = True  # type: ignore[attr-defined]
+                    return report
+            elif diagnostic:
+                print(
+                    "  \033[93m*** MODE DIAGNOSTIC — CAMPAGNE NON OPPOSABLE "
+                    "(CE FAIL) ***\033[0m\n"
+                )
 
         # Filter by allowed test IDs (for E1 diagnostic mode)
         if allowed_tests and test_line.id not in allowed_tests:
@@ -1439,6 +1494,11 @@ Examples:
         action="store_true",
         help="E1 mini-campaign: CE-1..CE-9 + V2-1,V2-2 + V3-0..V3-4",
     )
+    parser.add_argument(
+        "--diagnostic",
+        action="store_true",
+        help="T2: Continue despite CE FAIL (report marked NON OPPOSABLE)",
+    )
 
     args = parser.parse_args()
 
@@ -1476,10 +1536,14 @@ Examples:
         dry_run=args.dry_run,
         phases=args.phases,
         allowed_tests=allowed_tests,
+        diagnostic=getattr(args, "diagnostic", False),
     )
 
     # Exit code based on overall verdict
-    if report.dry_run:
+    # T2: CE abort uses exit code 2 (dedicated "CE bloquant")
+    if getattr(report, "_ce_aborted", False):
+        sys.exit(2)
+    elif report.dry_run:
         # Dry-run: exit 1 if any executed test failed (expected for E0 gate test)
         has_failures = any(l.verdict == "FAIL" and l.executed for l in report.lines)
         sys.exit(1 if has_failures else 0)
