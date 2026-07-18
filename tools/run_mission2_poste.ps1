@@ -6,9 +6,9 @@
 # Le runner calcule les verdicts ; l'agent analyse les artefacts ensuite.
 # ============================================================
 $ErrorActionPreference = "Continue"
-$TAG = "v1.3.2"
+$TAG = "v1.3.3"
 $BOT = "fa4d8b2d-548f-457b-bf65-acbc61a39cbb"
-$CAMP = "eval/recette-integrale/2026-07-17-v1.3.2"
+$CAMP = "eval/recette-integrale/2026-07-17-v1.3.3"
 
 # --- Charger .env dans l'environnement du process (herite par docker/python) ---
 Get-Content .env | ForEach-Object {
