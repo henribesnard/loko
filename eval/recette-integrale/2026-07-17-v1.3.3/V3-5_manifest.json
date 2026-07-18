@@ -1,0 +1,268 @@
+{
+  "manifest_hash": "c5ffe2ee3a9f56f763d3dc6d671af058b30f332be7e71c3fbe42168b61a8b569",
+  "manifest": {
+    "schema": 1,
+    "created_at": "2026-07-18T06:14:36.876951+00:00",
+    "bot_id": "fa4d8b2d-548f-457b-bf65-acbc61a39cbb",
+    "levels": {
+      "level1": {
+        "files": {
+          "README.md": "6bbad5bca445d9a10ff2aa4d5e9cb9727ffecb72e93e37c3d840ff520e23c01a",
+          "config.json": "63b35202ff33b93efdfbcda8fdb7c962edf9747be28b11a94603a8ff2d914e17",
+          "config_sentence_transformers.json": "e4245393402267fdf64fd238a54024aae0c10d5116ae115a2fa29c05898b94a9",
+          "config_setfit.json": "40c19cbfda13fec2ffee7425254abc3de5e0aabc72a8aba102bd4ef3fe4b44e8",
+          "label_map.json": "ab2b8f76bbb1c95f70609743aff8071879865ca40dac1c7a741e0d8ef869282f",
+          "model.safetensors": "9caefa5094f989ecaea163f0860959b3c2695e7d3214a8db0d0a964c4ceb66e3",
+          "model_head.pkl": "5216598974a0eb893ca1486711410ee1905e03a16e9de13d959820a4532385e2",
+          "modules.json": "8f4b264b80206c830bebbdcae377e137925650a433b689343a63bdc9b3145460",
+          "sentence_bert_config.json": "70f4448f31320443fe3557cacea5abf2dcc4915dda8c80646bec9f3bb0aa5a1f",
+          "special_tokens_map.json": "8c785abebea9ae3257b61681b4e6fd8365ceafde980c21970d001e834cf10835",
+          "tokenizer.json": "cad551d5600a84242d0973327029452a1e3672ba6313c2a3c3d69c4310e12719",
+          "tokenizer_config.json": "a551429f3c0a8bb9f7ade9c324b144c5de8a0f8f96e16a807b73526507a0cc2f"
+        },
+        "labels": [
+          "demande_conseiller",
+          "help_account",
+          "help_billing",
+          "help_cancellation",
+          "help_contact",
+          "help_documents",
+          "help_leave",
+          "help_transfer",
+          "hors_perimetre"
+        ],
+        "n_train_examples": 273
+      },
+      "level2_help_account": {
+        "files": {
+          "README.md": "0cc35c2cf34eb444b51e5b9d2f1778e179afac5135e2c07a8651a60aaa733197",
+          "config.json": "63b35202ff33b93efdfbcda8fdb7c962edf9747be28b11a94603a8ff2d914e17",
+          "config_sentence_transformers.json": "e4245393402267fdf64fd238a54024aae0c10d5116ae115a2fa29c05898b94a9",
+          "config_setfit.json": "7b2260a3209bb0889037b014d5c732adc77567a3f57a46e0e9f9e9bef5490abb",
+          "label_map.json": "fea311a0703fd0c50e332300ac59f20d9db84ab6ba787e157c2558c2778900ad",
+          "model.safetensors": "8dd722ecf58934195b92742a5e8c746bddc06511249a7cf0a2a827dea224d9a0",
+          "model_head.pkl": "23ec2cb33b83d31f273663436af223ed65060efbadc0d3941e0bc8f01a409823",
+          "modules.json": "8f4b264b80206c830bebbdcae377e137925650a433b689343a63bdc9b3145460",
+          "sentence_bert_config.json": "70f4448f31320443fe3557cacea5abf2dcc4915dda8c80646bec9f3bb0aa5a1f",
+          "special_tokens_map.json": "8c785abebea9ae3257b61681b4e6fd8365ceafde980c21970d001e834cf10835",
+          "tokenizer.json": "cad551d5600a84242d0973327029452a1e3672ba6313c2a3c3d69c4310e12719",
+          "tokenizer_config.json": "a551429f3c0a8bb9f7ade9c324b144c5de8a0f8f96e16a807b73526507a0cc2f"
+        },
+        "labels": [
+          "compte_bloque",
+          "identifiants_perdus",
+          "mot_de_passe_oublie",
+          "premiere_connexion",
+          "probleme_technique"
+        ],
+        "n_train_examples": 25
+      }
+    },
+    "dataset_hash": "5fcaf6995c50afd048722123ab1abb9e69624473b447cc5c59761798cb9b5471",
+    "train_metrics": {
+      "class_names": [
+        "demande_conseiller",
+        "help_account",
+        "help_billing",
+        "help_cancellation",
+        "help_contact",
+        "help_documents",
+        "help_leave",
+        "help_transfer",
+        "hors_perimetre"
+      ],
+      "confusion_matrix": [
+        [
+          36,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          47,
+          0,
+          0,
+          0,
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          1,
+          0,
+          22,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          21,
+          0,
+          1,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          0,
+          24,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          1,
+          0,
+          0,
+          30,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          1,
+          0,
+          0,
+          2,
+          27,
+          0,
+          1
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          22,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          1,
+          3,
+          1,
+          4,
+          0,
+          17
+        ]
+      ],
+      "accuracy": 0.9145,
+      "per_class_f1": {
+        "demande_conseiller": 0.973,
+        "help_account": 0.9592,
+        "help_billing": 0.9167,
+        "help_cancellation": 0.9545,
+        "help_contact": 0.9231,
+        "help_documents": 0.8955,
+        "help_leave": 0.8438,
+        "help_transfer": 0.9362,
+        "hors_perimetre": 0.7727
+      },
+      "advice": [
+        {
+          "type": "confused_pair",
+          "pair": [
+            "help_leave",
+            "hors_perimetre"
+          ],
+          "evidence": "cv",
+          "n_exemples_faibles": 4,
+          "suggestion": "'hors_perimetre' et 'help_leave' se confondent en CV base (4/26 erreurs). Ajoutez des exemples discriminants entre ces deux intentions."
+        },
+        {
+          "type": "confused_pair",
+          "pair": [
+            "help_contact",
+            "hors_perimetre"
+          ],
+          "evidence": "both",
+          "n_exemples_faibles": 3,
+          "avg_margin": 0.0014,
+          "suggestion": "Les intentions 'help_contact' et 'hors_perimetre' sont proches en marge (1 exemples avec ecart top1-top2 < 0.15, marge moyenne 0.001). Ajoutez des exemples discriminants entre ces deux intentions. Exemples a faible marge : \"adresse postale de la mutuelle\".",
+          "verbatims": [
+            "adresse postale de la mutuelle"
+          ]
+        },
+        {
+          "type": "confused_pair",
+          "pair": [
+            "help_documents",
+            "help_leave"
+          ],
+          "evidence": "both",
+          "n_exemples_faibles": 2,
+          "avg_margin": 0.0708,
+          "suggestion": "Les intentions 'help_documents' et 'help_leave' sont proches en marge (2 exemples avec ecart top1-top2 < 0.15, marge moyenne 0.071). Ajoutez des exemples discriminants entre ces deux intentions. Exemples a faible marge : \"attestation à remplir pour le versement de l'ijss\", \"attestation de paiement mutuelle de mes AJ\".",
+          "verbatims": [
+            "attestation à remplir pour le versement de l'ijss",
+            "attestation de paiement mutuelle de mes AJ"
+          ]
+        }
+      ],
+      "cv_method": "base_model_frozen_3seeds",
+      "duration_s": 3.98,
+      "n_seeds": 3,
+      "margin_weak_pairs": [
+        {
+          "pair": [
+            "help_documents",
+            "help_leave"
+          ],
+          "count": 2,
+          "avg_margin": 0.0708,
+          "verbatims": [
+            "attestation à remplir pour le versement de l'ijss",
+            "attestation de paiement mutuelle de mes AJ"
+          ]
+        },
+        {
+          "pair": [
+            "help_contact",
+            "hors_perimetre"
+          ],
+          "count": 1,
+          "avg_margin": 0.0014,
+          "verbatims": [
+            "adresse postale de la mutuelle"
+          ]
+        }
+      ]
+    },
+    "inference_latency_ms": {
+      "p50": 28.28,
+      "p95": 51.63,
+      "methodology": {
+        "warmup": 10,
+        "measured": 100,
+        "gc_before": true,
+        "threads_reset": true
+      }
+    }
+  }
+}

@@ -1,0 +1,9 @@
+{"n": 200, "p95_perf_ms": 106.42, "p95_mono_ms": 106.42, "ecart_rel": 0.0}
+
+There was a problem when trying to write in your cache folder (/app/.hf_cache/hub). You should set the environment variable TRANSFORMERS_CACHE to a writable directory.
+/usr/local/lib/python3.12/site-packages/joblib/numpy_pickle.py:207: DeprecationWarning: Setting the shape on a NumPy array has been deprecated in NumPy 2.5.
+As an alternative, you can create a new view using np.reshape (with copy=False if needed).
+  array.shape = self.shape
+/usr/local/lib/python3.12/site-packages/joblib/numpy_pickle.py:204: DeprecationWarning: Setting the shape on a NumPy array has been deprecated in NumPy 2.5.
+As an alternative, you can create a new view using np.reshape (with copy=False if needed).
+  array.shape = self.shape[::-1]

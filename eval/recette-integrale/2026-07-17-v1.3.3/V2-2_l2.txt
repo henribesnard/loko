@@ -1,0 +1,12 @@
+{
+  "num_classes": 5,
+  "num_samples": 25,
+  "duration_s": 54.81,
+  "classes": [
+    "compte_bloque",
+    "identifiants_perdus",
+    "mot_de_passe_oublie",
+    "premiere_connexion",
+    "probleme_technique"
+  ]
+}

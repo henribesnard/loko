@@ -1,0 +1,189 @@
+{
+  "mode": "decision",
+  "dataset": "heldout_metier.csv",
+  "total": 100,
+  "correct": 81,
+  "accuracy": 0.81,
+  "per_class": {},
+  "confusion": {},
+  "n_errors": 19,
+  "errors": [
+    {
+      "text": "espace mutuelle disponibles",
+      "expected": "help_account",
+      "predicted": "help_account",
+      "score": 0.4713028371334076,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "reçu un courrier pour mettre sur internet j'ai pas internet",
+      "expected": "help_account",
+      "predicted": "help_contact",
+      "score": 0.32677024602890015,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "démarche à faire pour un déménagement changement de département",
+      "expected": "help_contact",
+      "predicted": "help_contact",
+      "score": 0.49931952357292175,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "problème de saisie de RIB",
+      "expected": "help_contact",
+      "predicted": "help_account",
+      "score": 0.4993337392807007,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "carte de mutuelle pas reçu",
+      "expected": "help_documents",
+      "predicted": "hors_perimetre",
+      "score": 0.4515763223171234,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "carte mutuelle",
+      "expected": "help_documents",
+      "predicted": "hors_perimetre",
+      "score": 0.7429785132408142,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "certificat d'appartenance à la mutuelle",
+      "expected": "help_documents",
+      "predicted": "hors_perimetre",
+      "score": 0.3902682960033417,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "certificat d'inscription",
+      "expected": "help_documents",
+      "predicted": "hors_perimetre",
+      "score": 0.5021892786026001,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "demande d'attestation de carte vitale",
+      "expected": "help_documents",
+      "predicted": "hors_perimetre",
+      "score": 0.7878760099411011,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "information concernant ma carte mutuelle",
+      "expected": "help_documents",
+      "predicted": "hors_perimetre",
+      "score": 0.30407169461250305,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "justificatif d'affiliation",
+      "expected": "help_documents",
+      "predicted": "hors_perimetre",
+      "score": 0.48693859577178955,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "justificatif sécurité sociale",
+      "expected": "help_documents",
+      "predicted": "help_documents",
+      "score": 0.3556413948535919,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "perdu carte adhérent",
+      "expected": "help_documents",
+      "predicted": "help_account",
+      "score": 0.449762761592865,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "renseignement pour la carte de mutuelle",
+      "expected": "help_documents",
+      "predicted": "help_transfer",
+      "score": 0.3641875982284546,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "télécharger ma carte mutuelle",
+      "expected": "help_documents",
+      "predicted": "help_account",
+      "score": 0.7603816986083984,
+      "decision_type": "clarify_inter",
+      "correct": false,
+      "detail": "candidates=[('help_account', 0.7603816986083984), ('help_contact', 0.07665503025054932)]"
+    },
+    {
+      "text": "renseignement sur le temps partiel thérapeutique",
+      "expected": "help_leave",
+      "predicted": "help_transfer",
+      "score": 0.26243531703948975,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "signaler un cld",
+      "expected": "help_leave",
+      "predicted": "hors_perimetre",
+      "score": 0.4315224289894104,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "versement d'indemnité subrogé",
+      "expected": "help_leave",
+      "predicted": "help_billing",
+      "score": 0.9418729543685913,
+      "decision_type": "route",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "pas de lien avec ma mutuelle",
+      "expected": "help_transfer",
+      "predicted": "help_transfer",
+      "score": 0.4136596918106079,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    }
+  ],
+  "dataset_hash": "f0400c407a789943718ac3651d41a9be07974b605f71488bb9372fbd317ca7a2",
+  "manifest_reference": {
+    "bot_id": "fa4d8b2d-548f-457b-bf65-acbc61a39cbb",
+    "dataset_hash": "5fcaf6995c50afd048722123ab1abb9e69624473b447cc5c59761798cb9b5471",
+    "trained_at": "2026-07-18T06:14:36.876951+00:00"
+  }
+}

@@ -1,0 +1,207 @@
+........................................................................ [ 12%]
+........................................................................ [ 24%]
+........................................................................ [ 37%]
+.....................F...F....................FF........................ [ 49%]
+....................................................................F... [ 62%]
+...............F........................................................ [ 74%]
+........................................................................ [ 87%]
+..F..........................................ss..s...................... [ 99%]
+...                                                                      [100%]
+=================================== FAILURES ===================================
+___________________ TestIntent.test_too_few_examples_raises ____________________
+tests/bot/test_models.py:29: in test_too_few_examples_raises
+    with pytest.raises(ValueError, match="at least 8 examples"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError
+__________________ TestSubMotif.test_too_few_examples_raises ___________________
+tests/bot/test_models.py:68: in test_too_few_examples_raises
+    with pytest.raises(ValueError, match="at least 3 examples"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   Failed: DID NOT RAISE ValueError
+_________________________ test_signup_no_token_in_logs _________________________
+tests/bot/test_no_token_in_logs.py:66: in test_signup_no_token_in_logs
+    asyncio.get_event_loop().run_until_complete(_run())
+    ^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.12/asyncio/events.py:702: in get_event_loop
+    raise RuntimeError('There is no current event loop in thread %r.'
+E   RuntimeError: There is no current event loop in thread 'MainThread'.
+_________________________ test_reset_no_token_in_logs __________________________
+tests/bot/test_no_token_in_logs.py:99: in test_reset_no_token_in_logs
+    asyncio.get_event_loop().run_until_complete(_run())
+    ^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.12/asyncio/events.py:702: in get_event_loop
+    raise RuntimeError('There is no current event loop in thread %r.'
+E   RuntimeError: There is no current event loop in thread 'MainThread'.
+_________________ test_lazy_migration_assigns_internal_account _________________
+tests/bot/test_tenant_migration.py:76: in test_lazy_migration_assigns_internal_account
+    assert config.schema_version == 2
+E   AssertionError: assert 4 == 2
+E    +  where 4 = BotConfig(schema_version=4, bot_id='bot-a', name='Bot A', account_id='wezon-internal', demo=False, channel='both', lan...='platform', provider_type='openai_compat', preset=None, base_url='', api_key_ref='', api_key_hint=''), status='draft').schema_version
+____________________ test_login_blocked_before_verification ____________________
+tests/bot/test_user_auth.py:101: in test_login_blocked_before_verification
+    _run(_run_test())
+tests/bot/test_user_auth.py:58: in _run
+    return loop.run_until_complete(coro)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.12/asyncio/base_events.py:691: in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+tests/bot/test_user_auth.py:95: in _run_test
+    assert resp.status_code == 403
+E   assert 200 == 403
+E    +  where 200 = <Response [200 OK]>.status_code
+______________ TestP1_Intents.test_intent_min_examples_validation ______________
+tests/test_e2e_protocol.py:308: in test_intent_min_examples_validation
+    assert res.status_code in (422, 400)
+E   assert 200 in (422, 400)
+E    +  where 200 = <Response [200 OK]>.status_code
+=============================== warnings summary ===============================
+../usr/local/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /usr/local/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tools/run_campaign.py:64
+  /app/tools/run_campaign.py:64: PytestCollectionWarning: cannot collect test class 'TestLine' because it has a __init__ constructor (from: tests/test_campaign_tools.py)
+    @dataclass
+
+tests/bot/test_bot_api.py: 35 warnings
+tests/bot/test_cors_guard.py: 2 warnings
+tests/bot/test_dashboard_api.py: 11 warnings
+tests/bot/test_no_token_in_logs.py: 2 warnings
+tests/bot/test_publish_integrity.py: 6 warnings
+tests/bot/test_train_state.py: 2 warnings
+tests/bot/test_user_auth.py: 5 warnings
+tests/test_e2e_protocol.py: 33 warnings
+tests/test_interrupt.py: 6 warnings
+tests/test_repo_hygiene.py: 2 warnings
+tests/test_v_corrections.py: 1 warning
+  /app/loko/main.py:436: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    @app.on_event("startup")
+
+tests/bot/test_bot_api.py: 140 warnings
+tests/bot/test_cors_guard.py: 8 warnings
+tests/bot/test_dashboard_api.py: 44 warnings
+tests/bot/test_no_token_in_logs.py: 8 warnings
+tests/bot/test_publish_integrity.py: 24 warnings
+tests/bot/test_train_state.py: 8 warnings
+tests/bot/test_user_auth.py: 20 warnings
+tests/test_e2e_protocol.py: 132 warnings
+tests/test_interrupt.py: 24 warnings
+tests/test_repo_hygiene.py: 8 warnings
+tests/test_v_corrections.py: 4 warnings
+  /usr/local/lib/python3.12/site-packages/fastapi/applications.py:4675: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    return self.router.on_event(event_type)  # ty: ignore[deprecated]
+
+tests/bot/test_bot_api.py: 35 warnings
+tests/bot/test_cors_guard.py: 2 warnings
+tests/bot/test_dashboard_api.py: 11 warnings
+tests/bot/test_no_token_in_logs.py: 2 warnings
+tests/bot/test_publish_integrity.py: 6 warnings
+tests/bot/test_train_state.py: 2 warnings
+tests/bot/test_user_auth.py: 5 warnings
+tests/test_e2e_protocol.py: 33 warnings
+tests/test_interrupt.py: 6 warnings
+tests/test_repo_hygiene.py: 2 warnings
+tests/test_v_corrections.py: 1 warning
+  /app/loko/main.py:443: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    @app.on_event("startup")
+
+tests/bot/test_bot_api.py: 35 warnings
+tests/bot/test_cors_guard.py: 2 warnings
+tests/bot/test_dashboard_api.py: 11 warnings
+tests/bot/test_no_token_in_logs.py: 2 warnings
+tests/bot/test_publish_integrity.py: 6 warnings
+tests/bot/test_train_state.py: 2 warnings
+tests/bot/test_user_auth.py: 5 warnings
+tests/test_e2e_protocol.py: 33 warnings
+tests/test_interrupt.py: 6 warnings
+tests/test_repo_hygiene.py: 2 warnings
+tests/test_v_corrections.py: 1 warning
+  /app/loko/main.py:521: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    @app.on_event("startup")
+
+tests/bot/test_bot_api.py: 35 warnings
+tests/bot/test_cors_guard.py: 2 warnings
+tests/bot/test_dashboard_api.py: 11 warnings
+tests/bot/test_no_token_in_logs.py: 2 warnings
+tests/bot/test_publish_integrity.py: 6 warnings
+tests/bot/test_train_state.py: 2 warnings
+tests/bot/test_user_auth.py: 5 warnings
+tests/test_e2e_protocol.py: 33 warnings
+tests/test_interrupt.py: 6 warnings
+tests/test_repo_hygiene.py: 2 warnings
+tests/test_v_corrections.py: 1 warning
+  /app/loko/main.py:526: DeprecationWarning: 
+          on_event is deprecated, use lifespan event handlers instead.
+  
+          Read more about it in the
+          [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+          
+    @app.on_event("startup")
+
+tests/bot/test_bot_api.py::TestTemplateValidation::test_accept_valid_templates
+  /usr/local/lib/python3.12/site-packages/pydantic/main.py:475: UserWarning: Pydantic serializer warnings:
+    PydanticSerializationUnexpectedValue(Expected `MessageTemplate` - serialized value may not be as expected [field_name='templates', input_value={'key': <TemplateKey.FIN:...dbye.', 'variables': []}, input_type=dict])
+    return self.__pydantic_serializer__.to_python(
+
+tests/bot/test_classifier.py::TestSetFitIntegration::test_train_and_classify
+tests/bot/test_classifier.py::TestSetFitIntegration::test_save_and_reload
+  /usr/local/lib/python3.12/site-packages/torch/utils/data/dataloader.py:752: UserWarning: 'pin_memory' argument is set as true but no accelerator is found, then device pinned memory won't be used.
+    super().__init__(loader)
+
+tests/bot/test_classifier.py::TestSetFitIntegration::test_save_and_reload
+tests/bot/test_classifier.py::TestSetFitIntegration::test_save_and_reload
+tests/bot/test_classifier.py::TestSetFitIntegration::test_save_and_reload
+  /usr/local/lib/python3.12/site-packages/joblib/numpy_pickle.py:207: DeprecationWarning: Setting the shape on a NumPy array has been deprecated in NumPy 2.5.
+  As an alternative, you can create a new view using np.reshape (with copy=False if needed).
+    array.shape = self.shape
+
+tests/bot/test_classifier.py::TestSetFitIntegration::test_save_and_reload
+  /usr/local/lib/python3.12/site-packages/joblib/numpy_pickle.py:204: DeprecationWarning: Setting the shape on a NumPy array has been deprecated in NumPy 2.5.
+  As an alternative, you can create a new view using np.reshape (with copy=False if needed).
+    array.shape = self.shape[::-1]
+
+tests/bot/test_cross_access.py::test_user_a_can_read_own_bot
+  /app/tests/bot/test_cross_access.py:88: DeprecationWarning: There is no current event loop
+    result = asyncio.get_event_loop().run_until_complete(
+
+tests/test_e2e_protocol.py::TestP1_Intents::test_intent_min_examples_validation
+  /usr/local/lib/python3.12/site-packages/pydantic/main.py:475: UserWarning: Pydantic serializer warnings:
+    PydanticSerializationUnexpectedValue(Expected `Intent` - serialized value may not be as expected [field_name='intents', input_value={'id': 'help_cancellation...'examples_metadata': []}, input_type=dict])
+    return self.__pydantic_serializer__.to_python(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/bot/test_models.py::TestIntent::test_too_few_examples_raises - F...
+FAILED tests/bot/test_models.py::TestSubMotif::test_too_few_examples_raises
+FAILED tests/bot/test_no_token_in_logs.py::test_signup_no_token_in_logs - Run...
+FAILED tests/bot/test_no_token_in_logs.py::test_reset_no_token_in_logs - Runt...
+FAILED tests/bot/test_tenant_migration.py::test_lazy_migration_assigns_internal_account
+FAILED tests/bot/test_user_auth.py::test_login_blocked_before_verification - ...
+FAILED tests/test_e2e_protocol.py::TestP1_Intents::test_intent_min_examples_validation
+7 failed, 569 passed, 3 skipped, 851 warnings in 160.02s (0:02:40)
+
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager, possibly rendering your system unusable. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv. Use the --root-user-action option if you know what you are doing and want to suppress this warning.
+
+[notice] A new release of pip is available: 25.0.1 -> 26.1.2
+[notice] To update, run: pip install --upgrade pip

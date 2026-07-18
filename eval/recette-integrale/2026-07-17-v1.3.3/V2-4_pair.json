@@ -1,0 +1,10 @@
+{
+  "pair": [
+    "hors_perimetre",
+    "help_leave"
+  ],
+  "cell_avant": 0,
+  "detection": "lowest_f1 (matrice propre)",
+  "exemples_ajoutes": 10,
+  "clone": "v24-e2f6b9ae"
+}

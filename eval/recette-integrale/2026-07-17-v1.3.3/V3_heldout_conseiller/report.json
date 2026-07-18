@@ -1,0 +1,144 @@
+{
+  "mode": "decision",
+  "dataset": "heldout_conseiller.csv",
+  "total": 125,
+  "correct": 111,
+  "accuracy": 0.888,
+  "per_class": {},
+  "confusion": {},
+  "n_errors": 14,
+  "errors": [
+    {
+      "text": "Passez moi le standard",
+      "expected": "parler_conseiller",
+      "predicted": "hors_perimetre",
+      "score": 0.2836175858974457,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "demandes d'informations",
+      "expected": "parler_conseiller",
+      "predicted": "hors_perimetre",
+      "score": 0.37763071060180664,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "je ne peux pas calculer la mutuelle je suis en demi-traitement",
+      "expected": "parler_conseiller",
+      "predicted": "help_transfer",
+      "score": 0.1988396793603897,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "modification en mutuelle santé",
+      "expected": "parler_conseiller",
+      "predicted": "hors_perimetre",
+      "score": 0.5930398106575012,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "mon appel mutuelle a été coupé",
+      "expected": "parler_conseiller",
+      "predicted": "help_contact",
+      "score": 0.22762525081634521,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "mutuelle",
+      "expected": "parler_conseiller",
+      "predicted": "hors_perimetre",
+      "score": 0.803875207901001,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "mutuelle obligatoire",
+      "expected": "parler_conseiller",
+      "predicted": "hors_perimetre",
+      "score": 0.5015944838523865,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "perte de carte mutuelle",
+      "expected": "parler_conseiller",
+      "predicted": "help_billing",
+      "score": 0.23452013731002808,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "qu'est-ce que ça entraîne le fait d'avoir la mutuelle et sécu mutuelle",
+      "expected": "parler_conseiller",
+      "predicted": "help_transfer",
+      "score": 0.30386391282081604,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "renseignement sur la dématérialisation",
+      "expected": "parler_conseiller",
+      "predicted": "hors_perimetre",
+      "score": 0.4388618469238281,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "renseignement sur la prise de la mutuelle",
+      "expected": "parler_conseiller",
+      "predicted": "help_transfer",
+      "score": 0.5961594581604004,
+      "decision_type": "clarify_inter",
+      "correct": false,
+      "detail": "candidates=[('help_transfer', 0.5961594581604004), ('demande_conseiller', 0.1532611846923828)]"
+    },
+    {
+      "text": "résiliation de mutuelle",
+      "expected": "parler_conseiller",
+      "predicted": "help_cancellation",
+      "score": 0.998526930809021,
+      "decision_type": "route",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "sans mutuelle",
+      "expected": "parler_conseiller",
+      "predicted": "help_transfer",
+      "score": 0.4347093999385834,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "souscrire une mutuelle",
+      "expected": "parler_conseiller",
+      "predicted": "hors_perimetre",
+      "score": 0.3938102722167969,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    }
+  ],
+  "dataset_hash": "1200de4b01be1b4debec0a7499f1e0fc15a7499dd9d4198ac01bf65eb4b89499",
+  "manifest_reference": {
+    "bot_id": "fa4d8b2d-548f-457b-bf65-acbc61a39cbb",
+    "dataset_hash": "5fcaf6995c50afd048722123ab1abb9e69624473b447cc5c59761798cb9b5471",
+    "trained_at": "2026-07-18T06:14:36.876951+00:00"
+  }
+}

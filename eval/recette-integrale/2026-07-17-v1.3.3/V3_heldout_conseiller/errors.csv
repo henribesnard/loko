@@ -1,0 +1,15 @@
+text,expected,predicted,score,decision_type,correct,detail
+Passez moi le standard,parler_conseiller,hors_perimetre,0.2836175858974457,reject,False,
+demandes d'informations,parler_conseiller,hors_perimetre,0.37763071060180664,reject,False,
+je ne peux pas calculer la mutuelle je suis en demi-traitement,parler_conseiller,help_transfer,0.1988396793603897,reject,False,
+modification en mutuelle santé,parler_conseiller,hors_perimetre,0.5930398106575012,reject,False,
+mon appel mutuelle a été coupé,parler_conseiller,help_contact,0.22762525081634521,reject,False,
+mutuelle,parler_conseiller,hors_perimetre,0.803875207901001,reject,False,
+mutuelle obligatoire,parler_conseiller,hors_perimetre,0.5015944838523865,reject,False,
+perte de carte mutuelle,parler_conseiller,help_billing,0.23452013731002808,reject,False,
+qu'est-ce que ça entraîne le fait d'avoir la mutuelle et sécu mutuelle,parler_conseiller,help_transfer,0.30386391282081604,reject,False,
+renseignement sur la dématérialisation,parler_conseiller,hors_perimetre,0.4388618469238281,reject,False,
+renseignement sur la prise de la mutuelle,parler_conseiller,help_transfer,0.5961594581604004,clarify_inter,False,"candidates=[('help_transfer', 0.5961594581604004), ('demande_conseiller', 0.1532611846923828)]"
+résiliation de mutuelle,parler_conseiller,help_cancellation,0.998526930809021,route,False,
+sans mutuelle,parler_conseiller,help_transfer,0.4347093999385834,reject,False,
+souscrire une mutuelle,parler_conseiller,hors_perimetre,0.3938102722167969,reject,False,

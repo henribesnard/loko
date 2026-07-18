@@ -1,0 +1,241 @@
+{
+  "level1": {
+    "num_classes": 9,
+    "num_samples": 283,
+    "duration_s": 387.09,
+    "classes": [
+      "demande_conseiller",
+      "help_account",
+      "help_billing",
+      "help_cancellation",
+      "help_contact",
+      "help_documents",
+      "help_leave",
+      "help_transfer",
+      "hors_perimetre"
+    ]
+  },
+  "level2": {
+    "help_account": {
+      "num_classes": 5,
+      "num_samples": 25,
+      "duration_s": 58.74,
+      "classes": [
+        "compte_bloque",
+        "identifiants_perdus",
+        "mot_de_passe_oublie",
+        "premiere_connexion",
+        "probleme_technique"
+      ]
+    }
+  },
+  "evaluation": {
+    "class_names": [
+      "demande_conseiller",
+      "help_account",
+      "help_billing",
+      "help_cancellation",
+      "help_contact",
+      "help_documents",
+      "help_leave",
+      "help_transfer",
+      "hors_perimetre"
+    ],
+    "confusion_matrix": [
+      [
+        36,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        47,
+        0,
+        0,
+        1,
+        1,
+        0,
+        1,
+        0
+      ],
+      [
+        0,
+        0,
+        21,
+        1,
+        0,
+        0,
+        2,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        21,
+        0,
+        1,
+        1,
+        0,
+        0
+      ],
+      [
+        1,
+        1,
+        0,
+        0,
+        24,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        1,
+        0,
+        0,
+        30,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        1,
+        0,
+        0,
+        2,
+        35,
+        0,
+        3
+      ],
+      [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        1,
+        22,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        1,
+        2,
+        2,
+        4,
+        0,
+        16
+      ]
+    ],
+    "accuracy": 0.8936,
+    "per_class_f1": {
+      "demande_conseiller": 0.96,
+      "help_account": 0.9592,
+      "help_billing": 0.875,
+      "help_cancellation": 0.913,
+      "help_contact": 0.9057,
+      "help_documents": 0.8824,
+      "help_leave": 0.8333,
+      "help_transfer": 0.9167,
+      "hors_perimetre": 0.7273
+    },
+    "advice": [
+      {
+        "type": "confused_pair",
+        "pair": [
+          "help_leave",
+          "hors_perimetre"
+        ],
+        "evidence": "cv",
+        "n_exemples_faibles": 4,
+        "suggestion": "'hors_perimetre' et 'help_leave' se confondent en CV base (4/25 erreurs). Ajoutez des exemples discriminants entre ces deux intentions."
+      },
+      {
+        "type": "confused_pair",
+        "pair": [
+          "help_leave",
+          "hors_perimetre"
+        ],
+        "evidence": "cv",
+        "n_exemples_faibles": 3,
+        "suggestion": "'help_leave' et 'hors_perimetre' se confondent en CV base (3/41 erreurs). Ajoutez des exemples discriminants entre ces deux intentions."
+      },
+      {
+        "type": "confused_pair",
+        "pair": [
+          "help_billing",
+          "help_leave"
+        ],
+        "evidence": "cv",
+        "n_exemples_faibles": 2,
+        "suggestion": "'help_billing' et 'help_leave' se confondent en CV base (2/24 erreurs). Ajoutez des exemples discriminants entre ces deux intentions."
+      },
+      {
+        "type": "confused_pair",
+        "pair": [
+          "help_documents",
+          "help_leave"
+        ],
+        "evidence": "cv",
+        "n_exemples_faibles": 2,
+        "suggestion": "'help_leave' et 'help_documents' se confondent en CV base (2/41 erreurs). Ajoutez des exemples discriminants entre ces deux intentions."
+      },
+      {
+        "type": "confused_pair",
+        "pair": [
+          "help_contact",
+          "hors_perimetre"
+        ],
+        "evidence": "cv",
+        "n_exemples_faibles": 2,
+        "suggestion": "'hors_perimetre' et 'help_contact' se confondent en CV base (2/25 erreurs). Ajoutez des exemples discriminants entre ces deux intentions."
+      },
+      {
+        "type": "confused_pair",
+        "pair": [
+          "help_documents",
+          "hors_perimetre"
+        ],
+        "evidence": "cv",
+        "n_exemples_faibles": 2,
+        "suggestion": "'hors_perimetre' et 'help_documents' se confondent en CV base (2/25 erreurs). Ajoutez des exemples discriminants entre ces deux intentions."
+      }
+    ],
+    "cv_method": "base_model_frozen_3seeds",
+    "duration_s": 4.59,
+    "n_seeds": 3
+  },
+  "inference_latency_ms": {
+    "p50": 28.98,
+    "p95": 56.83,
+    "methodology": {
+      "warmup": 10,
+      "measured": 100,
+      "gc_before": true,
+      "threads_reset": true
+    }
+  },
+  "manifest": "written",
+  "profile": {
+    "l1_train_s": 392.64,
+    "eval_s": 13.7,
+    "l2_train_s": 58.75,
+    "latency_measure_s": 11.01,
+    "total_s": 486.01
+  }
+}

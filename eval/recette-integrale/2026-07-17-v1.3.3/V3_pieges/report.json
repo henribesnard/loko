@@ -1,0 +1,72 @@
+{
+  "mode": "pieges",
+  "dataset": "pieges.csv",
+  "total": 15,
+  "correct": 9,
+  "accuracy": 0.6,
+  "per_class": {},
+  "confusion": {},
+  "n_errors": 6,
+  "errors": [
+    {
+      "text": "modification mot de passe",
+      "expected": "route:help_account",
+      "predicted": "clarify_inter:help_contact|help_account",
+      "score": 0.7460275888442993,
+      "decision_type": "clarify_inter",
+      "correct": false,
+      "detail": "T02: help_account/mot_de_passe_oublie sans clarification | intent=help_contact"
+    },
+    {
+      "text": "RIB coordonnées bancaires",
+      "expected": "clarify_inter:help_contact|help_billing",
+      "predicted": "route:help_contact",
+      "score": 0.9811071157455444,
+      "decision_type": "route",
+      "correct": false,
+      "detail": "T04: ambigu help_contact/cotisations | intent=help_contact"
+    },
+    {
+      "text": "changement de banque pour les prélèvements de cotisations",
+      "expected": "clarify_inter:help_contact|help_billing",
+      "predicted": "route:help_billing",
+      "score": 0.9823930263519287,
+      "decision_type": "route",
+      "correct": false,
+      "detail": "T05: zone grise RIB/prélèvement | intent=help_billing"
+    },
+    {
+      "text": "attestation de paiement",
+      "expected": "clarify_inter:help_leave|help_billing|help_documents",
+      "predicted": "clarify_inter:help_documents|help_leave",
+      "score": 0.6003338098526001,
+      "decision_type": "clarify_inter",
+      "correct": false,
+      "detail": "T06: ambigu help_leave/help_billing/justificatif_droits | intent=help_documents"
+    },
+    {
+      "text": "bilan bucco-dentaire détartrage",
+      "expected": "reject",
+      "predicted": "clarify_inter:help_billing|help_leave",
+      "score": 0.6853736639022827,
+      "decision_type": "clarify_inter",
+      "correct": false,
+      "detail": "T13: hors_périmètre — dentaire non retenu | intent=help_billing"
+    },
+    {
+      "text": "la référence iban et le numéro de carte vitale ne sont pas reconnus",
+      "expected": "route:help_account",
+      "predicted": "reject:help_contact",
+      "score": 0.49089378118515015,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": "T15: piège IBAN+carte vitale — services_en_ligne | intent=help_contact"
+    }
+  ],
+  "dataset_hash": "52ca4c00e3740c8ae219d3a41257025789f6603b5d5b5b41d654cfc2ec65e09f",
+  "manifest_reference": {
+    "bot_id": "fa4d8b2d-548f-457b-bf65-acbc61a39cbb",
+    "dataset_hash": "5fcaf6995c50afd048722123ab1abb9e69624473b447cc5c59761798cb9b5471",
+    "trained_at": "2026-07-18T06:14:36.876951+00:00"
+  }
+}
