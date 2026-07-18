@@ -642,21 +642,23 @@ def select_best_thresholds_pareto(
     # Hard constraints
     GNG3_MIN = 0.80
     ROUTES_DIRECTES_MAX = 5
+    ECART_MIN = 0.05  # M2: minimum seuil_ecart to prevent flat-routing
 
     # Filter feasible points
     feasible = []
     for point in sweep_results:
         gng3 = point.get("gng3", 0)
         routes = point.get("gng3_routes_directes", 999)  # Default high if missing
+        ecart = point.get("seuil_ecart", 0)
 
-        if gng3 >= GNG3_MIN and routes <= ROUTES_DIRECTES_MAX:
+        if gng3 >= GNG3_MIN and routes <= ROUTES_DIRECTES_MAX and ecart >= ECART_MIN:
             feasible.append(point)
 
     warnings = []
     if not feasible:
         # No feasible point → find 5 closest to constraints
         warnings.append(
-            f"No feasible point (GNG-3 ≥ {GNG3_MIN} AND routes ≤ {ROUTES_DIRECTES_MAX})"
+            f"No feasible point (GNG-3 ≥ {GNG3_MIN} AND routes ≤ {ROUTES_DIRECTES_MAX} AND ecart ≥ {ECART_MIN})"
         )
 
         # Distance to feasibility (normalized)
@@ -665,8 +667,9 @@ def select_best_thresholds_pareto(
             routes_violation = max(
                 0, p.get("gng3_routes_directes", 0) - ROUTES_DIRECTES_MAX
             )
+            ecart_violation = max(0, ECART_MIN - p.get("seuil_ecart", 0))
             # Normalize: gng3 is [0,1], routes is count → scale routes by 0.01
-            return gng3_violation + (routes_violation * 0.01)
+            return gng3_violation + (routes_violation * 0.01) + ecart_violation
 
         closest = sorted(sweep_results, key=constraint_distance)[:5]
 
@@ -680,13 +683,14 @@ def select_best_thresholds_pareto(
             "selection_method": "pareto_constrained",
         }
 
-    # Lexicographic maximization: GNG-1 → GNG-2 → pièges
-    # Sort by (desc gng1, desc gng2, desc pieges_correct)
-    def lex_key(p: dict) -> tuple[float, float, float]:
+    # Lexicographic maximization: GNG-1 → GNG-2 → pièges → fewer hors-scope routes
+    # Sort by (desc gng1, desc gng2, desc pieges_correct, asc routes_directes)
+    def lex_key(p: dict) -> tuple[float, float, float, float]:
         return (
             -p.get("gng1", 0),  # Maximize GNG-1 (negative for desc sort)
             -p.get("gng2", 0),  # Then maximize GNG-2
             -p.get("pieges_correct", 0),  # Then maximize pièges
+            p.get("gng3_routes_directes", 0),  # M2: penalize hors-scope routes
         )
 
     feasible_sorted = sorted(feasible, key=lex_key)
