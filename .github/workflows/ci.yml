@@ -22,6 +22,11 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
       - name: Check for dataset modifications without hash update
         run: |
           # Check if any dataset files were modified
@@ -70,6 +75,10 @@ jobs:
             }
             echo "✅ eval/datasets integrity verified against HASHES.sha256"
           fi
+
+      - name: Deep dataset validation (C5 — make_datasets.py --check)
+        run: |
+          python tools/make_datasets.py --check eval/datasets/
 
       - name: Check for uncommitted changes in worktree (V2)
         run: |
