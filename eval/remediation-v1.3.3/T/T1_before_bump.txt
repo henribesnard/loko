@@ -1,0 +1,11 @@
+=== LOKO Version Sync Check ===
+  pyproject.toml: 1.3.2
+  importlib.metadata: 0.3.7
+  git tag on HEAD: (none)
+  expected tag: v1.3.3
+
+FAIL — 3 divergence(s):
+  - importlib.metadata (0.3.7) != pyproject.toml (1.3.2)
+  - no git tag on HEAD (expected v1.3.3)
+  - pyproject.toml (1.3.2) != tag version (1.3.3)
+exit=1

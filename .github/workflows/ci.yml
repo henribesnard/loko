@@ -216,3 +216,22 @@ jobs:
             echo "You must bump the version in pyproject.toml"
             exit 1
           fi
+
+  # T1: Version sync check (tag pushed must match pyproject.toml)
+  version-sync:
+    name: Version Sync (T1)
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Check version sync against tag
+        run: |
+          python tools/check_version_sync.py --against-tag ${{ github.ref_name }}
