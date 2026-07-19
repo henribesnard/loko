@@ -82,10 +82,23 @@ export function useBotPlayground(botId: string | undefined) {
     if (!botId) return;
     setError(null);
 
-    const apiKey = readApiKey(botId);
+    let apiKey = readApiKey(botId);
     if (!apiKey) {
-      setError("Aucune cle API runtime. Generez une cle dans l'etape Publication.");
-      return;
+      // Auto-generate a runtime key via admin API
+      try {
+        const keyRes = await api<{ raw_key: string; key_id: string }>(
+          `/api/bot/${botId}/api-keys`,
+          {
+            method: "POST",
+            body: JSON.stringify({ label: "playground", allowed_origins: ["*"] }),
+          },
+        );
+        sessionStorage.setItem(`loko_api_key_${botId}`, keyRes.raw_key);
+        apiKey = keyRes.raw_key;
+      } catch {
+        setError("Aucune cle API runtime. Generez une cle dans l'etape Publication.");
+        return;
+      }
     }
 
     try {
