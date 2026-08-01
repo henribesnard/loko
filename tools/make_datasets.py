@@ -237,51 +237,96 @@ CONSEILLER_INTENT = "parler_conseiller"
 # -----------------------------------------------------------------------
 
 PIEGE_CASES = [
-    {"id": "T01", "text": "je souhaiterais débloquer mon compte Ameli",
-     "expected_behavior": "route:help_account",
-     "note": "help_account/compte_bloque sans clarification"},
-    {"id": "T02", "text": "modification mot de passe",
-     "expected_behavior": "route:help_account",
-     "note": "help_account/mot_de_passe_oublie sans clarification"},
-    {"id": "T03", "text": "accéder au compte Santelis",
-     "expected_behavior": "clarify_intra:help_account",
-     "note": "sous-motif incertain — clarification intra attendue"},
-    {"id": "T04", "text": "RIB coordonnées bancaires",
-     "expected_behavior": "clarify_inter:help_contact|help_billing",
-     "note": "ambigu help_contact/cotisations"},
-    {"id": "T05", "text": "changement de banque pour les prélèvements de cotisations",
-     "expected_behavior": "clarify_inter:help_contact|help_billing",
-     "note": "zone grise RIB/prélèvement"},
-    {"id": "T06", "text": "attestation de paiement",
-     "expected_behavior": "clarify_inter:help_leave|help_billing|help_documents",
-     "note": "ambigu help_leave/help_billing/justificatif_droits"},
-    {"id": "T07", "text": "attestation de droits Santelis",
-     "expected_behavior": "route:help_documents",
-     "note": "help_documents direct"},
-    {"id": "T08", "text": "complément de salaire arrêt longue maladie",
-     "expected_behavior": "route:help_leave",
-     "note": "help_leave direct"},
-    {"id": "T09", "text": "est-ce qu'il y a une télétransmission entre vous et Santelis",
-     "expected_behavior": "route:help_transfer",
-     "note": "help_transfer direct (contrôle positif)"},
-    {"id": "T10", "text": "comment résilier mon ancien contrat Santelis",
-     "expected_behavior": "route:help_cancellation",
-     "note": "help_cancellation direct"},
-    {"id": "T11", "text": "Je préfère parler à un humain",
-     "expected_behavior": "escalate:demande_explicite",
-     "note": "sortie transverse demande_conseiller"},
-    {"id": "T12", "text": "déclarer un accident de ski",
-     "expected_behavior": "reject",
-     "note": "hors_périmètre — accident non retenu"},
-    {"id": "T13", "text": "bilan bucco-dentaire détartrage",
-     "expected_behavior": "reject",
-     "note": "hors_périmètre — dentaire non retenu"},
-    {"id": "T14", "text": "Noemie",
-     "expected_behavior": "route:help_transfer",
-     "note": "mot unique — robustesse entrées ultra-courtes"},
-    {"id": "T15", "text": "la référence iban et le numéro de carte vitale ne sont pas reconnus",
-     "expected_behavior": "route:help_account",
-     "note": "piège IBAN+carte vitale — services_en_ligne"},
+    {
+        "id": "T01",
+        "text": "je souhaiterais débloquer mon compte Ameli",
+        "expected_behavior": "route:help_account",
+        "note": "help_account/compte_bloque sans clarification",
+    },
+    {
+        "id": "T02",
+        "text": "modification mot de passe",
+        "expected_behavior": "route:help_account",
+        "note": "help_account/mot_de_passe_oublie sans clarification",
+    },
+    {
+        "id": "T03",
+        "text": "accéder au compte Santelis",
+        "expected_behavior": "clarify_intra:help_account",
+        "note": "sous-motif incertain — clarification intra attendue",
+    },
+    {
+        "id": "T04",
+        "text": "RIB coordonnées bancaires",
+        "expected_behavior": "clarify_inter:help_contact|help_billing",
+        "note": "ambigu help_contact/cotisations",
+    },
+    {
+        "id": "T05",
+        "text": "changement de banque pour les prélèvements de cotisations",
+        "expected_behavior": "clarify_inter:help_contact|help_billing",
+        "note": "zone grise RIB/prélèvement",
+    },
+    {
+        "id": "T06",
+        "text": "attestation de paiement",
+        "expected_behavior": "clarify_inter:help_leave|help_billing|help_documents",
+        "note": "ambigu help_leave/help_billing/justificatif_droits",
+    },
+    {
+        "id": "T07",
+        "text": "attestation de droits Santelis",
+        "expected_behavior": "route:help_documents",
+        "note": "help_documents direct",
+    },
+    {
+        "id": "T08",
+        "text": "complément de salaire arrêt longue maladie",
+        "expected_behavior": "route:help_leave",
+        "note": "help_leave direct",
+    },
+    {
+        "id": "T09",
+        "text": "est-ce qu'il y a une télétransmission entre vous et Santelis",
+        "expected_behavior": "route:help_transfer",
+        "note": "help_transfer direct (contrôle positif)",
+    },
+    {
+        "id": "T10",
+        "text": "comment résilier mon ancien contrat Santelis",
+        "expected_behavior": "route:help_cancellation",
+        "note": "help_cancellation direct",
+    },
+    {
+        "id": "T11",
+        "text": "Je préfère parler à un humain",
+        "expected_behavior": "escalate:demande_explicite",
+        "note": "sortie transverse demande_conseiller",
+    },
+    {
+        "id": "T12",
+        "text": "déclarer un accident de ski",
+        "expected_behavior": "reject",
+        "note": "hors_périmètre — accident non retenu",
+    },
+    {
+        "id": "T13",
+        "text": "bilan bucco-dentaire détartrage",
+        "expected_behavior": "reject",
+        "note": "hors_périmètre — dentaire non retenu",
+    },
+    {
+        "id": "T14",
+        "text": "Noemie",
+        "expected_behavior": "route:help_transfer",
+        "note": "mot unique — robustesse entrées ultra-courtes",
+    },
+    {
+        "id": "T15",
+        "text": "la référence iban et le numéro de carte vitale ne sont pas reconnus",
+        "expected_behavior": "route:help_account",
+        "note": "piège IBAN+carte vitale — services_en_ligne",
+    },
 ]
 
 # Expected counts
@@ -297,6 +342,7 @@ EXPECTED_COUNTS = {
 # -----------------------------------------------------------------------
 # Text normalization for overlap detection (C3.2 / C5.d)
 # -----------------------------------------------------------------------
+
 
 def normalize_text(text: str) -> str:
     """Normalize text for overlap comparison: lowercase, strip accents, reduce spaces."""
@@ -320,7 +366,9 @@ def normalize_text(text: str) -> str:
 # and the generic "mutuelle" to improve classifier discrimination (GNG-2).
 # -----------------------------------------------------------------------
 
-_CLIENT_RE = re.compile("m" + "gen", re.IGNORECASE)  # split to satisfy client-mention guard
+_CLIENT_RE = re.compile(
+    "m" + "gen", re.IGNORECASE
+)  # split to satisfy client-mention guard
 _FICTIONAL_BRAND = "Santelis"
 
 
@@ -390,7 +438,9 @@ def compute_sha256(path: Path) -> str:
 def write_csv(path: Path, rows: list[dict[str, str]], fieldnames: list[str]) -> None:
     """Write a CSV file deterministically."""
     with open(path, "w", encoding="utf-8", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=fieldnames, lineterminator="\n")  # LF canonique (re-figeage 2026-07-17)
+        writer = csv.DictWriter(
+            f, fieldnames=fieldnames, lineterminator="\n"
+        )  # LF canonique (re-figeage 2026-07-17)
         writer.writeheader()
         writer.writerows(rows)
 
@@ -416,17 +466,20 @@ def generate_datasets(source_path: Path, out_dir: Path) -> dict[str, int]:
 
     # 2. Separate source rows by category, excluding train/piege texts
     metier_pool = [
-        r for r in all_rows
+        r
+        for r in all_rows
         if r["intent"] in RETAINED_INTENTS
         and normalize_text(r["text"]) not in excluded_norm
     ]
     conseiller_pool = [
-        r for r in all_rows
+        r
+        for r in all_rows
         if r["intent"] == CONSEILLER_INTENT
         and normalize_text(r["text"]) not in excluded_norm
     ]
     horsscope_pool = [
-        r for r in all_rows
+        r
+        for r in all_rows
         if r["intent"] not in RETAINED_INTENTS
         and r["intent"] != CONSEILLER_INTENT
         and normalize_text(r["text"]) not in excluded_norm
@@ -435,7 +488,9 @@ def generate_datasets(source_path: Path, out_dir: Path) -> dict[str, int]:
     # 3. heldout_metier.csv — 100 stratified from retained intents
     rng_metier = random.Random(42)
     heldout_metier = stratified_sample(metier_pool, 100, rng_metier)
-    heldout_metier_sorted = sorted(heldout_metier, key=lambda r: (r["intent"], r["text"]))
+    heldout_metier_sorted = sorted(
+        heldout_metier, key=lambda r: (r["intent"], r["text"])
+    )
     heldout_path = out_dir / "heldout_metier.csv"
     write_csv(heldout_path, heldout_metier_sorted, ["text", "intent"])
     counts["heldout_metier.csv"] = len(heldout_metier)
@@ -449,7 +504,9 @@ def generate_datasets(source_path: Path, out_dir: Path) -> dict[str, int]:
     # 5. heldout_horsscope.csv — 100 stratified from non-selected intents
     rng_horsscope = random.Random(42)
     heldout_horsscope = stratified_sample(horsscope_pool, 100, rng_horsscope)
-    heldout_horsscope_sorted = sorted(heldout_horsscope, key=lambda r: (r["intent"], r["text"]))
+    heldout_horsscope_sorted = sorted(
+        heldout_horsscope, key=lambda r: (r["intent"], r["text"])
+    )
     horsscope_path = out_dir / "heldout_horsscope.csv"
     write_csv(horsscope_path, heldout_horsscope_sorted, ["text", "intent"])
     counts["heldout_horsscope.csv"] = len(heldout_horsscope)
@@ -475,6 +532,7 @@ def generate_datasets(source_path: Path, out_dir: Path) -> dict[str, int]:
 # -----------------------------------------------------------------------
 # C5 — Verification mode (--check)
 # -----------------------------------------------------------------------
+
 
 def check_datasets(datasets_dir: Path) -> list[str]:
     """Verify datasets without regenerating. Returns list of errors (empty = OK)."""
@@ -531,7 +589,13 @@ def check_datasets(datasets_dir: Path) -> list[str]:
             errors.append(f"Overlap {a} x {b}: {len(overlap)} texts (e.g. {samples})")
 
     # (e) Validate expected_behavior syntax in pieges.csv
-    valid_prefixes = ("route:", "clarify_inter:", "clarify_intra:", "reject", "escalate:")
+    valid_prefixes = (
+        "route:",
+        "clarify_inter:",
+        "clarify_intra:",
+        "reject",
+        "escalate:",
+    )
     with open(datasets_dir / "pieges.csv", encoding="utf-8", newline="") as f:
         for row in csv.DictReader(f):
             behavior = row["expected_behavior"]
@@ -545,6 +609,73 @@ def check_datasets(datasets_dir: Path) -> list[str]:
     if sorted(ids) != expected_ids:
         errors.append(f"Piege IDs mismatch: got {ids}, expected {expected_ids}")
 
+    # (f) Validate adversarial.csv (B1/B3 — guardrail test dataset)
+    adv_path = datasets_dir / "adversarial.csv"
+    if adv_path.is_file():
+        adv_valid_categories = {
+            "injection_directe",
+            "injection_indirecte",
+            "dangereux",
+            "donnees_tiers",
+            "contournement",
+            "pieges_existants",
+        }
+        adv_valid_behaviors = (
+            "route:",
+            "clarify_inter:",
+            "clarify_intra:",
+            "reject",
+            "reject_no_llm",
+            "escalate:",
+        )
+        adv_expected_columns = {"id", "text", "categorie", "expected_behavior"}
+
+        with open(adv_path, encoding="utf-8", newline="") as f:
+            reader = csv.DictReader(f)
+            adv_columns = set(reader.fieldnames or [])
+            if adv_columns != adv_expected_columns:
+                errors.append(
+                    f"adversarial.csv: wrong columns {adv_columns}, "
+                    f"expected {adv_expected_columns}"
+                )
+            adv_rows = list(reader)
+
+        # Minimum row count
+        if len(adv_rows) < 40:
+            errors.append(f"adversarial.csv: only {len(adv_rows)} rows (minimum 40)")
+
+        # Validate categories and expected_behavior
+        for row in adv_rows:
+            cat = row.get("categorie", "")
+            if cat not in adv_valid_categories:
+                errors.append(
+                    f"adversarial.csv [{row.get('id', '?')}]: invalid categorie '{cat}'"
+                )
+            behavior = row.get("expected_behavior", "")
+            if not any(behavior.startswith(p) for p in adv_valid_behaviors):
+                errors.append(
+                    f"adversarial.csv [{row.get('id', '?')}]: "
+                    f"invalid expected_behavior '{behavior}'"
+                )
+
+        # No overlap with held-out texts
+        adv_texts = {normalize_text(r["text"]) for r in adv_rows if r.get("text")}
+        for heldout in (
+            "heldout_metier.csv",
+            "heldout_conseiller.csv",
+            "heldout_horsscope.csv",
+        ):
+            if heldout in sets:
+                overlap = adv_texts & sets[heldout]
+                if overlap:
+                    samples = list(overlap)[:3]
+                    errors.append(
+                        f"Overlap adversarial.csv x {heldout}: "
+                        f"{len(overlap)} texts (e.g. {samples})"
+                    )
+    else:
+        errors.append("Missing file: adversarial.csv")
+
     return errors
 
 
@@ -557,11 +688,18 @@ def _count_csv_rows(path: Path) -> int:
 # CLI
 # -----------------------------------------------------------------------
 
+
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Generate/verify frozen evaluation datasets (C1/C5)")
-    parser.add_argument("--source", help="Path to dataset.csv (required for generation)")
+    parser = argparse.ArgumentParser(
+        description="Generate/verify frozen evaluation datasets (C1/C5)"
+    )
+    parser.add_argument(
+        "--source", help="Path to dataset.csv (required for generation)"
+    )
     parser.add_argument("--out", help="Output directory (for generation)")
-    parser.add_argument("--check", metavar="DIR", help="Verify existing datasets (no regeneration)")
+    parser.add_argument(
+        "--check", metavar="DIR", help="Verify existing datasets (no regeneration)"
+    )
     args = parser.parse_args()
 
     if args.check:
