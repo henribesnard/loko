@@ -1,6 +1,6 @@
 # LOKO — Tableau de bord projet
 
-> Derniere mise a jour : 2026-08-01 (LOT F2 + audit de completude LOT C)
+> Derniere mise a jour : 2026-08-01 (analyse v1.1 — retrait conclusion L2, hypothese H3)
 > Version courante : **1.3.4** (pyproject.toml)
 
 ---
@@ -29,7 +29,7 @@
 | Calibration temperature (A1) | FAIT | Lecture temperature depuis manifest dans loader.py |
 | Calibration training (A2) | FAIT | find_optimal_temperature() appele en fin d'entrainement |
 | Parite runtime/eval (A3) | FAIT | loko-eval utilise le meme SetFitClassifierAdapter que le runtime |
-| Mesure effet calibration (A4) | A FAIRE | Necessite execution in-container avec bot entraine |
+| Mesure effet calibration (A4) | FAIT | T=0.60, ECE 3.14%->0.68%, pieges inchanges (9/15). Calibration active mais aiguise (T<1) au lieu d'aplatir — hypothese sur-confiance non testee (v1.1) |
 | Manifest modele (A4/A5) | FAIT | SHA-256 fichiers, labels, metriques, calibration |
 | Verification integrite modele | FAIT | verify_model(): manifest + hash + load + smoke test |
 | Latence inference (B3/L5) | FAIT | measure_inference_latency(): P50/P95, warmup, GC |
@@ -100,17 +100,48 @@ Marqueurs xfail: aucun.
 | SMTP alerting | CONFIG REQUISE | Placeholder auth_password a remplir |
 | Volume persistant | FAIT | /home/loko/.loko monte depuis l'hote |
 
-## 8. Points en attente (decision humaine)
+## 8. Campagne diagnostic v1.3.4 (2026-08-01)
+
+**Verdict** : NON VALIDE (mode diagnostic, non opposable). V3-7 iter 2/2 non consommee.
+
+| Gate | Resultat | Detail |
+|---|---|---|
+| CE | PASS 9/9 | Datasets, hashes, intersection vide |
+| G-0 | FAIL 4/5 | V0-1 pytest : 6 fails (fixtures <8 ex, asyncio 3.12), 6 errors |
+| G-1 | PASS 4/4 | Boot, no-mock, loader, CRITICAL |
+| G-1b | PASS 1/1 | Offline mode (--network none) |
+| G-2 | FAIL 3/6 | V2-1 train 573s, V2-5 accuracy degradee, V2-6 P95=205ms |
+| G-3 | FAIL 2/7 | V3-0 sweep infaisable, GNG-1=81%, GNG-2=87.2%, GNG-3=72%, pieges=9/15 |
+
+| Metrique | Cible | v1.3.3 | v1.3.4 | Delta |
+|---|---|---|---|---|
+| GNG-1 metier | >= 85% | 81.0% | 81.0% | 0 |
+| GNG-2 conseiller | >= 90% | 88.8% | 87.2% | -1.6 |
+| GNG-3 hors-scope | >= 80% | 80.0% | 72.0% | **-8.0** |
+| Pieges | >= 12/15 | 9/15 | 9/15 | 0 |
+
+**Seuils utilises** : seuil_haut=0.85, seuil_bas=0.50, seuil_ecart=0.0 (config bot pre-existante, pas sweep-selectionnee).
+**Calibration** : active (T=0.60, ECE 0.0314->0.0068). Tests PASS.
+**Conclusion v1.1** : la conclusion "L2 s'applique" (v1.0) est retiree — l'alternative etait mal posee (fil-tendeur A4 valide seulement si T>1 ; avec T=0.60 l'hypothese de sur-confiance n'a jamais ete testee). Hypothese H3 dominante : la regression GNG-3 (-8 pts) est un effet mecanique de l'aiguisage (T<1 pousse les scores vers le haut, reduisant les rejets avec les seuils pre-calibration). Lecon centrale : calibration et seuils sont couples, les figer independamment invalide les mesures.
+**GNG-3 erreurs** : dispersees sur 5 classes (help_contact 36%, help_documents/billing/transfer 18% chacun).
+**Analyse** : `ANALYSE_POST_CAMPAGNE_v1.3.4.md` (v1.1, corrections signalees en clair)
+**Artefacts** : `eval/recette-integrale/2026-08-01-v1.3.4/`
+
+## 9. Points en attente (decision humaine)
 
 | Item | Blocage | Action requise |
 |---|---|---|
-| LOT A4 — Mesure calibration | Execution in-container | Lancer campagne v1.3.4 pour mesurer l'effet |
-| LOT D — Campagne v1.3.4 | Decision humaine | Decider si on lance la campagne avec les ameliorations |
-| LOT E — Ameliorations profondes | Post G-3 | Latence, hors_perimetre comme OOD rejection |
+| Re-sweep avec calibration active | Action 1 (analyse v1.1) | ECART_MIN=0.00, sweep post-calibration — etablir baseline legitimate |
+| Contre-test H3 | Action 2 (analyse v1.1) | T=1.0 memes seuils, re-mesure GNG-3 — confirme/infirme H3 |
+| V3-0 repli bloquant | Action 5 (analyse v1.1) | Faire echouer V3-0 au lieu de retomber silencieusement sur config bot |
+| LOT E2 — hors_perimetre en rejet OOD | Decision humaine | Voir `SPEC_LOT_E2_HORS_PERIMETRE_OOD_LOKO.md` — instruire apres action 1 |
+| V3-7 iteration 2/2 | Decision humaine | Recommandation : suspendre (baseline probablement artefact) |
+| V0-1 fixtures pytest | Bug produit | Relever les fixtures test_assistant a 8 exemples, corriger asyncio |
+| Runner reporting bugs | Outillage | CE PASS/FAIL contradiction, manifest vide, verdicts doubles |
 | Desktop version sync | Intentionnel | desktop/package.json (0.1.0) != pyproject.toml (1.3.4) |
 | SMTP AlertManager | Config prod | Remplir SMTP_PASSWORD et adresses email |
 
-## 9. Historique des lots
+## 10. Historique des lots
 
 | Lot | Date | Statut | Commit |
 |---|---|---|---|
@@ -120,8 +151,11 @@ Marqueurs xfail: aucun.
 | LOT A1 — Temperature manifest | 2026-08-01 | FAIT | loko/bot/classifier/loader.py |
 | LOT A2 — Calibration training | 2026-08-01 | FAIT | loko/bot/classifier/training.py, manifest.py |
 | LOT A3 — Parite eval/runtime | 2026-08-01 | FAIT | loko/eval/cli.py |
+| LOT A4 — Mesure calibration | 2026-08-01 | FAIT | Campagne diagnostic v1.3.4, T=0.60 active |
 | LOT B1 — adversarial.csv | 2026-08-01 | FAIT | eval/datasets/adversarial.csv (55 cas) |
 | LOT B2 — Documents canari | 2026-08-01 | FAIT | eval/canary-documents/ (5 docs) |
 | LOT B3 — CI guard adversarial | 2026-08-01 | FAIT | tools/make_datasets.py, HASHES.sha256 |
 | LOT C — Audit completude | 2026-08-01 | FAIT | STATUS.md (ce fichier) |
+| LOT D — Campagne diagnostic | 2026-08-01 | FAIT | eval/recette-integrale/2026-08-01-v1.3.4/ |
+| LOT E2 — OOD rejection | 2026-08-01 | SPEC REDIGEE | SPEC_LOT_E2_HORS_PERIMETRE_OOD_LOKO.md |
 | LOT F2 — STATUS.md | 2026-08-01 | FAIT | STATUS.md (ce fichier) |
