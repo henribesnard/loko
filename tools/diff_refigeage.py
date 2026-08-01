@@ -47,10 +47,12 @@ def load_source(path: Path) -> dict[str, list[dict[str, str]]]:
             key = text_orig.lower()
             if key not in rows:
                 rows[key] = []
-            rows[key].append({
-                "text_orig": text_orig,
-                "intent_orig": row["intent"].strip(),
-            })
+            rows[key].append(
+                {
+                    "text_orig": text_orig,
+                    "intent_orig": row["intent"].strip(),
+                }
+            )
     return rows
 
 
@@ -79,24 +81,28 @@ def find_scrub_diffs(
         for orig_key, orig_entries in source_index.items():
             if scrub_current(orig_key) == scrubbed_lower:
                 if orig_key != scrubbed_lower:
-                    diffs.append({
-                        "dataset": dataset_name,
-                        "original": orig_entries[0]["text_orig"],
-                        "scrubbed": frozen_text.strip(),
-                        "intent_orig": orig_entries[0]["intent_orig"],
-                        "intent_frozen": row.get("intent", row.get("expected", "")),
-                    })
+                    diffs.append(
+                        {
+                            "dataset": dataset_name,
+                            "original": orig_entries[0]["text_orig"],
+                            "scrubbed": frozen_text.strip(),
+                            "intent_orig": orig_entries[0]["intent_orig"],
+                            "intent_frozen": row.get("intent", row.get("expected", "")),
+                        }
+                    )
                 found = True
                 break
 
         if not found and _CLIENT_RE.search(frozen_text):
-            diffs.append({
-                "dataset": dataset_name,
-                "original": "(not found in source)",
-                "scrubbed": frozen_text.strip(),
-                "intent_orig": "?",
-                "intent_frozen": row.get("intent", row.get("expected", "")),
-            })
+            diffs.append(
+                {
+                    "dataset": dataset_name,
+                    "original": "(not found in source)",
+                    "scrubbed": frozen_text.strip(),
+                    "intent_orig": "?",
+                    "intent_frozen": row.get("intent", row.get("expected", "")),
+                }
+            )
 
     return diffs
 
@@ -104,25 +110,27 @@ def find_scrub_diffs(
 def count_mutuelle(frozen_rows: list[dict[str, str]]) -> int:
     """Count rows containing 'mutuelle' in text."""
     return sum(
-        1 for row in frozen_rows
+        1
+        for row in frozen_rows
         if re.search(r"\bmutuelle\b", row.get("text", ""), re.IGNORECASE)
     )
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="D1 — Diff de preuve du re-figeage"
-    )
+    parser = argparse.ArgumentParser(description="D1 — Diff de preuve du re-figeage")
     parser.add_argument(
-        "--source", default=str(ROOT / "dataset.csv"),
+        "--source",
+        default=str(ROOT / "dataset.csv"),
         help="Path to original dataset.csv",
     )
     parser.add_argument(
-        "--datasets", default=str(ROOT / "eval" / "datasets"),
+        "--datasets",
+        default=str(ROOT / "eval" / "datasets"),
         help="Path to frozen datasets directory",
     )
     parser.add_argument(
-        "--summary-only", action="store_true",
+        "--summary-only",
+        action="store_true",
         help="Only show summary counts, not individual diffs",
     )
     args = parser.parse_args()
@@ -167,15 +175,16 @@ def main() -> None:
 
         if not args.summary_only and diffs:
             for d in diffs:
-                print(f"    [{d['intent_orig']}] \"{d['original']}\"")
-                print(f"      -> \"{d['scrubbed']}\"")
+                print(f'    [{d["intent_orig"]}] "{d["original"]}"')
+                print(f'      -> "{d["scrubbed"]}"')
 
     # Pieges (special format)
     pieges_path = datasets_dir / "pieges.csv"
     if pieges_path.is_file():
         pieges = load_frozen(pieges_path)
         n_mut_pieges = sum(
-            1 for row in pieges
+            1
+            for row in pieges
             if re.search(r"\bmutuelle\b", row.get("text", ""), re.IGNORECASE)
         )
         total_mutuelle += n_mut_pieges
@@ -184,13 +193,13 @@ def main() -> None:
         if not args.summary_only and n_mut_pieges:
             for row in pieges:
                 if re.search(r"\bmutuelle\b", row.get("text", ""), re.IGNORECASE):
-                    print(f"    [{row.get('id', '?')}] \"{row['text']}\"")
+                    print(f'    [{row.get("id", "?")}] "{row["text"]}"')
 
-    print(f"\n=== Summary ===")
+    print("\n=== Summary ===")
     print(f"  Total scrub modifications: {total_diffs}")
     print(f"  Total rows with 'mutuelle': {total_mutuelle}")
-    print(f"  Impact: 'mutuelle' is a common French word that reduces discriminative")
-    print(f"  power for the classifier, especially for parler_conseiller in GNG-2.")
+    print("  Impact: 'mutuelle' is a common French word that reduces discriminative")
+    print("  power for the classifier, especially for parler_conseiller in GNG-2.")
 
 
 if __name__ == "__main__":

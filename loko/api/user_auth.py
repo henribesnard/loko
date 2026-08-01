@@ -47,15 +47,17 @@ def _record_metric(fn_name: str, *args, **kwargs) -> None:
     """Call a monitoring.metrics helper, fail-open."""
     try:
         from loko.monitoring import metrics
+
         getattr(metrics, fn_name)(*args, **kwargs)
     except Exception:
         pass
+
 
 # ---------------------------------------------------------------------------
 # Rate limiting (in-memory, per IP)
 # ---------------------------------------------------------------------------
 
-_AUTH_ATTEMPTS: dict[str, list[float]] = defaultdict(list)
+_AUTH_ATTEMPTS: dict[str, list[float]] = defaultdict(list)  # secret-guard: allow
 _MAX_AUTH_ATTEMPTS = 5
 _AUTH_WINDOW_SECONDS = 900  # 15 min
 
@@ -146,6 +148,7 @@ def _validate_password(password: str) -> list[str]:
 # ---------------------------------------------------------------------------
 # Request/Response models
 # ---------------------------------------------------------------------------
+
 
 class SignupRequest(BaseModel):
     email: str = Field(..., min_length=3)

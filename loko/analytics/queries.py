@@ -34,7 +34,9 @@ def _get_read_connection() -> sqlite3.Connection | None:
 def _default_date_range() -> tuple[str, str]:
     """Return (from_date, to_date) defaulting to last 30 days."""
     today = date.today()
-    return (today - timedelta(days=30)).isoformat(), (today + timedelta(days=1)).isoformat()
+    return (today - timedelta(days=30)).isoformat(), (
+        today + timedelta(days=1)
+    ).isoformat()
 
 
 # ---------------------------------------------------------------------------
@@ -42,9 +44,7 @@ def _default_date_range() -> tuple[str, str]:
 # ---------------------------------------------------------------------------
 
 
-def query_kpi_overview(
-    bot_id: str, from_date: str, to_date: str
-) -> dict[str, Any]:
+def query_kpi_overview(bot_id: str, from_date: str, to_date: str) -> dict[str, Any]:
     """High-level KPI metrics for a bot in [from_date, to_date)."""
     conn = _get_read_connection()
     if conn is None:
@@ -147,8 +147,12 @@ def query_intent_distribution(
             {
                 "intent_id": r["intent_id"],
                 "count": r["total"],
-                "avg_score_top1": round(r["avg_score_top1"], 4) if r["avg_score_top1"] is not None else None,
-                "avg_score_margin": round(r["avg_score_margin"], 4) if r["avg_score_margin"] is not None else None,
+                "avg_score_top1": round(r["avg_score_top1"], 4)
+                if r["avg_score_top1"] is not None
+                else None,
+                "avg_score_margin": round(r["avg_score_margin"], 4)
+                if r["avg_score_margin"] is not None
+                else None,
             }
             for r in rows
         ]
@@ -196,12 +200,14 @@ def query_latency_trends(
             n = len(latencies)
             p50 = latencies[int(n * 0.5)] if n > 0 else None
             p95 = latencies[int(min(n * 0.95, n - 1))] if n > 0 else None
-            result.append({
-                "day": day,
-                "p50_latency_ms": p50,
-                "p95_latency_ms": p95,
-                "event_count": n,
-            })
+            result.append(
+                {
+                    "day": day,
+                    "p50_latency_ms": p50,
+                    "p95_latency_ms": p95,
+                    "event_count": n,
+                }
+            )
         return result
     except Exception:
         logger.warning("query_latency_trends failed (fail-open)", exc_info=True)
@@ -333,7 +339,10 @@ def query_escalation_analysis(
                 reverse=True,
             ),
             "by_intent": sorted(
-                [{"intent_id": k[0], "motif": k[1], "count": c} for k, c in intent_motif.items()],
+                [
+                    {"intent_id": k[0], "motif": k[1], "count": c}
+                    for k, c in intent_motif.items()
+                ],
                 key=lambda x: x["count"],
                 reverse=True,
             ),
@@ -396,9 +405,7 @@ def query_guardrail_triggers(
 # ---------------------------------------------------------------------------
 
 
-def query_session_events(
-    bot_id: str, session_id: str
-) -> list[dict[str, Any]]:
+def query_session_events(bot_id: str, session_id: str) -> list[dict[str, Any]]:
     """All analytics events for a specific session (for debugging)."""
     conn = _get_read_connection()
     if conn is None:
@@ -511,13 +518,21 @@ def query_kpi_overview_enriched(
             "classifications": row["classifications"],
             "answers": row["answers"],
             "escalations": row["escalations"],
-            "escalation_rate": round(row["escalations"] / sessions, 4) if sessions else 0.0,
-            "selfcare_rate": round((sessions - escalated_sessions) / sessions, 4) if sessions else 0.0,
+            "escalation_rate": round(row["escalations"] / sessions, 4)
+            if sessions
+            else 0.0,
+            "selfcare_rate": round((sessions - escalated_sessions) / sessions, 4)
+            if sessions
+            else 0.0,
             "feedback_up": row["feedback_up"],
             "feedback_down": row["feedback_down"],
-            "satisfaction_rate": round(row["feedback_up"] / feedbacks, 4) if feedbacks else 0.0,
+            "satisfaction_rate": round(row["feedback_up"] / feedbacks, 4)
+            if feedbacks
+            else 0.0,
             "errors": row["errors"],
-            "error_rate": round(row["errors"] / row["messages"], 4) if row["messages"] else 0.0,
+            "error_rate": round(row["errors"] / row["messages"], 4)
+            if row["messages"]
+            else 0.0,
             "guardrail_blocks": row["guardrail_blocks"],
             "surveys_shown": row["surveys_shown"],
             "surveys_answered": row["surveys_answered"],
@@ -620,9 +635,7 @@ def query_kpi_timeseries(
 # ---------------------------------------------------------------------------
 
 
-def query_funnel(
-    bot_id: str, from_date: str, to_date: str
-) -> list[dict[str, Any]]:
+def query_funnel(bot_id: str, from_date: str, to_date: str) -> list[dict[str, Any]]:
     """5-step funnel: messages → classified → answered → survey → resolved.
 
     Each step returns a count and conversion rate from the previous step.
@@ -682,7 +695,9 @@ def query_funnel(
             {
                 "step": "resolved",
                 "count": max(resolved, 0),
-                "rate": round(max(resolved, 0) / row["total_sessions"], 4) if row["total_sessions"] else 0.0,
+                "rate": round(max(resolved, 0) / row["total_sessions"], 4)
+                if row["total_sessions"]
+                else 0.0,
             },
         ]
         return steps
@@ -768,10 +783,10 @@ def query_intent_detail(
         clarif_map: dict[str, int] = {r["intent_id"]: r["cnt"] for r in clarif_rows}
 
         # Compute previous period for trend
-        period_days = (
-            date.fromisoformat(to_date) - date.fromisoformat(from_date)
-        ).days
-        prev_from = (date.fromisoformat(from_date) - timedelta(days=period_days)).isoformat()
+        period_days = (date.fromisoformat(to_date) - date.fromisoformat(from_date)).days
+        prev_from = (
+            date.fromisoformat(from_date) - timedelta(days=period_days)
+        ).isoformat()
         prev_to = from_date
 
         prev_volumes: dict[str, int] = {}
@@ -796,20 +811,30 @@ def query_intent_detail(
             escalations = esc_map.get(intent_id, 0)
             clarifications = clarif_map.get(intent_id, 0)
             prev_vol = prev_volumes.get(intent_id, 0)
-            trend = round((volume - prev_vol) / prev_vol, 4) if prev_vol else (1.0 if volume else 0.0)
+            trend = (
+                round((volume - prev_vol) / prev_vol, 4)
+                if prev_vol
+                else (1.0 if volume else 0.0)
+            )
             selfcare_rate = round((volume - escalations) / volume, 4) if volume else 0.0
 
-            result.append({
-                "intent_id": intent_id,
-                "volume": volume,
-                "selfcare_rate": selfcare_rate,
-                "clarifications": clarifications,
-                "escalations": escalations,
-                "avg_confidence": round(r["avg_confidence"], 4) if r["avg_confidence"] is not None else None,
-                "avg_margin": round(r["avg_margin"], 4) if r["avg_margin"] is not None else None,
-                "trend": trend,
-                "prev_volume": prev_vol,
-            })
+            result.append(
+                {
+                    "intent_id": intent_id,
+                    "volume": volume,
+                    "selfcare_rate": selfcare_rate,
+                    "clarifications": clarifications,
+                    "escalations": escalations,
+                    "avg_confidence": round(r["avg_confidence"], 4)
+                    if r["avg_confidence"] is not None
+                    else None,
+                    "avg_margin": round(r["avg_margin"], 4)
+                    if r["avg_margin"] is not None
+                    else None,
+                    "trend": trend,
+                    "prev_volume": prev_vol,
+                }
+            )
         return result
     except Exception:
         logger.warning("query_intent_detail failed (fail-open)", exc_info=True)
@@ -867,20 +892,28 @@ def query_sub_motif_detail(
             """,
             (bot_id, from_date, to_date, intent_id),
         ).fetchall()
-        esc_map: dict[str, int] = {r["sub_motif_id"]: r["escalations"] for r in esc_rows}
+        esc_map: dict[str, int] = {
+            r["sub_motif_id"]: r["escalations"] for r in esc_rows
+        }
 
         result = []
         for r in rows:
             sm = r["sub_motif_id"]
             volume = r["volume"]
             esc = esc_map.get(sm, 0)
-            result.append({
-                "sub_motif_id": sm,
-                "volume": volume,
-                "escalations": esc,
-                "selfcare_rate": round((volume - esc) / volume, 4) if volume else 0.0,
-                "avg_confidence": round(r["avg_confidence"], 4) if r["avg_confidence"] is not None else None,
-            })
+            result.append(
+                {
+                    "sub_motif_id": sm,
+                    "volume": volume,
+                    "escalations": esc,
+                    "selfcare_rate": round((volume - esc) / volume, 4)
+                    if volume
+                    else 0.0,
+                    "avg_confidence": round(r["avg_confidence"], 4)
+                    if r["avg_confidence"] is not None
+                    else None,
+                }
+            )
         return result
     except Exception:
         logger.warning("query_sub_motif_detail failed (fail-open)", exc_info=True)
@@ -912,43 +945,88 @@ def export_csv(
 
     if view == "intents":
         data = query_intent_detail(bot_id, from_date, to_date, limit=500)
-        writer.writerow([
-            "intent_id", "volume", "selfcare_rate", "clarifications",
-            "escalations", "avg_confidence", "avg_margin", "trend", "prev_volume",
-        ])
+        writer.writerow(
+            [
+                "intent_id",
+                "volume",
+                "selfcare_rate",
+                "clarifications",
+                "escalations",
+                "avg_confidence",
+                "avg_margin",
+                "trend",
+                "prev_volume",
+            ]
+        )
         for row in data:
-            writer.writerow([
-                row["intent_id"], row["volume"], row["selfcare_rate"],
-                row["clarifications"], row["escalations"],
-                row["avg_confidence"], row["avg_margin"],
-                row["trend"], row["prev_volume"],
-            ])
+            writer.writerow(
+                [
+                    row["intent_id"],
+                    row["volume"],
+                    row["selfcare_rate"],
+                    row["clarifications"],
+                    row["escalations"],
+                    row["avg_confidence"],
+                    row["avg_margin"],
+                    row["trend"],
+                    row["prev_volume"],
+                ]
+            )
     elif view == "sub_motifs":
         # Export sub-motifs for all intents
         intents = query_intent_detail(bot_id, from_date, to_date, limit=500)
-        writer.writerow([
-            "intent_id", "sub_motif_id", "volume", "escalations",
-            "selfcare_rate", "avg_confidence",
-        ])
+        writer.writerow(
+            [
+                "intent_id",
+                "sub_motif_id",
+                "volume",
+                "escalations",
+                "selfcare_rate",
+                "avg_confidence",
+            ]
+        )
         for intent in intents:
-            subs = query_sub_motif_detail(bot_id, intent["intent_id"], from_date, to_date)
+            subs = query_sub_motif_detail(
+                bot_id, intent["intent_id"], from_date, to_date
+            )
             for s in subs:
-                writer.writerow([
-                    intent["intent_id"], s["sub_motif_id"], s["volume"],
-                    s["escalations"], s["selfcare_rate"], s["avg_confidence"],
-                ])
+                writer.writerow(
+                    [
+                        intent["intent_id"],
+                        s["sub_motif_id"],
+                        s["volume"],
+                        s["escalations"],
+                        s["selfcare_rate"],
+                        s["avg_confidence"],
+                    ]
+                )
     else:
         # overview: KPI timeseries
         data = query_kpi_timeseries(bot_id, from_date, to_date, granularity="day")
-        writer.writerow([
-            "date", "sessions", "messages", "escalations",
-            "feedback_up", "feedback_down", "errors", "answers",
-        ])
+        writer.writerow(
+            [
+                "date",
+                "sessions",
+                "messages",
+                "escalations",
+                "feedback_up",
+                "feedback_down",
+                "errors",
+                "answers",
+            ]
+        )
         for row in data:
-            writer.writerow([
-                row["bucket"], row["sessions"], row["messages"],
-                row["escalations"], row["feedback_up"],
-                row["feedback_down"], row["errors"], row["answers"],
-            ])
+            writer.writerow(
+                [
+                    row["bucket"],
+                    row["sessions"],
+                    row["messages"],
+                    row["escalations"],
+                    row["feedback_up"],
+                    row["feedback_down"],
+                    row["errors"],
+                    row["answers"],
+                ]
+            )
 
     return output.getvalue()

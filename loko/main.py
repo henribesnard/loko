@@ -277,7 +277,9 @@ async def _alert_evaluation_task() -> None:
                         )
                         metrics.update(stats)
                     except Exception:
-                        logger.debug("Could not gather session stats for bot %s", bot_id)
+                        logger.debug(
+                            "Could not gather session stats for bot %s", bot_id
+                        )
 
                     events = engine.evaluate(metrics)
                     for event in events:
@@ -344,7 +346,11 @@ async def _analytics_rollup_task() -> None:
             try:
                 deleted = purge_events(cutoff)
                 if deleted > 0:
-                    logger.info("Analytics purge: %d events deleted (before %s)", deleted, cutoff)
+                    logger.info(
+                        "Analytics purge: %d events deleted (before %s)",
+                        deleted,
+                        cutoff,
+                    )
             except Exception:
                 logger.exception("Analytics purge failed")
 
@@ -524,7 +530,9 @@ def create_app() -> FastAPI:
                     if config and config.status == "published":
                         published_bots.append((bot_id, config.name))
                 except Exception:
-                    boot_logger.debug("Skipping bot %s with config errors", bot_info.get("bot_id"))
+                    boot_logger.debug(
+                        "Skipping bot %s with config errors", bot_info.get("bot_id")
+                    )
 
             if not published_bots:
                 boot_logger.info("No published bots found at startup")
@@ -540,7 +548,9 @@ def create_app() -> FastAPI:
                 try:
                     # Try to load the classifier (will raise ComponentUnavailableError if missing)
                     _ = load_classifier(bot_id)
-                    boot_logger.debug("Bot %s (%s): classifier available", bot_id, bot_name)
+                    boot_logger.debug(
+                        "Bot %s (%s): classifier available", bot_id, bot_name
+                    )
                 except ComponentUnavailableError as exc:
                     # CRITICAL: model unavailable for published bot
                     # Log bot_id and error code, NO disk paths (security)
@@ -548,21 +558,27 @@ def create_app() -> FastAPI:
                     boot_logger.critical(
                         "Published bot unavailable at startup: "
                         "bot_id=%s name='%s' error=classifier_l1_unavailable code=%s",
-                        bot_id, bot_name, error_code,
+                        bot_id,
+                        bot_name,
+                        error_code,
                     )
                     unavailable_count += 1
                 except Exception as exc:
                     # Unexpected error during check (not a known ComponentUnavailableError)
                     boot_logger.error(
                         "Unexpected error checking bot %s (%s): %s: %s",
-                        bot_id, bot_name, type(exc).__name__, exc,
+                        bot_id,
+                        bot_name,
+                        type(exc).__name__,
+                        exc,
                     )
 
             if unavailable_count > 0:
                 boot_logger.critical(
                     "STARTUP CHECK: %d/%d published bot(s) "
                     "have unavailable models - they will fail-fast on requests",
-                    unavailable_count, len(published_bots),
+                    unavailable_count,
+                    len(published_bots),
                 )
             else:
                 boot_logger.info(
@@ -626,7 +642,11 @@ def create_app() -> FastAPI:
         async def spa_fallback(path: str) -> Response:
             """Serve SPA — return index.html for non-API/non-static routes."""
             # Don't intercept API requests — let them 404 normally
-            if path.startswith("api/") or path.startswith("health") or path == "metrics":
+            if (
+                path.startswith("api/")
+                or path.startswith("health")
+                or path == "metrics"
+            ):
                 return JSONResponse({"detail": "Not found"}, status_code=404)
 
             # Try to serve static file first

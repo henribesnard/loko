@@ -2,11 +2,8 @@
 
 from __future__ import annotations
 
-import json
 
 import pytest
-
-from loko.analytics.schema import create_schema
 
 
 @pytest.fixture()
@@ -15,6 +12,7 @@ def analytics_db(tmp_path, monkeypatch):
     monkeypatch.setenv("LOKO_DATA_DIR", str(tmp_path))
 
     import loko.analytics.db as db_mod
+
     db_mod._connection = None
     db_mod._DB_PATH = None
 
@@ -57,6 +55,7 @@ def _make_event(
 
 def _insert(events: list[dict]) -> None:
     from loko.analytics.db import insert_events_batch
+
     insert_events_batch(events)
 
 
@@ -117,10 +116,16 @@ def test_query_kpi_overview_date_filter(analytics_db):
     from loko.analytics.queries import query_kpi_overview
 
     events = [
-        _make_event(event_id="in", ts="2026-07-18T10:00:00.000+00:00",
-                     event_type="session_start"),
-        _make_event(event_id="out", ts="2026-07-20T10:00:00.000+00:00",
-                     event_type="session_start"),
+        _make_event(
+            event_id="in",
+            ts="2026-07-18T10:00:00.000+00:00",
+            event_type="session_start",
+        ),
+        _make_event(
+            event_id="out",
+            ts="2026-07-20T10:00:00.000+00:00",
+            event_type="session_start",
+        ),
     ]
     _insert(events)
 
@@ -138,12 +143,15 @@ def test_query_intent_distribution(analytics_db):
     from loko.analytics.queries import query_intent_distribution
 
     events = [
-        _make_event(event_id="c1", intent_id="help_account",
-                     score_top1=0.85, score_margin=0.7),
-        _make_event(event_id="c2", intent_id="help_account",
-                     score_top1=0.90, score_margin=0.8),
-        _make_event(event_id="c3", intent_id="help_billing",
-                     score_top1=0.60, score_margin=0.3),
+        _make_event(
+            event_id="c1", intent_id="help_account", score_top1=0.85, score_margin=0.7
+        ),
+        _make_event(
+            event_id="c2", intent_id="help_account", score_top1=0.90, score_margin=0.8
+        ),
+        _make_event(
+            event_id="c3", intent_id="help_billing", score_top1=0.60, score_margin=0.3
+        ),
     ]
     _insert(events)
 
@@ -243,14 +251,24 @@ def test_query_event_type_timeseries(analytics_db):
     from loko.analytics.queries import query_event_type_timeseries
 
     events = [
-        _make_event(event_id="e1", ts="2026-07-18T10:00:00.000+00:00",
-                     event_type="classification"),
-        _make_event(event_id="e2", ts="2026-07-18T11:00:00.000+00:00",
-                     event_type="classification"),
-        _make_event(event_id="e3", ts="2026-07-18T12:00:00.000+00:00",
-                     event_type="escalade"),
-        _make_event(event_id="e4", ts="2026-07-19T10:00:00.000+00:00",
-                     event_type="classification"),
+        _make_event(
+            event_id="e1",
+            ts="2026-07-18T10:00:00.000+00:00",
+            event_type="classification",
+        ),
+        _make_event(
+            event_id="e2",
+            ts="2026-07-18T11:00:00.000+00:00",
+            event_type="classification",
+        ),
+        _make_event(
+            event_id="e3", ts="2026-07-18T12:00:00.000+00:00", event_type="escalade"
+        ),
+        _make_event(
+            event_id="e4",
+            ts="2026-07-19T10:00:00.000+00:00",
+            event_type="classification",
+        ),
     ]
     _insert(events)
 
@@ -274,15 +292,24 @@ def test_query_escalation_analysis(analytics_db):
     from loko.analytics.queries import query_escalation_analysis
 
     events = [
-        _make_event(event_id="esc1", event_type="escalade",
-                     intent_id="help_account",
-                     meta={"motif": "INSATISFACTION"}),
-        _make_event(event_id="esc2", event_type="escalade",
-                     intent_id="help_account",
-                     meta={"motif": "INSATISFACTION"}),
-        _make_event(event_id="esc3", event_type="escalade",
-                     intent_id="help_billing",
-                     meta={"motif": "COMPLEXITE"}),
+        _make_event(
+            event_id="esc1",
+            event_type="escalade",
+            intent_id="help_account",
+            meta={"motif": "INSATISFACTION"},
+        ),
+        _make_event(
+            event_id="esc2",
+            event_type="escalade",
+            intent_id="help_account",
+            meta={"motif": "INSATISFACTION"},
+        ),
+        _make_event(
+            event_id="esc3",
+            event_type="escalade",
+            intent_id="help_billing",
+            meta={"motif": "COMPLEXITE"},
+        ),
     ]
     _insert(events)
 
@@ -304,12 +331,21 @@ def test_query_guardrail_triggers(analytics_db):
     from loko.analytics.queries import query_guardrail_triggers
 
     events = [
-        _make_event(event_id="g1", event_type="garde_fou_inapproprie",
-                     meta={"rule_id": "sys_injection_01", "category": "injection"}),
-        _make_event(event_id="g2", event_type="garde_fou_inapproprie",
-                     meta={"rule_id": "sys_injection_01", "category": "injection"}),
-        _make_event(event_id="g3", event_type="garde_fou_inapproprie",
-                     meta={"rule_id": "pii_leak_02", "category": "pii"}),
+        _make_event(
+            event_id="g1",
+            event_type="garde_fou_inapproprie",
+            meta={"rule_id": "sys_injection_01", "category": "injection"},
+        ),
+        _make_event(
+            event_id="g2",
+            event_type="garde_fou_inapproprie",
+            meta={"rule_id": "sys_injection_01", "category": "injection"},
+        ),
+        _make_event(
+            event_id="g3",
+            event_type="garde_fou_inapproprie",
+            meta={"rule_id": "pii_leak_02", "category": "pii"},
+        ),
     ]
     _insert(events)
 
@@ -331,15 +367,25 @@ def test_query_session_events(analytics_db):
     from loko.analytics.queries import query_session_events
 
     events = [
-        _make_event(event_id="e1", session_id="sess1",
-                     ts="2026-07-18T10:00:00.000+00:00",
-                     event_type="session_start"),
-        _make_event(event_id="e2", session_id="sess1",
-                     ts="2026-07-18T10:01:00.000+00:00",
-                     event_type="classification", intent_id="help_account"),
-        _make_event(event_id="e3", session_id="sess2",
-                     ts="2026-07-18T10:00:00.000+00:00",
-                     event_type="session_start"),
+        _make_event(
+            event_id="e1",
+            session_id="sess1",
+            ts="2026-07-18T10:00:00.000+00:00",
+            event_type="session_start",
+        ),
+        _make_event(
+            event_id="e2",
+            session_id="sess1",
+            ts="2026-07-18T10:01:00.000+00:00",
+            event_type="classification",
+            intent_id="help_account",
+        ),
+        _make_event(
+            event_id="e3",
+            session_id="sess2",
+            ts="2026-07-18T10:00:00.000+00:00",
+            event_type="session_start",
+        ),
     ]
     _insert(events)
 
@@ -367,6 +413,7 @@ def test_fail_open_missing_db(tmp_path, monkeypatch):
     monkeypatch.setenv("LOKO_DATA_DIR", str(tmp_path / "nonexistent"))
 
     import loko.analytics.db as db_mod
+
     db_mod._connection = None
     db_mod._DB_PATH = None
 

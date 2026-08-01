@@ -25,64 +25,107 @@ def _reset_registry(monkeypatch):
     from prometheus_client import Counter, Histogram, Gauge
 
     monkeypatch.setattr(
-        m, "messages_total",
-        Counter("loko_messages_total", "Total messages processed",
-                ["bot_id", "status"], registry=fresh),
+        m,
+        "messages_total",
+        Counter(
+            "loko_messages_total",
+            "Total messages processed",
+            ["bot_id", "status"],
+            registry=fresh,
+        ),
     )
     monkeypatch.setattr(
-        m, "escalations_total",
-        Counter("loko_escalations_total", "Total escalations to human",
-                ["bot_id", "reason"], registry=fresh),
+        m,
+        "escalations_total",
+        Counter(
+            "loko_escalations_total",
+            "Total escalations to human",
+            ["bot_id", "reason"],
+            registry=fresh,
+        ),
     )
     monkeypatch.setattr(
-        m, "classifications_total",
-        Counter("loko_classifications_total", "Total classifications",
-                ["bot_id", "level", "decision"], registry=fresh),
+        m,
+        "classifications_total",
+        Counter(
+            "loko_classifications_total",
+            "Total classifications",
+            ["bot_id", "level", "decision"],
+            registry=fresh,
+        ),
     )
     monkeypatch.setattr(
-        m, "classification_confidence",
-        Histogram("loko_classification_confidence",
-                  "Classification confidence scores",
-                  ["bot_id", "level"],
-                  buckets=[0.3, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 1.0],
-                  registry=fresh),
+        m,
+        "classification_confidence",
+        Histogram(
+            "loko_classification_confidence",
+            "Classification confidence scores",
+            ["bot_id", "level"],
+            buckets=[0.3, 0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 1.0],
+            registry=fresh,
+        ),
     )
     monkeypatch.setattr(
-        m, "step_latency",
-        Histogram("loko_step_latency_seconds",
-                  "Latency per conversation step", ["step"],
-                  buckets=[0.01, 0.05, 0.1, 0.2, 0.5, 1.0, 2.0, 5.0],
-                  registry=fresh),
+        m,
+        "step_latency",
+        Histogram(
+            "loko_step_latency_seconds",
+            "Latency per conversation step",
+            ["step"],
+            buckets=[0.01, 0.05, 0.1, 0.2, 0.5, 1.0, 2.0, 5.0],
+            registry=fresh,
+        ),
     )
     monkeypatch.setattr(
-        m, "message_latency",
-        Histogram("loko_message_latency_seconds",
-                  "Total message processing latency", ["bot_id"],
-                  buckets=[0.1, 0.5, 1.0, 2.0, 5.0, 10.0],
-                  registry=fresh),
+        m,
+        "message_latency",
+        Histogram(
+            "loko_message_latency_seconds",
+            "Total message processing latency",
+            ["bot_id"],
+            buckets=[0.1, 0.5, 1.0, 2.0, 5.0, 10.0],
+            registry=fresh,
+        ),
     )
     monkeypatch.setattr(
-        m, "models_loaded",
-        Gauge("loko_models_loaded",
-              "Number of ML models currently loaded in memory",
-              ["bot_id", "level"], registry=fresh),
+        m,
+        "models_loaded",
+        Gauge(
+            "loko_models_loaded",
+            "Number of ML models currently loaded in memory",
+            ["bot_id", "level"],
+            registry=fresh,
+        ),
     )
     monkeypatch.setattr(
-        m, "sessions_active",
-        Gauge("loko_sessions_active",
-              "Number of active chat sessions",
-              ["bot_id"], registry=fresh),
+        m,
+        "sessions_active",
+        Gauge(
+            "loko_sessions_active",
+            "Number of active chat sessions",
+            ["bot_id"],
+            registry=fresh,
+        ),
     )
     monkeypatch.setattr(
-        m, "errors_total",
-        Counter("loko_errors_total", "Total errors by type",
-                ["error_type", "bot_id"], registry=fresh),
+        m,
+        "errors_total",
+        Counter(
+            "loko_errors_total",
+            "Total errors by type",
+            ["error_type", "bot_id"],
+            registry=fresh,
+        ),
     )
     monkeypatch.setattr(
-        m, "auth_attempts_total",
-        Counter("loko_auth_attempts_total",
-                "Total authentication attempts",
-                ["result"], registry=fresh),
+        m,
+        "auth_attempts_total",
+        Counter(
+            "loko_auth_attempts_total",
+            "Total authentication attempts",
+            ["result"],
+            registry=fresh,
+        ),
     )
 
 
@@ -115,14 +158,16 @@ def test_record_classification_with_confidence():
     record_classification("bot1", "l1", "clarify", 0.55)
 
     assert (
-        classifications_total
-        .labels(bot_id="bot1", level="l1", decision="route")
-        ._value.get() == 1
+        classifications_total.labels(
+            bot_id="bot1", level="l1", decision="route"
+        )._value.get()
+        == 1
     )
     assert (
-        classifications_total
-        .labels(bot_id="bot1", level="l1", decision="clarify")
-        ._value.get() == 1
+        classifications_total.labels(
+            bot_id="bot1", level="l1", decision="clarify"
+        )._value.get()
+        == 1
     )
     # Histogram should have 2 observations
     sample = classification_confidence.labels(bot_id="bot1", level="l1")
@@ -136,7 +181,9 @@ def test_record_step_latency():
     record_step_latency("classification_l1", 0.05)
     record_step_latency("retrieval", 0.2)
 
-    assert step_latency.labels(step="classification_l1")._sum.get() == pytest.approx(0.05)
+    assert step_latency.labels(step="classification_l1")._sum.get() == pytest.approx(
+        0.05
+    )
     assert step_latency.labels(step="retrieval")._sum.get() == pytest.approx(0.2)
 
 
@@ -158,14 +205,14 @@ def test_record_escalation():
     record_escalation("bot1", "demande_conseiller")
 
     assert (
-        escalations_total
-        .labels(bot_id="bot1", reason="hors_perimetre")
-        ._value.get() == 2
+        escalations_total.labels(bot_id="bot1", reason="hors_perimetre")._value.get()
+        == 2
     )
     assert (
-        escalations_total
-        .labels(bot_id="bot1", reason="demande_conseiller")
-        ._value.get() == 1
+        escalations_total.labels(
+            bot_id="bot1", reason="demande_conseiller"
+        )._value.get()
+        == 1
     )
 
 
@@ -177,15 +224,12 @@ def test_record_error():
     record_error("timeout", "bot1")
 
     assert (
-        errors_total
-        .labels(error_type="classification_error", bot_id="bot1")
-        ._value.get() == 1
+        errors_total.labels(
+            error_type="classification_error", bot_id="bot1"
+        )._value.get()
+        == 1
     )
-    assert (
-        errors_total
-        .labels(error_type="timeout", bot_id="bot1")
-        ._value.get() == 1
-    )
+    assert errors_total.labels(error_type="timeout", bot_id="bot1")._value.get() == 1
 
 
 def test_record_auth_attempt():
@@ -248,15 +292,18 @@ def app(tmp_path, monkeypatch):
     monkeypatch.setenv("LOKO_ADMIN_TOKEN", "test-admin-token-12345")
 
     from loko.api.bot_public import clear_orchestrators
+
     clear_orchestrators()
 
     from loko.main import create_app
+
     return create_app()
 
 
 @pytest.fixture
 def client(app):
     from fastapi.testclient import TestClient
+
     return TestClient(app)
 
 

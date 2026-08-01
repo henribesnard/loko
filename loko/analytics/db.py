@@ -97,7 +97,9 @@ def insert_events_batch(events: list[dict[str, Any]]) -> int:
                     e.get("latency_ms"),
                     e.get("error_code"),
                     e.get("channel"),
-                    json.dumps(e["meta"], ensure_ascii=False) if e.get("meta") else None,
+                    json.dumps(e["meta"], ensure_ascii=False)
+                    if e.get("meta")
+                    else None,
                 )
                 for e in events
             ],

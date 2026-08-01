@@ -7,4 +7,4 @@
 
 # Datasets figés : AUCUNE conversion (byte-exact sur toutes plateformes) —
 # les fichiers sont générés en LF natif et les hash CE-3 (HASHES.sha256) portent sur ces octets
-eval/datasets/** -te
+eval/datasets/** -text

@@ -11,10 +11,12 @@ def build_a2_generate_prompt(
     count: int = 8,
 ) -> list[dict[str, str]]:
     """Build messages for generating new training examples."""
-    others_desc = "\n".join(
-        f"- {i['label']}: {i['definition']}" for i in other_intents
+    others_desc = "\n".join(f"- {i['label']}: {i['definition']}" for i in other_intents)
+    existing_str = (
+        "\n".join(f"- {e}" for e in existing_examples)
+        if existing_examples
+        else "(aucun)"
     )
-    existing_str = "\n".join(f"- {e}" for e in existing_examples) if existing_examples else "(aucun)"
 
     system = (
         "Tu es un assistant spécialisé dans la conception de chatbots. "
@@ -26,8 +28,8 @@ def build_a2_generate_prompt(
     )
 
     user = (
-        f"Intention : \"{label}\"\n"
-        f"Définition : \"{definition}\"\n\n"
+        f'Intention : "{label}"\n'
+        f'Définition : "{definition}"\n\n'
         f"Exemples existants :\n{existing_str}\n\n"
         f"Autres intentions du bot (à ne PAS confondre) :\n{others_desc}\n\n"
         f"Génère {count} nouveaux exemples variés.\n"
@@ -45,9 +47,7 @@ def build_a2_discriminate_prompt(
     other_intents: list[dict[str, str]],
 ) -> list[dict[str, str]]:
     """Build messages for evaluating candidate examples."""
-    others_desc = "\n".join(
-        f"- {i['label']}: {i['definition']}" for i in other_intents
-    )
+    others_desc = "\n".join(f"- {i['label']}: {i['definition']}" for i in other_intents)
     candidates_str = "\n".join(f"- {c}" for c in candidates)
 
     system = (
@@ -59,8 +59,8 @@ def build_a2_discriminate_prompt(
     )
 
     user = (
-        f"Intention : \"{label}\"\n"
-        f"Définition : \"{definition}\"\n\n"
+        f'Intention : "{label}"\n'
+        f'Définition : "{definition}"\n\n'
         f"Autres intentions :\n{others_desc}\n\n"
         f"Exemples à évaluer :\n{candidates_str}\n\n"
         f"Pour chaque exemple, indique le verdict et une justification.\n"
@@ -78,9 +78,7 @@ def build_a2_review_prompt(
     other_intents: list[dict[str, str]],
 ) -> list[dict[str, str]]:
     """Build messages for reviewing existing examples quality."""
-    others_desc = "\n".join(
-        f"- {i['label']}: {i['definition']}" for i in other_intents
-    )
+    others_desc = "\n".join(f"- {i['label']}: {i['definition']}" for i in other_intents)
     examples_str = "\n".join(f"- {e}" for e in examples)
 
     system = (
@@ -93,8 +91,8 @@ def build_a2_review_prompt(
     )
 
     user = (
-        f"Intention : \"{label}\"\n"
-        f"Définition : \"{definition}\"\n\n"
+        f'Intention : "{label}"\n'
+        f'Définition : "{definition}"\n\n'
         f"Autres intentions :\n{others_desc}\n\n"
         f"Exemples à analyser :\n{examples_str}\n\n"
         f"Signale les problèmes trouvés.\n"

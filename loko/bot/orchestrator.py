@@ -59,9 +59,7 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 
-def _make_analytics_observer(
-    session: BotSession, config: BotConfig
-) -> Any | None:
+def _make_analytics_observer(session: BotSession, config: BotConfig) -> Any | None:
     """Create an AnalyticsObserver for the current turn, or None if analytics
     is not running.  Fail-open: returns None on any error."""
     try:
@@ -792,10 +790,13 @@ class BotOrchestrator:
                         "Leak detected mid-stream (V1): %s — halting generation",
                         leak_detected_mid_stream,
                     )
-                    traces.add("guardrail_leak_streaming", detail={
-                        "leak_pattern": leak_detected_mid_stream,
-                        "tokens_before_halt": len(tokens),
-                    })
+                    traces.add(
+                        "guardrail_leak_streaming",
+                        detail={
+                            "leak_pattern": leak_detected_mid_stream,
+                            "tokens_before_halt": len(tokens),
+                        },
+                    )
                     break
                 yield (
                     session,

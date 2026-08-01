@@ -144,7 +144,8 @@ def verify_secret_file_permissions(secret_file_path: str) -> bool:
 
         logger.warning(
             "Secret file %s has insecure permissions: %s. Recommended: chmod 600",
-            secret_path, oct(mode),
+            secret_path,
+            oct(mode),
         )
         return False
 

@@ -58,9 +58,11 @@ def _record_metric(fn_name: str, *args, **kwargs) -> None:
     """Call a monitoring.metrics helper, fail-open."""
     try:
         from loko.monitoring import metrics
+
         getattr(metrics, fn_name)(*args, **kwargs)
     except Exception:
         pass
+
 
 # Rate limiter (None if slowapi not installed — desktop mode)
 _limiter = get_limiter()
@@ -155,7 +157,9 @@ class _ActiveGeneration:
     """
 
     cancel: asyncio.Event
-    done: asyncio.Event = field(default_factory=asyncio.Event)  # B1: set after lock release
+    done: asyncio.Event = field(
+        default_factory=asyncio.Event
+    )  # B1: set after lock release
     turn_id: str = ""
     tokens_emitted: int = 0
 
@@ -290,6 +294,7 @@ def purge_session_locks(active_session_ids: set[str] | None = None) -> int:
 # ---------------------------------------------------------------------------
 # SSE helpers
 # ---------------------------------------------------------------------------
+
 
 def _sse_encode(event: SSEEvent) -> str:
     """Encode an SSEEvent as an SSE text frame."""
@@ -514,9 +519,7 @@ async def send_message(
                     # INT/B2: track tokens and accumulate partial text
                     if sse_event.event == "generation_delta":
                         active_gen.tokens_emitted += 1
-                        partial_text_parts.append(
-                            sse_event.data.get("token", "")
-                        )
+                        partial_text_parts.append(sse_event.data.get("token", ""))
                     yield _sse_encode(sse_event)
             except Exception:
                 # OBS-3: record processing error (fail-open)
@@ -564,9 +567,7 @@ async def send_message(
 
                     # Persist session state even on client disconnect (P1-5)
                     store.update_session(current_session)
-                    for turn in current_session.transcript[
-                        len(session.transcript) :
-                    ]:
+                    for turn in current_session.transcript[len(session.transcript) :]:
                         store.add_turn(current_session.session_id, turn)
 
                 # R4: release session lock when session reaches terminal state
@@ -791,12 +792,13 @@ async def _handle_interrupt(
                 baseline_len = len(current_session.transcript)
 
                 try:
-                    async for current_session, sse_event in (
-                        orchestrator.process_message(
-                            current_session,
-                            req.text,
-                            config,
-                        )
+                    async for (
+                        current_session,
+                        sse_event,
+                    ) in orchestrator.process_message(
+                        current_session,
+                        req.text,
+                        config,
                     ):
                         if new_gen.cancel.is_set():
                             break

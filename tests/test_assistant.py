@@ -207,27 +207,28 @@ class TestHandleAssistantRequest:
     @pytest.mark.asyncio
     async def test_generate_returns_proposals(self, sample_config, monkeypatch):
         """Generate sub-mode returns deduplicated proposals."""
-        llm_response = json.dumps([
-            {"content": "quand arrive mon colis", "rationale": "delivery timing"},
-            {"content": "ou est mon colis", "rationale": "duplicate"},  # existing
-            {"content": "je n'ai pas recu ma commande", "rationale": "missing order"},
-        ])
+        llm_response = json.dumps(
+            [
+                {"content": "quand arrive mon colis", "rationale": "delivery timing"},
+                {"content": "ou est mon colis", "rationale": "duplicate"},  # existing
+                {
+                    "content": "je n'ai pas recu ma commande",
+                    "rationale": "missing order",
+                },
+            ]
+        )
 
         async def mock_llm(bot_id, config, messages, max_tokens=1200):
             return llm_response, {"prompt_tokens": 100, "completion_tokens": 50}
 
-        monkeypatch.setattr(
-            "loko.assistant.service.call_assistant_llm", mock_llm
-        )
+        monkeypatch.setattr("loko.assistant.service.call_assistant_llm", mock_llm)
 
         req = AssistantRequest(
             use_case=UseCase.A2_EXAMPLES,
             sub_mode=SubMode.GENERATE,
             intent_id="livraison",
         )
-        result = await handle_assistant_request(
-            "test-bot", sample_config, req
-        )
+        result = await handle_assistant_request("test-bot", sample_config, req)
 
         assert len(result.proposals) == 2  # "ou est mon colis" deduped
         contents = {p.content for p in result.proposals}
@@ -246,18 +247,14 @@ class TestHandleAssistantRequest:
         async def mock_llm(bot_id, config, messages, max_tokens=1200):
             return llm_response, {}
 
-        monkeypatch.setattr(
-            "loko.assistant.service.call_assistant_llm", mock_llm
-        )
+        monkeypatch.setattr("loko.assistant.service.call_assistant_llm", mock_llm)
 
         req = AssistantRequest(
             use_case=UseCase.A2_EXAMPLES,
             sub_mode=SubMode.GENERATE,
             intent_id="livraison",
         )
-        result = await handle_assistant_request(
-            "test-bot", sample_config, req
-        )
+        result = await handle_assistant_request("test-bot", sample_config, req)
 
         assert len(result.proposals) == 1
         assert result.proposals[0].content == "mon colis est perdu"
@@ -265,49 +262,45 @@ class TestHandleAssistantRequest:
     @pytest.mark.asyncio
     async def test_review_returns_issues(self, sample_config, monkeypatch):
         """Review sub-mode returns quality issues."""
-        llm_response = json.dumps([
-            {
-                "content": "suivi livraison",
-                "issue": "trop court et vague",
-                "suggestion": "reformuler en 'je voudrais suivre ma livraison'",
-            }
-        ])
+        llm_response = json.dumps(
+            [
+                {
+                    "content": "suivi livraison",
+                    "issue": "trop court et vague",
+                    "suggestion": "reformuler en 'je voudrais suivre ma livraison'",
+                }
+            ]
+        )
 
         async def mock_llm(bot_id, config, messages, max_tokens=1200):
             return llm_response, {}
 
-        monkeypatch.setattr(
-            "loko.assistant.service.call_assistant_llm", mock_llm
-        )
+        monkeypatch.setattr("loko.assistant.service.call_assistant_llm", mock_llm)
 
         req = AssistantRequest(
             use_case=UseCase.A2_EXAMPLES,
             sub_mode=SubMode.REVIEW,
             intent_id="livraison",
         )
-        result = await handle_assistant_request(
-            "test-bot", sample_config, req
-        )
+        result = await handle_assistant_request("test-bot", sample_config, req)
 
         assert len(result.proposals) == 1
         assert "trop court" in result.proposals[0].rationale
 
     @pytest.mark.asyncio
-    async def test_discriminate_sets_rejected_status(
-        self, sample_config, monkeypatch
-    ):
+    async def test_discriminate_sets_rejected_status(self, sample_config, monkeypatch):
         """Discriminate sub-mode sets status based on verdict."""
-        llm_response = json.dumps([
-            {"content": "good example", "verdict": "keep", "rationale": "clear"},
-            {"content": "bad example", "verdict": "drop", "rationale": "ambiguous"},
-        ])
+        llm_response = json.dumps(
+            [
+                {"content": "good example", "verdict": "keep", "rationale": "clear"},
+                {"content": "bad example", "verdict": "drop", "rationale": "ambiguous"},
+            ]
+        )
 
         async def mock_llm(bot_id, config, messages, max_tokens=1200):
             return llm_response, {}
 
-        monkeypatch.setattr(
-            "loko.assistant.service.call_assistant_llm", mock_llm
-        )
+        monkeypatch.setattr("loko.assistant.service.call_assistant_llm", mock_llm)
 
         req = AssistantRequest(
             use_case=UseCase.A2_EXAMPLES,
@@ -315,9 +308,7 @@ class TestHandleAssistantRequest:
             intent_id="livraison",
             context={"candidates": ["good example", "bad example"]},
         )
-        result = await handle_assistant_request(
-            "test-bot", sample_config, req
-        )
+        result = await handle_assistant_request("test-bot", sample_config, req)
 
         assert len(result.proposals) == 2
         kept = [p for p in result.proposals if p.status == "pending"]
@@ -346,18 +337,14 @@ class TestHandleAssistantRequest:
         async def mock_llm(bot_id, config, messages, max_tokens=1200):
             return "I cannot generate examples.", {}
 
-        monkeypatch.setattr(
-            "loko.assistant.service.call_assistant_llm", mock_llm
-        )
+        monkeypatch.setattr("loko.assistant.service.call_assistant_llm", mock_llm)
 
         req = AssistantRequest(
             use_case=UseCase.A2_EXAMPLES,
             sub_mode=SubMode.GENERATE,
             intent_id="livraison",
         )
-        result = await handle_assistant_request(
-            "test-bot", sample_config, req
-        )
+        result = await handle_assistant_request("test-bot", sample_config, req)
 
         assert len(result.proposals) == 0
 

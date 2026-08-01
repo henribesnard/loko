@@ -15,7 +15,6 @@ import asyncio
 import logging
 import os
 import time
-import uuid
 from datetime import datetime, timezone
 from typing import Any
 
@@ -77,9 +76,7 @@ class AnalyticsEmitter:
                 pass
         # Final flush
         await self._flush_queue()
-        logger.info(
-            "Analytics emitter stopped (dropped=%d total)", self._dropped
-        )
+        logger.info("Analytics emitter stopped (dropped=%d total)", self._dropped)
 
     def emit(self, event: dict[str, Any]) -> None:
         """Enqueue an event dict.  Never raises — fail-open."""

@@ -256,9 +256,7 @@ def _parse_sse_events(raw: bytes) -> list[dict]:
 @pytest.mark.asyncio
 async def test_interrupt_waits_for_lock_release(tmp_data, monkeypatch, slow_provider):
     """B1: interrupt waits for generator to release lock, no concurrent writes."""
-    app, config, api_key = _make_app_and_config(
-        tmp_data, monkeypatch, slow_provider
-    )
+    app, config, api_key = _make_app_and_config(tmp_data, monkeypatch, slow_provider)
     headers = {"Authorization": f"Bearer {api_key}"}
     bot_id = config.bot_id
 
@@ -266,9 +264,7 @@ async def test_interrupt_waits_for_lock_release(tmp_data, monkeypatch, slow_prov
         transport=httpx.ASGITransport(app=app), base_url="http://test"
     ) as client:
         # Create session
-        res = await client.post(
-            f"/api/v1/bot/{bot_id}/sessions", headers=headers
-        )
+        res = await client.post(f"/api/v1/bot/{bot_id}/sessions", headers=headers)
         assert res.status_code == 201
         session_id = res.json()["session_id"]
 
@@ -298,7 +294,9 @@ async def test_interrupt_waits_for_lock_release(tmp_data, monkeypatch, slow_prov
         # (remaining ~0.7s of tokens at 0.1s/token), not just sleep(0.1).
         # force_closed should be False since it completed within 2s.
         events = _parse_sse_events(interrupt_res.content)
-        interrupted_events = [e for e in events if e["event"] == "generation_interrupted"]
+        interrupted_events = [
+            e for e in events if e["event"] == "generation_interrupted"
+        ]
         assert len(interrupted_events) == 1
         assert interrupted_events[0]["data"]["force_closed"] is False
         assert interrupted_events[0]["data"]["tokens_emitted"] > 0
@@ -323,9 +321,7 @@ async def test_interrupt_waits_for_lock_release(tmp_data, monkeypatch, slow_prov
 @pytest.mark.asyncio
 async def test_interrupt_force_closed_after_2s(tmp_data, monkeypatch, hung_provider):
     """B1: if generator doesn't stop within 2s, force_closed=True and epoch fences writes."""
-    app, config, api_key = _make_app_and_config(
-        tmp_data, monkeypatch, hung_provider
-    )
+    app, config, api_key = _make_app_and_config(tmp_data, monkeypatch, hung_provider)
     headers = {"Authorization": f"Bearer {api_key}"}
     bot_id = config.bot_id
 
@@ -333,9 +329,7 @@ async def test_interrupt_force_closed_after_2s(tmp_data, monkeypatch, hung_provi
         transport=httpx.ASGITransport(app=app), base_url="http://test"
     ) as client:
         # Create session
-        res = await client.post(
-            f"/api/v1/bot/{bot_id}/sessions", headers=headers
-        )
+        res = await client.post(f"/api/v1/bot/{bot_id}/sessions", headers=headers)
         assert res.status_code == 201
         session_id = res.json()["session_id"]
 
@@ -365,7 +359,9 @@ async def test_interrupt_force_closed_after_2s(tmp_data, monkeypatch, hung_provi
         assert interrupt_res.status_code == 200
 
         events = _parse_sse_events(interrupt_res.content)
-        interrupted_events = [e for e in events if e["event"] == "generation_interrupted"]
+        interrupted_events = [
+            e for e in events if e["event"] == "generation_interrupted"
+        ]
         assert len(interrupted_events) == 1
         assert interrupted_events[0]["data"]["force_closed"] is True
         assert interrupted_events[0]["data"]["tokens_emitted"] >= 0
@@ -403,9 +399,7 @@ async def test_interrupt_burst_isolation(tmp_data, monkeypatch):
         # Create sessions
         session_ids = []
         for _ in range(num_sessions):
-            res = await client.post(
-                f"/api/v1/bot/{bot_id}/sessions", headers=headers
-            )
+            res = await client.post(f"/api/v1/bot/{bot_id}/sessions", headers=headers)
             assert res.status_code == 201
             session_ids.append(res.json()["session_id"])
 
@@ -463,9 +457,7 @@ async def test_interrupt_burst_isolation(tmp_data, monkeypatch):
 @pytest.mark.asyncio
 async def test_interrupted_turn_persisted(tmp_data, monkeypatch, slow_provider):
     """B2: interrupted generation persists partial turn with interrupted=True."""
-    app, config, api_key = _make_app_and_config(
-        tmp_data, monkeypatch, slow_provider
-    )
+    app, config, api_key = _make_app_and_config(tmp_data, monkeypatch, slow_provider)
     headers = {"Authorization": f"Bearer {api_key}"}
     bot_id = config.bot_id
 
@@ -473,9 +465,7 @@ async def test_interrupted_turn_persisted(tmp_data, monkeypatch, slow_provider):
         transport=httpx.ASGITransport(app=app), base_url="http://test"
     ) as client:
         # Create session
-        res = await client.post(
-            f"/api/v1/bot/{bot_id}/sessions", headers=headers
-        )
+        res = await client.post(f"/api/v1/bot/{bot_id}/sessions", headers=headers)
         session_id = res.json()["session_id"]
 
         # Start generation in background
@@ -513,8 +503,7 @@ async def test_interrupted_turn_persisted(tmp_data, monkeypatch, slow_provider):
 
         # Find the interrupted bot turn
         interrupted_turns = [
-            t for t in transcript
-            if t["role"] == "bot" and t.get("interrupted") is True
+            t for t in transcript if t["role"] == "bot" and t.get("interrupted") is True
         ]
         assert len(interrupted_turns) >= 1, (
             f"Expected at least one interrupted turn, got transcript: {transcript}"
@@ -544,9 +533,7 @@ async def test_interrupted_turn_not_counted(tmp_data, monkeypatch):
         transport=httpx.ASGITransport(app=app), base_url="http://test"
     ) as client:
         # Create session
-        res = await client.post(
-            f"/api/v1/bot/{bot_id}/sessions", headers=headers
-        )
+        res = await client.post(f"/api/v1/bot/{bot_id}/sessions", headers=headers)
         session_id = res.json()["session_id"]
 
         # First message: start generation then interrupt
@@ -584,7 +571,8 @@ async def test_interrupted_turn_not_counted(tmp_data, monkeypatch):
         # Should NOT have an escalation event (which would mean tours_demande
         # was incorrectly counted from the interrupted turn)
         escalation_events = [
-            e for e in second_events
+            e
+            for e in second_events
             if e["event"] == "template"
             and isinstance(e["data"], dict)
             and e["data"].get("template_key") == "mise_en_relation"
@@ -602,14 +590,12 @@ async def test_interrupted_turn_not_counted(tmp_data, monkeypatch):
         transcript = session_res.json()["transcript"]
         # The interrupted turn should exist but NOT be followed by satisfaction
         interrupted_turns = [
-            t for t in transcript
-            if t["role"] == "bot" and t.get("interrupted") is True
+            t for t in transcript if t["role"] == "bot" and t.get("interrupted") is True
         ]
         if interrupted_turns:
             # Find position of interrupted turn
             idx = next(
-                i for i, t in enumerate(transcript)
-                if t.get("interrupted") is True
+                i for i, t in enumerate(transcript) if t.get("interrupted") is True
             )
             # Next turn (if any) should NOT be a satisfaction survey
             if idx + 1 < len(transcript):
@@ -632,9 +618,7 @@ async def test_interrupted_tokens_in_budget(tmp_data, monkeypatch):
         transport=httpx.ASGITransport(app=app), base_url="http://test"
     ) as client:
         # Create session
-        res = await client.post(
-            f"/api/v1/bot/{bot_id}/sessions", headers=headers
-        )
+        res = await client.post(f"/api/v1/bot/{bot_id}/sessions", headers=headers)
         session_id = res.json()["session_id"]
 
         # Start generation
@@ -659,7 +643,9 @@ async def test_interrupted_tokens_in_budget(tmp_data, monkeypatch):
 
         # Get tokens_emitted from interrupt event
         events = _parse_sse_events(interrupt_res.content)
-        interrupted_events = [e for e in events if e["event"] == "generation_interrupted"]
+        interrupted_events = [
+            e for e in events if e["event"] == "generation_interrupted"
+        ]
         assert len(interrupted_events) == 1
         reported_tokens = interrupted_events[0]["data"]["tokens_emitted"]
 
@@ -675,8 +661,7 @@ async def test_interrupted_tokens_in_budget(tmp_data, monkeypatch):
         )
         transcript = session_res.json()["transcript"]
         interrupted_turns = [
-            t for t in transcript
-            if t["role"] == "bot" and t.get("interrupted") is True
+            t for t in transcript if t["role"] == "bot" and t.get("interrupted") is True
         ]
 
         if interrupted_turns:

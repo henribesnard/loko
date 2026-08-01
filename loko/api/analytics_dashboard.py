@@ -28,9 +28,7 @@ router = APIRouter(
 )
 
 
-def _resolve_date_range(
-    from_date: str | None, to_date: str | None
-) -> tuple[str, str]:
+def _resolve_date_range(from_date: str | None, to_date: str | None) -> tuple[str, str]:
     """Resolve date range with defaults (last 30 days)."""
     today = date.today()
     if not to_date:

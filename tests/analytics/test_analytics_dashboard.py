@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 
 import pytest
 from fastapi.testclient import TestClient
@@ -22,13 +21,16 @@ def app(tmp_path, monkeypatch):
     monkeypatch.setenv("LOKO_ADMIN_TOKEN", "test-admin-token-12345")
 
     import loko.analytics.db as db_mod
+
     db_mod._connection = None
     db_mod._DB_PATH = None
 
     from loko.api.bot_public import clear_orchestrators
+
     clear_orchestrators()
 
     from loko.main import create_app
+
     return create_app()
 
 
@@ -93,6 +95,7 @@ def _make_event(
 def _populate_analytics(monkeypatch, tmp_path):
     """Insert sample events into analytics.db."""
     import loko.analytics.db as db_mod
+
     db_mod._connection = None
     db_mod._DB_PATH = None
     monkeypatch.setenv("LOKO_DATA_DIR", str(tmp_path))
@@ -107,19 +110,35 @@ def _populate_analytics(monkeypatch, tmp_path):
         _make_event(event_id="m1", event_type="message_in"),
         _make_event(event_id="m2", event_type="message_in"),
         _make_event(event_id="m3", event_type="message_in"),
-        _make_event(event_id="c1", event_type="classification",
-                     intent_id="help_account", score_top1=0.85, score_margin=0.7,
-                     latency_ms=25),
-        _make_event(event_id="c2", event_type="classification",
-                     intent_id="help_account", score_top1=0.90, score_margin=0.8,
-                     latency_ms=30),
-        _make_event(event_id="esc1", event_type="escalade",
-                     intent_id="help_account",
-                     meta={"motif": "INSATISFACTION"}),
+        _make_event(
+            event_id="c1",
+            event_type="classification",
+            intent_id="help_account",
+            score_top1=0.85,
+            score_margin=0.7,
+            latency_ms=25,
+        ),
+        _make_event(
+            event_id="c2",
+            event_type="classification",
+            intent_id="help_account",
+            score_top1=0.90,
+            score_margin=0.8,
+            latency_ms=30,
+        ),
+        _make_event(
+            event_id="esc1",
+            event_type="escalade",
+            intent_id="help_account",
+            meta={"motif": "INSATISFACTION"},
+        ),
         _make_event(event_id="fu1", event_type="feedback_up"),
         _make_event(event_id="fd1", event_type="feedback_down"),
-        _make_event(event_id="gf1", event_type="garde_fou_inapproprie",
-                     meta={"rule_id": "sys_injection_01", "category": "injection"}),
+        _make_event(
+            event_id="gf1",
+            event_type="garde_fou_inapproprie",
+            meta={"rule_id": "sys_injection_01", "category": "injection"},
+        ),
     ]
     insert_events_batch(events)
 
@@ -139,9 +158,7 @@ def test_kpi_requires_auth(app, bot_id):
 def test_kpi_ops_access(client, bot_id, tmp_path, monkeypatch):
     """Ops admin token grants access."""
     _populate_analytics(monkeypatch, tmp_path)
-    resp = client.get(
-        f"/api/bot/{bot_id}/analytics/kpi?from=2026-07-18&to=2026-07-19"
-    )
+    resp = client.get(f"/api/bot/{bot_id}/analytics/kpi?from=2026-07-18&to=2026-07-19")
     assert resp.status_code == 200
     data = resp.json()
     assert "sessions" in data
@@ -155,9 +172,7 @@ def test_kpi_ops_access(client, bot_id, tmp_path, monkeypatch):
 def test_get_kpi(client, bot_id, tmp_path, monkeypatch):
     """KPI endpoint returns correct metrics."""
     _populate_analytics(monkeypatch, tmp_path)
-    resp = client.get(
-        f"/api/bot/{bot_id}/analytics/kpi?from=2026-07-18&to=2026-07-19"
-    )
+    resp = client.get(f"/api/bot/{bot_id}/analytics/kpi?from=2026-07-18&to=2026-07-19")
     assert resp.status_code == 200
     data = resp.json()
     assert data["sessions"] == 2
@@ -170,9 +185,7 @@ def test_get_kpi(client, bot_id, tmp_path, monkeypatch):
 
 def test_get_kpi_empty_bot(client, bot_id):
     """KPI for a bot with no analytics events returns zeros."""
-    resp = client.get(
-        f"/api/bot/{bot_id}/analytics/kpi?from=2026-07-18&to=2026-07-19"
-    )
+    resp = client.get(f"/api/bot/{bot_id}/analytics/kpi?from=2026-07-18&to=2026-07-19")
     assert resp.status_code == 200
     data = resp.json()
     assert data["sessions"] == 0
@@ -221,8 +234,7 @@ def test_get_event_timeseries(client, bot_id, tmp_path, monkeypatch):
     """Event timeseries endpoint returns daily breakdowns."""
     _populate_analytics(monkeypatch, tmp_path)
     resp = client.get(
-        f"/api/bot/{bot_id}/analytics/events/timeseries"
-        "?from=2026-07-18&to=2026-07-19"
+        f"/api/bot/{bot_id}/analytics/events/timeseries?from=2026-07-18&to=2026-07-19"
     )
     assert resp.status_code == 200
     data = resp.json()
@@ -270,9 +282,7 @@ def test_get_guardrails(client, bot_id, tmp_path, monkeypatch):
 def test_get_session_events(client, bot_id, tmp_path, monkeypatch):
     """Session events returns events for a specific session."""
     _populate_analytics(monkeypatch, tmp_path)
-    resp = client.get(
-        f"/api/bot/{bot_id}/analytics/sessions/sess1"
-    )
+    resp = client.get(f"/api/bot/{bot_id}/analytics/sessions/sess1")
     assert resp.status_code == 200
     data = resp.json()
     assert len(data) >= 1
@@ -280,8 +290,6 @@ def test_get_session_events(client, bot_id, tmp_path, monkeypatch):
 
 def test_get_session_events_empty(client, bot_id):
     """Unknown session returns 200 with empty list."""
-    resp = client.get(
-        f"/api/bot/{bot_id}/analytics/sessions/nonexistent"
-    )
+    resp = client.get(f"/api/bot/{bot_id}/analytics/sessions/nonexistent")
     assert resp.status_code == 200
     assert resp.json() == []

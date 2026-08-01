@@ -2,11 +2,8 @@
 
 from __future__ import annotations
 
-import sqlite3
 
 import pytest
-
-from loko.analytics.schema import create_schema
 
 
 @pytest.fixture()
@@ -15,6 +12,7 @@ def analytics_db(tmp_path, monkeypatch):
     monkeypatch.setenv("LOKO_DATA_DIR", str(tmp_path))
 
     import loko.analytics.db as db_mod
+
     db_mod._connection = None
     db_mod._DB_PATH = None
 

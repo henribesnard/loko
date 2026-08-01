@@ -12,18 +12,20 @@ from typing import Any
 import json
 
 
-_SENSITIVE_KEYS = frozenset({
-    "password",
-    "password_hash",
-    "token",
-    "api_key",
-    "secret",
-    "message",  # User messages (RGPD)
-    "content",  # User content
-    "session_token",
-    "auth_token",
-    "bearer_token",
-})
+_SENSITIVE_KEYS = frozenset(
+    {
+        "password",
+        "password_hash",
+        "token",
+        "api_key",
+        "secret",
+        "message",  # User messages (RGPD)
+        "content",  # User content
+        "session_token",
+        "auth_token",
+        "bearer_token",
+    }
+)
 
 
 class AuditLogger:
@@ -61,12 +63,12 @@ class AuditLogger:
     ACTION_KEY_EXPIRED = "key.expired"
 
     # Authentication
-    ACTION_AUTH_LOGIN = "auth.login"
-    ACTION_AUTH_LOGIN_FAILED = "auth.login_failed"
-    ACTION_AUTH_LOGOUT = "auth.logout"
-    ACTION_AUTH_SIGNUP = "auth.signup"
-    ACTION_AUTH_PASSWORD_RESET = "auth.password_reset"
-    ACTION_AUTH_EMAIL_VERIFY = "auth.email_verify"
+    ACTION_AUTH_LOGIN = "auth.login"  # secret-guard: allow
+    ACTION_AUTH_LOGIN_FAILED = "auth.login_failed"  # secret-guard: allow
+    ACTION_AUTH_LOGOUT = "auth.logout"  # secret-guard: allow
+    ACTION_AUTH_SIGNUP = "auth.signup"  # secret-guard: allow
+    ACTION_AUTH_PASSWORD_RESET = "auth.password_reset"  # secret-guard: allow
+    ACTION_AUTH_EMAIL_VERIFY = "auth.email_verify"  # secret-guard: allow
 
     # User management
     ACTION_USER_CREATE = "user.create"

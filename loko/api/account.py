@@ -47,8 +47,6 @@ from loko.db.accounts import (
     update_user,
     verify_password,
     create_email_token,
-    mark_token_used,
-    validate_email_token,
 )
 
 logger = logging.getLogger(__name__)
@@ -89,9 +87,13 @@ def _record_invite(account_id: str) -> None:
 def _check_resend_verify_rate(user_id: str) -> None:
     now = time.time()
     attempts = _RESEND_VERIFY_ATTEMPTS[user_id]
-    _RESEND_VERIFY_ATTEMPTS[user_id] = [t for t in attempts if now - t < _RESEND_VERIFY_WINDOW]
+    _RESEND_VERIFY_ATTEMPTS[user_id] = [
+        t for t in attempts if now - t < _RESEND_VERIFY_WINDOW
+    ]
     if len(_RESEND_VERIFY_ATTEMPTS[user_id]) >= _MAX_RESEND_VERIFY:
-        raise HTTPException(429, "Veuillez patienter quelques minutes avant de renvoyer.")
+        raise HTTPException(
+            429, "Veuillez patienter quelques minutes avant de renvoyer."
+        )
 
 
 def _record_resend_verify(user_id: str) -> None:
@@ -108,7 +110,9 @@ PW_MIN_CHARS = 12
 def _validate_password(password: str) -> list[str]:
     errors = []
     if len(password) < PW_MIN_CHARS:
-        errors.append(f"Le mot de passe doit contenir au moins {PW_MIN_CHARS} caracteres.")
+        errors.append(
+            f"Le mot de passe doit contenir au moins {PW_MIN_CHARS} caracteres."
+        )
     if not re.search(r"[A-Z]", password):
         errors.append("Le mot de passe doit contenir au moins une majuscule.")
     if not re.search(r"[0-9]", password):
@@ -121,6 +125,7 @@ def _validate_password(password: str) -> list[str]:
 # ---------------------------------------------------------------------------
 # Request schemas (extra="forbid" on all — AC-12)
 # ---------------------------------------------------------------------------
+
 
 class UpdateProfileRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -165,7 +170,9 @@ class DeleteAccountRequest(BaseModel):
 
 
 @router.get("/profile")
-async def get_profile(request: Request, _auth=Depends(require_session)) -> dict[str, Any]:
+async def get_profile(
+    request: Request, _auth=Depends(require_session)
+) -> dict[str, Any]:
     """Get current user profile."""
     user = get_user_by_id(request.state.user_id)
     if not user:
@@ -205,7 +212,9 @@ async def update_profile(
 
 
 @router.post("/profile/resend-verification")
-async def resend_verification(request: Request, _auth=Depends(require_session)) -> dict[str, str]:
+async def resend_verification(
+    request: Request, _auth=Depends(require_session)
+) -> dict[str, str]:
     """Resend email verification (rate-limited: 1/5min)."""
     user = get_user_by_id(request.state.user_id)
     if not user:
@@ -216,6 +225,7 @@ async def resend_verification(request: Request, _auth=Depends(require_session)) 
     _record_resend_verify(request.state.user_id)
     token = create_email_token(request.state.user_id, "verify")
     from loko.email import send_verification_email
+
     send_verification_email(user["email"], token)
     return {"status": "ok", "message": "Email de verification envoye."}
 
@@ -249,19 +259,23 @@ async def change_password(
 
 
 @router.get("/sessions")
-async def list_sessions(request: Request, _auth=Depends(require_session)) -> list[dict[str, Any]]:
+async def list_sessions(
+    request: Request, _auth=Depends(require_session)
+) -> list[dict[str, Any]]:
     """List active sessions for current user."""
     current_session_id = request.cookies.get("loko_session", "")
     sessions = list_user_sessions(request.state.user_id)
     result = []
     for s in sessions:
-        result.append({
-            "id": s["id"],
-            "created_at": s["created_at"],
-            "user_agent": s.get("user_agent", ""),
-            "ip_address": s.get("ip_address", ""),
-            "is_current": s["id"] == current_session_id,
-        })
+        result.append(
+            {
+                "id": s["id"],
+                "created_at": s["created_at"],
+                "user_agent": s.get("user_agent", ""),
+                "ip_address": s.get("ip_address", ""),
+                "is_current": s["id"] == current_session_id,
+            }
+        )
     return result
 
 
@@ -331,17 +345,25 @@ async def invite_members(
         # Check if already a member
         existing_user = get_user_by_email(email)
         if existing_user:
-            existing_membership = get_membership(request.state.account_id, existing_user["id"])
+            existing_membership = get_membership(
+                request.state.account_id, existing_user["id"]
+            )
             if existing_membership:
                 results.append({"email": email, "status": "already_member"})
                 continue
         inv_id, raw_token = create_invitation(
-            request.state.account_id, email, req.role, request.state.user_id,
+            request.state.account_id,
+            email,
+            req.role,
+            request.state.user_id,
         )
         _record_invite(request.state.account_id)
         # Send email
         from loko.email import send_invitation_email
-        sent = send_invitation_email(email, raw_token, org_name, inviter_email, req.role)
+
+        sent = send_invitation_email(
+            email, raw_token, org_name, inviter_email, req.role
+        )
         results.append({"email": email, "status": "invited", "email_sent": sent})
     return {"results": results}
 
@@ -376,7 +398,10 @@ async def resend_invitation(
     account = get_account(request.state.account_id)
     org_name = account["org_name"] if account else "LOKO"
     from loko.email import send_invitation_email
-    send_invitation_email(inv["email"], raw_token, org_name, request.state.user_email, inv["role"])
+
+    send_invitation_email(
+        inv["email"], raw_token, org_name, request.state.user_email, inv["role"]
+    )
     _record_invite(request.state.account_id)
     return {"status": "ok", "message": "Invitation renvoyee."}
 
@@ -418,7 +443,9 @@ async def remove_member(
         raise HTTPException(403, "Seul un proprietaire peut retirer un membre.")
     # AC-3: cannot remove the last owner
     if membership["role"] == "owner" and count_owners(request.state.account_id) <= 1:
-        raise HTTPException(403, "Impossible de retirer le seul proprietaire du compte.")
+        raise HTTPException(
+            403, "Impossible de retirer le seul proprietaire du compte."
+        )
     delete_membership(request.state.account_id, user_id)
     return {"status": "ok"}
 
@@ -500,6 +527,7 @@ async def accept_invite(
         path="/",
     )
     from loko.api.csrf import set_csrf_cookie
+
     set_csrf_cookie(response)
 
     return {"status": "ok", "account_id": inv["account_id"], "role": inv["role"]}
@@ -551,13 +579,16 @@ async def get_billing_history(
 
 
 @router.post("/export")
-async def export_data(request: Request, _auth=Depends(require_session)) -> dict[str, Any]:
+async def export_data(
+    request: Request, _auth=Depends(require_session)
+) -> dict[str, Any]:
     """RGPD export: all personal data for the current account."""
     user = get_user_by_id(request.state.user_id)
     if not user:
         raise HTTPException(404, "Utilisateur introuvable.")
     account = get_account(request.state.account_id)
     from loko.bot.config_store import list_bots
+
     bots = list_bots(account_id=request.state.account_id)
     members = list_memberships(request.state.account_id)
     invites = list_invitations(request.state.account_id)
@@ -613,17 +644,21 @@ async def delete_account(
 
     # Delete all bots
     from loko.bot.config_store import delete_bot, list_bots
+
     bots = list_bots(account_id=account_id)
     for bot in bots:
         try:
             delete_bot(bot["bot_id"])
         except Exception:
-            logger.warning("Failed to delete bot %s during account purge", bot["bot_id"])
+            logger.warning(
+                "Failed to delete bot %s during account purge", bot["bot_id"]
+            )
 
     # Purge analytics events for this tenant (AC-7 coordination with OBS)
     # Delete rollups BEFORE events (the sub-query needs events to exist)
     try:
         from loko.analytics.db import get_analytics_db
+
         adb = get_analytics_db()
         if adb:
             adb.execute(
@@ -634,13 +669,20 @@ async def delete_account(
             adb.execute("DELETE FROM events WHERE account_id = ?", (account_id,))
             adb.commit()
     except Exception:
-        logger.warning("Failed to purge analytics for account %s", account_id, exc_info=True)
+        logger.warning(
+            "Failed to purge analytics for account %s", account_id, exc_info=True
+        )
 
     # Delete user, memberships, invitations, sessions, email_tokens, account
     delete_user_and_account(request.state.user_id, account_id)
 
     # Clear session cookie
     response.delete_cookie(key="loko_session", path="/")
-    logger.info("Account deleted (RGPD): user=%s account=%s", request.state.user_id, account_id)
+    logger.info(
+        "Account deleted (RGPD): user=%s account=%s", request.state.user_id, account_id
+    )
 
-    return {"status": "deleted", "message": "Compte et donnees supprimes definitivement."}
+    return {
+        "status": "deleted",
+        "message": "Compte et donnees supprimes definitivement.",
+    }

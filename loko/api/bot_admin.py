@@ -239,9 +239,7 @@ async def get_template_defaults(
     defaults = get_default_templates(config.tone_profile)
     return {
         "tone": config.tone_profile.value,
-        "templates": {
-            k.value: t.model_dump(mode="json") for k, t in defaults.items()
-        },
+        "templates": {k.value: t.model_dump(mode="json") for k, t in defaults.items()},
     }
 
 

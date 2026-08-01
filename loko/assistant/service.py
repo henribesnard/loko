@@ -210,9 +210,8 @@ async def _handle_review(bot_id, config, intent, others):
             sub_mode=SubMode.REVIEW,
             intent_id=intent.id,
             content=item.get("content", ""),
-            rationale=item.get("issue", "") + (
-                f" → {item['suggestion']}" if item.get("suggestion") else ""
-            ),
+            rationale=item.get("issue", "")
+            + (f" → {item['suggestion']}" if item.get("suggestion") else ""),
         )
         for item in items
         if item.get("content", "").strip()

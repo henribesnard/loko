@@ -120,17 +120,27 @@ def _migrate_add_columns(conn: sqlite3.Connection) -> None:
     # User profile columns
     user_cols = {row[1] for row in conn.execute("PRAGMA table_info(users)").fetchall()}
     if "display_name" not in user_cols:
-        conn.execute("ALTER TABLE users ADD COLUMN display_name TEXT NOT NULL DEFAULT ''")
+        conn.execute(
+            "ALTER TABLE users ADD COLUMN display_name TEXT NOT NULL DEFAULT ''"
+        )
     if "language" not in user_cols:
         conn.execute("ALTER TABLE users ADD COLUMN language TEXT NOT NULL DEFAULT 'fr'")
     if "timezone" not in user_cols:
-        conn.execute("ALTER TABLE users ADD COLUMN timezone TEXT NOT NULL DEFAULT 'Europe/Paris'")
+        conn.execute(
+            "ALTER TABLE users ADD COLUMN timezone TEXT NOT NULL DEFAULT 'Europe/Paris'"
+        )
     # Session metadata columns
-    sess_cols = {row[1] for row in conn.execute("PRAGMA table_info(sessions)").fetchall()}
+    sess_cols = {
+        row[1] for row in conn.execute("PRAGMA table_info(sessions)").fetchall()
+    }
     if "user_agent" not in sess_cols:
-        conn.execute("ALTER TABLE sessions ADD COLUMN user_agent TEXT NOT NULL DEFAULT ''")
+        conn.execute(
+            "ALTER TABLE sessions ADD COLUMN user_agent TEXT NOT NULL DEFAULT ''"
+        )
     if "ip_address" not in sess_cols:
-        conn.execute("ALTER TABLE sessions ADD COLUMN ip_address TEXT NOT NULL DEFAULT ''")
+        conn.execute(
+            "ALTER TABLE sessions ADD COLUMN ip_address TEXT NOT NULL DEFAULT ''"
+        )
     conn.commit()
 
 
@@ -337,7 +347,10 @@ def delete_user_and_account(user_id: str, account_id: str) -> bool:
     db.execute("DELETE FROM memberships WHERE account_id = ?", (account_id,))
     # Purge all users of this account (email_tokens + sessions + users)
     user_ids = [
-        r[0] for r in db.execute("SELECT id FROM users WHERE account_id = ?", (account_id,)).fetchall()
+        r[0]
+        for r in db.execute(
+            "SELECT id FROM users WHERE account_id = ?", (account_id,)
+        ).fetchall()
     ]
     for uid in user_ids:
         db.execute("DELETE FROM email_tokens WHERE user_id = ?", (uid,))
@@ -355,9 +368,7 @@ def delete_user_and_account(user_id: str, account_id: str) -> bool:
 _SESSION_DURATION_DAYS = 7
 
 
-def create_session(
-    user_id: str, user_agent: str = "", ip_address: str = ""
-) -> str:
+def create_session(user_id: str, user_agent: str = "", ip_address: str = "") -> str:
     """Create a new session. Returns the session token (opaque, 128-bit hex)."""
     db = get_db()
     session_id = secrets.token_hex(16)
@@ -365,7 +376,14 @@ def create_session(
     expires = now + timedelta(days=_SESSION_DURATION_DAYS)
     db.execute(
         "INSERT INTO sessions (id, user_id, created_at, expires_at, revoked, user_agent, ip_address) VALUES (?, ?, ?, ?, 0, ?, ?)",
-        (session_id, user_id, now.isoformat(), expires.isoformat(), user_agent[:256], ip_address[:64]),
+        (
+            session_id,
+            user_id,
+            now.isoformat(),
+            expires.isoformat(),
+            user_agent[:256],
+            ip_address[:64],
+        ),
     )
     db.commit()
     return session_id
@@ -525,7 +543,13 @@ def create_membership(account_id: str, user_id: str, role: str) -> dict[str, Any
         (mid, account_id, user_id, role, now),
     )
     db.commit()
-    return {"id": mid, "account_id": account_id, "user_id": user_id, "role": role, "created_at": now}
+    return {
+        "id": mid,
+        "account_id": account_id,
+        "user_id": user_id,
+        "role": role,
+        "created_at": now,
+    }
 
 
 def get_membership(account_id: str, user_id: str) -> dict[str, Any] | None:
@@ -603,7 +627,16 @@ def create_invitation(
     db.execute(
         """INSERT INTO invitations (id, account_id, email, role, token_hash, invited_by, created_at, expires_at)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-        (inv_id, account_id, email.lower(), role, token_hash, invited_by, now.isoformat(), expires.isoformat()),
+        (
+            inv_id,
+            account_id,
+            email.lower(),
+            role,
+            token_hash,
+            invited_by,
+            now.isoformat(),
+            expires.isoformat(),
+        ),
     )
     db.commit()
     return inv_id, raw_token
@@ -689,7 +722,9 @@ def refresh_invitation_token(invitation_id: str, account_id: str) -> str | None:
         return None
     raw_token = secrets.token_urlsafe(32)
     token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
-    new_expires = (datetime.now(timezone.utc) + timedelta(hours=_INVITATION_EXPIRY_HOURS)).isoformat()
+    new_expires = (
+        datetime.now(timezone.utc) + timedelta(hours=_INVITATION_EXPIRY_HOURS)
+    ).isoformat()
     db.execute(
         "UPDATE invitations SET token_hash = ?, expires_at = ? WHERE id = ?",
         (token_hash, new_expires, invitation_id),

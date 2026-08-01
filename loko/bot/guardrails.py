@@ -268,7 +268,11 @@ def check_response_leaks_streaming(accumulated: str) -> str | None:
     Only scans the last _LEAK_WINDOW_SIZE characters for efficiency.
     Returns the leak type if found, None if clean.
     """
-    tail = accumulated[-_LEAK_WINDOW_SIZE:] if len(accumulated) > _LEAK_WINDOW_SIZE else accumulated
+    tail = (
+        accumulated[-_LEAK_WINDOW_SIZE:]
+        if len(accumulated) > _LEAK_WINDOW_SIZE
+        else accumulated
+    )
     for pattern in _LEAK_PATTERNS:
         if pattern.search(tail):
             return pattern.pattern[:40]

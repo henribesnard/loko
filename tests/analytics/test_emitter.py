@@ -4,12 +4,8 @@ from __future__ import annotations
 
 import asyncio
 import os
-import sqlite3
-import tempfile
 
 import pytest
-
-from loko.analytics.schema import create_schema
 
 
 @pytest.fixture()
@@ -20,10 +16,12 @@ def analytics_db(tmp_path, monkeypatch):
 
     # Reset module-level singletons
     import loko.analytics.db as db_mod
+
     db_mod._connection = None
     db_mod._DB_PATH = None
 
     import loko.analytics.emitter as em_mod
+
     em_mod._emitter = None
 
     yield db_path
@@ -126,6 +124,7 @@ async def test_emit_fail_open_readonly_db(analytics_db):
 
     # Make it read-only (platform-dependent, skip on Windows)
     import sys
+
     if sys.platform == "win32":
         pytest.skip("chmod not available on Windows")
 
@@ -172,7 +171,9 @@ async def test_emit_public_api(analytics_db):
     from loko.analytics.db import get_analytics_db
 
     conn = get_analytics_db()
-    row = conn.execute("SELECT * FROM events WHERE event_type='classification'").fetchone()
+    row = conn.execute(
+        "SELECT * FROM events WHERE event_type='classification'"
+    ).fetchone()
     assert row is not None
 
 

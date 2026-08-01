@@ -11,7 +11,6 @@ Usage:
 from __future__ import annotations
 
 import argparse
-import json
 import subprocess
 import sys
 from pathlib import Path
@@ -112,7 +111,9 @@ def main() -> None:
                     f"OpenAPI ({openapi_version}) != pyproject.toml ({pyproject_version})"
                 )
         else:
-            errors.append(f"OpenAPI: could not reach {args.server_url}/api/openapi.json")
+            errors.append(
+                f"OpenAPI: could not reach {args.server_url}/api/openapi.json"
+            )
 
     # 4. Git tag check (if --against-tag)
     if args.against_tag:

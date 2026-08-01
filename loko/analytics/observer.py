@@ -71,7 +71,9 @@ class AnalyticsObserver:
                 "session_id": self.session_id,
                 "turn": self.turn,
                 "channel": self.channel,
-                "latency_ms": int(trace_event.latency_ms) if trace_event.latency_ms else None,
+                "latency_ms": int(trace_event.latency_ms)
+                if trace_event.latency_ms
+                else None,
             }
 
             if event_type == "classification":
@@ -84,7 +86,9 @@ class AnalyticsObserver:
                         if len(scores) > 1:
                             second = scores[1]
                             if isinstance(second, (list, tuple)):
-                                kwargs["score_margin"] = float(top[1]) - float(second[1])
+                                kwargs["score_margin"] = float(top[1]) - float(
+                                    second[1]
+                                )
                 # L2 classification includes sub_motif
                 if trace_event.step == "classification_l2" and scores:
                     top = scores[0] if isinstance(scores[0], (list, tuple)) else None

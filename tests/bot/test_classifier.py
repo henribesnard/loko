@@ -309,9 +309,15 @@ class TestAdapterTemperature:
             "remboursement",
         ]
         labels = [
-            "livraison", "livraison", "livraison",
-            "facturation", "facturation", "facturation",
-            "retour", "retour", "retour",
+            "livraison",
+            "livraison",
+            "livraison",
+            "facturation",
+            "facturation",
+            "facturation",
+            "retour",
+            "retour",
+            "retour",
         ]
 
         # Train
@@ -324,9 +330,21 @@ class TestAdapterTemperature:
         manifest = {
             "schema": 1,
             "bot_id": bot_id,
-            "levels": {"level1": {"files": {}, "labels": sorted(set(labels)), "n_train_examples": len(texts)}},
+            "levels": {
+                "level1": {
+                    "files": {},
+                    "labels": sorted(set(labels)),
+                    "n_train_examples": len(texts),
+                }
+            },
             "dataset_hash": "test",
-            "calibration": {"temperature": 1.4, "ece_before": 0.2, "ece_after": 0.1, "method": "temperature_scaling_ece_min", "n_samples": 9},
+            "calibration": {
+                "temperature": 1.4,
+                "ece_before": 0.2,
+                "ece_after": 0.1,
+                "method": "temperature_scaling_ece_min",
+                "n_samples": 9,
+            },
         }
         manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
 
@@ -341,7 +359,9 @@ class TestAdapterTemperature:
         # Scores must differ (temperature != 1.0 changes the distribution)
         raw_dict = dict(raw_scores)
         adapted_dict = dict(adapted_scores)
-        assert raw_dict != adapted_dict, "Temperature scaling should change score values"
+        assert raw_dict != adapted_dict, (
+            "Temperature scaling should change score values"
+        )
 
     @pytest.mark.slow
     def test_classifier_adapter_neutral_without_calibration(self):
@@ -367,9 +387,15 @@ class TestAdapterTemperature:
             "remboursement",
         ]
         labels = [
-            "livraison", "livraison", "livraison",
-            "facturation", "facturation", "facturation",
-            "retour", "retour", "retour",
+            "livraison",
+            "livraison",
+            "livraison",
+            "facturation",
+            "facturation",
+            "facturation",
+            "retour",
+            "retour",
+            "retour",
         ]
 
         clf = SetFitClassifier(bot_id, "level1")
@@ -381,7 +407,13 @@ class TestAdapterTemperature:
         manifest = {
             "schema": 1,
             "bot_id": bot_id,
-            "levels": {"level1": {"files": {}, "labels": sorted(set(labels)), "n_train_examples": len(texts)}},
+            "levels": {
+                "level1": {
+                    "files": {},
+                    "labels": sorted(set(labels)),
+                    "n_train_examples": len(texts),
+                }
+            },
             "dataset_hash": "test",
         }
         manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
@@ -397,9 +429,13 @@ class TestAdapterTemperature:
         adapted_scores = adapter.classify_l1("ou est ma commande")
         raw_labels = [s[0] for s in raw_scores]
         adapted_labels = [s[0] for s in adapted_scores]
-        assert raw_labels == adapted_labels, "Ranking should be identical at temperature 1.0"
+        assert raw_labels == adapted_labels, (
+            "Ranking should be identical at temperature 1.0"
+        )
         for (_, r_score), (_, a_score) in zip(raw_scores, adapted_scores):
-            assert abs(r_score - a_score) < 1e-3, f"Score drift too large: {r_score} vs {a_score}"
+            assert abs(r_score - a_score) < 1e-3, (
+                f"Score drift too large: {r_score} vs {a_score}"
+            )
 
 
 # ---------------------------------------------------------------------------

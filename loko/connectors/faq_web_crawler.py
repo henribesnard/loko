@@ -260,9 +260,7 @@ class SimplePageFetcher:
                         (pinned_ip, port), timeout=self.timeout
                     )
                     try:
-                        ssl_sock = ctx.wrap_socket(
-                            raw_sock, server_hostname=hostname
-                        )
+                        ssl_sock = ctx.wrap_socket(raw_sock, server_hostname=hostname)
                     except Exception:
                         raw_sock.close()
                         raise

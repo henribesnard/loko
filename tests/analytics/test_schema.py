@@ -72,10 +72,22 @@ def test_events_table_columns():
     info = conn.execute("PRAGMA table_info(events)").fetchall()
     columns = {row[1] for row in info}
     expected = {
-        "event_id", "ts", "account_id", "bot_id", "session_id", "turn",
-        "event_type", "intent_id", "sub_motif_id", "decision",
-        "score_top1", "score_margin", "latency_ms", "error_code",
-        "channel", "meta",
+        "event_id",
+        "ts",
+        "account_id",
+        "bot_id",
+        "session_id",
+        "turn",
+        "event_type",
+        "intent_id",
+        "sub_motif_id",
+        "decision",
+        "score_top1",
+        "score_margin",
+        "latency_ms",
+        "error_code",
+        "channel",
+        "meta",
     }
     assert expected == columns
     conn.close()

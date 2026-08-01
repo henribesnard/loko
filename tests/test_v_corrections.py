@@ -237,7 +237,9 @@ class TestV1StreamingLeakCheck:
 
     def test_check_response_leaks_streaming_clean(self):
         """Unit test: streaming check passes clean text."""
-        result = check_response_leaks_streaming("Bonjour, votre livraison arrive bientôt.")
+        result = check_response_leaks_streaming(
+            "Bonjour, votre livraison arrive bientôt."
+        )
         assert result is None
 
     def test_check_response_leaks_streaming_sliding_window(self):
@@ -252,9 +254,7 @@ class TestV1StreamingLeakCheck:
     @pytest.mark.asyncio
     async def test_leak_halts_streaming_no_token_emitted(self, tmp_data, monkeypatch):
         """V1 integration: leaky token is NOT emitted to client; replacement sent."""
-        app, config, api_key = _make_app(
-            tmp_data, monkeypatch, LeakyMockLLMProvider()
-        )
+        app, config, api_key = _make_app(tmp_data, monkeypatch, LeakyMockLLMProvider())
         headers = {"Authorization": f"Bearer {api_key}"}
         bot_id = config.bot_id
 
@@ -262,9 +262,7 @@ class TestV1StreamingLeakCheck:
             transport=httpx.ASGITransport(app=app), base_url="http://test"
         ) as client:
             # Create session
-            res = await client.post(
-                f"/api/v1/bot/{bot_id}/sessions", headers=headers
-            )
+            res = await client.post(f"/api/v1/bot/{bot_id}/sessions", headers=headers)
             assert res.status_code == 201
             session_id = res.json()["session_id"]
 
@@ -279,9 +277,7 @@ class TestV1StreamingLeakCheck:
             events = _parse_sse_events(msg_res.content)
             # The leaked key should NOT appear in generation_delta events
             delta_events = [e for e in events if e["event"] == "generation_delta"]
-            all_tokens = "".join(
-                e["data"].get("token", "") for e in delta_events
-            )
+            all_tokens = "".join(e["data"].get("token", "") for e in delta_events)
             assert "sk-" + "a" * 26 not in all_tokens
 
             # A generation_replace event should be present (V1 correction)
@@ -410,12 +406,18 @@ class TestV4BudgetOnButtonClick:
                     examples=[f"livraison ex {i}" for i in range(10)],
                 ),
                 Intent(
-                    id="hors_perimetre", label="HP", definition="HP",
-                    examples=["hp"], is_system=True,
+                    id="hors_perimetre",
+                    label="HP",
+                    definition="HP",
+                    examples=["hp"],
+                    is_system=True,
                 ),
                 Intent(
-                    id="demande_conseiller", label="DC", definition="DC",
-                    examples=["dc"], is_system=True,
+                    id="demande_conseiller",
+                    label="DC",
+                    definition="DC",
+                    examples=["dc"],
+                    is_system=True,
                 ),
             ],
             status="published",
@@ -467,12 +469,18 @@ class TestV4BudgetOnButtonClick:
                     examples=[f"livraison ex {i}" for i in range(10)],
                 ),
                 Intent(
-                    id="hors_perimetre", label="HP", definition="HP",
-                    examples=["hp"], is_system=True,
+                    id="hors_perimetre",
+                    label="HP",
+                    definition="HP",
+                    examples=["hp"],
+                    is_system=True,
                 ),
                 Intent(
-                    id="demande_conseiller", label="DC", definition="DC",
-                    examples=["dc"], is_system=True,
+                    id="demande_conseiller",
+                    label="DC",
+                    definition="DC",
+                    examples=["dc"],
+                    is_system=True,
                 ),
             ],
             status="published",

@@ -99,7 +99,10 @@ async def assistant_accept(
     _reject_demo_mutation(config, bot_id)
 
     if not req.items:
-        return {"added": 0, "intents": [i.model_dump(mode="json") for i in config.intents]}
+        return {
+            "added": 0,
+            "intents": [i.model_dump(mode="json") for i in config.intents],
+        }
 
     # Build lookup
     intents_by_id = {i.id: i for i in config.intents}

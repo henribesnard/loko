@@ -66,7 +66,10 @@ class OpenAICompatProvider:
         """
         import os
 
-        if self._original_url and os.environ.get("LOKO_MODE", "desktop").lower() == "server":
+        if (
+            self._original_url
+            and os.environ.get("LOKO_MODE", "desktop").lower() == "server"
+        ):
             from loko.security.ssrf import resolve_and_pin, SSRFError
 
             try:
