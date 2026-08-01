@@ -1,0 +1,61 @@
+<!-- @dsCard group="Brand" viewport="980x460" subtitle="Three concepts explored before committing to the keyhole" name="Logo — directions considered" -->
+<html>
+<head>
+<link rel="stylesheet" href="../styles.css">
+<style>
+  body{margin:0;font-family:var(--font-sans);background:var(--gray-0);color:var(--gray-900);}
+  .wrap{display:flex;gap:28px;padding:28px;}
+  .col{flex:1;display:flex;flex-direction:column;gap:14px;}
+  .tile{height:150px;border-radius:14px;background:var(--gray-50);border:1px solid var(--gray-200);display:flex;align-items:center;justify-content:center;}
+  h4{margin:0;font-size:15px;font-weight:600;}
+  p{margin:0;font-size:12.5px;line-height:1.55;color:var(--gray-600);}
+  .tag{display:inline-block;font-size:10.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--green-700);background:var(--green-50);border-radius:5px;padding:2px 7px;width:fit-content;}
+  .tagno{color:var(--gray-600);background:var(--gray-100);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="col">
+    <span class="tag tagno">Écartée (v1)</span>
+    <h4>A — Trou de serrure évoluée</h4>
+    <div class="tile">
+      <svg width="64" height="64" viewBox="0 0 64 64">
+        <rect x="1" y="1" width="62" height="62" rx="14" fill="#0F7D63"/>
+        <circle cx="32" cy="24.5" r="9" fill="#F5F7F6"/>
+        <path d="M27.2 24.5 L36.8 24.5 L39.6 43 Q40 45.5 37.3 45.5 L26.7 45.5 Q24 45.5 24.4 43 Z" fill="#F5F7F6"/>
+      </svg>
+    </div>
+    <p>Le glyphe existant, redessiné en géométrie pure (cercle + trapèze). Lisible à 16px, porte directement la métaphore confidentialité. Retenue dans une première passe, puis écartée sur retour client : trop littéral, se lit comme une icône générique de « sécurité », pas comme une marque distinctive.</p>
+  </div>
+
+  <div class="col">
+    <span class="tag tagno">Écartée</span>
+    <h4>B — Machine à états</h4>
+    <div class="tile">
+      <svg width="64" height="64" viewBox="0 0 64 64">
+        <path d="M23 41 L23 30 L38 30 L38 22" stroke="#0F7D63" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <circle cx="23" cy="41" r="6.5" fill="#0F7D63"/>
+        <rect x="31" y="15" width="14" height="14" rx="4" fill="#0F7D63"/>
+      </svg>
+    </div>
+    <p>Nœuds + transition, pour incarner le déterminisme du parcours conversationnel. Conceptuellement le plus juste vis-à-vis du positionnement produit — mais se lit comme un diagramme, pas comme une marque : ambigu à 16px, et redondant avec le motif graphique qu'on veut de toute façon dériver du logo (donc mieux traité comme motif secondaire que comme glyphe).</p>
+  </div>
+
+  <div class="col">
+    <span class="tag">Retenue (v2)</span>
+    <h4>C — Typographique pure</h4>
+    <div class="tile">
+      <svg width="170" height="48" viewBox="0 0 250 64">
+        <text x="0" y="45" font-family="Geist, sans-serif" font-weight="600" font-size="42" letter-spacing="-0.5" fill="#181B1A">LOK</text>
+        <g fill="#0F7D63" fill-rule="evenodd">
+          <path d="M 96 30 m -16 0 a 16 16 0 1 0 32 0 a 16 16 0 1 0 -32 0 Z M 93 33 h6 a2.5 2.5 0 0 1 2.5 2.5 v8 a2.5 2.5 0 0 1 -2.5 2.5 h-6 a2.5 2.5 0 0 1 -2.5 -2.5 v-8 a2.5 2.5 0 0 1 2.5 -2.5 Z"/>
+        </g>
+      </svg>
+    </div>
+    <p>Pas de pictogramme séparé posé à côté du mot : la marque tient dans la lettre elle-même. Le dernier « O » de LOKO est redessiné en disque plein avec une fente étroite — lecture normale à taille de texte, signature au survol. Cette même forme, isolée, redevient le glyphe seul (app icon / favicon) : une seule source de vérité pour le mot et l'icône, plus sobre et moins « pictogramme sécurité générique » que la direction A.</p>
+  </div>
+
+</div>
+</body>
+</html>

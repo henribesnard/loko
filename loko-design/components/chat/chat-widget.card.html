@@ -1,0 +1,37 @@
+<!-- @dsCard group="Components" viewport="700x420" subtitle="Launcher, bubbles, choice buttons, streaming indicator, trace badge" name="Chat widget primitives" -->
+<html>
+<head>
+<link rel="stylesheet" href="../../styles.css">
+<script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script crossorigin src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
+<script src="../../_ds_bundle.js"></script>
+<style>body{margin:0;font-family:var(--font-sans);background:var(--surface-page);padding:20px}</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel" data-presets="react" data-plugins="transform-react-jsx">
+const { ChatLauncher, MessageBubble, ChoiceButtons, StreamingIndicator, StateTraceBadge } = window.LOKO || {};
+function Demo(){
+  const [open, setOpen] = React.useState(true);
+  const [answer, setAnswer] = React.useState(null);
+  return (
+    <div style={{display:'flex', flexDirection:'column', gap:20}}>
+      <div style={{display:'flex', gap:14, alignItems:'center'}}>
+        {ChatLauncher ? <ChatLauncher open={false} onClick={()=>{}} unread={2} /> : null}
+        {ChatLauncher ? <ChatLauncher open={true} onClick={()=>{}} /> : null}
+        {StateTraceBadge ? <StateTraceBadge state="state.confirm_return" confidence={0.94} /> : null}
+      </div>
+      <div style={{display:'flex', flexDirection:'column', gap:10, maxWidth:340}}>
+        {MessageBubble ? <MessageBubble from="user">J'ai un souci avec ma commande.</MessageBubble> : null}
+        {MessageBubble ? <MessageBubble from="bot" traceLabel="cgv-2026.pdf · state.qualify_issue">Pouvez-vous préciser le type de demande ?</MessageBubble> : null}
+        {ChoiceButtons ? <ChoiceButtons options={["Livraison","Retour","Facturation"]} onSelect={setAnswer} selected={answer} /> : null}
+        {StreamingIndicator ? <StreamingIndicator /> : null}
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<Demo />);
+</script>
+</body>
+</html>

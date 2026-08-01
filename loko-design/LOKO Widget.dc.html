@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="styles.css">
+</helmet>
+<div style="font-family:var(--font-sans); background:var(--gray-100); min-height:100vh; display:flex; flex-direction:column; align-items:center; padding:32px 16px; gap:16px;">
+
+  <div style="display:flex; align-items:center; gap:10px;">
+    <div style="font-size:12.5px; color:var(--text-secondary);">Démo — thème système :</div>
+    <button onClick="{{ toggleTheme }}" style="padding:6px 12px; border-radius:var(--radius-pill); border:1px solid var(--border-default); background:var(--surface-card); color:var(--text-secondary); font-size:12px; cursor:pointer;">{{ themeToggleLabel }}</button>
+  </div>
+
+  <!-- Mobile frame -->
+  <div style="width:390px; height:760px; border-radius:36px; background:#000; padding:10px; box-shadow:var(--shadow-lg);">
+    <div data-theme="{{ theme }}" style="width:100%; height:100%; border-radius:28px; overflow:hidden; position:relative; background:var(--surface-page);">
+
+      <!-- Fake client page behind -->
+      <div style="padding:20px; display:flex; flex-direction:column; gap:10px;">
+        <div style="font-size:11px; color:var(--text-tertiary); font-family:var(--font-mono);">mutuelle-verdier.fr</div>
+        <div style="font-size:20px; font-weight:600; color:var(--text-primary); letter-spacing:var(--tracking-tight);">Espace adhérent</div>
+        <div style="font-size:13px; color:var(--text-secondary); line-height:var(--leading-relaxed);">Gérez votre contrat, vos remboursements et vos coordonnées.</div>
+        <div style="height:90px; border-radius:var(--radius-md); background:var(--surface-sunken); border:1px solid var(--border-subtle); margin-top:6px;"></div>
+        <div style="height:90px; border-radius:var(--radius-md); background:var(--surface-sunken); border:1px solid var(--border-subtle);"></div>
+      </div>
+
+      <!-- Chat sheet -->
+      <sc-if value="{{ isOpen }}">
+        <div style="position:absolute; inset:0; background:var(--surface-page); display:flex; flex-direction:column;">
+          <div style="display:flex; align-items:center; gap:10px; padding:16px 16px 14px; border-bottom:1px solid var(--border-subtle); background:var(--surface-card);">
+            <svg width="30" height="30" viewBox="0 0 64 64" style="flex:none;">
+              <rect x="1" y="1" width="62" height="62" rx="14" fill="{{ accentColor }}"/>
+              <circle cx="32" cy="25" r="10" fill="none" stroke="#fff" stroke-width="4"/>
+              <path d="M32 33 L32 44" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
+            </svg>
+            <div style="flex:1;">
+              <div style="font-size:14.5px; font-weight:600; color:var(--text-primary);">Assistant Verdier</div>
+              <div style="font-size:11.5px; color:var(--text-tertiary); display:flex; align-items:center; gap:5px;">
+                <span style="width:6px; height:6px; border-radius:50%; background:{{ accentColor }};"></span>
+                Données traitées localement
+              </div>
+            </div>
+            <button onClick="{{ toggleOpen }}" style="border:none; background:transparent; color:var(--text-tertiary); font-size:20px; cursor:pointer; line-height:1; padding:4px;">⌄</button>
+          </div>
+
+          <div style="flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:14px; background:var(--surface-sunken);">
+            <sc-if value="{{ showResumedNote }}">
+              <div style="align-self:center; font-size:10.5px; color:var(--text-tertiary); font-family:var(--font-mono); background:var(--surface-page); border-radius:999px; padding:4px 12px;">Reprise de votre conversation précédente</div>
+            </sc-if>
+
+            <sc-for list="{{ messageRows }}" as="m" hint-placeholder-count="2">
+              <div style="display:flex; flex-direction:column; gap:5px; align-items:{{ m.align }};">
+                <div style="max-width:82%; padding:10px 14px; border-radius:{{ m.radius }}; background:{{ m.bg }}; color:{{ m.fg }}; font-size:13.5px; line-height:var(--leading-normal);">{{ m.text }}</div>
+                <sc-if value="{{ m.hasSource }}">
+                  <div style="font-family:var(--font-mono); font-size:10px; color:var(--text-tertiary); padding:0 4px;">Source : {{ m.sourceLabel }}</div>
+                </sc-if>
+                <sc-if value="{{ m.showFeedback }}">
+                  <div style="display:flex; gap:6px; padding:0 4px;">
+                    <button onClick="{{ m.onThumbUp }}" style="border:none; background:transparent; font-size:13px; cursor:pointer; opacity:{{ m.thumbUpOpacity }}; padding:2px;">👍</button>
+                    <button onClick="{{ m.onThumbDown }}" style="border:none; background:transparent; font-size:13px; cursor:pointer; opacity:{{ m.thumbDownOpacity }}; padding:2px;">👎</button>
+                  </div>
+                </sc-if>
+              </div>
+            </sc-for>
+
+            <sc-if value="{{ isStreaming }}">
+              <div style="align-self:flex-start; display:inline-flex; gap:5px; padding:11px 14px; border-radius:4px 14px 14px 14px; background:var(--surface-card); border:1px solid var(--border-subtle); width:fit-content;">
+                <span style="width:5px; height:5px; border-radius:50%; background:var(--text-tertiary); opacity:0.4;"></span>
+                <span style="width:5px; height:5px; border-radius:50%; background:var(--text-tertiary); opacity:0.7;"></span>
+                <span style="width:5px; height:5px; border-radius:50%; background:var(--text-tertiary); opacity:0.4;"></span>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ showChoices }}">
+              <div style="display:flex; flex-wrap:wrap; gap:8px;">
+                <sc-for list="{{ choiceOptions }}" as="c" hint-placeholder-count="3">
+                  <button onClick="{{ c.onClick }}" style="padding:9px 15px; border-radius:var(--radius-pill); border:1px solid var(--border-default); background:var(--surface-card); color:var(--text-primary); font-size:13px; font-weight:500; cursor:pointer;">{{ c.label }}</button>
+                </sc-for>
+              </div>
+            </sc-if>
+          </div>
+
+          <div style="display:flex; gap:8px; padding:12px 14px; border-top:1px solid var(--border-subtle); background:var(--surface-card);">
+            <input placeholder="Écrire un message…" style="flex:1; box-sizing:border-box; padding:10px 14px; border-radius:var(--radius-pill); border:1px solid var(--border-default); background:var(--surface-page); color:var(--text-primary); font-size:13.5px; font-family:var(--font-sans);" />
+            <button style="width:38px; height:38px; border-radius:50%; border:none; background:{{ accentColor }}; color:#fff; cursor:pointer; flex:none;">→</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- Launcher -->
+      <sc-if value="{{ showLauncher }}">
+        <button onClick="{{ toggleOpen }}" style="position:absolute; right:16px; bottom:20px; width:56px; height:56px; border-radius:22%; border:none; background:{{ accentColor }}; box-shadow:var(--shadow-lg); display:flex; align-items:center; justify-content:center; cursor:pointer;">
+          <svg width="22" height="22" viewBox="0 0 64 64">
+            <circle cx="32" cy="25" r="10" fill="none" stroke="#fff" stroke-width="4"/>
+            <path d="M32 33 L32 44" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </sc-if>
+
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{
+  &quot;$preview&quot;: {&quot;width&quot;: 460, &quot;height&quot;: 860},
+  &quot;accentColor&quot;: {&quot;editor&quot;: &quot;color&quot;, &quot;default&quot;: &quot;#0F7D63&quot;, &quot;options&quot;: [&quot;#0F7D63&quot;, &quot;#2A4B7C&quot;, &quot;#7C2A3F&quot;, &quot;#A8752D&quot;], &quot;tsType&quot;: &quot;string&quot;}
+}">
+const SCENARIO_REPLIES = {
+  'Résiliation': { text: 'Votre résiliation est enregistrée. Un e-mail de confirmation vous parvient sous 24h.', source: 'cgv-2026.pdf' },
+  'Cotisations': { text: 'Le montant de votre cotisation dépend de votre formule. Vous pouvez le consulter dans votre espace personnel.', source: 'bareme-cotisations-2026.pdf' },
+  'Coordonnées': { text: 'Vous pouvez mettre à jour vos coordonnées depuis votre espace personnel, rubrique « Mes informations ».', source: 'faq-coordonnees.html' },
+};
+
+class Component extends DCLogic {
+  state = {
+    theme: 'light',
+    isOpen: true,
+    hasResumed: false,
+    isStreaming: false,
+    showChoices: true,
+    messages: [
+      { from: 'bot', text: 'Bonjour, je suis l’assistant Verdier. Je peux vous aider pour : résiliation, cotisations, coordonnées.' },
+    ],
+  };
+
+  componentDidMount() {
+    try {
+      if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        this.setState({ theme: 'dark' });
+      }
+    } catch (e) {}
+  }
+
+  toggleTheme = () => this.setState(s => ({ theme: s.theme === 'light' ? 'dark' : 'light' }));
+
+  toggleOpen = () => {
+    this.setState(s => {
+      const reopening = !s.isOpen && s.messages.length > 1;
+      return { isOpen: !s.isOpen, hasResumed: reopening || s.hasResumed };
+    });
+  };
+
+  chooseOption = (label) => {
+    const reply = SCENARIO_REPLIES[label];
+    this.setState(s => ({
+      messages: [...s.messages, { from: 'user', text: label }],
+      showChoices: false,
+      isStreaming: true,
+    }));
+    setTimeout(() => {
+      this.setState(s => ({
+        messages: [...s.messages, { from: 'bot', text: reply.text, source: reply.source, feedback: null }],
+        isStreaming: false,
+      }));
+    }, 900);
+  };
+
+  setFeedback = (idx, val) => {
+    this.setState(s => ({
+      messages: s.messages.map((m, i) => i === idx ? { ...m, feedback: m.feedback === val ? null : val } : m),
+    }));
+  };
+
+  renderVals() {
+    const { theme, isOpen, hasResumed, isStreaming, showChoices, messages } = this.state;
+    const accentColor = this.props.accentColor || '#0F7D63';
+
+    const messageRows = messages.map((m, i) => {
+      const isBot = m.from === 'bot';
+      const isLastBotReply = isBot && m.feedback !== undefined;
+      return {
+        align: isBot ? 'flex-start' : 'flex-end',
+        radius: isBot ? '4px 14px 14px 14px' : '14px 4px 14px 14px',
+        bg: isBot ? 'var(--surface-card)' : accentColor,
+        fg: isBot ? 'var(--text-primary)' : '#fff',
+        text: m.text,
+        hasSource: !!m.source,
+        sourceLabel: m.source || '',
+        showFeedback: isLastBotReply,
+        onThumbUp: () => this.setFeedback(i, 'up'),
+        onThumbDown: () => this.setFeedback(i, 'down'),
+        thumbUpOpacity: m.feedback === 'down' ? 0.3 : 1,
+        thumbDownOpacity: m.feedback === 'up' ? 0.3 : 1,
+      };
+    });
+
+    return {
+      theme,
+      themeToggleLabel: theme === 'light' ? '◐ Passer en sombre' : '◑ Passer en clair',
+      toggleTheme: this.toggleTheme,
+      accentColor,
+      isOpen,
+      showLauncher: !isOpen,
+      toggleOpen: this.toggleOpen,
+      showResumedNote: hasResumed,
+      messageRows,
+      isStreaming,
+      showChoices,
+      choiceOptions: ['Résiliation', 'Cotisations', 'Coordonnées'].map(label => ({ label, onClick: () => this.chooseOption(label) })),
+    };
+  }
+}
+
+</script>
+</body>
+</html>

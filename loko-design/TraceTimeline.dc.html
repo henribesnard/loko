@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="styles.css">
+</helmet>
+<div style="font-family:var(--font-sans); background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:var(--radius-lg); padding:18px; display:flex; flex-direction:column; gap:2px; width:100%;">
+  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+    <div style="font-size:13px; font-weight:600; color:var(--text-primary);">Trace de décision</div>
+    <div style="font-family:var(--font-mono); font-size:11px; color:var(--text-tertiary);">{{ totalLabel }}</div>
+  </div>
+
+  <sc-for list="{{ rows }}" as="row" hint-placeholder-count="4">
+    <div style="display:flex; gap:12px; position:relative;">
+      <div style="display:flex; flex-direction:column; align-items:center; width:20px; flex:none;">
+        <div style="width:11px; height:11px; border-radius:50%; background:{{ row.dotColor }}; border:2px solid {{ row.ringColor }}; z-index:1; margin-top:2px;"></div>
+        <sc-if value="{{ row.hasLine }}">
+          <div style="width:2px; flex:1; background:var(--border-default); min-height:20px; margin-top:2px;"></div>
+        </sc-if>
+      </div>
+      <div style="flex:1; padding-bottom:18px;">
+        <div style="display:flex; align-items:baseline; justify-content:space-between; gap:8px;">
+          <div style="font-size:13.5px; font-weight:600; color:var(--text-primary);">{{ row.label }}</div>
+          <div style="font-family:var(--font-mono); font-size:11.5px; color:var(--text-tertiary); flex:none; white-space:nowrap;">{{ row.durationLabel }}</div>
+        </div>
+        <div style="font-size:12.5px; color:var(--text-secondary); margin-top:3px; line-height:var(--leading-snug);">{{ row.detail }}</div>
+
+        <sc-if value="{{ row.showScore }}">
+          <div style="display:flex; align-items:center; gap:8px; margin-top:8px;">
+            <div style="font-family:var(--font-mono); font-size:11.5px; font-weight:600; color:{{ row.scoreColor }}; background:{{ row.scoreBg }}; border:1px solid {{ row.scoreBorder }}; border-radius:6px; padding:2px 8px;">{{ row.scoreLabel }}</div>
+            <div style="font-family:var(--font-mono); font-size:10.5px; color:var(--text-tertiary);">seuil {{ row.thresholdLabel }}</div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ row.showKind }}">
+          <div style="display:inline-flex; align-items:center; gap:5px; margin-top:8px; font-family:var(--font-mono); font-size:10.5px; font-weight:600; letter-spacing:0.02em; text-transform:uppercase; color:{{ row.kindColor }}; background:{{ row.kindBg }}; border:1px solid {{ row.kindBorder }}; border-radius:5px; padding:3px 7px;">{{ row.kindIcon }} {{ row.kindLabel }}</div>
+        </sc-if>
+
+        <sc-if value="{{ row.showSources }}">
+          <div style="display:flex; flex-direction:column; gap:6px; margin-top:9px;">
+            <sc-for list="{{ row.sources }}" as="src" hint-placeholder-count="2">
+              <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; background:var(--surface-sunken); border:1px solid var(--border-subtle); border-radius:7px; padding:6px 10px; min-width:0;">
+                <div style="font-size:11px; color:var(--text-secondary); font-family:var(--font-mono); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0;">{{ src.name }}</div>
+                <div style="font-family:var(--font-mono); font-size:11px; font-weight:600; color:var(--text-tertiary); flex:none;">{{ src.relevanceLabel }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+  </sc-for>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{
+  &quot;$preview&quot;: {&quot;width&quot;: 420, &quot;height&quot;: 520},
+  &quot;variant&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;default&quot;: &quot;full&quot;, &quot;options&quot;: [&quot;full&quot;, &quot;mini&quot;], &quot;tsType&quot;: &quot;'full' | 'mini'&quot;},
+  &quot;steps&quot;: {&quot;editor&quot;: null, &quot;default&quot;: [
+    {&quot;label&quot;: &quot;Classification&quot;, &quot;status&quot;: &quot;done&quot;, &quot;durationMs&quot;: 82, &quot;detail&quot;: &quot;Intention détectée : résiliation&quot;, &quot;score&quot;: 0.91, &quot;threshold&quot;: 0.75, &quot;confidenceLevel&quot;: &quot;high&quot;},
+    {&quot;label&quot;: &quot;Clarification&quot;, &quot;status&quot;: &quot;done&quot;, &quot;durationMs&quot;: 1200, &quot;detail&quot;: &quot;Choix fermé proposé — réponse : « Résiliation »&quot;, &quot;confidenceLevel&quot;: &quot;high&quot;},
+    {&quot;label&quot;: &quot;Retrieval&quot;, &quot;status&quot;: &quot;done&quot;, &quot;durationMs&quot;: 140, &quot;detail&quot;: &quot;2 documents récupérés&quot;, &quot;score&quot;: 0.84, &quot;threshold&quot;: 0.70, &quot;confidenceLevel&quot;: &quot;high&quot;, &quot;sources&quot;: [{&quot;name&quot;: &quot;cgv-2026.pdf#L214&quot;, &quot;relevance&quot;: 0.88}, {&quot;name&quot;: &quot;guide-resiliation.pdf#L12&quot;, &quot;relevance&quot;: 0.79}]},
+    {&quot;label&quot;: &quot;Génération&quot;, &quot;status&quot;: &quot;done&quot;, &quot;durationMs&quot;: 46, &quot;detail&quot;: &quot;Réponse composée à partir du template « confirm_resiliation »&quot;, &quot;kind&quot;: &quot;template&quot;}
+  ], &quot;tsType&quot;: &quot;Array&lt;{label: string, status: 'done'|'active'|'pending', durationMs?: number, detail?: string, score?: number, threshold?: number, confidenceLevel?: 'high'|'medium'|'low', kind?: 'template'|'generated', sources?: Array&lt;{name: string, relevance: number}&gt;}&gt;&quot;}
+}">
+class Component extends DCLogic {
+  fmtMs(ms) {
+    if (ms == null) return '';
+    return ms < 1000 ? `${ms} ms` : `${(ms / 1000).toFixed(1)} s`;
+  }
+
+  confColors(level) {
+    if (level === 'high') return { dot: 'var(--green-500)', ring: 'var(--green-100)', fg: 'var(--success-fg)', bg: 'var(--success-bg)', border: 'var(--success-border)' };
+    if (level === 'medium') return { dot: 'var(--warning-500)', ring: 'var(--warning-100)', fg: 'var(--warning-fg)', bg: 'var(--warning-bg)', border: 'var(--warning-border)' };
+    if (level === 'low') return { dot: 'var(--error-500)', ring: 'var(--error-100)', fg: 'var(--error-fg)', bg: 'var(--error-bg)', border: 'var(--error-border)' };
+    return { dot: 'var(--gray-400)', ring: 'var(--gray-100)', fg: 'var(--text-tertiary)', bg: 'var(--surface-sunken)', border: 'var(--border-subtle)' };
+  }
+
+  renderVals() {
+    const steps = this.props.steps || [];
+    const variant = this.props.variant || 'full';
+    const totalMs = steps.reduce((a, s) => a + (s.durationMs || 0), 0);
+
+    const rows = steps.map((s, i) => {
+      const isPending = s.status === 'pending';
+      const conf = this.confColors(s.confidenceLevel || (isPending ? null : 'high'));
+      const dotColor = isPending ? 'var(--gray-300)' : conf.dot;
+      const ringColor = isPending ? 'var(--gray-50)' : conf.ring;
+
+      return {
+        label: s.label,
+        detail: isPending ? 'En attente…' : (s.detail || ''),
+        durationLabel: isPending ? '' : this.fmtMs(s.durationMs),
+        hasLine: i < steps.length - 1,
+        dotColor,
+        ringColor,
+        showScore: !isPending && s.score != null && variant === 'full',
+        scoreLabel: s.score != null ? s.score.toFixed(2) : '',
+        thresholdLabel: s.threshold != null ? s.threshold.toFixed(2) : '',
+        scoreColor: conf.fg,
+        scoreBg: conf.bg,
+        scoreBorder: conf.border,
+        showKind: !isPending && !!s.kind && variant === 'full',
+        kindLabel: s.kind === 'template' ? 'Template verrouillé' : s.kind === 'generated' ? 'Génération LLM' : '',
+        kindIcon: s.kind === 'template' ? '🔒' : '◆',
+        kindColor: s.kind === 'template' ? 'var(--green-700)' : 'var(--bronze-600)',
+        kindBg: s.kind === 'template' ? 'var(--brand-primary-tint)' : 'var(--accent-tint)',
+        kindBorder: s.kind === 'template' ? 'var(--brand-primary-border)' : 'var(--accent-border)',
+        showSources: !isPending && !!s.sources && s.sources.length > 0 && variant === 'full',
+        sources: (s.sources || []).map(src => ({ name: src.name, relevanceLabel: `${Math.round(src.relevance * 100)}%` })),
+      };
+    });
+
+    return {
+      rows,
+      totalLabel: totalMs > 0 ? `total ${this.fmtMs(totalMs)}` : '',
+    };
+  }
+}
+
+</script>
+</body>
+</html>

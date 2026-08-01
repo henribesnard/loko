@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="styles.css">
+</helmet>
+<div data-theme="{{ theme }}" style="font-family:var(--font-sans); background:var(--surface-page); min-height:100vh; color:var(--text-primary);">
+
+  <!-- Header -->
+  <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 28px; background:var(--surface-card); border-bottom:1px solid var(--border-subtle);">
+    <div style="display:flex; align-items:center; gap:12px;">
+      <svg viewBox="0 0 250 64" style="height:20px; width:78px; display:block;">
+        <text x="0" y="45" font-family="Geist, sans-serif" font-weight="600" font-size="42" letter-spacing="-0.5" fill="var(--text-primary)">LOK</text>
+        <path fill-rule="evenodd" fill="var(--brand-primary)" d="M 96 30 m -16 0 a 16 16 0 1 0 32 0 a 16 16 0 1 0 -32 0 Z M 93 33 h6 a2.5 2.5 0 0 1 2.5 2.5 v8 a2.5 2.5 0 0 1 -2.5 2.5 h-6 a2.5 2.5 0 0 1 -2.5 -2.5 v-8 a2.5 2.5 0 0 1 2.5 -2.5 Z"/>
+      </svg>
+      <div style="width:1px; height:18px; background:var(--border-default);"></div>
+      <div style="font-size:14px; font-weight:600;">Mutuelle Verdier</div>
+      <div style="font-family:var(--font-mono); font-size:10.5px; font-weight:600; color:var(--green-700); background:var(--brand-primary-tint); border:1px solid var(--brand-primary-border); border-radius:4px; padding:2px 7px;">Publié</div>
+    </div>
+    <button onClick="{{ toggleTheme }}" style="display:flex; align-items:center; gap:6px; padding:6px 12px; border-radius:var(--radius-sm); border:1px solid var(--border-default); background:transparent; color:var(--text-secondary); font-size:12.5px; font-family:var(--font-sans); cursor:pointer;">
+      {{ themeLabel }}
+    </button>
+  </div>
+
+  <div style="padding:28px; max-width:1180px; margin:0 auto; display:flex; flex-direction:column; gap:24px;">
+
+    <div style="display:flex; align-items:center; justify-content:space-between;">
+      <div style="font-size:22px; font-weight:600; letter-spacing:var(--tracking-tight);">Tableau de bord</div>
+      <div style="display:flex; gap:8px;">
+        <sc-for list="{{ periodOptions }}" as="p" hint-placeholder-count="3">
+          <button onClick="{{ p.onSelect }}" style="padding:7px 14px; border-radius:var(--radius-pill); border:1px solid {{ p.borderColor }}; background:{{ p.bg }}; color:{{ p.fg }}; font-size:12.5px; font-weight:500; cursor:pointer;">{{ p.label }}</button>
+        </sc-for>
+      </div>
+    </div>
+
+    <!-- KPI banner -->
+    <div style="display:grid; grid-template-columns:repeat(5, 1fr); gap:14px;">
+      <sc-for list="{{ kpiCards }}" as="k" hint-placeholder-count="5">
+        <div style="background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:var(--radius-lg); padding:16px;">
+          <div style="font-size:11.5px; color:var(--text-tertiary); margin-bottom:8px;">{{ k.label }}</div>
+          <div style="font-family:var(--font-mono); font-size:22px; font-weight:600; color:var(--text-primary);">{{ k.value }}</div>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+      <!-- Selfcare par intention -->
+      <div style="background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:var(--radius-lg); padding:20px;">
+        <div style="font-size:13.5px; font-weight:600; margin-bottom:14px;">Selfcare par intention</div>
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          <sc-for list="{{ selfcareRows }}" as="s" hint-placeholder-count="3">
+            <div style="display:flex; align-items:center; gap:12px;">
+              <div style="width:100px; flex:none; font-size:12.5px;">{{ s.label }}</div>
+              <div style="flex:1; height:8px; border-radius:999px; background:var(--gray-100); overflow:hidden;">
+                <div style="height:100%; width:{{ s.widthPct }}; background:var(--brand-primary);"></div>
+              </div>
+              <div style="width:44px; flex:none; text-align:right; font-family:var(--font-mono); font-size:12px; color:var(--text-tertiary);">{{ s.pctLabel }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <!-- Motifs d'escalade + taux clarification -->
+      <div style="background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:var(--radius-lg); padding:20px; display:flex; flex-direction:column; gap:18px;">
+        <div>
+          <div style="font-size:13.5px; font-weight:600; margin-bottom:12px;">Motifs d'escalade</div>
+          <div style="display:flex; flex-direction:column; gap:9px;">
+            <sc-for list="{{ escalationRows }}" as="e" hint-placeholder-count="3">
+              <div style="display:flex; align-items:center; justify-content:space-between; font-size:12.5px;">
+                <div style="color:var(--text-secondary);">{{ e.label }}</div>
+                <div style="font-family:var(--font-mono); color:var(--text-tertiary);">{{ e.countLabel }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        <div style="border-top:1px solid var(--border-subtle); padding-top:14px; display:flex; align-items:center; justify-content:space-between;">
+          <div style="font-size:12.5px; color:var(--text-secondary);">Taux de clarification</div>
+          <div style="font-family:var(--font-mono); font-size:16px; font-weight:600; color:var(--warning-fg);">{{ clarificationRateLabel }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Retours négatifs / mal classés -->
+    <div style="background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:var(--radius-lg); padding:20px;">
+      <div style="font-size:13.5px; font-weight:600; margin-bottom:4px;">Retours négatifs / mal classés</div>
+      <div style="font-size:12px; color:var(--text-tertiary); margin-bottom:14px;">Corrigez l'intention, ajoutez l'exemple, ré-entraînez — en 2 clics.</div>
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        <sc-for list="{{ negativeFeedbackRows }}" as="n" hint-placeholder-count="3">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:14px; padding:12px 14px; background:var(--surface-sunken); border:1px solid var(--border-subtle); border-radius:var(--radius-md);">
+            <div style="min-width:0; flex:1;">
+              <div style="font-size:12.5px; color:var(--text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">« {{ n.verbatim }} »</div>
+              <div style="font-family:var(--font-mono); font-size:11px; color:var(--text-tertiary); margin-top:3px;">classé comme « {{ n.intentAttribuee }} »</div>
+            </div>
+            <button onClick="{{ n.onAction }}" disabled="{{ n.actionDisabled }}" style="flex:none; font-size:12px; font-weight:600; padding:7px 13px; border-radius:var(--radius-sm); border:1px solid {{ n.actionBorder }}; background:{{ n.actionBg }}; color:{{ n.actionFg }}; cursor:{{ n.actionCursor }}; white-space:nowrap;">{{ n.actionLabel }}</button>
+          </div>
+        </sc-for>
+      </div>
+      <sc-if value="{{ showRetrainBar }}">
+        <div style="margin-top:14px; display:flex; align-items:center; justify-content:space-between; background:var(--brand-primary-tint); border:1px solid var(--brand-primary-border); border-radius:var(--radius-md); padding:11px 14px;">
+          <div style="font-size:12.5px; color:var(--green-700);">{{ retrainBarLabel }}</div>
+          <button onClick="{{ onRetrainClick }}" style="font-size:12px; font-weight:600; padding:7px 13px; border-radius:var(--radius-sm); border:none; background:var(--brand-primary); color:var(--text-on-brand); cursor:pointer;">Ré-entraîner</button>
+        </div>
+      </sc-if>
+      <sc-if value="{{ retrainToast }}">
+        <div style="margin-top:14px; font-size:12.5px; color:var(--success-fg); background:var(--success-bg); border:1px solid var(--success-border); border-radius:var(--radius-sm); padding:9px 13px;">✓ {{ retrainToast }}</div>
+      </sc-if>
+    </div>
+
+    <!-- Sessions récentes -->
+    <div style="display:grid; grid-template-columns:{{ sessionsGridCols }}; gap:16px; align-items:flex-start;">
+      <div style="background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:var(--radius-lg); overflow:hidden;">
+        <div style="padding:16px 18px 10px; font-size:13.5px; font-weight:600;">Sessions récentes</div>
+        <sc-for list="{{ sessionRows }}" as="sess" hint-placeholder-count="4">
+          <button onClick="{{ sess.onSelect }}" style="display:flex; align-items:center; justify-content:space-between; width:100%; text-align:left; padding:12px 18px; border:none; border-top:1px solid var(--border-subtle); background:{{ sess.bg }}; cursor:pointer;">
+            <div>
+              <div style="font-size:13px; color:var(--text-primary);">{{ sess.userLabel }}</div>
+              <div style="font-family:var(--font-mono); font-size:11px; color:var(--text-tertiary); margin-top:2px;">{{ sess.dateLabel }}</div>
+            </div>
+            <div style="font-family:var(--font-mono); font-size:10.5px; font-weight:600; color:{{ sess.outcomeColor }}; background:{{ sess.outcomeBg }}; border-radius:4px; padding:3px 8px;">{{ sess.outcomeLabel }}</div>
+          </button>
+        </sc-for>
+      </div>
+
+      <sc-if value="{{ hasSelectedSession }}">
+        <div style="background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:var(--radius-lg); padding:18px; display:flex; flex-direction:column; gap:16px; max-height:640px; overflow-y:auto;">
+          <div style="display:flex; align-items:center; justify-content:space-between;">
+            <div style="font-size:13.5px; font-weight:600;">{{ selectedSessionUserLabel }}</div>
+            <button onClick="{{ closeSession }}" style="border:none; background:transparent; color:var(--text-tertiary); font-size:16px; cursor:pointer; line-height:1;">✕</button>
+          </div>
+          <sc-for list="{{ selectedSessionTurns }}" as="turn" hint-placeholder-count="3">
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              <div style="display:flex; justify-content:{{ turn.justify }};">
+                <div style="max-width:82%; padding:9px 13px; border-radius:{{ turn.radius }}; background:{{ turn.bg }}; color:{{ turn.fg }}; font-size:12.5px;">{{ turn.text }}</div>
+              </div>
+              <sc-if value="{{ turn.hasTrace }}">
+                <dc-import name="TraceTimeline" steps="{{ turn.traceSteps }}" variant="mini" hint-size="100%,140px"></dc-import>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+    </div>
+
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const SESSIONS = [
+  {
+    id: 's1', userLabel: 'Utilisateur #4821', dateLabel: "Aujourd'hui · 14:02", outcome: 'selfcare',
+    turns: [
+      { from: 'user', text: 'Je veux résilier mon contrat' },
+      { from: 'bot', text: 'Votre résiliation est enregistrée. Un e-mail de confirmation vous parvient sous 24h.', trace: [
+        { label: 'Classification', status: 'done', durationMs: 78, detail: 'Intention détectée : Résiliation', score: 0.93, threshold: 0.75, confidenceLevel: 'high' },
+        { label: 'Retrieval', status: 'done', durationMs: 132, detail: '2 documents récupérés', score: 0.88, threshold: 0.65, confidenceLevel: 'high', sources: [{ name: 'cgv-2026.pdf#L214', relevance: 0.90 }] },
+        { label: 'Génération', status: 'done', durationMs: 40, detail: 'Template « fin »', kind: 'template' },
+      ] },
+    ],
+  },
+  {
+    id: 's2', userLabel: 'Utilisateur #4822', dateLabel: "Aujourd'hui · 11:47", outcome: 'escalade',
+    turns: [
+      { from: 'user', text: 'Je veux parler à quelqu’un, ce n’est pas clair' },
+      { from: 'bot', text: 'Je vous mets en relation avec un conseiller. Temps d’attente estimé : 3 minutes.', trace: [
+        { label: 'Classification', status: 'done', durationMs: 70, detail: 'Intention détectée : Demande conseiller', score: 0.95, threshold: 0.75, confidenceLevel: 'high' },
+        { label: 'Génération', status: 'done', durationMs: 18, detail: 'Template « escalade »', kind: 'template' },
+      ] },
+    ],
+  },
+  {
+    id: 's3', userLabel: 'Utilisateur #4823', dateLabel: 'Hier · 18:20', outcome: 'clarification',
+    turns: [
+      { from: 'user', text: 'Je veux mettre à jour mes infos de cotisation' },
+      { from: 'bot', text: 'Pouvez-vous préciser votre demande parmi : Résiliation / Cotisations / Coordonnées ?', trace: [
+        { label: 'Classification', status: 'done', durationMs: 85, detail: 'Score sous le seuil de routage', score: 0.58, threshold: 0.75, confidenceLevel: 'medium' },
+      ] },
+    ],
+  },
+  {
+    id: 's4', userLabel: 'Utilisateur #4824', dateLabel: 'Hier · 09:15', outcome: 'selfcare',
+    turns: [
+      { from: 'user', text: 'Comment mettre à jour mon RIB ?' },
+      { from: 'bot', text: 'Vous pouvez mettre à jour votre RIB depuis votre espace personnel, rubrique « Coordonnées bancaires ».', trace: [
+        { label: 'Classification', status: 'done', durationMs: 66, detail: 'Intention détectée : Coordonnées', score: 0.90, threshold: 0.75, confidenceLevel: 'high' },
+        { label: 'Retrieval', status: 'done', durationMs: 110, detail: '1 document récupéré', score: 0.82, threshold: 0.65, confidenceLevel: 'high', sources: [{ name: 'faq-coordonnees.html', relevance: 0.85 }] },
+        { label: 'Génération', status: 'done', durationMs: 33, detail: 'Template « coordonnees »', kind: 'template' },
+      ] },
+    ],
+  },
+];
+
+class Component extends DCLogic {
+  state = {
+    theme: 'light',
+    period: '7j',
+    selectedSessionId: 's1',
+    negativeFeedback: [
+      { id: 'n1', verbatim: 'Je veux changer mon adresse email de contact', intentAttribuee: 'Hors périmètre', status: 'idle' },
+      { id: 'n2', verbatim: 'Pourquoi ma cotisation a autant augmenté cette année ?', intentAttribuee: 'Coordonnées', status: 'idle' },
+      { id: 'n3', verbatim: 'Je veux résilier à cause d’un déménagement', intentAttribuee: 'Demande conseiller', status: 'idle' },
+    ],
+    retrainToast: '',
+  };
+
+  toggleTheme = () => this.setState(s => ({ theme: s.theme === 'light' ? 'dark' : 'light' }));
+  setPeriod = (p) => this.setState({ period: p });
+  selectSession = (id) => this.setState({ selectedSessionId: id });
+  closeSession = () => this.setState({ selectedSessionId: null });
+
+  addAsExample = (id) => {
+    this.setState(s => ({ negativeFeedback: s.negativeFeedback.map(n => n.id === id ? { ...n, status: 'added' } : n) }));
+  };
+
+  retrain = () => {
+    this.setState(s => ({
+      negativeFeedback: s.negativeFeedback.map(n => n.status === 'added' ? { ...n, status: 'done' } : n),
+      retrainToast: 'Ré-entraînement lancé — la matrice sera mise à jour sous peu.',
+    }));
+    setTimeout(() => this.setState({ retrainToast: '' }), 4000);
+  };
+
+  renderVals() {
+    const { theme, period, selectedSessionId, negativeFeedback, retrainToast } = this.state;
+
+    const periodOptions = ['7j', '30j', '90j'].map(p => ({
+      label: p,
+      onSelect: () => this.setPeriod(p),
+      borderColor: period === p ? 'var(--brand-primary)' : 'var(--border-default)',
+      bg: period === p ? 'var(--brand-primary-tint)' : 'transparent',
+      fg: period === p ? 'var(--green-700)' : 'var(--text-secondary)',
+    }));
+
+    const mult = period === '7j' ? 1 : period === '30j' ? 4.1 : 11.8;
+    const kpiCards = [
+      { label: 'Sessions', value: Math.round(1284 * mult).toLocaleString('fr-FR') },
+      { label: 'Taux de selfcare', value: '78 %' },
+      { label: 'Escalades', value: Math.round(214 * mult).toLocaleString('fr-FR') },
+      { label: 'Latence P50', value: '340 ms' },
+      { label: 'Feedback positif', value: '91 %' },
+    ];
+
+    const selfcareRows = [
+      { label: 'Résiliation', pct: 0.84 },
+      { label: 'Cotisations', pct: 0.62 },
+      { label: 'Coordonnées', pct: 0.89 },
+    ].map(s => ({ label: s.label, widthPct: `${Math.round(s.pct * 100)}%`, pctLabel: `${Math.round(s.pct * 100)}%` }));
+
+    const escalationRows = [
+      { label: 'Demande explicite d’un humain', count: 96 },
+      { label: 'Échec de clarification répétée', count: 71 },
+      { label: 'Demande complexe hors template', count: 47 },
+    ].map(e => ({ label: e.label, countLabel: `${Math.round(e.count * mult)}` }));
+
+    const clarificationRateLabel = '34 %';
+
+    const negativeFeedbackRows = negativeFeedback.map(n => {
+      const disabled = n.status !== 'idle';
+      return {
+        verbatim: n.verbatim,
+        intentAttribuee: n.intentAttribuee,
+        onAction: n.status === 'idle' ? () => this.addAsExample(n.id) : () => {},
+        actionDisabled: n.status === 'done',
+        actionLabel: n.status === 'idle' ? 'Ajouter comme exemple' : n.status === 'added' ? '✓ Ajouté' : '✓ Intégré',
+        actionBorder: n.status === 'idle' ? 'var(--border-default)' : 'var(--success-border)',
+        actionBg: n.status === 'idle' ? 'var(--surface-card)' : 'var(--success-bg)',
+        actionFg: n.status === 'idle' ? 'var(--text-secondary)' : 'var(--success-fg)',
+        actionCursor: n.status === 'idle' ? 'pointer' : 'default',
+      };
+    });
+    const showRetrainBar = negativeFeedback.some(n => n.status === 'added');
+    const addedCount = negativeFeedback.filter(n => n.status === 'added').length;
+    const retrainBarLabel = `${addedCount} exemple${addedCount > 1 ? 's' : ''} ajouté${addedCount > 1 ? 's' : ''} — prêt à ré-entraîner`;
+
+    const sessionRows = SESSIONS.map(sess => {
+      const isSelected = sess.id === selectedSessionId;
+      const outcomeMap = {
+        selfcare: { label: 'Selfcare', color: 'var(--success-fg)', bg: 'var(--success-bg)' },
+        escalade: { label: 'Escalade', color: 'var(--warning-fg)', bg: 'var(--warning-bg)' },
+        clarification: { label: 'Clarification', color: 'var(--info-fg)', bg: 'var(--info-bg)' },
+      };
+      const o = outcomeMap[sess.outcome];
+      return {
+        userLabel: sess.userLabel,
+        dateLabel: sess.dateLabel,
+        onSelect: () => this.selectSession(sess.id),
+        bg: isSelected ? 'var(--brand-primary-tint)' : 'transparent',
+        outcomeLabel: o.label,
+        outcomeColor: o.color,
+        outcomeBg: o.bg,
+      };
+    });
+
+    const selectedSession = SESSIONS.find(s => s.id === selectedSessionId) || null;
+    const selectedSessionTurns = selectedSession ? selectedSession.turns.map(t => {
+      const isBot = t.from === 'bot';
+      return {
+        text: t.text,
+        justify: isBot ? 'flex-start' : 'flex-end',
+        radius: isBot ? '4px 14px 14px 14px' : '14px 4px 14px 14px',
+        bg: isBot ? 'var(--surface-sunken)' : 'var(--brand-primary)',
+        fg: isBot ? 'var(--text-primary)' : 'var(--text-on-brand)',
+        hasTrace: !!t.trace,
+        traceSteps: t.trace || [],
+      };
+    }) : [];
+
+    return {
+      theme,
+      themeLabel: theme === 'light' ? '◐ Mode sombre' : '◑ Mode clair',
+      toggleTheme: this.toggleTheme,
+      periodOptions,
+      kpiCards,
+      selfcareRows,
+      escalationRows,
+      clarificationRateLabel,
+      negativeFeedbackRows,
+      showRetrainBar,
+      retrainBarLabel,
+      onRetrainClick: this.retrain,
+      retrainToast,
+      sessionsGridCols: selectedSessionId ? '360px 1fr' : '1fr',
+      sessionRows,
+      hasSelectedSession: !!selectedSession,
+      selectedSessionUserLabel: selectedSession ? selectedSession.userLabel : '',
+      selectedSessionTurns,
+      closeSession: this.closeSession,
+    };
+  }
+}
+
+</script>
+</body>
+</html>

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="styles.css">
+</helmet>
+<div data-theme="{{ theme }}" style="font-family:var(--font-sans); background:var(--surface-page); min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:32px; color:var(--text-primary);">
+
+  <button onClick="{{ toggleTheme }}" style="position:absolute; top:20px; right:24px; border:1px solid var(--border-default); background:transparent; color:var(--text-secondary); border-radius:var(--radius-sm); padding:6px 11px; font-size:12px; cursor:pointer;">{{ themeLabel }}</button>
+  <div style="position:absolute; top:20px; left:24px; display:flex; gap:8px;">
+    <sc-for list="{{ stateOptions }}" as="d" hint-placeholder-count="3">
+      <button onClick="{{ d.onClick }}" style="font-size:11px; border:1px solid var(--border-default); background:{{ d.bg }}; color:var(--text-tertiary); border-radius:5px; padding:4px 8px; cursor:pointer;">{{ d.label }}</button>
+    </sc-for>
+  </div>
+
+  <a href="#" style="display:flex; align-items:center; gap:10px; text-decoration:none; margin-bottom:32px;">
+    <svg width="24" height="24" viewBox="0 0 64 64"><rect x="1" y="1" width="62" height="62" rx="14" fill="var(--brand-primary)"/><circle cx="32" cy="25" r="10" fill="none" stroke="var(--text-on-brand)" stroke-width="4"/><path d="M32 33 L32 44" stroke="var(--text-on-brand)" stroke-width="4" stroke-linecap="round"/></svg>
+    <span style="font-size:16px; font-weight:600; color:var(--text-primary);">LOKO</span>
+  </a>
+
+  <div style="width:100%; max-width:400px; background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:var(--radius-xl); box-shadow:var(--shadow-md); padding:32px;">
+
+    <sc-if value="{{ isRequest }}">
+      <div style="font-size:20px; font-weight:600; margin-bottom:6px; letter-spacing:var(--tracking-tight);">Mot de passe oublié</div>
+      <div style="font-size:13px; color:var(--text-secondary); margin-bottom:22px;">Nous vous enverrons un lien de réinitialisation.</div>
+      <label style="display:block; font-size:12.5px; font-weight:600; margin-bottom:6px;">E-mail</label>
+      <input value="{{ email }}" onChange="{{ onEmailChange }}" style="width:100%; box-sizing:border-box; padding:10px 12px; border-radius:var(--radius-sm); border:1px solid var(--border-default); background:var(--surface-page); color:var(--text-primary); font-size:13.5px; font-family:var(--font-sans); margin-bottom:18px;" />
+      <button onClick="{{ onRequestSubmit }}" style="width:100%; box-sizing:border-box; padding:11px; border-radius:var(--radius-md); border:none; background:var(--brand-primary); color:var(--text-on-brand); font-size:14px; font-weight:600; cursor:pointer;">Envoyer le lien</button>
+    </sc-if>
+
+    <sc-if value="{{ isRequestSent }}">
+      <div style="text-align:center;">
+        <div style="width:44px; height:44px; border-radius:50%; background:var(--brand-primary-tint); display:flex; align-items:center; justify-content:center; margin:0 auto 18px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M3 6l9 6 9-6M3 6v12h18V6" stroke="var(--brand-primary)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div style="font-size:15.5px; font-weight:600; margin-bottom:8px;">Vérifiez votre boîte mail</div>
+        <div style="font-size:13.5px; color:var(--text-secondary); line-height:var(--leading-relaxed);">Si un compte existe pour cette adresse, un e-mail avec un lien de réinitialisation vient d'être envoyé.</div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isNewPassword }}">
+      <div style="font-size:20px; font-weight:600; margin-bottom:6px; letter-spacing:var(--tracking-tight);">Nouveau mot de passe</div>
+      <div style="font-size:13px; color:var(--text-secondary); margin-bottom:22px;">Choisissez un nouveau mot de passe pour votre compte.</div>
+      <label style="display:block; font-size:12.5px; font-weight:600; margin-bottom:6px;">Mot de passe</label>
+      <input type="password" value="{{ newPassword }}" onChange="{{ onNewPasswordChange }}" style="width:100%; box-sizing:border-box; padding:10px 12px; border-radius:var(--radius-sm); border:1px solid var(--border-default); background:var(--surface-page); color:var(--text-primary); font-size:13.5px; font-family:var(--font-sans);" />
+      <sc-if value="{{ showStrength }}">
+        <div style="margin-top:8px; margin-bottom:14px; display:flex; flex-direction:column; gap:5px;">
+          <div style="height:4px; border-radius:999px; background:var(--gray-200); overflow:hidden;">
+            <div style="height:100%; width:{{ strengthPct }}; background:{{ strengthColor }};"></div>
+          </div>
+          <div style="font-size:11.5px; color:{{ strengthColor }};">{{ strengthLabel }}</div>
+        </div>
+      </sc-if>
+      <button style="width:100%; box-sizing:border-box; padding:11px; border-radius:var(--radius-md); border:none; background:var(--brand-primary); color:var(--text-on-brand); font-size:14px; font-weight:600; cursor:pointer; margin-top:8px;">Réinitialiser le mot de passe</button>
+    </sc-if>
+
+    <sc-if value="{{ isExpired }}">
+      <div style="text-align:center;">
+        <div style="width:44px; height:44px; border-radius:50%; background:var(--warning-bg); display:flex; align-items:center; justify-content:center; margin:0 auto 18px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 8v5M12 16h.01" stroke="var(--warning-fg)" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="9" stroke="var(--warning-fg)" stroke-width="1.8"/></svg>
+        </div>
+        <div style="font-size:15.5px; font-weight:600; margin-bottom:8px;">Ce lien a expiré</div>
+        <div style="font-size:13.5px; color:var(--text-secondary); line-height:var(--leading-relaxed); margin-bottom:20px;">Les liens de réinitialisation sont valables 1 heure.</div>
+        <button style="width:100%; box-sizing:border-box; padding:11px; border-radius:var(--radius-md); border:none; background:var(--brand-primary); color:var(--text-on-brand); font-size:14px; font-weight:600; cursor:pointer;">Demander un nouveau lien</button>
+      </div>
+    </sc-if>
+
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = {
+    theme: 'light',
+    view: 'request', // request | request_sent | new_password | expired
+    email: '',
+    newPassword: '',
+  };
+
+  toggleTheme = () => this.setState(s => ({ theme: s.theme === 'light' ? 'dark' : 'light' }));
+  onEmailChange = (e) => this.setState({ email: e.target.value });
+  onNewPasswordChange = (e) => this.setState({ newPassword: e.target.value });
+  onRequestSubmit = () => this.setState({ view: 'request_sent' });
+  setView = (v) => this.setState({ view: v });
+
+  strength(pw) {
+    if (!pw) return { level: 0, label: '', color: 'var(--gray-300)' };
+    let score = 0;
+    if (pw.length >= 8) score++;
+    if (pw.length >= 12) score++;
+    if (/[0-9]/.test(pw) && /[a-zA-Z]/.test(pw)) score++;
+    if (/[^a-zA-Z0-9]/.test(pw)) score++;
+    if (score <= 1) return { level: 1, label: 'Faible', color: 'var(--error-fg)' };
+    if (score <= 2) return { level: 2, label: 'Moyen', color: 'var(--warning-fg)' };
+    return { level: 3, label: 'Robuste', color: 'var(--success-fg)' };
+  }
+
+  renderVals() {
+    const { theme, view, email, newPassword } = this.state;
+    const st = this.strength(newPassword);
+
+    return {
+      theme,
+      themeLabel: theme === 'light' ? '◐ Sombre' : '◑ Clair',
+      toggleTheme: this.toggleTheme,
+      isRequest: view === 'request',
+      isRequestSent: view === 'request_sent',
+      isNewPassword: view === 'new_password',
+      isExpired: view === 'expired',
+      email, onEmailChange: this.onEmailChange,
+      onRequestSubmit: this.onRequestSubmit,
+      newPassword, onNewPasswordChange: this.onNewPasswordChange,
+      showStrength: newPassword.length > 0,
+      strengthPct: `${(st.level / 3) * 100}%`,
+      strengthColor: st.color,
+      strengthLabel: st.label,
+      stateOptions: [
+        { label: 'Demande', onClick: () => this.setView('request'), bg: view === 'request' ? 'var(--brand-primary-tint)' : 'transparent' },
+        { label: 'Nouveau mdp', onClick: () => this.setView('new_password'), bg: view === 'new_password' ? 'var(--brand-primary-tint)' : 'transparent' },
+        { label: 'Lien expiré', onClick: () => this.setView('expired'), bg: view === 'expired' ? 'var(--brand-primary-tint)' : 'transparent' },
+      ],
+    };
+  }
+}
+
+</script>
+</body>
+</html>

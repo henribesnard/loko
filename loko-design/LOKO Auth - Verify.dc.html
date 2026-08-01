@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="styles.css">
+</helmet>
+<div data-theme="{{ theme }}" style="font-family:var(--font-sans); background:var(--surface-page); min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:32px; color:var(--text-primary);">
+
+  <button onClick="{{ toggleTheme }}" style="position:absolute; top:20px; right:24px; border:1px solid var(--border-default); background:transparent; color:var(--text-secondary); border-radius:var(--radius-sm); padding:6px 11px; font-size:12px; cursor:pointer;">{{ themeLabel }}</button>
+  <div style="position:absolute; top:20px; left:24px; display:flex; gap:8px;">
+    <sc-for list="{{ stateOptions }}" as="d" hint-placeholder-count="3">
+      <button onClick="{{ d.onClick }}" style="font-size:11px; border:1px solid var(--border-default); background:{{ d.bg }}; color:var(--text-tertiary); border-radius:5px; padding:4px 8px; cursor:pointer;">{{ d.label }}</button>
+    </sc-for>
+  </div>
+
+  <a href="#" style="display:flex; align-items:center; gap:10px; text-decoration:none; margin-bottom:32px;">
+    <svg width="24" height="24" viewBox="0 0 64 64"><rect x="1" y="1" width="62" height="62" rx="14" fill="var(--brand-primary)"/><circle cx="32" cy="25" r="10" fill="none" stroke="var(--text-on-brand)" stroke-width="4"/><path d="M32 33 L32 44" stroke="var(--text-on-brand)" stroke-width="4" stroke-linecap="round"/></svg>
+    <span style="font-size:16px; font-weight:600; color:var(--text-primary);">LOKO</span>
+  </a>
+
+  <div style="width:100%; max-width:400px; background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:var(--radius-xl); box-shadow:var(--shadow-md); padding:36px; text-align:center;">
+
+    <sc-if value="{{ isSent }}">
+      <div style="width:44px; height:44px; border-radius:50%; background:var(--brand-primary-tint); display:flex; align-items:center; justify-content:center; margin:0 auto 18px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M3 6l9 6 9-6M3 6v12h18V6" stroke="var(--brand-primary)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div style="font-size:18px; font-weight:600; margin-bottom:8px;">Vérifiez votre boîte mail</div>
+      <div style="font-size:13.5px; color:var(--text-secondary); line-height:var(--leading-relaxed); margin-bottom:22px;">Un lien de vérification a été envoyé à<br/><strong style="color:var(--text-primary);">{{ email }}</strong></div>
+      <button disabled="{{ resendDisabled }}" onClick="{{ onResend }}" style="font-size:13px; font-weight:600; color:{{ resendColor }}; background:transparent; border:1px solid var(--border-default); border-radius:var(--radius-md); padding:9px 18px; cursor:{{ resendCursor }};">{{ resendLabel }}</button>
+    </sc-if>
+
+    <sc-if value="{{ isVerified }}">
+      <div style="width:44px; height:44px; border-radius:50%; background:var(--success-bg); display:flex; align-items:center; justify-content:center; margin:0 auto 18px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="var(--success-fg)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div style="font-size:18px; font-weight:600; margin-bottom:8px;">Adresse vérifiée</div>
+      <div style="font-size:13.5px; color:var(--text-secondary); margin-bottom:22px;">Votre compte est prêt à l'emploi.</div>
+      <button style="width:100%; box-sizing:border-box; padding:11px; border-radius:var(--radius-md); border:none; background:var(--brand-primary); color:var(--text-on-brand); font-size:14px; font-weight:600; cursor:pointer;">Accéder à mon espace</button>
+    </sc-if>
+
+    <sc-if value="{{ isExpired }}">
+      <div style="width:44px; height:44px; border-radius:50%; background:var(--warning-bg); display:flex; align-items:center; justify-content:center; margin:0 auto 18px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 8v5M12 16h.01" stroke="var(--warning-fg)" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="9" stroke="var(--warning-fg)" stroke-width="1.8"/></svg>
+      </div>
+      <div style="font-size:18px; font-weight:600; margin-bottom:8px;">Ce lien a expiré</div>
+      <div style="font-size:13.5px; color:var(--text-secondary); line-height:var(--leading-relaxed); margin-bottom:22px;">Les liens de vérification sont valables 24 heures. Demandez-en un nouveau.</div>
+      <button style="width:100%; box-sizing:border-box; padding:11px; border-radius:var(--radius-md); border:none; background:var(--brand-primary); color:var(--text-on-brand); font-size:14px; font-weight:600; cursor:pointer;">Renvoyer un lien</button>
+    </sc-if>
+
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = {
+    theme: 'light',
+    view: 'sent', // sent | verified | expired
+    resendCooldown: 0,
+  };
+
+  toggleTheme = () => this.setState(s => ({ theme: s.theme === 'light' ? 'dark' : 'light' }));
+  setView = (v) => this.setState({ view: v, resendCooldown: 60 });
+
+  componentDidMount() {
+    this._interval = setInterval(() => {
+      this.setState(s => ({ resendCooldown: Math.max(0, s.resendCooldown - 1) }));
+    }, 1000);
+    this.setState({ resendCooldown: 60 });
+  }
+  componentWillUnmount() {
+    if (this._interval) clearInterval(this._interval);
+  }
+
+  onResend = () => this.setState({ resendCooldown: 60 });
+
+  renderVals() {
+    const { theme, view, resendCooldown } = this.state;
+
+    return {
+      theme,
+      themeLabel: theme === 'light' ? '◐ Sombre' : '◑ Clair',
+      toggleTheme: this.toggleTheme,
+      isSent: view === 'sent',
+      isVerified: view === 'verified',
+      isExpired: view === 'expired',
+      email: 'contact@mutuelle-verdier.fr',
+      resendDisabled: resendCooldown > 0,
+      resendLabel: resendCooldown > 0 ? `Renvoyer (${resendCooldown}s)` : 'Renvoyer le lien',
+      resendColor: resendCooldown > 0 ? 'var(--text-disabled)' : 'var(--text-primary)',
+      resendCursor: resendCooldown > 0 ? 'default' : 'pointer',
+      onResend: this.onResend,
+      stateOptions: [
+        { label: 'E-mail envoyé', onClick: () => this.setView('sent'), bg: view === 'sent' ? 'var(--brand-primary-tint)' : 'transparent' },
+        { label: 'Vérifié', onClick: () => this.setView('verified'), bg: view === 'verified' ? 'var(--brand-primary-tint)' : 'transparent' },
+        { label: 'Lien expiré', onClick: () => this.setView('expired'), bg: view === 'expired' ? 'var(--brand-primary-tint)' : 'transparent' },
+      ],
+    };
+  }
+}
+
+</script>
+</body>
+</html>

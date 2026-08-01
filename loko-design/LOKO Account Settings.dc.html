@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="styles.css">
+</helmet>
+<div data-theme="{{ theme }}" style="font-family:var(--font-sans); background:var(--surface-page); min-height:100vh; color:var(--text-primary);">
+
+  <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 28px; background:var(--surface-card); border-bottom:1px solid var(--border-subtle);">
+    <svg viewBox="0 0 250 64" style="height:20px; width:78px; display:block;">
+      <text x="0" y="45" font-family="Geist, sans-serif" font-weight="600" font-size="42" letter-spacing="-0.5" fill="var(--text-primary)">LOK</text>
+      <path fill-rule="evenodd" fill="var(--brand-primary)" d="M 96 30 m -16 0 a 16 16 0 1 0 32 0 a 16 16 0 1 0 -32 0 Z M 93 33 h6 a2.5 2.5 0 0 1 2.5 2.5 v8 a2.5 2.5 0 0 1 -2.5 2.5 h-6 a2.5 2.5 0 0 1 -2.5 -2.5 v-8 a2.5 2.5 0 0 1 2.5 -2.5 Z"/>
+    </svg>
+    <button onClick="{{ toggleTheme }}" style="border:1px solid var(--border-default); background:transparent; color:var(--text-secondary); border-radius:var(--radius-sm); padding:6px 11px; font-size:12px; cursor:pointer; white-space:nowrap;">{{ themeLabel }}</button>
+  </div>
+
+  <div style="display:grid; grid-template-columns:220px 1fr; gap:32px; max-width:1080px; margin:0 auto; padding:32px 28px 80px;">
+
+    <!-- Side tabs -->
+    <div style="display:flex; flex-direction:column; gap:2px;">
+      <div style="font-size:18px; font-weight:600; letter-spacing:var(--tracking-tight); margin-bottom:14px;">Paramètres</div>
+      <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="5">
+        <button onClick="{{ t.onClick }}" style="display:flex; align-items:center; gap:9px; text-align:left; white-space:nowrap; padding:9px 12px; border-radius:var(--radius-sm); border:none; background:{{ t.bg }}; color:{{ t.fg }}; font-size:13.5px; font-weight:{{ t.weight }}; cursor:pointer;">{{ t.label }}</button>
+      </sc-for>
+    </div>
+
+    <!-- ==================== PROFIL ==================== -->
+    <sc-if value="{{ isProfil }}">
+      <div style="display:flex; flex-direction:column; gap:20px; max-width:560px;">
+        <div style="font-size:20px; font-weight:600;">Profil</div>
+
+        <div style="background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:var(--radius-lg); padding:22px; display:flex; flex-direction:column; gap:16px;">
+          <div>
+            <label style="display:block; font-size:12.5px; font-weight:600; margin-bottom:6px;">Nom</label>
+            <input value="{{ profileName }}" onChange="{{ onProfileNameChange }}" style="width:100%; box-sizing:border-box; padding:9px 12px; border-radius:var(--radius-sm); border:1px solid var(--border-default); background:var(--surface-page); color:var(--text-primary); font-size:13.5px;" />
+          </div>
+          <div>
+            <label style="display:block; font-size:12.5px; font-weight:600; margin-bottom:6px;">E-mail</label>
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="flex:1; font-size:13.5px; padding:9px 12px; background:var(--surface-sunken); border-radius:var(--radius-sm); border:1px solid var(--border-subtle);">{{ profileEmail }}</div>
+              <div style="font-family:var(--font-mono); font-size:10px; font-weight:600; padding:3px 8px; border-radius:4px; background:{{ emailBadgeBg }}; color:{{ emailBadgeFg }}; flex:none;">{{ emailBadgeLabel }}</div>
+            </div>
+            <sc-if value="{{ showResendVerify }}">
+              <button onClick="{{ onResendVerify }}" style="margin-top:6px; font-size:12px; color:var(--text-link); background:transparent; border:none; padding:0; cursor:pointer;">Renvoyer l'e-mail de vérification</button>
+            </sc-if>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+            <div>
+              <label style="display:block; font-size:12.5px; font-weight:600; margin-bottom:6px;">Langue de l'interface</label>
+              <div style="display:flex; gap:8px;">
+                <sc-for list="{{ langOptions }}" as="l" hint-placeholder-count="2">
+                  <button onClick="{{ l.onSelect }}" style="padding:8px 14px; border-radius:var(--radius-pill); border:1px solid {{ l.borderColor }}; background:{{ l.bg }}; color:{{ l.fg }}; white-space:nowrap; font-size:12.5px; cursor:pointer;">{{ l.label }}</button>
+                </sc-for>
+              </div>
+            </div>
+            <div>
+              <label style="display:block; font-size:12.5px; font-weight:600; margin-bottom:6px;">Fuseau horaire</label>
+              <select onChange="{{ onTimezoneChange }}" style="width:100%; box-sizing:border-box; padding:9px 12px; border-radius:var(--radius-sm); border:1px solid var(--border-default); background:var(--surface-page); color:var(--text-primary); font-size:13px;">
+                <sc-for list="{{ timezoneOptions }}" as="tz" hint-placeholder-count="3">
+                  <option value="{{ tz.value }}" selected="{{ tz.selected }}">{{ tz.label }}</option>
+                </sc-for>
+              </select>
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:12px;">
+            <button onClick="{{ onSaveProfile }}" style="padding:9px 18px; border-radius:var(--radius-md); border:none; background:var(--brand-primary); color:var(--text-on-brand); font-size:13px; font-weight:600; cursor:pointer; white-space:nowrap;">Enregistrer</button>
+            <sc-if value="{{ showSaveStatus }}">
+              <div style="font-size:12.5px; color:{{ saveStatusColor }};">{{ saveStatusLabel }}</div>
+            </sc-if>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ==================== SÉCURITÉ ==================== -->
+    <sc-if value="{{ isSecurite }}">
+      <div style="display:flex; flex-direction:column; gap:20px; max-width:560px;">
+        <div style="font-size:20px; font-weight:600;">Sécurité</div>
+
+        <div style="background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:var(--radius-lg); padding:22px; display:flex; flex-direction:column; gap:14px;">
+          <div style="font-size:14px; font-weight:600;">Changer le mot de passe</div>
+          <div>
+            <label style="display:block; font-size:12px; color:var(--text-secondary); margin-bottom:6px;">Mot de passe actuel</label>
+            <input type="password" value="{{ currentPassword }}" onChange="{{ onCurrentPasswordChange }}" style="width:100%; box-sizing:border-box; padding:9px 12px; border-radius:var(--radius-sm); border:1px solid var(--border-default); background:var(--surface-page); color:var(--text-primary); font-size:13.5px;" />
+          </div>
+          <div>
+            <label style="display:block; font-size:12px; color:var(--text-secondary); margin-bottom:6px;">Nouveau mot de passe</label>
+            <input type="password" value="{{ newPassword }}" onChange="{{ onNewPasswordChange }}" style="width:100%; box-sizing:border-box; padding:9px 12px; border-radius:var(--radius-sm); border:1px solid var(--border-default); background:var(--surface-page); color:var(--text-primary); font-size:13.5px;" />
+            <sc-if value="{{ showStrength }}">
+              <div style="margin-top:8px; display:flex; flex-direction:column; gap:5px;">
+                <div style="height:4px; border-radius:999px; background:var(--gray-200); overflow:hidden;">
+                  <div style="height:100%; width:{{ strengthPct }}; background:{{ strengthColor }};"></div>
+                </div>
+                <div style="font-size:11.5px; color:{{ strengthColor }};">{{ strengthLabel }}</div>
+              </div>
+            </sc-if>
+          </div>
+          <div>
+            <label style="display:block; font-size:12px; color:var(--text-secondary); margin-bottom:6px;">Confirmer le nouveau mot de passe</label>
+            <input type="password" value="{{ confirmPassword }}" onChange="{{ onConfirmPasswordChange }}" style="width:100%; box-sizing:border-box; padding:9px 12px; border-radius:var(--radius-sm); border:1px solid {{ confirmBorder }}; background:var(--surface-page); color:var(--text-primary); font-size:13.5px;" />
+          </div>
+          <button disabled="{{ passwordSubmitDisabled }}" style="align-self:flex-start; padding:9px 18px; border-radius:var(--radius-md); border:none; background:{{ passwordSubmitBg }}; color:var(--text-on-brand); font-size:13px; font-weight:600; cursor:{{ passwordSubmitCursor }}; white-space:nowrap;">Mettre à jour le mot de passe</button>
+        </div>
+
+        <div style="background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:var(--radius-lg); padding:22px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+            <div style="font-size:14px; font-weight:600;">Sessions actives</div>
+            <button onClick="{{ onLogoutOthers }}" style="font-size:12px; font-weight:600; color:var(--error-fg); background:transparent; border:none; padding:0; cursor:pointer; white-space:nowrap;">Déconnecter toutes les autres sessions</button>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:2px;">
+            <sc-for list="{{ sessionRows }}" as="s" hint-placeholder-count="3">
+              <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-top:1px solid var(--border-subtle);">
+                <div>
+                  <div style="font-size:13px; color:var(--text-primary); display:flex; align-items:center; gap:7px;">{{ s.device }} <sc-if value="{{ s.isCurrent }}"><span style="font-family:var(--font-mono); font-size:9.5px; font-weight:600; color:var(--green-700); background:var(--brand-primary-tint); border-radius:4px; padding:1px 6px;">Session actuelle</span></sc-if></div>
+                  <div style="font-family:var(--font-mono); font-size:11px; color:var(--text-tertiary); margin-top:2px;">{{ s.location }} · {{ s.lastActive }}</div>
+                </div>
+                <sc-if value="{{ s.showLogout }}">
+                  <button onClick="{{ s.onLogout }}" style="white-space:nowrap; font-size:12px; font-weight:600; color:var(--text-secondary); background:transparent; border:1px solid var(--border-default); border-radius:var(--radius-sm); padding:6px 11px; cursor:pointer;">Déconnecter</button>
+                </sc-if>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:var(--radius-lg); padding:22px; display:flex; align-items:center; justify-content:space-between; opacity:0.6;">
+          <div>
+            <div style="font-size:14px; font-weight:600;">Authentification à deux facteurs</div>
+            <div style="font-size:12.5px; color:var(--text-secondary); margin-top:4px;">Sécurisez votre compte avec un code à usage unique.</div>
+          </div>
+          <div style="font-family:var(--font-mono); font-size:10px; font-weight:600; color:var(--text-tertiary); background:var(--gray-100); border-radius:4px; padding:4px 9px; flex:none;">Bientôt</div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ==================== ÉQUIPE ==================== -->
+    <sc-if value="{{ isEquipe }}">
+      <div style="display:flex; flex-direction:column; gap:20px;">
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+          <div style="font-size:20px; font-weight:600;">Équipe</div>
+          <button onClick="{{ openInvite }}" style="padding:9px 16px; border-radius:var(--radius-md); border:none; background:var(--brand-primary); color:var(--text-on-brand); font-size:13px; font-weight:600; cursor:pointer;">+ Inviter un membre</button>
+        </div>
+
+        <sc-if value="{{ hasMembers }}">
+          <div style="background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:var(--radius-lg); overflow:hidden;">
+            <div style="display:grid; grid-template-columns:1.6fr 0.9fr 0.9fr 0.9fr 0.6fr; padding:9px 16px; border-bottom:1px solid var(--border-subtle); font-size:10.5px; font-weight:600; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.03em;">
+              <div>Membre</div><div>Rôle</div><div>Statut</div><div>Ajouté le</div><div></div>
+            </div>
+            <sc-for list="{{ memberRows }}" as="m" hint-placeholder-count="3">
+              <div style="display:grid; grid-template-columns:1.6fr 0.9fr 0.9fr 0.9fr 0.6fr; padding:11px 16px; border-bottom:1px solid var(--border-subtle); align-items:center;">
+                <div style="display:flex; align-items:center; gap:10px; min-width:0;">
+                  <div style="width:28px; height:28px; border-radius:50%; background:var(--brand-primary-tint); color:var(--green-700); font-family:var(--font-mono); font-size:11px; font-weight:600; display:flex; align-items:center; justify-content:center; flex:none;">{{ m.initials }}</div>
+                  <div style="min-width:0;">
+                    <div style="font-size:13px; color:var(--text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ m.name }}</div>
+                    <div style="font-size:11px; color:var(--text-tertiary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ m.email }}</div>
+                  </div>
+                </div>
+                <div>
+                  <span style="font-family:var(--font-mono); font-size:10px; font-weight:600; padding:3px 8px; border-radius:4px; background:{{ m.roleBg }}; color:{{ m.roleFg }};">{{ m.roleLabel }}</span>
+                </div>
+                <div>
+                  <span style="font-family:var(--font-mono); font-size:10px; font-weight:600; padding:3px 8px; border-radius:4px; background:{{ m.statusBg }}; color:{{ m.statusFg }};">{{ m.statusLabel }}</span>
+                </div>
+                <div style="font-family:var(--font-mono); font-size:11px; color:var(--text-tertiary);">{{ m.addedLabel }}</div>
+                <div style="position:relative;">
+                  <sc-if value="{{ m.isPending }}">
+                    <div style="display:flex; gap:6px;">
+                      <button onClick="{{ m.onResend }}" style="white-space:nowrap; font-size:11px; font-weight:600; color:var(--text-secondary); background:transparent; border:1px solid var(--border-default); border-radius:4px; padding:4px 7px; cursor:pointer;">Renvoyer</button>
+                      <button onClick="{{ m.onCancel }}" style="white-space:nowrap; font-size:11px; font-weight:600; color:var(--error-fg); background:transparent; border:1px solid var(--error-border); border-radius:4px; padding:4px 7px; cursor:pointer;">Annuler</button>
+                    </div>
+                  </sc-if>
+                  <sc-if value="{{ m.showActionsToggle }}">
+                    <button onClick="{{ m.onToggleActions }}" disabled="{{ m.actionsDisabled }}" title="{{ m.actionsDisabledTooltip }}" style="width:26px; height:26px; border-radius:var(--radius-sm); border:1px solid var(--border-default); background:var(--surface-page); color:var(--text-secondary); cursor:{{ m.actionsDisabled ? 'default' : 'pointer' }}; opacity:{{ m.actionsDisabled ? 0.5 : 1 }};">⋯</button>
+                    <sc-if value="{{ m.actionsOpen }}">
+                      <div style="position:absolute; right:0; top:30px; width:170px; background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:var(--radius-md); box-shadow:var(--shadow-lg); padding:6px; z-index:10;">
+                        <button onClick="{{ m.onSetEditor }}" style="width:100%; text-align:left; padding:7px 9px; border:none; background:transparent; color:var(--text-primary); font-size:12.5px; border-radius:var(--radius-sm); cursor:pointer;">Passer Éditeur</button>
+                        <button onClick="{{ m.onSetReader }}" style="width:100%; text-align:left; padding:7px 9px; border:none; background:transparent; color:var(--text-primary); font-size:12.5px; border-radius:var(--radius-sm); cursor:pointer;">Passer Lecteur</button>
+                        <button onClick="{{ m.onRemove }}" style="width:100%; text-align:left; padding:7px 9px; border:none; background:transparent; color:var(--error-fg); font-size:12.5px; border-radius:var(--radius-sm); cursor:pointer;">Retirer</button>
+                      </div>
+                    </sc-if>
+                  </sc-if>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ !hasMembers }}" hint-placeholder-val="{{ false }}">
+          <div style="background:var(--surface-card); border:1px dashed var(--border-default); border-radius:var(--radius-lg); padding:40px; text-align:center;">
+            <div style="width:44px; height:44px; border-radius:50%; background:var(--brand-primary-tint); display:flex; align-items:center; justify-content:center; margin:0 auto 14px;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="9" cy="8" r="3" stroke="var(--brand-primary)" stroke-width="1.6"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5" stroke="var(--brand-primary)" stroke-width="1.6" stroke-linecap="round"/><circle cx="18" cy="7" r="2.2" stroke="var(--brand-primary)" stroke-width="1.4"/></svg>
+            </div>
+            <div style="font-size:14px; font-weight:600; margin-bottom:6px;">Vous êtes seul pour l'instant</div>
+            <div style="font-size:13px; color:var(--text-secondary); margin-bottom:16px;">Invitez votre équipe pour partager la configuration du bot.</div>
+            <button onClick="{{ openInvite }}" style="white-space:nowrap; padding:9px 18px; border-radius:var(--radius-md); border:none; background:var(--brand-primary); color:var(--text-on-brand); font-size:13px; font-weight:600; cursor:pointer;">Invitez votre équipe</button>
+          </div>
+        </sc-if>
+
+        <!-- Invite modal -->
+        <sc-if value="{{ inviteModalOpen }}">
+          <div style="position:fixed; inset:0; background:var(--surface-overlay); display:flex; align-items:center; justify-content:center; z-index:20;">
+            <div style="width:440px; background:var(--surface-card); border-radius:var(--radius-lg); box-shadow:var(--shadow-lg); padding:24px;">
+              <div style="font-size:16px; font-weight:600; margin-bottom:18px;">Inviter des membres</div>
+              <label style="display:block; font-size:12.5px; font-weight:600; margin-bottom:6px;">Adresses e-mail</label>
+              <textarea value="{{ inviteEmails }}" onChange="{{ onInviteEmailsChange }}" placeholder="marie@organisation.fr, paul@organisation.fr" rows="2" style="width:100%; box-sizing:border-box; padding:9px 12px; border-radius:var(--radius-sm); border:1px solid var(--border-default); background:var(--surface-page); color:var(--text-primary); font-size:13px; resize:vertical; margin-bottom:16px;"></textarea>
+              <label style="display:block; font-size:12.5px; font-weight:600; margin-bottom:8px;">Rôle</label>
+              <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:8px;">
+                <sc-for list="{{ roleOptions }}" as="r" hint-placeholder-count="2">
+                  <button onClick="{{ r.onSelect }}" style="text-align:left; padding:10px 12px; border-radius:var(--radius-md); border:1.5px solid {{ r.borderColor }}; background:{{ r.bg }}; cursor:pointer;">
+                    <div style="font-size:13px; font-weight:600; color:var(--text-primary);">{{ r.label }}</div>
+                    <div style="font-size:11.5px; color:var(--text-secondary); margin-top:2px;">{{ r.description }}</div>
+                  </button>
+                </sc-for>
+              </div>
+              <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:16px;">
+                <button onClick="{{ closeInvite }}" style="white-space:nowrap; padding:9px 16px; border-radius:var(--radius-md); border:1px solid var(--border-default); background:transparent; color:var(--text-secondary); font-size:13px; cursor:pointer;">Annuler</button>
+                <button onClick="{{ sendInvite }}" style="white-space:nowrap; padding:9px 16px; border-radius:var(--radius-md); border:none; background:var(--brand-primary); color:var(--text-on-brand); font-size:13px; font-weight:600; cursor:pointer;">Envoyer les invitations</button>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <!-- ==================== PLAN & FACTURATION ==================== -->
+    <sc-if value="{{ isFacturation }}">
+      <div style="display:flex; flex-direction:column; gap:20px; max-width:640px;">
+        <div style="font-size:20px; font-weight:600;">Plan &amp; facturation</div>
+
+        <div style="background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:var(--radius-lg); padding:22px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+            <div style="font-size:16px; font-weight:600;">Plan {{ planName }}</div>
+            <button onClick="{{ openChangePlan }}" style="white-space:nowrap; font-size:12.5px; font-weight:600; padding:7px 14px; border-radius:var(--radius-sm); border:1px solid var(--border-default); background:transparent; color:var(--text-primary); cursor:pointer;">Changer de plan</button>
+          </div>
+          <div style="font-size:13px; color:var(--text-secondary); line-height:var(--leading-relaxed);">{{ planDescription }}</div>
+        </div>
+
+        <div style="background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:var(--radius-lg); padding:22px;">
+          <div style="font-size:14px; font-weight:600; margin-bottom:16px;">Quotas</div>
+          <div style="display:flex; flex-direction:column; gap:16px;">
+            <sc-for list="{{ billingQuotaRows }}" as="q" hint-placeholder-count="3">
+              <div>
+                <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+                  <div style="font-size:12.5px; color:var(--text-secondary);">{{ q.label }}</div>
+                  <div style="font-family:var(--font-mono); font-size:12px; font-weight:600; color:{{ q.textColor }};">{{ q.usageLabel }}</div>
+                </div>
+                <div style="height:7px; border-radius:999px; background:var(--gray-100); overflow:hidden;">
+                  <div style="height:100%; width:{{ q.pct }}; background:{{ q.barColor }};"></div>
+                </div>
+                <div style="font-family:var(--font-mono); font-size:10.5px; color:var(--text-tertiary); margin-top:4px;">Réinitialisation le {{ q.resetLabel }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:var(--radius-lg); padding:22px;">
+          <div style="font-size:14px; font-weight:600; margin-bottom:14px;">Historique de facturation</div>
+          <div style="text-align:center; padding:24px; color:var(--text-tertiary); font-size:13px;">Aucune facture pour l'instant.</div>
+        </div>
+
+        <sc-if value="{{ changePlanModalOpen }}">
+          <div style="position:fixed; inset:0; background:var(--surface-overlay); display:flex; align-items:center; justify-content:center; z-index:20;">
+            <div style="width:380px; background:var(--surface-card); border-radius:var(--radius-lg); box-shadow:var(--shadow-lg); padding:24px; text-align:center;">
+              <div style="font-size:15px; font-weight:600; margin-bottom:8px;">Bientôt disponible</div>
+              <div style="font-size:13px; color:var(--text-secondary); margin-bottom:18px;">La gestion des plans payants n'est pas encore activée. Contactez-nous pour changer de formule.</div>
+              <button onClick="{{ closeChangePlan }}" style="white-space:nowrap; padding:9px 18px; border-radius:var(--radius-md); border:none; background:var(--brand-primary); color:var(--text-on-brand); font-size:13px; font-weight:600; cursor:pointer;">Fermer</button>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <!-- ==================== CONFIDENTIALITÉ ==================== -->
+    <sc-if value="{{ isConfidentialite }}">
+      <div style="display:flex; flex-direction:column; gap:20px; max-width:560px;">
+        <div style="font-size:20px; font-weight:600;">Confidentialité &amp; données</div>
+
+        <div style="background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:var(--radius-lg); padding:22px;">
+          <div style="font-size:14px; font-weight:600; margin-bottom:6px;">Exporter mes données</div>
+          <div style="font-size:12.5px; color:var(--text-secondary); margin-bottom:14px; line-height:var(--leading-relaxed);">Générez une archive JSON de vos bots, documents et paramètres, conformément au RGPD.</div>
+          <sc-if value="{{ exportIdle }}">
+            <button onClick="{{ onStartExport }}" style="white-space:nowrap; padding:9px 16px; border-radius:var(--radius-md); border:1px solid var(--border-default); background:transparent; color:var(--text-primary); font-size:13px; font-weight:600; cursor:pointer;">Exporter mes données</button>
+          </sc-if>
+          <sc-if value="{{ exportGenerating }}">
+            <div style="display:flex; align-items:center; gap:9px; font-size:13px; color:var(--text-secondary);">
+              <span style="width:14px; height:14px; border-radius:50%; border:2px solid var(--border-default); border-top-color:var(--brand-primary); animation:loko-spin 0.8s linear infinite;"></span>
+              Génération de l'archive…
+            </div>
+          </sc-if>
+          <sc-if value="{{ exportReady }}">
+            <a href="#" style="display:inline-flex; align-items:center; gap:7px; padding:9px 16px; border-radius:var(--radius-md); border:none; background:var(--success-bg); color:var(--success-fg); font-size:13px; font-weight:600; text-decoration:none;">✓ Télécharger l'archive (export.json)</a>
+          </sc-if>
+        </div>
+
+        <div style="background:var(--error-bg); border:1px solid var(--error-border); border-radius:var(--radius-lg); padding:22px;">
+          <div style="font-size:14px; font-weight:600; color:var(--error-fg); margin-bottom:6px;">Supprimer mon compte</div>
+          <div style="font-size:12.5px; color:var(--error-fg); opacity:0.9; margin-bottom:14px; line-height:var(--leading-relaxed);">Cette action est irréversible : tous vos bots, documents et transcripts seront définitivement supprimés.</div>
+          <button onClick="{{ openDeleteAccount }}" style="white-space:nowrap; padding:9px 16px; border-radius:var(--radius-md); border:1px solid var(--error-border); background:var(--surface-card); color:var(--error-fg); font-size:13px; font-weight:600; cursor:pointer;">Supprimer mon compte</button>
+        </div>
+
+        <sc-if value="{{ deleteAccountModalOpen }}">
+          <div style="position:fixed; inset:0; background:var(--surface-overlay); display:flex; align-items:center; justify-content:center; z-index:20;">
+            <div style="width:420px; background:var(--surface-card); border-radius:var(--radius-lg); box-shadow:var(--shadow-lg); padding:24px;">
+              <div style="font-size:16px; font-weight:600; color:var(--error-fg); margin-bottom:10px;">Supprimer définitivement votre compte ?</div>
+              <div style="font-size:12.5px; color:var(--text-secondary); line-height:var(--leading-relaxed); margin-bottom:18px;">Vos bots publiés, vos documents, l'historique de sessions et vos clés API seront effacés sans recours possible.</div>
+              <label style="display:block; font-size:12px; font-weight:600; margin-bottom:6px;">Mot de passe</label>
+              <input type="password" value="{{ deleteAccountPassword }}" onChange="{{ onDeleteAccountPasswordChange }}" style="width:100%; box-sizing:border-box; padding:9px 12px; border-radius:var(--radius-sm); border:1px solid var(--border-default); background:var(--surface-page); color:var(--text-primary); font-size:13px; margin-bottom:14px;" />
+              <label style="display:block; font-size:12px; font-weight:600; margin-bottom:6px;">Tapez SUPPRIMER pour confirmer</label>
+              <input value="{{ deleteAccountWord }}" onChange="{{ onDeleteAccountWordChange }}" style="width:100%; box-sizing:border-box; padding:9px 12px; border-radius:var(--radius-sm); border:1px solid var(--border-default); background:var(--surface-page); color:var(--text-primary); font-size:13px; margin-bottom:18px;" />
+              <div style="display:flex; justify-content:flex-end; gap:10px;">
+                <button onClick="{{ closeDeleteAccount }}" style="white-space:nowrap; padding:9px 16px; border-radius:var(--radius-md); border:1px solid var(--border-default); background:transparent; color:var(--text-secondary); font-size:13px; cursor:pointer;">Annuler</button>
+                <button disabled="{{ deleteAccountDisabled }}" style="white-space:nowrap; padding:9px 16px; border-radius:var(--radius-md); border:none; background:{{ deleteAccountBg }}; color:#fff; font-size:13px; font-weight:600; cursor:{{ deleteAccountCursor }};">Supprimer définitivement</button>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+    </sc-if>
+
+  </div>
+  <style>@keyframes loko-spin { to { transform: rotate(360deg); } }</style>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const ROLE_DESCRIPTIONS = {
+  editeur: 'Éditeur : peut créer et modifier des bots, sans gérer l’équipe ni la facturation.',
+  lecteur: 'Lecteur : peut consulter les bots, dashboards et sessions, sans rien modifier.',
+};
+
+class Component extends DCLogic {
+  state = {
+    theme: 'light',
+    activeTab: 'equipe',
+
+    profileName: 'Camille Dubreuil',
+    profileEmail: 'contact@mutuelle-verdier.fr',
+    emailVerified: false,
+    lang: 'FR',
+    timezone: 'Europe/Paris',
+    saveState: 'idle', // idle | saving | saved
+
+    currentPassword: '', newPassword: '', confirmPassword: '',
+    sessions: [
+      { id: 'sess1', device: 'Chrome sur macOS', location: 'Paris, FR', lastActive: 'Maintenant', isCurrent: true },
+      { id: 'sess2', device: 'Safari sur iPhone', location: 'Lyon, FR', lastActive: 'il y a 2 heures', isCurrent: false },
+      { id: 'sess3', device: 'Chrome sur Windows', location: 'Bruxelles, BE', lastActive: 'il y a 3 jours', isCurrent: false },
+    ],
+
+    members: [
+      { id: 'u1', name: 'Camille Dubreuil', email: 'contact@mutuelle-verdier.fr', role: 'proprietaire', status: 'actif', added: '12/05/2026', actionsOpen: false },
+      { id: 'u2', name: 'Marie Lenoir', email: 'marie.lenoir@mutuelle-verdier.fr', role: 'editeur', status: 'actif', added: '03/06/2026', actionsOpen: false },
+      { id: 'u3', name: 'paul.roy@mutuelle-verdier.fr', email: 'paul.roy@mutuelle-verdier.fr', role: 'lecteur', status: 'invitation_pending', added: '18/07/2026', actionsOpen: false },
+    ],
+    inviteModalOpen: false,
+    inviteEmails: '',
+    inviteRole: 'editeur',
+
+    planName: 'Pilote',
+    changePlanModalOpen: false,
+
+    exportState: 'idle', // idle | generating | ready
+
+    deleteAccountModalOpen: false,
+    deleteAccountPassword: '',
+    deleteAccountWord: '',
+  };
+
+  toggleTheme = () => this.setState(s => ({ theme: s.theme === 'light' ? 'dark' : 'light' }));
+  setTab = (tab) => this.setState({ activeTab: tab });
+
+  // Profil
+  onProfileNameChange = (e) => this.setState({ profileName: e.target.value });
+  onResendVerify = () => {};
+  setLang = (lang) => this.setState({ lang });
+  onTimezoneChange = (e) => this.setState({ timezone: e.target.value });
+  onSaveProfile = () => {
+    this.setState({ saveState: 'saving' });
+    setTimeout(() => this.setState({ saveState: 'saved' }), 700);
+    setTimeout(() => this.setState({ saveState: 'idle' }), 2700);
+  };
+
+  // Sécurité
+  onCurrentPasswordChange = (e) => this.setState({ currentPassword: e.target.value });
+  onNewPasswordChange = (e) => this.setState({ newPassword: e.target.value });
+  onConfirmPasswordChange = (e) => this.setState({ confirmPassword: e.target.value });
+  onLogoutOthers = () => this.setState(s => ({ sessions: s.sessions.filter(x => x.isCurrent) }));
+  logoutSession = (id) => this.setState(s => ({ sessions: s.sessions.filter(x => x.id !== id) }));
+
+  strength(pw) {
+    if (!pw) return { level: 0, label: '', color: 'var(--gray-300)' };
+    let score = 0;
+    if (pw.length >= 8) score++;
+    if (pw.length >= 12) score++;
+    if (/[0-9]/.test(pw) && /[a-zA-Z]/.test(pw)) score++;
+    if (/[^a-zA-Z0-9]/.test(pw)) score++;
+    if (score <= 1) return { level: 1, label: 'Faible', color: 'var(--error-fg)' };
+    if (score <= 2) return { level: 2, label: 'Moyen', color: 'var(--warning-fg)' };
+    return { level: 3, label: 'Robuste', color: 'var(--success-fg)' };
+  }
+
+  // Équipe
+  openInvite = () => this.setState({ inviteModalOpen: true });
+  closeInvite = () => this.setState({ inviteModalOpen: false, inviteEmails: '' });
+  onInviteEmailsChange = (e) => this.setState({ inviteEmails: e.target.value });
+  setInviteRole = (role) => this.setState({ inviteRole: role });
+  sendInvite = () => {
+    const emails = this.state.inviteEmails.split(',').map(e => e.trim()).filter(Boolean);
+    const role = this.state.inviteRole;
+    const newMembers = emails.map((email, i) => ({
+      id: `pending_${Date.now()}_${i}`, name: email, email, role, status: 'invitation_pending', added: "Aujourd'hui", actionsOpen: false,
+    }));
+    this.setState(s => ({ members: [...s.members, ...newMembers], inviteModalOpen: false, inviteEmails: '' }));
+  };
+  toggleMemberActions = (id) => this.setState(s => ({ members: s.members.map(m => m.id === id ? { ...m, actionsOpen: !m.actionsOpen } : { ...m, actionsOpen: false }) }));
+  setMemberRole = (id, role) => this.setState(s => ({ members: s.members.map(m => m.id === id ? { ...m, role, actionsOpen: false } : m) }));
+  removeMember = (id) => this.setState(s => ({ members: s.members.filter(m => m.id !== id) }));
+  resendInvite = (id) => {};
+  cancelInvite = (id) => this.setState(s => ({ members: s.members.filter(m => m.id !== id) }));
+
+  // Facturation
+  openChangePlan = () => this.setState({ changePlanModalOpen: true });
+  closeChangePlan = () => this.setState({ changePlanModalOpen: false });
+
+  // Confidentialité
+  onStartExport = () => {
+    this.setState({ exportState: 'generating' });
+    setTimeout(() => this.setState({ exportState: 'ready' }), 1400);
+  };
+  openDeleteAccount = () => this.setState({ deleteAccountModalOpen: true });
+  closeDeleteAccount = () => this.setState({ deleteAccountModalOpen: false, deleteAccountPassword: '', deleteAccountWord: '' });
+  onDeleteAccountPasswordChange = (e) => this.setState({ deleteAccountPassword: e.target.value });
+  onDeleteAccountWordChange = (e) => this.setState({ deleteAccountWord: e.target.value });
+
+  renderVals() {
+    const {
+      theme, activeTab, profileName, profileEmail, emailVerified, lang, timezone, saveState,
+      currentPassword, newPassword, confirmPassword, sessions,
+      members, inviteModalOpen, inviteEmails, inviteRole,
+      planName, changePlanModalOpen, exportState,
+      deleteAccountModalOpen, deleteAccountPassword, deleteAccountWord,
+    } = this.state;
+
+    const TABS = [
+      { key: 'profil', label: 'Profil' },
+      { key: 'securite', label: 'Sécurité' },
+      { key: 'equipe', label: 'Équipe' },
+      { key: 'facturation', label: 'Plan & facturation' },
+      { key: 'confidentialite', label: 'Confidentialité & données' },
+    ];
+    const tabs = TABS.map(t => {
+      const isActive = t.key === activeTab;
+      return {
+        label: t.label,
+        onClick: () => this.setTab(t.key),
+        bg: isActive ? 'var(--brand-primary-tint)' : 'transparent',
+        fg: isActive ? 'var(--green-700)' : 'var(--text-secondary)',
+        weight: isActive ? 600 : 500,
+      };
+    });
+
+    // ---- Profil ----
+    const langOptions = ['FR', 'EN'].map(l => ({
+      label: l, onSelect: () => this.setLang(l),
+      borderColor: lang === l ? 'var(--brand-primary)' : 'var(--border-default)',
+      bg: lang === l ? 'var(--brand-primary-tint)' : 'var(--surface-card)',
+      fg: lang === l ? 'var(--green-700)' : 'var(--text-secondary)',
+    }));
+    const timezoneOptions = ['Europe/Paris', 'Europe/London', 'America/New_York'].map(tz => ({ value: tz, label: tz, selected: tz === timezone }));
+    const saveStatusMap = { saving: { label: 'Enregistrement…', color: 'var(--text-tertiary)' }, saved: { label: '✓ Enregistré', color: 'var(--success-fg)' } };
+
+    // ---- Sécurité ----
+    const st = this.strength(newPassword);
+    const sessionRows = sessions.map(s => ({
+      device: s.device, location: s.location, lastActive: s.lastActive, isCurrent: s.isCurrent,
+      showLogout: !s.isCurrent, onLogout: () => this.logoutSession(s.id),
+    }));
+    const passwordsMatch = newPassword && confirmPassword && newPassword === confirmPassword;
+    const passwordSubmitDisabled = !currentPassword || !newPassword || !passwordsMatch;
+
+    // ---- Équipe ----
+    const roleLabelMap = { proprietaire: { label: 'Propriétaire', bg: 'var(--brand-primary-tint)', fg: 'var(--green-700)' }, editeur: { label: 'Éditeur', bg: 'var(--info-bg)', fg: 'var(--info-fg)' }, lecteur: { label: 'Lecteur', bg: 'var(--gray-100)', fg: 'var(--text-secondary)' } };
+    const statusLabelMap = { actif: { label: 'Actif', bg: 'var(--success-bg)', fg: 'var(--success-fg)' }, invitation_pending: { label: 'En attente', bg: 'var(--warning-bg)', fg: 'var(--warning-fg)' } };
+    const ownerCount = members.filter(m => m.role === 'proprietaire').length;
+    const memberRows = members.map(m => {
+      const isPending = m.status === 'invitation_pending';
+      const isSoleOwner = m.role === 'proprietaire' && ownerCount <= 1;
+      const initials = m.name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
+      const r = roleLabelMap[m.role];
+      const s = statusLabelMap[m.status];
+      return {
+        initials, name: m.name, email: m.email,
+        roleLabel: r.label, roleBg: r.bg, roleFg: r.fg,
+        statusLabel: s.label, statusBg: s.bg, statusFg: s.fg,
+        addedLabel: m.added,
+        isPending,
+        onResend: () => this.resendInvite(m.id),
+        onCancel: () => this.cancelInvite(m.id),
+        showActionsToggle: !isPending,
+        actionsDisabled: isSoleOwner,
+        actionsDisabledTooltip: isSoleOwner ? 'Impossible de modifier le seul propriétaire du compte' : '',
+        onToggleActions: () => this.toggleMemberActions(m.id),
+        actionsOpen: m.actionsOpen,
+        onSetEditor: () => this.setMemberRole(m.id, 'editeur'),
+        onSetReader: () => this.setMemberRole(m.id, 'lecteur'),
+        onRemove: () => this.removeMember(m.id),
+      };
+    });
+    const roleOptions = [
+      { key: 'editeur', label: 'Éditeur', description: ROLE_DESCRIPTIONS.editeur },
+      { key: 'lecteur', label: 'Lecteur', description: ROLE_DESCRIPTIONS.lecteur },
+    ].map(r => ({
+      label: r.label, description: r.description, onSelect: () => this.setInviteRole(r.key),
+      borderColor: inviteRole === r.key ? 'var(--brand-primary)' : 'var(--border-subtle)',
+      bg: inviteRole === r.key ? 'var(--brand-primary-tint)' : 'var(--surface-page)',
+    }));
+
+    // ---- Facturation ----
+    const BILLING_QUOTAS = [
+      { label: 'Bots', used: 1, max: 1, reset: '01/08/2026' },
+      { label: 'Conversations / mois', used: 1284, max: 1000, reset: '01/08/2026' },
+      { label: 'Tokens assistant / mois', used: 812000, max: 1000000, reset: '01/08/2026' },
+    ];
+    const billingQuotaRows = BILLING_QUOTAS.map(q => {
+      const pct = Math.min(100, (q.used / q.max) * 100);
+      const isOver = q.used >= q.max, isWarn = pct >= 80;
+      return {
+        label: q.label,
+        usageLabel: `${q.used.toLocaleString('fr-FR')} / ${q.max.toLocaleString('fr-FR')}`,
+        pct: `${pct}%`,
+        barColor: isOver ? 'var(--error-500)' : isWarn ? 'var(--warning-500)' : 'var(--brand-primary)',
+        textColor: isOver ? 'var(--error-fg)' : isWarn ? 'var(--warning-fg)' : 'var(--text-primary)',
+        resetLabel: q.reset,
+      };
+    });
+
+    // ---- Confidentialité ----
+    const deleteAccountDisabled = !deleteAccountPassword || deleteAccountWord.trim() !== 'SUPPRIMER';
+
+    return {
+      theme, themeLabel: theme === 'light' ? '◐ Sombre' : '◑ Clair', toggleTheme: this.toggleTheme,
+      tabs,
+      isProfil: activeTab === 'profil', isSecurite: activeTab === 'securite', isEquipe: activeTab === 'equipe', isFacturation: activeTab === 'facturation', isConfidentialite: activeTab === 'confidentialite',
+
+      // Profil
+      profileName, onProfileNameChange: this.onProfileNameChange,
+      profileEmail,
+      emailBadgeLabel: emailVerified ? 'Vérifié' : 'Non vérifié',
+      emailBadgeBg: emailVerified ? 'var(--success-bg)' : 'var(--warning-bg)',
+      emailBadgeFg: emailVerified ? 'var(--success-fg)' : 'var(--warning-fg)',
+      showResendVerify: !emailVerified,
+      onResendVerify: this.onResendVerify,
+      langOptions, timezoneOptions, onTimezoneChange: this.onTimezoneChange,
+      onSaveProfile: this.onSaveProfile,
+      showSaveStatus: saveState !== 'idle',
+      saveStatusLabel: (saveStatusMap[saveState] || {}).label,
+      saveStatusColor: (saveStatusMap[saveState] || {}).color,
+
+      // Sécurité
+      currentPassword, onCurrentPasswordChange: this.onCurrentPasswordChange,
+      newPassword, onNewPasswordChange: this.onNewPasswordChange,
+      confirmPassword, onConfirmPasswordChange: this.onConfirmPasswordChange,
+      showStrength: newPassword.length > 0,
+      strengthPct: `${(st.level / 3) * 100}%`, strengthColor: st.color, strengthLabel: st.label,
+      confirmBorder: confirmPassword && !passwordsMatch ? 'var(--error-border)' : 'var(--border-default)',
+      passwordSubmitDisabled,
+      passwordSubmitBg: passwordSubmitDisabled ? 'var(--gray-300)' : 'var(--brand-primary)',
+      passwordSubmitCursor: passwordSubmitDisabled ? 'default' : 'pointer',
+      sessionRows,
+      onLogoutOthers: this.onLogoutOthers,
+
+      // Équipe
+      hasMembers: members.length > 1,
+      memberRows,
+      openInvite: this.openInvite,
+      inviteModalOpen, closeInvite: this.closeInvite,
+      inviteEmails, onInviteEmailsChange: this.onInviteEmailsChange,
+      roleOptions,
+      sendInvite: this.sendInvite,
+
+      // Facturation
+      planName,
+      planDescription: 'Accès complet à un bot, playground illimité, support par e-mail. Idéal pour valider votre premier cas d’usage.',
+      openChangePlan: this.openChangePlan,
+      changePlanModalOpen, closeChangePlan: this.closeChangePlan,
+      billingQuotaRows,
+
+      // Confidentialité
+      exportIdle: exportState === 'idle',
+      exportGenerating: exportState === 'generating',
+      exportReady: exportState === 'ready',
+      onStartExport: this.onStartExport,
+      openDeleteAccount: this.openDeleteAccount,
+      deleteAccountModalOpen, closeDeleteAccount: this.closeDeleteAccount,
+      deleteAccountPassword, onDeleteAccountPasswordChange: this.onDeleteAccountPasswordChange,
+      deleteAccountWord, onDeleteAccountWordChange: this.onDeleteAccountWordChange,
+      deleteAccountDisabled,
+      deleteAccountBg: deleteAccountDisabled ? 'var(--gray-300)' : 'var(--error-500)',
+      deleteAccountCursor: deleteAccountDisabled ? 'default' : 'pointer',
+    };
+  }
+}
+
+</script>
+</body>
+</html>

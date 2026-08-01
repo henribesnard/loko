@@ -1,0 +1,1281 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+</helmet>
+<div data-theme="{{ theme }}" style="font-family:var(--font-sans); background:var(--surface-page); min-height:100vh; color:var(--text-primary);">
+
+  <!-- Header -->
+  <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 28px; background:var(--surface-card); border-bottom:1px solid var(--border-subtle);">
+    <div style="display:flex; align-items:center; gap:12px;">
+      <svg viewBox="0 0 250 64" style="height:20px; width:78px; display:block;">
+        <text x="0" y="45" font-family="Geist, sans-serif" font-weight="600" font-size="42" letter-spacing="-0.5" fill="var(--text-primary)">LOK</text>
+        <path fill-rule="evenodd" fill="var(--brand-primary)" d="M 96 30 m -16 0 a 16 16 0 1 0 32 0 a 16 16 0 1 0 -32 0 Z M 93 33 h6 a2.5 2.5 0 0 1 2.5 2.5 v8 a2.5 2.5 0 0 1 -2.5 2.5 h-6 a2.5 2.5 0 0 1 -2.5 -2.5 v-8 a2.5 2.5 0 0 1 2.5 -2.5 Z"/>
+      </svg>
+      <div style="width:1px; height:18px; background:var(--border-default);"></div>
+      <div style="font-size:14px; font-weight:600;">{{ projectName }}</div>
+    </div>
+    <div style="display:flex; align-items:center; gap:14px;">
+      <div style="display:flex; align-items:center; gap:6px; font-size:12px; color:var(--text-tertiary); font-family:var(--font-mono);">
+        <span style="width:6px; height:6px; border-radius:50%; background:var(--brand-primary);"></span>
+        {{ saveLabel }}
+      </div>
+      <button onClick="{{ toggleTheme }}" style="display:flex; align-items:center; gap:6px; padding:6px 12px; border-radius:var(--radius-sm); border:1px solid var(--border-default); background:transparent; color:var(--text-secondary); font-size:12.5px; font-family:var(--font-sans); cursor:pointer;">
+        {{ themeLabel }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Progress bar -->
+  <div style="display:flex; align-items:stretch; padding:0 28px; background:var(--surface-card); border-bottom:1px solid var(--border-subtle); overflow-x:auto;">
+    <sc-for list="{{ stepList }}" as="step" hint-placeholder-count="6">
+      <button onClick="{{ step.onClick }}" disabled="{{ step.disabled }}" style="display:flex; flex-direction:column; align-items:flex-start; gap:4px; padding:14px 20px 14px 0; margin-right:28px; border:none; background:transparent; cursor:{{ step.cursor }}; border-bottom:2px solid {{ step.borderColor }}; flex:none; text-align:left;">
+        <div style="display:flex; align-items:center; gap:7px;">
+          <div style="width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:var(--font-mono); font-size:10.5px; font-weight:600; background:{{ step.dotBg }}; color:{{ step.dotFg }}; flex:none;">{{ step.dotContent }}</div>
+          <div style="font-size:13px; font-weight:600; color:{{ step.labelColor }};">{{ step.label }}</div>
+        </div>
+        <div style="font-size:11px; color:var(--text-tertiary); font-family:var(--font-mono); padding-left:27px;">{{ step.sublabel }}</div>
+      </button>
+    </sc-for>
+  </div>
+
+  <!-- Step content -->
+  <div style="padding:32px 28px 80px; max-width:1120px; margin:0 auto;">
+
+    <sc-if value="{{ isStep0 }}">
+      <div style="display:flex; flex-direction:column; gap:28px; max-width:640px;">
+        <div>
+          <div style="font-size:22px; font-weight:600; letter-spacing:var(--tracking-tight); margin-bottom:6px;">Projet</div>
+          <div style="font-size:14px; color:var(--text-secondary);">Les informations de base de votre bot. Vous pourrez tout modifier plus tard.</div>
+        </div>
+
+        <div>
+          <label style="display:block; font-size:13px; font-weight:600; margin-bottom:8px;">Nom du bot</label>
+          <input value="{{ projectName }}" onChange="{{ onProjectNameChange }}" style="width:100%; box-sizing:border-box; padding:10px 12px; border-radius:var(--radius-sm); border:1px solid var(--border-default); background:var(--surface-card); color:var(--text-primary); font-size:14px; font-family:var(--font-sans);" />
+        </div>
+
+        <div>
+          <label style="display:block; font-size:13px; font-weight:600; margin-bottom:8px;">Canal</label>
+          <div style="display:flex; gap:10px;">
+            <sc-for list="{{ channelOptions }}" as="ch" hint-placeholder-count="2">
+              <button onClick="{{ ch.onToggle }}" style="display:flex; align-items:center; gap:8px; padding:10px 16px; border-radius:var(--radius-md); border:1px solid {{ ch.borderColor }}; background:{{ ch.bg }}; color:{{ ch.fg }}; font-size:13.5px; font-weight:500; cursor:pointer;">
+                <span style="width:14px; height:14px; border-radius:4px; border:1.5px solid {{ ch.fg }}; display:flex; align-items:center; justify-content:center; font-size:10px;">{{ ch.check }}</span>
+                {{ ch.label }}
+              </button>
+            </sc-for>
+          </div>
+        </div>
+
+        <div>
+          <label style="display:block; font-size:13px; font-weight:600; margin-bottom:8px;">Langue</label>
+          <div style="display:flex; gap:8px;">
+            <sc-for list="{{ langOptions }}" as="lg" hint-placeholder-count="2">
+              <button onClick="{{ lg.onSelect }}" style="padding:8px 16px; border-radius:var(--radius-pill); border:1px solid {{ lg.borderColor }}; background:{{ lg.bg }}; color:{{ lg.fg }}; font-size:13px; font-weight:500; cursor:pointer;">{{ lg.label }}</button>
+            </sc-for>
+          </div>
+        </div>
+
+        <div>
+          <label style="display:block; font-size:13px; font-weight:600; margin-bottom:10px;">Ton</label>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+            <sc-for list="{{ toneOptions }}" as="tone" hint-placeholder-count="4">
+              <button onClick="{{ tone.onSelect }}" style="text-align:left; padding:14px; border-radius:var(--radius-md); border:1.5px solid {{ tone.borderColor }}; background:{{ tone.bg }}; cursor:pointer;">
+                <div style="font-size:13px; font-weight:600; color:var(--text-primary); margin-bottom:6px;">{{ tone.label }}</div>
+                <div style="font-size:12.5px; color:var(--text-secondary); font-style:italic;">« {{ tone.example }} »</div>
+              </button>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end;">
+          <button onClick="{{ goNext }}" style="padding:10px 22px; border-radius:var(--radius-md); border:none; background:var(--brand-primary); color:var(--text-on-brand); font-size:13.5px; font-weight:600; cursor:pointer;">Continuer</button>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isStep1 }}">
+      <div style="display:flex; flex-direction:column; gap:20px;">
+        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:20px;">
+          <div>
+            <div style="font-size:22px; font-weight:600; letter-spacing:var(--tracking-tight); margin-bottom:6px;">Intentions</div>
+            <div style="font-size:14px; color:var(--text-secondary); max-width:560px;">Ce que le bot doit reconnaître pour router correctement. Plus les exemples sont variés, plus la classification est fiable.</div>
+          </div>
+          <button onClick="{{ startTraining }}" disabled="{{ trainingDisabled }}" style="flex:none; display:flex; align-items:center; gap:8px; padding:10px 18px; border-radius:var(--radius-md); border:none; background:{{ trainButtonBg }}; color:var(--text-on-brand); font-size:13.5px; font-weight:600; cursor:{{ trainButtonCursor }};">
+            {{ trainButtonLabel }}
+          </button>
+        </div>
+
+        <sc-if value="{{ showTrainingProgress }}">
+          <div style="background:var(--surface-sunken); border:1px solid var(--border-subtle); border-radius:var(--radius-md); padding:14px 18px; display:flex; flex-direction:column; gap:8px;">
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+              <div style="font-size:13px; font-weight:600;">{{ trainingPhaseLabel }}</div>
+              <div style="font-family:var(--font-mono); font-size:11.5px; color:var(--text-tertiary);">{{ trainingEtaLabel }}</div>
+            </div>
+            <div style="height:6px; border-radius:999px; background:var(--gray-200); overflow:hidden;">
+              <div style="height:100%; width:{{ trainingProgressPct }}; background:var(--brand-primary); transition:width 300ms var(--ease-standard);"></div>
+            </div>
+          </div>
+        </sc-if>
+
+        <div style="display:grid; grid-template-columns:300px 1fr; gap:20px; align-items:flex-start;">
+
+          <!-- Intent list -->
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <sc-for list="{{ intentRows }}" as="intent" hint-placeholder-count="5">
+              <button onClick="{{ intent.onSelect }}" style="display:flex; flex-direction:column; gap:4px; text-align:left; padding:11px 13px; border-radius:var(--radius-md); border:1px solid {{ intent.borderColor }}; background:{{ intent.bg }}; cursor:pointer;">
+                <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                  <div style="font-size:13px; font-weight:600; color:var(--text-primary);">{{ intent.name }}</div>
+                  <sc-if value="{{ intent.isSystem }}">
+                    <div style="font-family:var(--font-mono); font-size:9.5px; font-weight:600; text-transform:uppercase; letter-spacing:0.03em; color:var(--text-tertiary); background:var(--gray-100); border-radius:4px; padding:2px 6px; flex:none;">Système</div>
+                  </sc-if>
+                </div>
+                <div style="font-family:var(--font-mono); font-size:11px; color:{{ intent.countColor }};">{{ intent.countLabel }}</div>
+              </button>
+            </sc-for>
+            <button onClick="{{ addIntent }}" style="display:flex; align-items:center; gap:6px; padding:10px 13px; border-radius:var(--radius-md); border:1px dashed var(--border-default); background:transparent; color:var(--text-secondary); font-size:13px; cursor:pointer; margin-top:4px;">+ Nouvelle intention</button>
+          </div>
+
+          <!-- Editor -->
+          <sc-if value="{{ hasSelectedIntent }}">
+            <div style="background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:var(--radius-lg); padding:20px; display:flex; flex-direction:column; gap:16px;">
+              <div style="display:flex; align-items:center; justify-content:space-between;">
+                <div style="font-size:15px; font-weight:600;">{{ selectedIntentName }}</div>
+                <sc-if value="{{ selectedIsSystem }}">
+                  <div style="font-family:var(--font-mono); font-size:10px; font-weight:600; text-transform:uppercase; color:var(--text-tertiary); background:var(--gray-100); border-radius:4px; padding:3px 7px;">Intention système — non supprimable</div>
+                </sc-if>
+              </div>
+
+              <div>
+                <label style="display:block; font-size:12.5px; font-weight:600; margin-bottom:6px; color:var(--text-secondary);">Définition</label>
+                <textarea value="{{ selectedDefinition }}" onChange="{{ onDefinitionChange }}" rows="2" style="width:100%; box-sizing:border-box; padding:9px 11px; border-radius:var(--radius-sm); border:1px solid var(--border-default); background:var(--surface-page); color:var(--text-primary); font-size:13px; font-family:var(--font-sans); resize:vertical;"></textarea>
+              </div>
+
+              <div>
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+                  <label style="font-size:12.5px; font-weight:600; color:var(--text-secondary);">Exemples</label>
+                  <div style="font-family:var(--font-mono); font-size:11.5px; font-weight:600; color:{{ exampleCountColor }};">{{ exampleCountLabel }}</div>
+                </div>
+                <div style="height:5px; border-radius:999px; background:var(--gray-200); overflow:hidden; margin-bottom:10px; position:relative;">
+                  <div style="height:100%; width:{{ exampleProgressPct }}; background:{{ exampleCountColor }}; transition:width 200ms var(--ease-standard);"></div>
+                </div>
+                <div style="display:flex; flex-wrap:wrap; gap:7px; margin-bottom:10px;">
+                  <sc-for list="{{ exampleChips }}" as="ex" hint-placeholder-count="6">
+                    <div style="display:flex; align-items:center; gap:6px; background:var(--surface-sunken); border:1px solid var(--border-subtle); border-radius:var(--radius-pill); padding:5px 6px 5px 12px; font-size:12.5px; color:var(--text-primary);">
+                      {{ ex.text }}
+                      <button onClick="{{ ex.onRemove }}" style="width:16px; height:16px; border-radius:50%; border:none; background:var(--gray-200); color:var(--text-secondary); font-size:10px; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0;">✕</button>
+                    </div>
+                  </sc-for>
+                </div>
+                <div style="display:flex; gap:8px;">
+                  <input value="{{ newExampleText }}" onChange="{{ onNewExampleChange }}" onKeyDown="{{ onNewExampleKeyDown }}" placeholder="Ajouter une phrase d'exemple et Entrée…" style="flex:1; box-sizing:border-box; padding:8px 11px; border-radius:var(--radius-sm); border:1px solid var(--border-default); background:var(--surface-page); color:var(--text-primary); font-size:13px; font-family:var(--font-sans);" />
+                  <button onClick="{{ onAddExampleClick }}" style="padding:8px 14px; border-radius:var(--radius-sm); border:1px solid var(--border-default); background:var(--surface-card); color:var(--text-secondary); font-size:13px; cursor:pointer;">Ajouter</button>
+                </div>
+              </div>
+
+              <div>
+                <button onClick="{{ toggleSubpatterns }}" style="display:flex; align-items:center; gap:6px; background:transparent; border:none; padding:0; cursor:pointer; color:var(--text-secondary); font-size:12.5px; font-weight:600;">
+                  {{ subpatternsToggleIcon }} Sous-motifs ({{ subpatternCount }})
+                </button>
+                <sc-if value="{{ subpatternsOpen }}">
+                  <div style="display:flex; flex-direction:column; gap:8px; margin-top:10px;">
+                    <sc-for list="{{ subpatternRows }}" as="sp" hint-placeholder-count="2">
+                      <div style="display:flex; align-items:center; justify-content:space-between; padding:9px 12px; background:var(--surface-sunken); border:1px solid var(--border-subtle); border-radius:var(--radius-sm);">
+                        <div style="font-size:12.5px; color:var(--text-primary);">{{ sp.name }}</div>
+                        <div style="font-family:var(--font-mono); font-size:11px; color:var(--text-tertiary);">{{ sp.countLabel }}</div>
+                      </div>
+                    </sc-for>
+                    <button onClick="{{ addSubpattern }}" style="align-self:flex-start; font-size:12px; color:var(--text-tertiary); background:transparent; border:1px dashed var(--border-default); border-radius:var(--radius-sm); padding:6px 11px; cursor:pointer;">+ Ajouter un sous-motif</button>
+                  </div>
+                </sc-if>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+
+        <sc-if value="{{ showResults }}">
+          <div style="display:grid; grid-template-columns:1fr 380px; gap:20px; margin-top:8px;">
+            <div style="background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:var(--radius-lg); padding:20px;">
+              <div style="font-size:14px; font-weight:600; margin-bottom:4px;">Matrice de confusion</div>
+              <div style="font-size:12.5px; color:var(--text-secondary); margin-bottom:16px;">Chaque ligne = intention réelle. Chaque colonne = intention prédite. La diagonale doit être la plus sombre.</div>
+              <div style="display:grid; grid-template-columns:120px repeat({{ matrixSize }}, 1fr); gap:3px;">
+                <div></div>
+                <sc-for list="{{ matrixLabels }}" as="lbl" hint-placeholder-count="5">
+                  <div style="font-size:10px; font-family:var(--font-mono); color:var(--text-tertiary); text-align:center; padding:4px 2px; writing-mode:vertical-rl; transform:rotate(180deg); height:70px; display:flex; align-items:flex-end; justify-content:center;">{{ lbl }}</div>
+                </sc-for>
+                <sc-for list="{{ matrixRows }}" as="row" hint-placeholder-count="5">
+                  <div style="font-size:10.5px; font-family:var(--font-mono); color:var(--text-secondary); display:flex; align-items:center; padding-right:6px;">{{ row.label }}</div>
+                  <sc-for list="{{ row.cells }}" as="cell" hint-placeholder-count="5">
+                    <div style="aspect-ratio:1; border-radius:5px; background:{{ cell.bg }}; color:{{ cell.fg }}; display:flex; align-items:center; justify-content:center; font-family:var(--font-mono); font-size:11px; font-weight:600;">{{ cell.label }}</div>
+                  </sc-for>
+                </sc-for>
+              </div>
+            </div>
+            <div style="background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:var(--radius-lg); padding:20px; display:flex; flex-direction:column; gap:12px;">
+              <div style="font-size:14px; font-weight:600;">Conseils</div>
+              <sc-for list="{{ tips }}" as="tip" hint-placeholder-count="2">
+                <div style="background:var(--warning-bg); border:1px solid var(--warning-border); border-radius:var(--radius-md); padding:12px 14px; display:flex; flex-direction:column; gap:8px;">
+                  <div style="font-size:12.5px; color:var(--warning-fg); line-height:var(--leading-snug);">{{ tip.text }}</div>
+                  <button onClick="{{ tip.onApply }}" style="align-self:flex-start; font-size:12px; font-weight:600; color:var(--warning-fg); background:var(--surface-card); border:1px solid var(--warning-border); border-radius:var(--radius-sm); padding:6px 11px; cursor:pointer;">{{ tip.actionLabel }}</button>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+
+        <div style="display:flex; justify-content:flex-end;">
+          <button onClick="{{ goNext }}" style="padding:10px 22px; border-radius:var(--radius-md); border:none; background:var(--brand-primary); color:var(--text-on-brand); font-size:13.5px; font-weight:600; cursor:pointer;">Continuer</button>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isStep2 }}">
+      <div style="display:flex; flex-direction:column; gap:24px;">
+        <div>
+          <div style="font-size:22px; font-weight:600; letter-spacing:var(--tracking-tight); margin-bottom:6px;">Connaissances</div>
+          <div style="font-size:14px; color:var(--text-secondary); max-width:600px;">Les documents que le bot peut citer. Chaque réponse documentée doit pouvoir renvoyer à sa source.</div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+          <div style="border:1.5px dashed var(--border-default); border-radius:var(--radius-lg); padding:24px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; background:var(--surface-card); text-align:center;">
+            <div style="font-size:13.5px; font-weight:600;">Déposer des documents</div>
+            <div style="font-size:12px; color:var(--text-tertiary);">PDF, DOCX, TXT — glisser-déposer ou parcourir</div>
+          </div>
+
+          <div style="background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:var(--radius-lg); padding:18px; display:flex; flex-direction:column; gap:10px;">
+            <div style="font-size:13.5px; font-weight:600;">Connecteur FAQ web</div>
+            <div style="display:flex; gap:8px;">
+              <input value="{{ faqUrl }}" onChange="{{ onFaqUrlChange }}" style="flex:1; box-sizing:border-box; padding:8px 11px; border-radius:var(--radius-sm); border:1px solid var(--border-default); background:var(--surface-page); color:var(--text-primary); font-size:12.5px; font-family:var(--font-mono);" />
+              <button onClick="{{ startCrawl }}" style="padding:8px 14px; border-radius:var(--radius-sm); border:1px solid var(--border-default); background:transparent; color:var(--text-secondary); font-size:12.5px; cursor:pointer; white-space:nowrap;">{{ crawlButtonLabel }}</button>
+            </div>
+            <sc-if value="{{ showCrawlProgress }}">
+              <div style="height:5px; border-radius:999px; background:var(--gray-200); overflow:hidden;">
+                <div style="height:100%; width:{{ crawlProgressPct }}; background:var(--brand-primary); transition:width 300ms var(--ease-standard);"></div>
+              </div>
+            </sc-if>
+            <div style="font-size:11.5px; color:var(--text-tertiary); font-family:var(--font-mono);">{{ crawlStatusLabel }}</div>
+          </div>
+        </div>
+
+        <div style="background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:var(--radius-lg); overflow:hidden;">
+          <div style="display:grid; grid-template-columns:1fr 120px 140px; padding:10px 16px; border-bottom:1px solid var(--border-subtle); font-size:11px; font-weight:600; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.03em;">
+            <div>Document</div><div>Confidentialité</div><div>Intentions</div>
+          </div>
+          <sc-for list="{{ docRows }}" as="doc" hint-placeholder-count="4">
+            <div>
+              <div onClick="{{ doc.onToggleExpand }}" style="display:grid; grid-template-columns:1fr 120px 140px; padding:12px 16px; border-bottom:1px solid var(--border-subtle); align-items:center; cursor:pointer;">
+                <div style="display:flex; align-items:center; gap:8px; min-width:0;">
+                  <span style="color:var(--text-tertiary); font-size:11px;">{{ doc.expandIcon }}</span>
+                  <div style="min-width:0;">
+                    <div style="font-size:13px; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ doc.name }}</div>
+                    <div style="font-family:var(--font-mono); font-size:10.5px; color:var(--text-tertiary);">{{ doc.sizeLabel }}</div>
+                  </div>
+                </div>
+                <div>
+                  <button onClick="{{ doc.onToggleConfidentiality }}" style="font-family:var(--font-mono); font-size:10.5px; font-weight:600; border:none; border-radius:5px; padding:4px 8px; background:{{ doc.confidentialityBg }}; color:{{ doc.confidentialityFg }}; cursor:pointer;">{{ doc.confidentialityLabel }}</button>
+                </div>
+                <div style="font-size:11.5px; color:var(--text-secondary);">{{ doc.tagChips }}</div>
+              </div>
+              <sc-if value="{{ doc.isExpanded }}">
+                <div style="padding:10px 16px 16px 40px; border-bottom:1px solid var(--border-subtle); background:var(--surface-sunken); display:flex; flex-wrap:wrap; gap:7px;">
+                  <sc-for list="{{ doc.tagToggleOptions }}" as="opt" hint-placeholder-count="3">
+                    <button onClick="{{ opt.onToggle }}" style="padding:6px 12px; border-radius:var(--radius-pill); font-size:12px; font-weight:500; border:1px solid {{ opt.on ? 'var(--brand-primary)' : 'var(--border-default)' }}; background:{{ opt.on ? 'var(--brand-primary-tint)' : 'var(--surface-card)' }}; color:{{ opt.on ? 'var(--green-700)' : 'var(--text-secondary)' }}; cursor:pointer;">{{ opt.label }}</button>
+                  </sc-for>
+                </div>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:var(--radius-lg); padding:18px;">
+          <div style="font-size:13.5px; font-weight:600; margin-bottom:12px;">Couverture par intention</div>
+          <div style="display:flex; flex-direction:column; gap:12px;">
+            <sc-for list="{{ coverageRows }}" as="cov" hint-placeholder-count="3">
+              <div style="display:flex; align-items:center; gap:12px;">
+                <div style="width:110px; flex:none; font-size:12.5px; color:var(--text-primary);">{{ cov.label }}</div>
+                <div style="flex:1; height:8px; border-radius:999px; background:var(--gray-100); overflow:hidden;">
+                  <div style="height:100%; width:{{ cov.widthPct }}; background:{{ cov.barColor }};"></div>
+                </div>
+                <div style="width:110px; flex:none; text-align:right; font-family:var(--font-mono); font-size:11.5px; color:var(--text-tertiary); display:flex; align-items:center; justify-content:flex-end; gap:5px;">
+                  <sc-if value="{{ cov.showWarning }}"><span style="color:var(--warning-fg);">⚠</span></sc-if>
+                  {{ cov.countLabel }}
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end;">
+          <button onClick="{{ goNext }}" style="padding:10px 22px; border-radius:var(--radius-md); border:none; background:var(--brand-primary); color:var(--text-on-brand); font-size:13.5px; font-weight:600; cursor:pointer;">Continuer</button>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isStep3 }}">
+      <div style="display:flex; flex-direction:column; gap:24px;">
+        <div>
+          <div style="font-size:22px; font-weight:600; letter-spacing:var(--tracking-tight); margin-bottom:6px;">Parcours</div>
+          <div style="font-size:14px; color:var(--text-secondary); max-width:600px;">Les seuils qui décident si le bot répond directement, demande une clarification, ou refuse de répondre.</div>
+        </div>
+
+        <div style="background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:var(--radius-lg); padding:22px;">
+          <div style="display:flex; height:34px; border-radius:var(--radius-sm); overflow:hidden; margin-bottom:10px;">
+            <div style="width:{{ zoneRejetPct }}; background:var(--error-100); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:600; color:var(--error-700); transition:width 150ms;">Rejet</div>
+            <div style="width:{{ zoneClarifPct }}; background:var(--warning-100); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:600; color:var(--warning-700); transition:width 150ms;">Clarification</div>
+            <div style="width:{{ zoneDirectPct }}; background:var(--success-bg); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:600; color:var(--success-fg); transition:width 150ms;">Route directe</div>
+          </div>
+          <div style="display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:10.5px; color:var(--text-tertiary); margin-bottom:22px;">
+            <span>0.00</span><span>1.00</span>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:24px;">
+            <div>
+              <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                <label style="font-size:12.5px; font-weight:600;">Seuil bas (rejet en dessous)</label>
+                <span style="font-family:var(--font-mono); font-size:12px; font-weight:600; color:var(--error-fg);">{{ thresholdLowLabel }}</span>
+              </div>
+              <input type="range" min="0" max="1" step="0.01" value="{{ thresholdLow }}" onChange="{{ onThresholdLowChange }}" style="width:100%; accent-color:var(--brand-primary);" />
+            </div>
+            <div>
+              <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                <label style="font-size:12.5px; font-weight:600;">Seuil haut (route directe au-dessus)</label>
+                <span style="font-family:var(--font-mono); font-size:12px; font-weight:600; color:var(--success-fg);">{{ thresholdHighLabel }}</span>
+              </div>
+              <input type="range" min="0" max="1" step="0.01" value="{{ thresholdHigh }}" onChange="{{ onThresholdHighChange }}" style="width:100%; accent-color:var(--brand-primary);" />
+            </div>
+          </div>
+        </div>
+
+        <div style="background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:var(--radius-lg); padding:22px;">
+          <div style="font-size:13.5px; font-weight:600; margin-bottom:16px;">Schéma du parcours</div>
+          <svg viewBox="0 0 760 180" style="width:100%; height:auto;">
+            <line x1="90" y1="90" x2="230" y2="40" stroke="var(--success-fg)" stroke-width="2"/>
+            <line x1="90" y1="90" x2="230" y2="90" stroke="var(--warning-fg)" stroke-width="2"/>
+            <line x1="90" y1="90" x2="230" y2="140" stroke="var(--error-fg)" stroke-width="2"/>
+            <line x1="330" y1="40" x2="470" y2="40" stroke="var(--success-fg)" stroke-width="2"/>
+            <line x1="330" y1="90" x2="230" y2="90" stroke="var(--warning-fg)" stroke-width="0" opacity="0"/>
+            <line x1="330" y1="90" x2="410" y2="90" stroke="var(--warning-fg)" stroke-width="2" stroke-dasharray="4 3"/>
+            <line x1="410" y1="90" x2="470" y2="40" stroke="var(--warning-fg)" stroke-width="2"/>
+            <line x1="570" y1="40" x2="670" y2="40" stroke="var(--green-700)" stroke-width="2"/>
+
+            <rect x="10" y="65" width="80" height="50" rx="10" fill="var(--surface-sunken)" stroke="var(--border-default)"/>
+            <text x="50" y="94" text-anchor="middle" font-family="Geist, sans-serif" font-size="11" fill="var(--text-primary)">Classif.</text>
+
+            <rect x="230" y="15" width="100" height="50" rx="10" fill="var(--success-bg)" stroke="var(--success-border)"/>
+            <text x="280" y="44" text-anchor="middle" font-family="Geist, sans-serif" font-size="11" fill="var(--success-fg)">Route directe</text>
+
+            <rect x="230" y="65" width="100" height="50" rx="10" fill="var(--warning-bg)" stroke="var(--warning-border)"/>
+            <text x="280" y="94" text-anchor="middle" font-family="Geist, sans-serif" font-size="11" fill="var(--warning-fg)">Clarification</text>
+
+            <rect x="230" y="115" width="100" height="50" rx="10" fill="var(--error-bg)" stroke="var(--error-border)"/>
+            <text x="280" y="144" text-anchor="middle" font-family="Geist, sans-serif" font-size="11" fill="var(--error-fg)">Rejet</text>
+
+            <rect x="410" y="65" width="60" height="50" rx="10" fill="var(--surface-sunken)" stroke="var(--border-default)" opacity="0"/>
+
+            <rect x="470" y="15" width="100" height="50" rx="10" fill="var(--surface-sunken)" stroke="var(--border-default)"/>
+            <text x="520" y="44" text-anchor="middle" font-family="Geist, sans-serif" font-size="11" fill="var(--text-primary)">Retrieval</text>
+
+            <rect x="670" y="15" width="80" height="50" rx="10" fill="var(--brand-primary)" />
+            <text x="710" y="44" text-anchor="middle" font-family="Geist, sans-serif" font-size="11" fill="var(--text-on-brand)">Génération</text>
+          </svg>
+          <div style="display:flex; gap:20px; font-family:var(--font-mono); font-size:11px; color:var(--text-tertiary); margin-top:6px;">
+            <span>score ≥ {{ thresholdHighLabel }} → route directe</span>
+            <span>{{ thresholdLowLabel }} – {{ thresholdHighLabel }} → clarification</span>
+            <span>score &lt; {{ thresholdLowLabel }} → rejet</span>
+          </div>
+        </div>
+
+        <div style="background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:var(--radius-lg); padding:18px;">
+          <button onClick="{{ toggleAdvanced }}" style="display:flex; align-items:center; gap:6px; background:transparent; border:none; padding:0; cursor:pointer; font-size:13px; font-weight:600; color:var(--text-primary);">
+            {{ advancedToggleIcon }} Paramètres avancés
+          </button>
+          <sc-if value="{{ advancedOpen }}">
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:16px;">
+              <div>
+                <label style="display:block; font-size:12px; color:var(--text-secondary); margin-bottom:6px;">Clarifications max</label>
+                <input type="number" value="{{ maxClarifications }}" onChange="{{ onMaxClarificationsChange }}" style="width:100%; box-sizing:border-box; padding:8px 10px; border-radius:var(--radius-sm); border:1px solid var(--border-default); background:var(--surface-page); color:var(--text-primary); font-family:var(--font-mono); font-size:13px;" />
+              </div>
+              <div>
+                <label style="display:block; font-size:12px; color:var(--text-secondary); margin-bottom:6px;">Relances max</label>
+                <input type="number" value="{{ maxAsks }}" onChange="{{ onMaxAsksChange }}" style="width:100%; box-sizing:border-box; padding:8px 10px; border-radius:var(--radius-sm); border:1px solid var(--border-default); background:var(--surface-page); color:var(--text-primary); font-family:var(--font-mono); font-size:13px;" />
+              </div>
+              <div>
+                <label style="display:block; font-size:12px; color:var(--text-secondary); margin-bottom:6px;">Timeout (secondes)</label>
+                <input type="number" value="{{ timeoutSec }}" onChange="{{ onTimeoutChange }}" style="width:100%; box-sizing:border-box; padding:8px 10px; border-radius:var(--radius-sm); border:1px solid var(--border-default); background:var(--surface-page); color:var(--text-primary); font-family:var(--font-mono); font-size:13px;" />
+              </div>
+              <div>
+                <label style="display:block; font-size:12px; color:var(--text-secondary); margin-bottom:6px;">Seuil retrieval</label>
+                <input type="number" step="0.01" value="{{ retrievalThreshold }}" onChange="{{ onRetrievalThresholdChange }}" style="width:100%; box-sizing:border-box; padding:8px 10px; border-radius:var(--radius-sm); border:1px solid var(--border-default); background:var(--surface-page); color:var(--text-primary); font-family:var(--font-mono); font-size:13px;" />
+              </div>
+            </div>
+          </sc-if>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end;">
+          <button onClick="{{ goNext }}" style="padding:10px 22px; border-radius:var(--radius-md); border:none; background:var(--brand-primary); color:var(--text-on-brand); font-size:13.5px; font-weight:600; cursor:pointer;">Continuer</button>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isStep4 }}">
+      <div style="display:flex; flex-direction:column; gap:20px;">
+        <div>
+          <div style="font-size:22px; font-weight:600; letter-spacing:var(--tracking-tight); margin-bottom:6px;">Messages</div>
+          <div style="font-size:14px; color:var(--text-secondary); max-width:600px;">Les templates que le bot envoie à chaque étape. Ce sont vos phrases, jamais générées.</div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:260px 1fr 300px; gap:20px; align-items:flex-start;">
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <sc-for list="{{ messageRows }}" as="msg" hint-placeholder-count="7">
+              <button onClick="{{ msg.onSelect }}" style="display:flex; align-items:center; justify-content:space-between; gap:8px; text-align:left; padding:11px 13px; border-radius:var(--radius-md); border:1px solid {{ msg.borderColor }}; background:{{ msg.bg }}; cursor:pointer;">
+                <div style="font-size:13px; font-weight:600; color:var(--text-primary);">{{ msg.label }}</div>
+                <div style="color:{{ msg.statusColor }}; font-size:12px;">{{ msg.statusIcon }}</div>
+              </button>
+            </sc-for>
+          </div>
+
+          <sc-if value="{{ hasSelectedMessage }}">
+            <div style="background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:var(--radius-lg); padding:20px; display:flex; flex-direction:column; gap:14px;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <div style="width:9px; height:9px; border-radius:2px; background:var(--brand-primary);"></div>
+                <div style="font-size:14px; font-weight:600;">{{ selectedMessageLabel }}</div>
+                <div style="font-family:var(--font-mono); font-size:9.5px; font-weight:600; text-transform:uppercase; color:var(--green-700); background:var(--brand-primary-tint); border:1px solid var(--brand-primary-border); border-radius:4px; padding:2px 6px;">Template verrouillé</div>
+              </div>
+              <textarea value="{{ selectedMessageText }}" onChange="{{ onMessageTextChange }}" rows="4" style="width:100%; box-sizing:border-box; padding:11px 13px; border-radius:var(--radius-sm); border:1px solid var(--border-default); background:var(--surface-page); color:var(--text-primary); font-size:13.5px; font-family:var(--font-sans); resize:vertical; line-height:var(--leading-relaxed);"></textarea>
+              <div>
+                <div style="font-size:11.5px; color:var(--text-tertiary); margin-bottom:8px;">Variables disponibles — clic pour insérer</div>
+                <div style="display:flex; flex-wrap:wrap; gap:7px;">
+                  <sc-for list="{{ variableChips }}" as="v" hint-placeholder-count="2">
+                    <button onClick="{{ v.onInsert }}" style="font-family:var(--font-mono); font-size:12px; padding:5px 10px; border-radius:var(--radius-sm); border:1px solid var(--border-default); background:var(--surface-sunken); color:var(--text-secondary); cursor:pointer;">{{ v.label }}</button>
+                  </sc-for>
+                </div>
+              </div>
+              <sc-if value="{{ missingVarsWarning }}">
+                <div style="display:flex; align-items:center; gap:6px; font-size:12px; color:var(--warning-fg); background:var(--warning-bg); border:1px solid var(--warning-border); border-radius:var(--radius-sm); padding:8px 11px;">
+                  ⚠ {{ missingVarsWarning }}
+                </div>
+              </sc-if>
+            </div>
+          </sc-if>
+
+          <div style="background:var(--gray-800); border-radius:var(--radius-lg); padding:16px; display:flex; flex-direction:column; gap:8px;">
+            <div style="font-size:11px; color:var(--gray-400); font-family:var(--font-mono); margin-bottom:4px;">Aperçu widget</div>
+            <div style="display:flex; align-items:flex-end; gap:8px;">
+              <svg width="22" height="22" viewBox="0 0 64 64" style="flex:none;">
+                <rect x="1" y="1" width="62" height="62" rx="14" fill="var(--brand-primary)"/>
+                <circle cx="32" cy="25" r="10" fill="none" stroke="#fff" stroke-width="4"/>
+                <path d="M32 33 L32 44" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
+              </svg>
+              <div style="background:#232B28; color:#F2F5F3; border-radius:4px 14px 14px 14px; padding:10px 13px; font-size:12.5px; line-height:var(--leading-normal); max-width:220px;">{{ previewBubbleText }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end;">
+          <button onClick="{{ goNext }}" style="padding:10px 22px; border-radius:var(--radius-md); border:none; background:var(--brand-primary); color:var(--text-on-brand); font-size:13.5px; font-weight:600; cursor:pointer;">Continuer</button>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isStep5 }}">
+      <div style="display:flex; flex-direction:column; gap:24px;">
+        <div>
+          <div style="font-size:22px; font-weight:600; letter-spacing:var(--tracking-tight); margin-bottom:6px;">Simulation & publication</div>
+          <div style="font-size:14px; color:var(--text-secondary); max-width:640px;">Testez le bot comme un utilisateur final, avec la trace de décision en direct. Publiez une fois les vérifications passées.</div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 380px; gap:20px; align-items:flex-start;">
+
+          <div style="display:flex; flex-direction:column; gap:14px;">
+            <div style="background:var(--gray-900); border-radius:var(--radius-lg); padding:16px; display:flex; flex-direction:column; gap:10px; min-height:280px;">
+              <div style="font-size:11px; color:var(--gray-400); font-family:var(--font-mono);">Playground — conversation</div>
+              <sc-for list="{{ simBubbles }}" as="b" hint-placeholder-count="2">
+                <div style="display:flex; justify-content:{{ b.justify }};">
+                  <div style="max-width:78%; padding:9px 13px; border-radius:{{ b.radius }}; background:{{ b.bg }}; color:{{ b.fg }}; font-size:13px; line-height:var(--leading-normal);">{{ b.text }}</div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="display:flex; flex-wrap:wrap; gap:8px;">
+              <sc-for list="{{ scenarioChips }}" as="sc" hint-placeholder-count="3">
+                <button onClick="{{ sc.onClick }}" style="padding:8px 14px; border-radius:var(--radius-pill); border:1px solid var(--border-default); background:var(--surface-card); color:var(--text-secondary); font-size:12.5px; cursor:pointer;">{{ sc.label }}</button>
+              </sc-for>
+            </div>
+
+            <sc-if value="{{ historyRows.length }}" hint-placeholder-val="{{ false }}">
+              <div style="background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:var(--radius-lg); padding:16px;">
+                <div style="font-size:12.5px; font-weight:600; margin-bottom:10px;">Historique des essais</div>
+                <div style="display:flex; flex-direction:column; gap:8px;">
+                  <sc-for list="{{ historyRows }}" as="h" hint-placeholder-count="2">
+                    <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:12px;">
+                      <div style="color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">« {{ h.userText }} »</div>
+                      <div style="font-family:var(--font-mono); font-size:11px; color:var(--text-tertiary); flex:none;">{{ h.intentLabel }} · {{ h.confidenceLabel }}</div>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+
+          <sc-if value="{{ hasTrace }}">
+            <dc-import name="TraceTimeline" steps="{{ simTraceSteps }}" variant="full" hint-size="100%,400px"></dc-import>
+          </sc-if>
+        </div>
+
+        <div style="background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:var(--radius-lg); padding:22px;">
+          <div style="font-size:14px; font-weight:600; margin-bottom:14px;">Publication</div>
+          <div style="display:flex; flex-direction:column; gap:9px; margin-bottom:18px;">
+            <sc-for list="{{ checklistRows }}" as="c" hint-placeholder-count="5">
+              <div style="display:flex; align-items:center; gap:9px; font-size:13px; color:{{ c.textColor }};">
+                <span style="color:{{ c.iconColor }}; font-weight:600;">{{ c.icon }}</span>
+                {{ c.label }}
+              </div>
+            </sc-for>
+          </div>
+
+          <button onClick="{{ publishClick }}" style="padding:11px 22px; border-radius:var(--radius-md); border:none; background:var(--brand-primary); color:var(--text-on-brand); font-size:13.5px; font-weight:600; cursor:pointer;">{{ publishButtonLabel }}</button>
+
+          <sc-if value="{{ showBlocked }}">
+            <div style="margin-top:16px; display:flex; align-items:center; justify-content:space-between; gap:12px; background:var(--error-bg); border:1px solid var(--error-border); border-radius:var(--radius-md); padding:12px 16px;">
+              <div style="font-size:13px; color:var(--error-fg);">Publication refusée — le modèle doit être ré-entraîné avant publication.</div>
+              <button onClick="{{ goToIntentions }}" style="flex:none; font-size:12.5px; font-weight:600; color:var(--error-fg); background:var(--surface-card); border:1px solid var(--error-border); border-radius:var(--radius-sm); padding:7px 12px; cursor:pointer;">Aller à Entraînement</button>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ showSuccess }}">
+            <div style="margin-top:20px; padding-top:20px; border-top:1px solid var(--border-subtle); display:flex; flex-direction:column; gap:16px;">
+              <div style="display:flex; align-items:center; gap:8px; color:var(--success-fg); font-size:13.5px; font-weight:600;">✓ Bot publié</div>
+
+              <div>
+                <label style="display:block; font-size:12px; color:var(--text-secondary); margin-bottom:6px;">Clé API — copiez-la maintenant, elle ne sera plus affichée en clair</label>
+                <div style="display:flex; gap:8px;">
+                  <div style="flex:1; font-family:var(--font-mono); font-size:12.5px; background:var(--surface-sunken); border:1px solid var(--border-subtle); border-radius:var(--radius-sm); padding:9px 12px; overflow-x:auto; white-space:nowrap;">{{ apiKeyDisplay }}</div>
+                  <button onClick="{{ copyApiKey }}" style="flex:none; font-size:12.5px; font-weight:600; padding:9px 14px; border-radius:var(--radius-sm); border:1px solid var(--border-default); background:var(--surface-card); color:var(--text-secondary); cursor:pointer;">{{ apiKeyCopyLabel }}</button>
+                </div>
+              </div>
+
+              <div>
+                <label style="display:block; font-size:12px; color:var(--text-secondary); margin-bottom:6px;">Snippet à intégrer sur votre site</label>
+                <div style="display:flex; gap:8px; align-items:flex-start;">
+                  <div style="flex:1; font-family:var(--font-mono); font-size:12px; background:var(--gray-900); color:#B7EBD4; border-radius:var(--radius-sm); padding:12px 14px; overflow-x:auto; white-space:pre;">&lt;script src="https://cdn.loko.eu/widget.js"
+  data-bot-id="verdier-svc-client"
+  data-accent="#0F7D63"&gt;&lt;/script&gt;</div>
+                  <button style="flex:none; font-size:12.5px; font-weight:600; padding:9px 14px; border-radius:var(--radius-sm); border:1px solid var(--border-default); background:var(--surface-card); color:var(--text-secondary); cursor:pointer;">Copier</button>
+                </div>
+              </div>
+
+              <div style="background:var(--surface-sunken); border-radius:var(--radius-md); padding:16px; position:relative; height:100px;">
+                <div style="font-size:11px; color:var(--text-tertiary); font-family:var(--font-mono);">Aperçu sur votre page</div>
+                <div style="position:absolute; right:16px; bottom:16px; width:44px; height:44px; border-radius:22%; background:var(--brand-primary); display:flex; align-items:center; justify-content:center; box-shadow:var(--shadow-md);">
+                  <svg width="18" height="18" viewBox="0 0 64 64"><circle cx="32" cy="25" r="10" fill="none" stroke="#fff" stroke-width="4"/><path d="M32 33 L32 44" stroke="#fff" stroke-width="4" stroke-linecap="round"/></svg>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+
+      </div>
+    </sc-if>
+
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const SCENARIOS = {
+  resiliation: {
+    userText: 'Je veux résilier mon contrat',
+    trace: [
+      { label: 'Classification', status: 'done', durationMs: 78, detail: 'Intention détectée : Résiliation', score: 0.93, threshold: 0.75, confidenceLevel: 'high' },
+      { label: 'Retrieval', status: 'done', durationMs: 132, detail: '2 documents récupérés', score: 0.88, threshold: 0.65, confidenceLevel: 'high', sources: [{ name: 'cgv-2026.pdf#L214', relevance: 0.90 }, { name: 'guide-resiliation-interne.pdf#L12', relevance: 0.81 }] },
+      { label: 'Génération', status: 'done', durationMs: 40, detail: 'Réponse composée à partir du template « fin »', kind: 'template' },
+    ],
+    botText: 'Votre résiliation est enregistrée. Un e-mail de confirmation vous parvient sous 24h.',
+    intentLabel: 'Résiliation', confidence: 0.93,
+  },
+  confusion: {
+    userText: 'Je veux mettre à jour mes infos de cotisation',
+    trace: [
+      { label: 'Classification', status: 'done', durationMs: 85, detail: 'Score sous le seuil de routage — clarification nécessaire', score: 0.58, threshold: 0.75, confidenceLevel: 'medium' },
+      { label: 'Clarification', status: 'done', durationMs: 1400, detail: 'Choix fermé proposé — réponse : « Cotisations »', confidenceLevel: 'high' },
+      { label: 'Retrieval', status: 'done', durationMs: 120, detail: '1 document récupéré', score: 0.79, threshold: 0.65, confidenceLevel: 'medium', sources: [{ name: 'bareme-cotisations-2026.pdf#L4', relevance: 0.79 }] },
+      { label: 'Génération', status: 'done', durationMs: 38, detail: 'Réponse composée à partir du template « cotisations »', kind: 'template' },
+    ],
+    botText: 'Pouvez-vous préciser votre demande parmi : Résiliation / Cotisations / Coordonnées ?',
+    intentLabel: 'Cotisations (après clarification)', confidence: 0.58,
+  },
+  horsperimetre: {
+    userText: 'Quel temps fait-il demain ?',
+    trace: [
+      { label: 'Classification', status: 'done', durationMs: 64, detail: 'Intention détectée : Hors périmètre', score: 0.97, threshold: 0.75, confidenceLevel: 'high' },
+      { label: 'Génération', status: 'done', durationMs: 22, detail: 'Réponse composée à partir du template « hors_perimetre »', kind: 'template' },
+    ],
+    botText: 'Je ne suis pas en mesure de traiter cette demande. Je peux vous aider pour : résiliation, cotisations, coordonnées.',
+    intentLabel: 'Hors périmètre', confidence: 0.97,
+  },
+};
+
+const STEPS = [
+  { key: 'projet', label: 'Projet' },
+  { key: 'intentions', label: 'Intentions' },
+  { key: 'connaissances', label: 'Connaissances' },
+  { key: 'parcours', label: 'Parcours' },
+  { key: 'messages', label: 'Messages' },
+  { key: 'simulation', label: 'Simulation & publication' },
+];
+
+class Component extends DCLogic {
+  state = {
+    theme: 'light',
+    currentStep: 0,
+    visited: [0],
+    project: {
+      name: 'Mutuelle Verdier',
+      channels: { widget: true, api: false },
+      lang: 'FR',
+      tone: 'sobre',
+    },
+    intents: [
+      { id: 'sys_hp', name: 'Hors périmètre', isSystem: true, definition: "Demandes qui ne concernent pas les services de la mutuelle.", examples: ['Quelle heure est-il ?', 'Peux-tu me raconter une blague ?', "C'est quoi la capitale de l'Espagne ?", 'Peux-tu réserver un billet de train ?', 'Quel temps fait-il demain ?', 'Peux-tu m’aider à cuisiner ?', 'Quel est le sens de la vie ?', 'Raconte-moi une histoire.'], subpatterns: [] },
+      { id: 'sys_conseiller', name: 'Demande conseiller', isSystem: true, definition: "L'utilisateur souhaite parler à un humain.", examples: ['Je veux parler à quelqu’un', 'Passez-moi un conseiller', 'Ce n’est pas ce que je cherche, un humain svp', 'Je veux un vrai interlocuteur', 'Transférez-moi à une personne', 'Un conseiller peut-il m’appeler ?', 'Je ne veux pas parler à un robot', 'Mettez-moi en contact avec quelqu’un', 'J’ai besoin d’un humain'], subpatterns: [] },
+      { id: 'resiliation', name: 'Résiliation', isSystem: false, definition: "L'utilisateur veut résilier son contrat.", examples: ['Je veux résilier mon contrat', 'Comment arrêter mon assurance ?', 'Je souhaite mettre fin à mon adhésion', 'Résiliation de ma mutuelle', 'Je change d’assureur, comment je fais ?', 'Arrêter mon contrat santé', 'Je ne veux plus être couvert chez vous', 'Clôturer mon dossier', 'Fin de contrat anticipée', 'Je déménage à l’étranger, je résilie', 'Résilier suite à un changement de situation', 'Comment stopper mes prélèvements ?', 'Je veux annuler mon adhésion', 'Procédure de résiliation', 'Résilier mon contrat véhicule', 'Je n’ai plus besoin de cette mutuelle', 'Sortir du contrat groupe', 'Résiliation anticipée loi Chatel'], subpatterns: [{ name: 'Résiliation véhicule', examples: ['Résilier mon assurance auto', 'Je vends ma voiture, je résilie', 'Fin de contrat véhicule'] }] },
+      { id: 'cotisations', name: 'Cotisations', isSystem: false, definition: "Questions sur le montant ou le paiement des cotisations.", examples: ['Pourquoi ma cotisation a augmenté ?', 'Quel est le montant de ma cotisation ?', 'Je n’arrive pas à payer ce mois-ci', 'Comment modifier mon prélèvement ?'], subpatterns: [] },
+      { id: 'coordonnees', name: 'Coordonnées', isSystem: false, definition: "L'utilisateur veut mettre à jour ses informations personnelles.", examples: ['Je change d’adresse', 'Comment mettre à jour mon RIB ?', 'Je veux modifier mon numéro de téléphone', 'Changer mon e-mail de contact', 'Mettre à jour ma situation familiale', 'Ajouter un enfant à mon contrat', 'Je me suis marié, il faut mettre à jour mon dossier', 'Modifier mes coordonnées bancaires', 'Changement d’adresse postale', 'Corriger une erreur sur mon nom', 'Mettre à jour mon numéro de sécurité sociale', 'Ajouter un bénéficiaire', 'Je veux changer mes coordonnées', 'Actualiser mon profil', 'Modifier mon adresse e-mail', 'Retirer un ayant droit', 'Nouveau numéro de téléphone', 'Mise à jour de ma carte d’identité', 'Changer de nom après mariage', 'Corriger mon adresse', 'Mettre à jour ma banque', 'Ajouter un second bénéficiaire', 'Modifier ma date de naissance enregistrée', 'Changer mon statut marital', 'Actualiser mes coordonnées d’urgence', 'Modifier mon IBAN', 'Changer mon adresse de facturation'], subpatterns: [] },
+    ],
+    selectedIntentId: 'resiliation',
+    newExampleText: '',
+    subpatternsOpen: false,
+    trainingStatus: 'untrained',
+    trainingPhase: null,
+    trainingProgress: 0,
+
+    documents: [
+      { id: 'd1', name: 'cgv-2026.pdf', sizeLabel: '412 Ko', confidentiality: 'publique', tags: ['resiliation'] },
+      { id: 'd2', name: 'guide-resiliation-interne.pdf', sizeLabel: '88 Ko', confidentiality: 'interne', tags: ['resiliation'] },
+      { id: 'd3', name: 'bareme-cotisations-2026.pdf', sizeLabel: '156 Ko', confidentiality: 'interne', tags: ['cotisations'] },
+      { id: 'd4', name: 'faq-coordonnees.html', sizeLabel: 'FAQ web', confidentiality: 'publique', tags: ['coordonnees'] },
+    ],
+    expandedDocId: null,
+    faqUrl: 'https://aide.mutuelle-verdier.fr/faq',
+    crawlStatus: 'synced',
+    crawlProgress: 0,
+
+    journey: {
+      thresholdHigh: 0.75,
+      thresholdLow: 0.40,
+      maxClarifications: 2,
+      maxAsks: 3,
+      timeoutSec: 45,
+      retrievalThreshold: 0.65,
+      advancedOpen: false,
+    },
+
+    messages: [
+      { key: 'accueil', label: 'Accueil', requiredVars: ['intentions_gerees'], availableVars: ['intentions_gerees', 'nom_bot'], text: 'Bonjour, je suis l’assistant {nom_bot}. Je peux vous aider pour : {intentions_gerees}.' },
+      { key: 'clarification', label: 'Clarification', requiredVars: [], availableVars: ['options'], text: 'Pouvez-vous préciser votre demande parmi : {options} ?' },
+      { key: 'hors_perimetre', label: 'Hors périmètre', requiredVars: ['intentions_gerees'], availableVars: ['intentions_gerees'], text: 'Je ne suis pas en mesure de traiter cette demande. Je peux vous aider pour : {intentions_gerees}.' },
+      { key: 'escalade', label: 'Escalade', requiredVars: ['temps_attente'], availableVars: ['temps_attente'], text: 'Je vous mets en relation avec un conseiller. Temps d’attente estimé : {temps_attente}.' },
+      { key: 'enquete', label: 'Enquête de satisfaction', requiredVars: [], availableVars: [], text: 'Cette réponse vous a-t-elle été utile ?' },
+      { key: 'fin', label: 'Fin de conversation', requiredVars: [], availableVars: [], text: 'Merci de votre visite. À bientôt.' },
+      { key: 'timeout', label: 'Timeout', requiredVars: [], availableVars: [], text: 'Êtes-vous toujours là ? Je clôture cette conversation faute de réponse.' },
+    ],
+    selectedMessageKey: 'accueil',
+
+    simConversation: [
+      { from: 'bot', text: 'Bonjour, je suis l’assistant Verdier. Je peux vous aider pour : résiliation, cotisations, coordonnées.' },
+    ],
+    simTrace: [],
+    simHistory: [],
+    publishState: 'idle',
+    apiKeyCopied: false,
+  };
+
+  toggleTheme = () => {
+    this.setState(s => ({ theme: s.theme === 'light' ? 'dark' : 'light' }));
+  };
+
+  goToStep = (i) => {
+    this.setState(s => {
+      if (!s.visited.includes(i)) return s;
+      return { currentStep: i };
+    });
+  };
+
+  goNext = () => {
+    this.setState(s => {
+      const next = Math.min(s.currentStep + 1, STEPS.length - 1);
+      const visited = s.visited.includes(next) ? s.visited : [...s.visited, next];
+      return { currentStep: next, visited };
+    });
+  };
+
+  onProjectNameChange = (e) => {
+    const val = e && e.target ? e.target.value : e;
+    this.setState(s => ({ project: { ...s.project, name: val } }));
+  };
+
+  toggleChannel = (key) => {
+    this.setState(s => ({ project: { ...s.project, channels: { ...s.project.channels, [key]: !s.project.channels[key] } } }));
+  };
+
+  setLang = (lang) => this.setState(s => ({ project: { ...s.project, lang } }));
+  setTone = (tone) => this.setState(s => ({ project: { ...s.project, tone } }));
+
+  // ---- Intentions (step 2) ----
+  updateIntent(id, patch) {
+    this.setState(s => ({
+      intents: s.intents.map(it => it.id === id ? { ...it, ...patch } : it),
+    }));
+  }
+
+  selectIntent = (id) => this.setState({ selectedIntentId: id, subpatternsOpen: false, newExampleText: '' });
+
+  addIntent = () => {
+    this.setState(s => {
+      const n = s.intents.filter(i => !i.isSystem).length + 1;
+      const id = `intent_${Date.now()}`;
+      const newIntent = { id, name: `Nouvelle intention ${n}`, isSystem: false, definition: '', examples: [], subpatterns: [] };
+      return { intents: [...s.intents, newIntent], selectedIntentId: id };
+    });
+  };
+
+  onDefinitionChange = (e) => {
+    const val = e && e.target ? e.target.value : e;
+    this.updateIntent(this.state.selectedIntentId, { definition: val });
+  };
+
+  onNewExampleChange = (e) => {
+    const val = e && e.target ? e.target.value : e;
+    this.setState({ newExampleText: val });
+  };
+
+  commitNewExample = () => {
+    const text = (this.state.newExampleText || '').trim();
+    if (!text) return;
+    const id = this.state.selectedIntentId;
+    const intent = this.state.intents.find(i => i.id === id);
+    if (!intent) return;
+    this.updateIntent(id, { examples: [...intent.examples, text] });
+    this.setState({ newExampleText: '' });
+  };
+
+  onNewExampleKeyDown = (e) => {
+    if (e && e.key === 'Enter') {
+      e.preventDefault();
+      this.commitNewExample();
+    }
+  };
+
+  onAddExampleClick = () => this.commitNewExample();
+
+  removeExample = (intentId, idx) => {
+    const intent = this.state.intents.find(i => i.id === intentId);
+    if (!intent) return;
+    this.updateIntent(intentId, { examples: intent.examples.filter((_, i) => i !== idx) });
+  };
+
+  toggleSubpatterns = () => this.setState(s => ({ subpatternsOpen: !s.subpatternsOpen }));
+
+  addSubpattern = () => {
+    const id = this.state.selectedIntentId;
+    const intent = this.state.intents.find(i => i.id === id);
+    if (!intent) return;
+    const n = intent.subpatterns.length + 1;
+    this.updateIntent(id, { subpatterns: [...intent.subpatterns, { name: `Sous-motif ${n}`, examples: [] }] });
+  };
+
+  // ---- Parcours (step 4) ----
+  setJourney = (patch) => this.setState(s => ({ journey: { ...s.journey, ...patch } }));
+  onThresholdHighChange = (e) => {
+    const val = parseFloat(e.target.value);
+    this.setState(s => ({ journey: { ...s.journey, thresholdHigh: Math.max(val, s.journey.thresholdLow + 0.05) } }));
+  };
+  onThresholdLowChange = (e) => {
+    const val = parseFloat(e.target.value);
+    this.setState(s => ({ journey: { ...s.journey, thresholdLow: Math.min(val, s.journey.thresholdHigh - 0.05) } }));
+  };
+  toggleAdvanced = () => this.setState(s => ({ journey: { ...s.journey, advancedOpen: !s.journey.advancedOpen } }));
+  onJourneyNumberChange = (key) => (e) => {
+    const val = parseFloat(e.target.value);
+    this.setJourney({ [key]: isNaN(val) ? 0 : val });
+  };
+
+  // ---- Simulation & publication (step 6) ----
+  runScenario = (key) => {
+    const s = SCENARIOS[key];
+    if (!s) return;
+    this.setState(st => ({
+      simConversation: [...st.simConversation, { from: 'user', text: s.userText }, { from: 'bot', text: s.botText }],
+      simTrace: s.trace,
+      simHistory: [{ intentLabel: s.intentLabel, confidence: s.confidence, userText: s.userText }, ...st.simHistory],
+    }));
+  };
+
+  publishClick = () => {
+    if (this.checklistAllDone()) {
+      this.setState({ publishState: 'success' });
+    } else {
+      this.setState({ publishState: 'blocked' });
+    }
+  };
+
+  checklistAllDone() {
+    const { project, intents, trainingStatus, documents, messages } = this.state;
+    const businessIntents = intents.filter(i => !i.isSystem);
+    const messagesOk = messages.every(m => m.requiredVars.every(v => m.text.includes(`{${v}}`)));
+    return !!project.name && businessIntents.length > 0 && trainingStatus === 'trained' && documents.length > 0 && messagesOk;
+  }
+
+  copyApiKey = () => this.setState({ apiKeyCopied: true });
+  goToIntentions = () => this.setState(s => ({ currentStep: 1, visited: s.visited.includes(1) ? s.visited : [...s.visited, 1] }));
+
+  // ---- Messages (step 5) ----
+  selectMessage = (key) => this.setState({ selectedMessageKey: key });
+  onMessageTextChange = (e) => {
+    const val = e && e.target ? e.target.value : e;
+    const key = this.state.selectedMessageKey;
+    this.setState(s => ({ messages: s.messages.map(m => m.key === key ? { ...m, text: val } : m) }));
+  };
+  insertVariable = (varName) => {
+    const key = this.state.selectedMessageKey;
+    this.setState(s => ({
+      messages: s.messages.map(m => m.key === key ? { ...m, text: `${m.text} {${varName}}` } : m),
+    }));
+  };
+
+  // ---- Connaissances (step 3) ----
+  toggleDocExpanded = (id) => this.setState(s => ({ expandedDocId: s.expandedDocId === id ? null : id }));
+
+  toggleDocTag = (docId, intentId) => {
+    this.setState(s => ({
+      documents: s.documents.map(d => {
+        if (d.id !== docId) return d;
+        const has = d.tags.includes(intentId);
+        return { ...d, tags: has ? d.tags.filter(t => t !== intentId) : [...d.tags, intentId] };
+      }),
+    }));
+  };
+
+  toggleDocConfidentiality = (docId) => {
+    this.setState(s => ({
+      documents: s.documents.map(d => d.id === docId ? { ...d, confidentiality: d.confidentiality === 'publique' ? 'interne' : 'publique' } : d),
+    }));
+  };
+
+  onFaqUrlChange = (e) => {
+    const val = e && e.target ? e.target.value : e;
+    this.setState({ faqUrl: val });
+  };
+
+  startCrawl = () => {
+    if (this.state.crawlStatus === 'crawling') return;
+    this.setState({ crawlStatus: 'crawling', crawlProgress: 15 });
+    setTimeout(() => this.setState({ crawlProgress: 60 }), 500);
+    setTimeout(() => this.setState({ crawlStatus: 'synced', crawlProgress: 100 }), 1300);
+  };
+
+  startTraining = () => {
+    if (this.state.trainingStatus === 'training') return;
+    this.setState({ trainingStatus: 'training', trainingPhase: 'prep', trainingProgress: 8 });
+    setTimeout(() => this.setState({ trainingPhase: 'train', trainingProgress: 35 }), 700);
+    setTimeout(() => this.setState({ trainingProgress: 70 }), 1500);
+    setTimeout(() => this.setState({ trainingPhase: 'eval', trainingProgress: 92 }), 2200);
+    setTimeout(() => this.setState({ trainingStatus: 'trained', trainingProgress: 100 }), 2900);
+  };
+
+  exampleThreshold(count) {
+    if (count < 8) return { level: 'low', color: 'var(--error-fg)', label: `${count} exemples — minimum 8` };
+    if (count < 15) return { level: 'ok', color: 'var(--warning-fg)', label: `${count} exemples — recommandé 15–20` };
+    if (count <= 30) return { level: 'good', color: 'var(--success-fg)', label: `${count} exemples — optimal` };
+    return { level: 'good', color: 'var(--success-fg)', label: `${count} exemples` };
+  }
+
+  buildConfusionMatrix(intents) {
+    const labels = intents.map(i => i.name);
+    const n = labels.length;
+    // seed a mostly-diagonal matrix, with an intentional confusion between cotisations/coordonnees
+    const idxCot = intents.findIndex(i => i.id === 'cotisations');
+    const idxCoord = intents.findIndex(i => i.id === 'coordonnees');
+    const matrix = [];
+    for (let r = 0; r < n; r++) {
+      const row = [];
+      for (let c = 0; c < n; c++) {
+        if (r === c) { row.push(0.86 + (r % 3) * 0.03); continue; }
+        if ((r === idxCot && c === idxCoord)) { row.push(0.22); continue; }
+        if ((r === idxCoord && c === idxCot)) { row.push(0.17); continue; }
+        row.push(0.01 + Math.abs(r - c) * 0.005);
+      }
+      matrix.push(row);
+    }
+    return { labels, matrix };
+  }
+
+  matrixCellStyle(value, isDiagonal) {
+    if (isDiagonal) {
+      const g = Math.round(125 - value * 60);
+      return { bg: `hsl(160 45% ${Math.max(28, 62 - value * 40)}%)`, fg: '#fff' };
+    }
+    if (value >= 0.15) return { bg: 'var(--error-100)', fg: 'var(--error-700)' };
+    if (value >= 0.06) return { bg: 'var(--warning-100)', fg: 'var(--warning-700)' };
+    return { bg: 'var(--gray-50)', fg: 'var(--text-tertiary)' };
+  }
+
+  renderVals() {
+    const { theme, currentStep, visited, project, intents, selectedIntentId, newExampleText, subpatternsOpen, trainingStatus, trainingPhase, trainingProgress, documents, expandedDocId, faqUrl, crawlStatus, crawlProgress, journey, messages, selectedMessageKey, simConversation, simTrace, simHistory, publishState, apiKeyCopied } = this.state;
+
+    const stepList = STEPS.map((step, i) => {
+      const isCurrent = i === currentStep;
+      const isVisited = visited.includes(i);
+      const isDone = visited.includes(i) && i < currentStep;
+      return {
+        label: step.label,
+        sublabel: i === 0 ? (project.name ? 'Nom défini' : 'À compléter') : 'À faire',
+        onClick: () => this.goToStep(i),
+        disabled: !isVisited,
+        cursor: isVisited ? 'pointer' : 'default',
+        borderColor: isCurrent ? 'var(--brand-primary)' : 'transparent',
+        labelColor: isCurrent ? 'var(--text-primary)' : isVisited ? 'var(--text-secondary)' : 'var(--text-disabled)',
+        dotBg: isCurrent ? 'var(--brand-primary)' : isDone ? 'var(--brand-primary-tint)' : 'var(--surface-sunken)',
+        dotFg: isCurrent ? 'var(--text-on-brand)' : isDone ? 'var(--green-700)' : 'var(--text-tertiary)',
+        dotContent: isDone ? '✓' : `${i + 1}`,
+      };
+    });
+
+    const channelOptions = [
+      { key: 'widget', label: 'Widget' },
+      { key: 'api', label: 'API' },
+    ].map(c => {
+      const on = project.channels[c.key];
+      return {
+        label: c.label,
+        onToggle: () => this.toggleChannel(c.key),
+        borderColor: on ? 'var(--brand-primary)' : 'var(--border-default)',
+        bg: on ? 'var(--brand-primary-tint)' : 'var(--surface-card)',
+        fg: on ? 'var(--green-700)' : 'var(--text-secondary)',
+        check: on ? '✓' : '',
+      };
+    });
+
+    const langOptions = ['FR', 'EN'].map(l => ({
+      label: l,
+      onSelect: () => this.setLang(l),
+      borderColor: project.lang === l ? 'var(--brand-primary)' : 'var(--border-default)',
+      bg: project.lang === l ? 'var(--brand-primary-tint)' : 'var(--surface-card)',
+      fg: project.lang === l ? 'var(--green-700)' : 'var(--text-secondary)',
+    }));
+
+    const TONES = [
+      { key: 'sobre', label: 'Sobre', example: 'Votre résiliation est enregistrée. Un e-mail de confirmation vous parvient sous 24h.' },
+      { key: 'chaleureux', label: 'Chaleureux', example: 'C’est noté ! Votre résiliation est bien enregistrée, vous recevrez la confirmation par e-mail.' },
+      { key: 'direct', label: 'Direct', example: 'Résiliation enregistrée. Confirmation par e-mail sous 24h.' },
+      { key: 'formel', label: 'Formel', example: 'Votre demande de résiliation a été prise en compte. Vous recevrez une confirmation écrite sous 24 heures.' },
+    ];
+    const toneOptions = TONES.map(t => ({
+      label: t.label,
+      example: t.example,
+      onSelect: () => this.setTone(t.key),
+      borderColor: project.tone === t.key ? 'var(--brand-primary)' : 'var(--border-subtle)',
+      bg: project.tone === t.key ? 'var(--brand-primary-tint)' : 'var(--surface-card)',
+    }));
+
+    // ---- Intentions (step 2) ----
+    const selectedIntent = intents.find(i => i.id === selectedIntentId) || null;
+
+    const intentRows = intents.map(it => {
+      const isSelected = it.id === selectedIntentId;
+      const th = this.exampleThreshold(it.examples.length);
+      return {
+        name: it.name,
+        isSystem: it.isSystem,
+        onSelect: () => this.selectIntent(it.id),
+        borderColor: isSelected ? 'var(--brand-primary)' : 'var(--border-subtle)',
+        bg: isSelected ? 'var(--brand-primary-tint)' : 'var(--surface-card)',
+        countLabel: `${it.examples.length} exemples`,
+        countColor: th.color,
+      };
+    });
+
+    let exampleChips = [];
+    let subpatternRows = [];
+    let exampleCount = 0;
+    let exTh = { level: 'low', color: 'var(--text-tertiary)', label: '' };
+    if (selectedIntent) {
+      exampleCount = selectedIntent.examples.length;
+      exTh = this.exampleThreshold(exampleCount);
+      exampleChips = selectedIntent.examples.map((text, idx) => ({
+        text,
+        onRemove: () => this.removeExample(selectedIntent.id, idx),
+      }));
+      subpatternRows = selectedIntent.subpatterns.map(sp => ({
+        name: sp.name,
+        countLabel: `${sp.examples.length} exemples`,
+      }));
+    }
+
+    const trainingDisabled = trainingStatus === 'training';
+    const trainButtonLabel = trainingStatus === 'training' ? 'Entraînement en cours…' : trainingStatus === 'trained' ? '↻ Ré-entraîner' : 'Entraîner';
+    const phaseLabels = { prep: 'Préparation des données…', train: 'Entraînement du modèle…', eval: 'Évaluation…' };
+
+    let tips = [];
+    let matrixLabels = [], matrixRows = [], matrixSize = 0;
+    const showResults = trainingStatus === 'trained';
+    if (showResults) {
+      const { labels, matrix } = this.buildConfusionMatrix(intents);
+      matrixLabels = labels;
+      matrixSize = labels.length;
+      matrixRows = labels.map((label, r) => ({
+        label,
+        cells: matrix[r].map((v, c) => {
+          const style = this.matrixCellStyle(v, r === c);
+          return { label: v.toFixed(2), bg: style.bg, fg: style.fg };
+        }),
+      }));
+      const cot = intents.find(i => i.id === 'cotisations');
+      const coord = intents.find(i => i.id === 'coordonnees');
+      if (cot && coord) {
+        tips = [{
+          text: `« ${cot.name} » et « ${coord.name} » se confondent — ajoutez des exemples discriminants côté « ${cot.name} ».`,
+          actionLabel: 'Ajouter des exemples',
+          onApply: () => this.selectIntent(cot.id),
+        }];
+      }
+    }
+
+    // ---- Connaissances (step 3) ----
+    const businessIntents = intents.filter(i => !i.isSystem);
+    const docRows = documents.map(d => {
+      const isExpanded = expandedDocId === d.id;
+      const isPublic = d.confidentiality === 'publique';
+      return {
+        id: d.id,
+        name: d.name,
+        sizeLabel: d.sizeLabel,
+        onToggleExpand: () => this.toggleDocExpanded(d.id),
+        confidentialityLabel: isPublic ? 'Publique' : 'Interne',
+        confidentialityBg: isPublic ? 'var(--info-bg)' : 'var(--gray-100)',
+        confidentialityFg: isPublic ? 'var(--info-fg)' : 'var(--text-secondary)',
+        onToggleConfidentiality: () => this.toggleDocConfidentiality(d.id),
+        tagChips: d.tags.map(tId => (businessIntents.find(i => i.id === tId) || {}).name).filter(Boolean),
+        isExpanded,
+        expandIcon: isExpanded ? '▾' : '▸',
+        tagToggleOptions: businessIntents.map(i => ({
+          label: i.name,
+          onToggle: () => this.toggleDocTag(d.id, i.id),
+          on: d.tags.includes(i.id),
+        })),
+      };
+    });
+
+    const coverageRows = businessIntents.map(i => {
+      const count = documents.filter(d => d.tags.includes(i.id)).length;
+      const low = count < 2;
+      return {
+        label: i.name,
+        count,
+        countLabel: `${count} document${count > 1 ? 's' : ''}`,
+        widthPct: `${Math.min(100, count * 34)}%`,
+        barColor: low ? 'var(--warning-500)' : 'var(--brand-primary)',
+        showWarning: low,
+      };
+    });
+
+    const crawlStatusLabel = crawlStatus === 'crawling' ? 'Analyse en cours…' : 'Dernière synchronisation : il y a 2 heures';
+
+    // ---- Messages (step 5) ----
+    const SAMPLE_VALUES = {
+      intentions_gerees: 'résiliation, cotisations, coordonnées',
+      nom_bot: 'Verdier',
+      options: 'Résiliation / Cotisations / Coordonnées',
+      temps_attente: '3 minutes',
+    };
+    const selectedMessage = messages.find(m => m.key === selectedMessageKey) || null;
+    const messageRows = messages.map(m => {
+      const isSelected = m.key === selectedMessageKey;
+      const missing = m.requiredVars.filter(v => !m.text.includes(`{${v}}`));
+      return {
+        label: m.label,
+        onSelect: () => this.selectMessage(m.key),
+        borderColor: isSelected ? 'var(--brand-primary)' : 'var(--border-subtle)',
+        bg: isSelected ? 'var(--brand-primary-tint)' : 'var(--surface-card)',
+        statusIcon: missing.length > 0 ? '⚠' : '✓',
+        statusColor: missing.length > 0 ? 'var(--warning-fg)' : 'var(--success-fg)',
+      };
+    });
+    let variableChips = [];
+    let missingVarsWarning = '';
+    let previewBubbleText = '';
+    if (selectedMessage) {
+      variableChips = selectedMessage.availableVars.map(v => ({ label: `{${v}}`, onInsert: () => this.insertVariable(v) }));
+      const missing = selectedMessage.requiredVars.filter(v => !selectedMessage.text.includes(`{${v}}`));
+      missingVarsWarning = missing.length > 0 ? `Variable requise manquante : ${missing.map(v => `{${v}}`).join(', ')}` : '';
+      previewBubbleText = selectedMessage.text.replace(/\{(\w+)\}/g, (_, v) => SAMPLE_VALUES[v] || `{${v}}`);
+    }
+
+    // ---- Simulation & publication (step 6) ----
+    const simBubbles = simConversation.map(t => {
+      const isBot = t.from === 'bot';
+      return {
+        text: t.text,
+        justify: isBot ? 'flex-start' : 'flex-end',
+        radius: isBot ? '4px 14px 14px 14px' : '14px 4px 14px 14px',
+        bg: isBot ? '#232B28' : 'var(--brand-primary)',
+        fg: isBot ? '#F2F5F3' : '#fff',
+      };
+    });
+    const scenarioChips = [
+      { label: 'Essai : Résiliation', onClick: () => this.runScenario('resiliation') },
+      { label: 'Essai : Cotisations / Coordonnées', onClick: () => this.runScenario('confusion') },
+      { label: 'Essai : Hors périmètre', onClick: () => this.runScenario('horsperimetre') },
+    ];
+    const historyRows = simHistory.map(h => ({
+      intentLabel: h.intentLabel,
+      confidenceLabel: h.confidence.toFixed(2),
+      userText: h.userText,
+    }));
+
+    const businessIntents2 = intents.filter(i => !i.isSystem);
+    const messagesOk = messages.every(m => m.requiredVars.every(v => m.text.includes(`{${v}}`)));
+    const checklistDefs = [
+      { label: 'Projet configuré', done: !!project.name },
+      { label: 'Au moins une intention métier', done: businessIntents2.length > 0 },
+      { label: 'Modèle entraîné', done: trainingStatus === 'trained' },
+      { label: 'Documents source ajoutés', done: documents.length > 0 },
+      { label: 'Messages complets', done: messagesOk },
+    ];
+    const checklistRows = checklistDefs.map(c => ({
+      label: c.label,
+      icon: c.done ? '✓' : '○',
+      iconColor: c.done ? 'var(--success-fg)' : 'var(--text-tertiary)',
+      textColor: c.done ? 'var(--text-primary)' : 'var(--text-tertiary)',
+    }));
+    const allChecksDone = checklistDefs.every(c => c.done);
+
+    return {
+      theme,
+      themeLabel: theme === 'light' ? '◐ Mode sombre' : '◑ Mode clair',
+      toggleTheme: this.toggleTheme,
+      projectName: project.name,
+      saveLabel: 'Enregistré à l’instant',
+      stepList,
+      isStep0: currentStep === 0,
+      isStep1: currentStep === 1,
+      isStep2: currentStep === 2,
+      isStep3: currentStep === 3,
+      isStep4: currentStep === 4,
+      isStep5: currentStep === 5,
+      docRows,
+      faqUrl,
+      onFaqUrlChange: this.onFaqUrlChange,
+      startCrawl: this.startCrawl,
+      crawlButtonLabel: crawlStatus === 'crawling' ? 'Analyse…' : '↻ Resynchroniser',
+      crawlStatusLabel,
+      showCrawlProgress: crawlStatus === 'crawling',
+      crawlProgressPct: `${crawlProgress}%`,
+      coverageRows,
+      onProjectNameChange: this.onProjectNameChange,
+      channelOptions,
+      langOptions,
+      toneOptions,
+      goNext: this.goNext,
+
+      startTraining: this.startTraining,
+      trainingDisabled,
+      trainButtonLabel,
+      trainButtonBg: trainingDisabled ? 'var(--gray-400)' : 'var(--brand-primary)',
+      trainButtonCursor: trainingDisabled ? 'default' : 'pointer',
+      showTrainingProgress: trainingStatus === 'training',
+      trainingPhaseLabel: phaseLabels[trainingPhase] || '',
+      trainingEtaLabel: trainingStatus === 'training' ? '~3 s restantes' : '',
+      trainingProgressPct: `${trainingProgress}%`,
+
+      intentRows,
+      addIntent: this.addIntent,
+      hasSelectedIntent: !!selectedIntent,
+      selectedIntentName: selectedIntent ? selectedIntent.name : '',
+      selectedIsSystem: selectedIntent ? selectedIntent.isSystem : false,
+      selectedDefinition: selectedIntent ? selectedIntent.definition : '',
+      onDefinitionChange: this.onDefinitionChange,
+
+      exampleCountLabel: exTh.label,
+      exampleCountColor: exTh.color,
+      exampleProgressPct: `${Math.min(100, (exampleCount / 30) * 100)}%`,
+      exampleChips,
+      newExampleText,
+      onNewExampleChange: this.onNewExampleChange,
+      onNewExampleKeyDown: this.onNewExampleKeyDown,
+      onAddExampleClick: this.onAddExampleClick,
+
+      subpatternsOpen,
+      subpatternsToggleIcon: subpatternsOpen ? '▾' : '▸',
+      subpatternCount: selectedIntent ? selectedIntent.subpatterns.length : 0,
+      subpatternRows,
+      toggleSubpatterns: this.toggleSubpatterns,
+      addSubpattern: this.addSubpattern,
+
+      showResults,
+      matrixLabels,
+      matrixRows,
+      matrixSize,
+      tips,
+
+      // ---- Parcours (step 4) ----
+      thresholdHigh: journey.thresholdHigh,
+      thresholdLow: journey.thresholdLow,
+      thresholdHighLabel: journey.thresholdHigh.toFixed(2),
+      thresholdLowLabel: journey.thresholdLow.toFixed(2),
+      onThresholdHighChange: this.onThresholdHighChange,
+      onThresholdLowChange: this.onThresholdLowChange,
+      zoneRejetPct: `${(journey.thresholdLow * 100).toFixed(0)}%`,
+      zoneClarifPct: `${((journey.thresholdHigh - journey.thresholdLow) * 100).toFixed(0)}%`,
+      zoneDirectPct: `${((1 - journey.thresholdHigh) * 100).toFixed(0)}%`,
+      advancedOpen: journey.advancedOpen,
+      advancedToggleIcon: journey.advancedOpen ? '▾' : '▸',
+      toggleAdvanced: this.toggleAdvanced,
+      maxClarifications: journey.maxClarifications,
+      maxAsks: journey.maxAsks,
+      timeoutSec: journey.timeoutSec,
+      retrievalThreshold: journey.retrievalThreshold,
+      onMaxClarificationsChange: this.onJourneyNumberChange('maxClarifications'),
+      onMaxAsksChange: this.onJourneyNumberChange('maxAsks'),
+      onTimeoutChange: this.onJourneyNumberChange('timeoutSec'),
+      onRetrievalThresholdChange: this.onJourneyNumberChange('retrievalThreshold'),
+
+      // ---- Messages (step 5) ----
+      messageRows,
+      hasSelectedMessage: !!selectedMessage,
+      selectedMessageLabel: selectedMessage ? selectedMessage.label : '',
+      selectedMessageText: selectedMessage ? selectedMessage.text : '',
+      onMessageTextChange: this.onMessageTextChange,
+      variableChips,
+      missingVarsWarning,
+      previewBubbleText,
+
+      // ---- Simulation & publication (step 6) ----
+      simBubbles,
+      scenarioChips,
+      simTraceSteps: simTrace,
+      hasTrace: simTrace.length > 0,
+      historyRows,
+      checklistRows,
+      allChecksDone,
+      publishButtonLabel: publishState === 'success' ? '✓ Publié' : 'Publier',
+      publishClick: this.publishClick,
+      showBlocked: publishState === 'blocked',
+      showSuccess: publishState === 'success',
+      apiKeyDisplay: apiKeyCopied ? 'sk_live_••••••••••••fa31' : 'sk_live_EXAMPLE_PLACEHOLDER_KEY',
+      apiKeyCopyLabel: apiKeyCopied ? 'Copié ✓' : 'Copier',
+      copyApiKey: this.copyApiKey,
+      goToIntentions: this.goToIntentions,
+    };
+  }
+}
+
+</script>
+</body>
+</html>

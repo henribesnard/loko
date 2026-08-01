@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="styles.css">
+</helmet>
+<div data-theme="{{ theme }}" style="font-family:var(--font-sans); background:var(--surface-page); min-height:100vh; color:var(--text-primary);">
+
+  <!-- App header with account menu -->
+  <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 28px; background:var(--surface-card); border-bottom:1px solid var(--border-subtle);">
+    <div style="display:flex; align-items:center; gap:12px;">
+      <svg viewBox="0 0 250 64" style="height:20px; width:78px; display:block;">
+        <text x="0" y="45" font-family="Geist, sans-serif" font-weight="600" font-size="42" letter-spacing="-0.5" fill="var(--text-primary)">LOK</text>
+        <path fill-rule="evenodd" fill="var(--brand-primary)" d="M 96 30 m -16 0 a 16 16 0 1 0 32 0 a 16 16 0 1 0 -32 0 Z M 93 33 h6 a2.5 2.5 0 0 1 2.5 2.5 v8 a2.5 2.5 0 0 1 -2.5 2.5 h-6 a2.5 2.5 0 0 1 -2.5 -2.5 v-8 a2.5 2.5 0 0 1 2.5 -2.5 Z"/>
+      </svg>
+    </div>
+    <div style="display:flex; align-items:center; gap:14px;">
+      <button onClick="{{ toggleTheme }}" style="border:1px solid var(--border-default); background:transparent; color:var(--text-secondary); border-radius:var(--radius-sm); padding:6px 11px; font-size:12px; cursor:pointer;">{{ themeLabel }}</button>
+      <div style="position:relative;">
+        <button onClick="{{ toggleAccountMenu }}" style="width:34px; height:34px; border-radius:50%; border:none; background:var(--brand-primary-tint); color:var(--green-700); font-family:var(--font-mono); font-size:12px; font-weight:600; cursor:pointer;">MV</button>
+        <sc-if value="{{ accountMenuOpen }}">
+          <div style="position:absolute; right:0; top:42px; width:220px; background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:var(--radius-md); box-shadow:var(--shadow-lg); padding:8px; z-index:10;">
+            <div style="padding:8px 10px; border-bottom:1px solid var(--border-subtle); margin-bottom:6px;">
+              <div style="font-size:13px; font-weight:600;">Mutuelle Verdier</div>
+              <div style="font-size:11.5px; color:var(--text-tertiary);">contact@mutuelle-verdier.fr</div>
+            </div>
+            <div style="display:flex; flex-direction:column;">
+              <button style="text-align:left; padding:8px 10px; border:none; background:transparent; color:var(--text-primary); font-size:13px; border-radius:var(--radius-sm); cursor:pointer;">Profil</button>
+              <button style="text-align:left; padding:8px 10px; border:none; background:transparent; color:var(--text-primary); font-size:13px; border-radius:var(--radius-sm); cursor:pointer;">Plan &amp; quotas</button>
+              <button style="text-align:left; padding:8px 10px; border:none; background:transparent; color:var(--error-fg); font-size:13px; border-radius:var(--radius-sm); cursor:pointer;">Déconnexion</button>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quota banner -->
+  <sc-if value="{{ showQuotaBanner }}">
+    <div style="padding:11px 28px; display:flex; align-items:center; justify-content:space-between; gap:16px; background:{{ quotaBannerBg }}; border-bottom:1px solid {{ quotaBannerBorder }};">
+      <div style="font-size:12.5px; color:{{ quotaBannerFg }};">{{ quotaBannerText }}</div>
+      <sc-if value="{{ quotaBannerBlocking }}">
+        <button style="font-size:12px; font-weight:600; padding:6px 12px; border-radius:var(--radius-sm); border:1px solid {{ quotaBannerBorder }}; background:var(--surface-card); color:{{ quotaBannerFg }}; cursor:pointer; flex:none;">Nous contacter</button>
+      </sc-if>
+    </div>
+  </sc-if>
+
+  <div style="padding:32px 28px 80px; max-width:900px; margin:0 auto; display:flex; flex-direction:column; gap:24px;">
+    <div style="font-size:22px; font-weight:600; letter-spacing:var(--tracking-tight);">Mon compte</div>
+
+    <!-- Profile -->
+    <div style="background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:var(--radius-lg); padding:22px;">
+      <div style="font-size:14px; font-weight:600; margin-bottom:16px;">Profil</div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:18px;">
+        <div>
+          <label style="display:block; font-size:12px; color:var(--text-secondary); margin-bottom:6px;">E-mail</label>
+          <div style="font-size:13.5px; padding:9px 12px; background:var(--surface-sunken); border-radius:var(--radius-sm); border:1px solid var(--border-subtle);">contact@mutuelle-verdier.fr</div>
+        </div>
+        <div>
+          <label style="display:block; font-size:12px; color:var(--text-secondary); margin-bottom:6px;">Organisation</label>
+          <div style="font-size:13.5px; padding:9px 12px; background:var(--surface-sunken); border-radius:var(--radius-sm); border:1px solid var(--border-subtle);">Mutuelle Verdier</div>
+        </div>
+      </div>
+      <button style="font-size:13px; font-weight:600; padding:9px 16px; border-radius:var(--radius-sm); border:1px solid var(--border-default); background:transparent; color:var(--text-primary); cursor:pointer;">Changer le mot de passe</button>
+    </div>
+
+    <!-- Plan & quotas -->
+    <div style="background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:var(--radius-lg); padding:22px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:18px;">
+        <div style="font-size:14px; font-weight:600;">Plan &amp; quotas</div>
+        <div style="font-family:var(--font-mono); font-size:10.5px; font-weight:600; color:var(--green-700); background:var(--brand-primary-tint); border:1px solid var(--brand-primary-border); border-radius:4px; padding:3px 8px;">Pilote</div>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:16px;">
+        <sc-for list="{{ quotaRows }}" as="q" hint-placeholder-count="4">
+          <div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+              <div style="font-size:12.5px; color:var(--text-secondary);">{{ q.label }}</div>
+              <div style="font-family:var(--font-mono); font-size:12px; font-weight:600; color:{{ q.textColor }};">{{ q.usageLabel }}</div>
+            </div>
+            <div style="height:7px; border-radius:999px; background:var(--gray-100); overflow:hidden;">
+              <div style="height:100%; width:{{ q.pct }}; background:{{ q.barColor }};"></div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <!-- Danger zone -->
+    <div style="background:var(--surface-card); border:1px solid var(--error-border); border-radius:var(--radius-lg); padding:22px;">
+      <div style="font-size:14px; font-weight:600; color:var(--error-fg); margin-bottom:6px;">Zone dangereuse</div>
+      <div style="font-size:12.5px; color:var(--text-secondary); margin-bottom:16px; line-height:var(--leading-relaxed);">La suppression du compte est définitive : bots publiés, documents, historique de sessions et clés API seront irrémédiablement effacés.</div>
+
+      <sc-if value="{{ deleteClosed }}" hint-placeholder-val="{{ true }}">
+        <button onClick="{{ openDelete }}" style="font-size:13px; font-weight:600; padding:9px 16px; border-radius:var(--radius-sm); border:1px solid var(--error-border); background:transparent; color:var(--error-fg); cursor:pointer;">Supprimer le compte</button>
+      </sc-if>
+
+      <sc-if value="{{ deleteOpen }}">
+        <div style="background:var(--error-bg); border:1px solid var(--error-border); border-radius:var(--radius-md); padding:16px;">
+          <div style="font-size:12.5px; color:var(--error-fg); margin-bottom:10px;">Pour confirmer, saisissez le nom de l'organisation : <strong>Mutuelle Verdier</strong></div>
+          <input value="{{ deleteConfirmText }}" onChange="{{ onDeleteConfirmChange }}" style="width:100%; box-sizing:border-box; padding:9px 12px; border-radius:var(--radius-sm); border:1px solid var(--error-border); background:var(--surface-card); color:var(--text-primary); font-size:13px; margin-bottom:12px;" />
+          <div style="display:flex; gap:8px;">
+            <button onClick="{{ cancelDelete }}" style="font-size:12.5px; font-weight:600; padding:8px 14px; border-radius:var(--radius-sm); border:1px solid var(--border-default); background:var(--surface-card); color:var(--text-secondary); cursor:pointer;">Annuler</button>
+            <button disabled="{{ deleteConfirmDisabled }}" style="font-size:12.5px; font-weight:600; padding:8px 14px; border-radius:var(--radius-sm); border:none; background:{{ deleteConfirmBg }}; color:#fff; cursor:{{ deleteConfirmCursor }};">Supprimer définitivement</button>
+          </div>
+        </div>
+      </sc-if>
+    </div>
+
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = {
+    theme: 'light',
+    accountMenuOpen: false,
+    deleteOpen: false,
+    deleteConfirmText: '',
+    quotaScenario: 'normal', // normal | warning | blocked
+  };
+
+  toggleTheme = () => this.setState(s => ({ theme: s.theme === 'light' ? 'dark' : 'light' }));
+  toggleAccountMenu = () => this.setState(s => ({ accountMenuOpen: !s.accountMenuOpen }));
+  openDelete = () => this.setState({ deleteOpen: true });
+  cancelDelete = () => this.setState({ deleteOpen: false, deleteConfirmText: '' });
+  onDeleteConfirmChange = (e) => this.setState({ deleteConfirmText: e.target.value });
+
+  renderVals() {
+    const { theme, accountMenuOpen, deleteOpen, deleteConfirmText } = this.state;
+
+    const QUOTAS = [
+      { label: 'Bots', used: 1, max: 1 },
+      { label: 'Exemples (intentions)', used: 112, max: 500 },
+      { label: 'Entraînements ce mois-ci', used: 41, max: 50 },
+      { label: 'Sessions ce mois-ci', used: 1284, max: 1000 },
+    ];
+    const quotaRows = QUOTAS.map(q => {
+      const pct = Math.min(100, (q.used / q.max) * 100);
+      const isOver = q.used >= q.max;
+      const isWarn = pct >= 80;
+      return {
+        label: q.label,
+        usageLabel: `${q.used.toLocaleString('fr-FR')} / ${q.max.toLocaleString('fr-FR')}`,
+        pct: `${pct}%`,
+        barColor: isOver ? 'var(--error-500)' : isWarn ? 'var(--warning-500)' : 'var(--brand-primary)',
+        textColor: isOver ? 'var(--error-fg)' : isWarn ? 'var(--warning-fg)' : 'var(--text-primary)',
+      };
+    });
+
+    const overQuota = QUOTAS.some(q => q.used >= q.max);
+    const nearQuota = QUOTAS.some(q => q.used / q.max >= 0.8 && q.used < q.max);
+
+    let quotaBannerText = '', quotaBannerBg = '', quotaBannerBorder = '', quotaBannerFg = '', quotaBannerBlocking = false;
+    const showQuotaBanner = overQuota || nearQuota;
+    if (overQuota) {
+      quotaBannerText = 'Quota de sessions atteint pour ce mois — les nouvelles conversations sont mises en attente jusqu\'au renouvellement.';
+      quotaBannerBg = 'var(--error-bg)'; quotaBannerBorder = 'var(--error-border)'; quotaBannerFg = 'var(--error-fg)'; quotaBannerBlocking = true;
+    } else if (nearQuota) {
+      quotaBannerText = 'Vous approchez de votre quota d’entraînements mensuel (82 %).';
+      quotaBannerBg = 'var(--warning-bg)'; quotaBannerBorder = 'var(--warning-border)'; quotaBannerFg = 'var(--warning-fg)';
+    }
+
+    const deleteConfirmDisabled = deleteConfirmText.trim() !== 'Mutuelle Verdier';
+
+    return {
+      theme,
+      themeLabel: theme === 'light' ? '◐ Sombre' : '◑ Clair',
+      toggleTheme: this.toggleTheme,
+      accountMenuOpen,
+      toggleAccountMenu: this.toggleAccountMenu,
+      deleteClosed: !deleteOpen,
+      showQuotaBanner,
+      quotaBannerText, quotaBannerBg, quotaBannerBorder, quotaBannerFg, quotaBannerBlocking,
+      quotaRows,
+      deleteOpen,
+      openDelete: this.openDelete,
+      cancelDelete: this.cancelDelete,
+      deleteConfirmText,
+      onDeleteConfirmChange: this.onDeleteConfirmChange,
+      deleteConfirmDisabled,
+      deleteConfirmBg: deleteConfirmDisabled ? 'var(--gray-300)' : 'var(--error-500)',
+      deleteConfirmCursor: deleteConfirmDisabled ? 'default' : 'pointer',
+    };
+  }
+}
+
+</script>
+</body>
+</html>

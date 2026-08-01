@@ -1,0 +1,45 @@
+<!-- @dsCard group="Brand" viewport="900x300" subtitle="State-machine lattice for backgrounds/empty-states; O-glyph repeat for marketing" name="Graphic motif" -->
+<html><head><link rel="stylesheet" href="../styles.css">
+<style>
+body{margin:0;font-family:var(--font-sans);display:flex;gap:16px;padding:16px;background:#fff}
+.panel{flex:1;border-radius:12px;overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center;height:230px}
+.label{position:absolute;top:10px;left:12px;font-size:11px;color:#717A77;font-family:var(--font-mono)}
+</style></head>
+<body>
+
+<div class="panel" style="background:#F5F7F6">
+  <span class="label">lattice — background</span>
+  <svg width="100%" height="100%" viewBox="0 0 300 230">
+    <defs>
+      <pattern id="lattice" width="46" height="46" patternUnits="userSpaceOnUse">
+        <circle cx="6" cy="6" r="2.4" fill="#0F7D63" opacity="0.35"/>
+        <path d="M6 6 L34 6 L34 34" stroke="#0F7D63" stroke-width="1.4" opacity="0.22" fill="none"/>
+      </pattern>
+    </defs>
+    <rect width="300" height="230" fill="url(#lattice)"/>
+  </svg>
+</div>
+
+<div class="panel" style="background:#0D0F0E">
+  <span class="label" style="color:#828B87">empty state</span>
+  <div style="text-align:center;color:#828B87">
+    <svg width="52" height="52" viewBox="0 0 64 64" style="opacity:.55">
+      <path fill-rule="evenodd" fill="#6FC0A2" d="M 32 32 m -18 0 a 18 18 0 1 0 36 0 a 18 18 0 1 0 -36 0 Z M 28.5 29 h7 a3 3 0 0 1 3 3 v10 a3 3 0 0 1 -3 3 h-7 a3 3 0 0 1 -3 -3 v-10 a3 3 0 0 1 3 -3 Z"/>
+    </svg>
+    <div style="font-size:13px;margin-top:10px;color:#AFB8B4">Aucun document source pour l'instant</div>
+  </div>
+</div>
+
+<div class="panel" style="background:#0A5142">
+  <span class="label" style="color:#A0D7C2">marketing repeat</span>
+  <svg width="100%" height="100%" viewBox="0 0 300 230">
+    <defs>
+      <pattern id="kh" width="54" height="54" patternUnits="userSpaceOnUse" patternTransform="rotate(8)">
+        <path fill-rule="evenodd" fill="#ffffff" opacity="0.12" d="M 12 12 m -8 0 a 8 8 0 1 0 16 0 a 8 8 0 1 0 -16 0 Z M 10.5 10.5 h3 a1.3 1.3 0 0 1 1.3 1.3 v4.4 a1.3 1.3 0 0 1 -1.3 1.3 h-3 a1.3 1.3 0 0 1 -1.3 -1.3 v-4.4 a1.3 1.3 0 0 1 1.3 -1.3 Z"/>
+      </pattern>
+    </defs>
+    <rect width="300" height="230" fill="url(#kh)"/>
+  </svg>
+</div>
+
+</body></html>

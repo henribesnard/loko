@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="styles.css">
+</helmet>
+<div data-theme="{{ theme }}" style="font-family:var(--font-sans); background:var(--surface-page); min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:32px; color:var(--text-primary);">
+
+  <button onClick="{{ toggleTheme }}" style="position:absolute; top:20px; right:24px; border:1px solid var(--border-default); background:transparent; color:var(--text-secondary); border-radius:var(--radius-sm); padding:6px 11px; font-size:12px; cursor:pointer;">{{ themeLabel }}</button>
+
+  <div style="position:absolute; top:20px; left:24px; display:flex; gap:8px;">
+    <sc-for list="{{ demoStateOptions }}" as="d" hint-placeholder-count="2">
+      <button onClick="{{ d.onClick }}" style="font-size:11px; border:1px solid var(--border-default); background:{{ d.bg }}; color:var(--text-tertiary); border-radius:5px; padding:4px 8px; cursor:pointer;">{{ d.label }}</button>
+    </sc-for>
+  </div>
+
+  <a href="#" style="display:flex; align-items:center; gap:10px; text-decoration:none; margin-bottom:32px;">
+    <svg width="24" height="24" viewBox="0 0 64 64"><rect x="1" y="1" width="62" height="62" rx="14" fill="var(--brand-primary)"/><circle cx="32" cy="25" r="10" fill="none" stroke="var(--text-on-brand)" stroke-width="4"/><path d="M32 33 L32 44" stroke="var(--text-on-brand)" stroke-width="4" stroke-linecap="round"/></svg>
+    <span style="font-size:16px; font-weight:600; color:var(--text-primary);">LOKO</span>
+  </a>
+
+  <div style="width:100%; max-width:380px; background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:var(--radius-xl); box-shadow:var(--shadow-md); padding:32px;">
+    <div style="font-size:20px; font-weight:600; margin-bottom:6px; letter-spacing:var(--tracking-tight);">Connexion</div>
+    <div style="font-size:13px; color:var(--text-secondary); margin-bottom:22px;">Accédez à votre espace LOKO.</div>
+
+    <sc-if value="{{ showRateLimit }}">
+      <div style="margin-bottom:16px; font-size:12.5px; color:var(--warning-fg); background:var(--warning-bg); border:1px solid var(--warning-border); border-radius:var(--radius-sm); padding:10px 13px; line-height:var(--leading-snug);">Trop de tentatives. Réessayez dans {{ rateLimitMinutes }} minutes.</div>
+    </sc-if>
+
+    <div style="display:flex; flex-direction:column; gap:14px;">
+      <div>
+        <label style="display:block; font-size:12.5px; font-weight:600; margin-bottom:6px;">E-mail</label>
+        <input value="{{ email }}" onChange="{{ onEmailChange }}" style="width:100%; box-sizing:border-box; padding:10px 12px; border-radius:var(--radius-sm); border:1px solid {{ inputBorder }}; background:var(--surface-page); color:var(--text-primary); font-size:13.5px; font-family:var(--font-sans);" />
+      </div>
+      <div>
+        <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+          <label style="font-size:12.5px; font-weight:600;">Mot de passe</label>
+          <a href="#" style="font-size:12px; color:var(--text-link);">Mot de passe oublié ?</a>
+        </div>
+        <input type="password" value="{{ password }}" onChange="{{ onPasswordChange }}" style="width:100%; box-sizing:border-box; padding:10px 12px; border-radius:var(--radius-sm); border:1px solid {{ inputBorder }}; background:var(--surface-page); color:var(--text-primary); font-size:13.5px; font-family:var(--font-sans);" />
+      </div>
+
+      <sc-if value="{{ showError }}">
+        <div style="font-size:12.5px; color:var(--error-fg); background:var(--error-bg); border:1px solid var(--error-border); border-radius:var(--radius-sm); padding:9px 12px;">Identifiants invalides.</div>
+      </sc-if>
+
+      <button onClick="{{ onSubmit }}" style="width:100%; box-sizing:border-box; padding:11px; border-radius:var(--radius-md); border:none; background:var(--brand-primary); color:var(--text-on-brand); font-size:14px; font-weight:600; cursor:pointer;">Se connecter</button>
+    </div>
+
+    <div style="text-align:center; margin-top:20px; font-size:13px; color:var(--text-secondary);">Pas encore de compte ? <a href="#" style="color:var(--text-link); font-weight:500;">Créer un compte</a></div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = {
+    theme: 'light',
+    email: '',
+    password: '',
+    demoState: 'normal', // normal | error | ratelimit
+  };
+
+  toggleTheme = () => this.setState(s => ({ theme: s.theme === 'light' ? 'dark' : 'light' }));
+  onEmailChange = (e) => this.setState({ email: e.target.value });
+  onPasswordChange = (e) => this.setState({ password: e.target.value });
+  onSubmit = () => this.setState({ demoState: 'error' });
+  setDemoState = (s) => this.setState({ demoState: s });
+
+  renderVals() {
+    const { theme, email, password, demoState } = this.state;
+    const showError = demoState === 'error';
+    const showRateLimit = demoState === 'ratelimit';
+
+    return {
+      theme,
+      themeLabel: theme === 'light' ? '◐ Sombre' : '◑ Clair',
+      toggleTheme: this.toggleTheme,
+      email, onEmailChange: this.onEmailChange,
+      password, onPasswordChange: this.onPasswordChange,
+      onSubmit: this.onSubmit,
+      showError,
+      showRateLimit,
+      rateLimitMinutes: 5,
+      inputBorder: showError ? 'var(--error-border)' : 'var(--border-default)',
+      demoStateOptions: [
+        { label: 'État : erreur', onClick: () => this.setDemoState('error'), bg: demoState === 'error' ? 'var(--error-bg)' : 'transparent' },
+        { label: 'État : rate limit', onClick: () => this.setDemoState('ratelimit'), bg: demoState === 'ratelimit' ? 'var(--warning-bg)' : 'transparent' },
+      ],
+    };
+  }
+}
+
+</script>
+</body>
+</html>

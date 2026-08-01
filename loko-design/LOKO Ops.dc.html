@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="styles.css">
+</helmet>
+<div data-theme="{{ theme }}" style="font-family:var(--font-sans); background:var(--surface-page); min-height:100vh; color:var(--text-primary);">
+
+  <sc-if value="{{ !isLoggedIn }}" hint-placeholder-val="{{ true }}">
+    <div style="min-height:100vh; display:flex; align-items:center; justify-content:center; padding:32px;">
+      <div style="width:100%; max-width:340px; background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:var(--radius-lg); padding:28px;">
+        <div style="font-family:var(--font-mono); font-size:11px; font-weight:600; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px;">Outil interne</div>
+        <div style="font-size:17px; font-weight:600; margin-bottom:18px;">Accès Ops</div>
+        <label style="display:block; font-size:12px; color:var(--text-secondary); margin-bottom:6px;">Token</label>
+        <input type="password" value="{{ token }}" onChange="{{ onTokenChange }}" placeholder="sk_ops_…" style="width:100%; box-sizing:border-box; padding:9px 11px; border-radius:var(--radius-sm); border:1px solid var(--border-default); background:var(--surface-page); color:var(--text-primary); font-family:var(--font-mono); font-size:13px; margin-bottom:14px;" />
+        <button onClick="{{ onLogin }}" style="width:100%; box-sizing:border-box; padding:10px; border-radius:var(--radius-sm); border:none; background:var(--gray-900); color:#fff; font-size:13px; font-weight:600; cursor:pointer;">Entrer</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isLoggedIn }}">
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 24px; background:var(--gray-900); color:#fff;">
+      <div style="display:flex; align-items:center; gap:10px; font-family:var(--font-mono); font-size:12.5px; font-weight:600;">
+        <span style="width:7px; height:7px; border-radius:50%; background:var(--green-400);"></span> LOKO OPS
+      </div>
+      <div style="display:flex; align-items:center; gap:14px;">
+        <button onClick="{{ toggleTheme }}" style="border:1px solid #333; background:transparent; color:#ccc; border-radius:4px; padding:5px 9px; font-size:11.5px; cursor:pointer;">{{ themeLabel }}</button>
+        <button onClick="{{ onLogout }}" style="border:none; background:transparent; color:#999; font-size:12px; cursor:pointer;">Déconnexion</button>
+      </div>
+    </div>
+
+    <!-- Health banner -->
+    <div style="display:flex; align-items:center; gap:24px; padding:9px 24px; background:var(--surface-card); border-bottom:1px solid var(--border-subtle); font-family:var(--font-mono); font-size:11.5px;">
+      <sc-for list="{{ healthMetrics }}" as="h" hint-placeholder-count="4">
+        <div style="display:flex; align-items:center; gap:6px;">
+          <span style="width:6px; height:6px; border-radius:50%; background:{{ h.color }};"></span>
+          <span style="color:var(--text-tertiary);">{{ h.label }}</span>
+          <span style="color:var(--text-primary); font-weight:600;">{{ h.value }}</span>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="padding:20px 24px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+        <div style="font-size:15px; font-weight:600;">Comptes ({{ accountRows.length }})</div>
+        <input value="{{ search }}" onChange="{{ onSearchChange }}" placeholder="Rechercher une organisation…" style="width:260px; box-sizing:border-box; padding:7px 11px; border-radius:var(--radius-sm); border:1px solid var(--border-default); background:var(--surface-card); color:var(--text-primary); font-size:12.5px;" />
+      </div>
+
+      <div style="background:var(--surface-card); border:1px solid var(--border-subtle); border-radius:var(--radius-md); overflow:hidden;">
+        <div style="display:grid; grid-template-columns:1.4fr 0.8fr 1fr 0.8fr 1fr 1.4fr; padding:8px 14px; border-bottom:1px solid var(--border-subtle); font-size:10.5px; font-weight:600; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.03em;">
+          <div>Organisation</div><div>Plan</div><div>Sessions/mois</div><div>Statut</div><div>Créé le</div><div>Actions</div>
+        </div>
+        <sc-for list="{{ accountRows }}" as="a" hint-placeholder-count="6">
+          <div style="display:grid; grid-template-columns:1.4fr 0.8fr 1fr 0.8fr 1fr 1.4fr; padding:10px 14px; border-bottom:1px solid var(--border-subtle); align-items:center; font-size:12.5px;">
+            <div style="color:var(--text-primary);">{{ a.orgName }}</div>
+            <div style="font-family:var(--font-mono); font-size:11.5px; color:var(--text-secondary);">{{ a.plan }}</div>
+            <div style="font-family:var(--font-mono); font-size:11.5px; color:var(--text-secondary);">{{ a.sessionsLabel }}</div>
+            <div><span style="font-family:var(--font-mono); font-size:10px; font-weight:600; padding:2px 7px; border-radius:4px; background:{{ a.statusBg }}; color:{{ a.statusFg }};">{{ a.statusLabel }}</span></div>
+            <div style="font-family:var(--font-mono); font-size:11px; color:var(--text-tertiary);">{{ a.createdLabel }}</div>
+            <div style="display:flex; gap:6px;">
+              <button onClick="{{ a.onToggleSuspend }}" style="font-size:11px; font-weight:600; padding:4px 9px; border-radius:4px; border:1px solid var(--border-default); background:var(--surface-page); color:var(--text-secondary); cursor:pointer;">{{ a.suspendLabel }}</button>
+              <button onClick="{{ a.onAdjustQuota }}" style="font-size:11px; font-weight:600; padding:4px 9px; border-radius:4px; border:1px solid var(--border-default); background:var(--surface-page); color:var(--text-secondary); cursor:pointer;">Quotas</button>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const ACCOUNTS = [
+  { org: 'Mutuelle Verdier', plan: 'Pilote', sessions: 1284, status: 'active', created: '2026-05-12' },
+  { org: 'Banque Osterreich', plan: 'Pro', sessions: 8420, status: 'active', created: '2026-03-02' },
+  { org: 'Assurance Lumière', plan: 'Pro', sessions: 340, status: 'suspended', created: '2026-06-18' },
+  { org: 'Groupe Ferrand', plan: 'Pilote', sessions: 92, status: 'active', created: '2026-06-29' },
+  { org: 'Caisse Retraite Ouest', plan: 'Pro', sessions: 5210, status: 'active', created: '2026-01-20' },
+  { org: 'Voltéa Énergie', plan: 'Pilote', sessions: 0, status: 'trial_expired', created: '2026-04-02' },
+];
+
+class Component extends DCLogic {
+  state = {
+    theme: 'light',
+    isLoggedIn: false,
+    token: '',
+    search: '',
+    suspended: {},
+  };
+
+  toggleTheme = () => this.setState(s => ({ theme: s.theme === 'light' ? 'dark' : 'light' }));
+  onTokenChange = (e) => this.setState({ token: e.target.value });
+  onLogin = () => { if (this.state.token.length > 0) this.setState({ isLoggedIn: true }); };
+  onLogout = () => this.setState({ isLoggedIn: false, token: '' });
+  onSearchChange = (e) => this.setState({ search: e.target.value });
+  toggleSuspend = (org) => this.setState(s => ({ suspended: { ...s.suspended, [org]: !s.suspended[org] } }));
+
+  renderVals() {
+    const { theme, isLoggedIn, token, search, suspended } = this.state;
+
+    const statusMap = {
+      active: { label: 'Actif', bg: 'var(--success-bg)', fg: 'var(--success-fg)' },
+      suspended: { label: 'Suspendu', bg: 'var(--error-bg)', fg: 'var(--error-fg)' },
+      trial_expired: { label: 'Essai expiré', bg: 'var(--warning-bg)', fg: 'var(--warning-fg)' },
+    };
+
+    const filtered = ACCOUNTS.filter(a => a.org.toLowerCase().includes(search.toLowerCase()));
+    const accountRows = filtered.map(a => {
+      const isSuspendedOverride = suspended[a.org];
+      const effectiveStatus = isSuspendedOverride === true ? 'suspended' : isSuspendedOverride === false && a.status === 'suspended' ? 'active' : a.status;
+      const s = statusMap[effectiveStatus];
+      return {
+        orgName: a.org,
+        plan: a.plan,
+        sessionsLabel: a.sessions.toLocaleString('fr-FR'),
+        statusLabel: s.label,
+        statusBg: s.bg,
+        statusFg: s.fg,
+        createdLabel: a.created,
+        suspendLabel: effectiveStatus === 'suspended' ? 'Réactiver' : 'Suspendre',
+        onToggleSuspend: () => this.toggleSuspend(a.org),
+        onAdjustQuota: () => {},
+      };
+    });
+
+    return {
+      theme,
+      themeLabel: theme === 'light' ? 'Sombre' : 'Clair',
+      toggleTheme: this.toggleTheme,
+      isLoggedIn,
+      token, onTokenChange: this.onTokenChange,
+      onLogin: this.onLogin,
+      onLogout: this.onLogout,
+      search, onSearchChange: this.onSearchChange,
+      accountRows,
+      healthMetrics: [
+        { label: 'API', value: 'Opérationnelle', color: 'var(--green-500)' },
+        { label: 'Entraînement', value: 'Opérationnel', color: 'var(--green-500)' },
+        { label: 'Latence P50', value: '312 ms', color: 'var(--green-500)' },
+        { label: 'File d’attente', value: '0', color: 'var(--green-500)' },
+      ],
+    };
+  }
+}
+
+</script>
+</body>
+</html>

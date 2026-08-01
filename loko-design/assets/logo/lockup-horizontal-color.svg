@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 64">
+  <text x="0" y="45" font-family="Geist, -apple-system, &#39;Segoe UI&#39;, sans-serif" font-weight="600" font-size="42" letter-spacing="-0.5" fill="#181B1A">LOK</text>
+  <g fill="#0F7D63" fill-rule="evenodd">
+    <path d="M 96 30 m -16 0 a 16 16 0 1 0 32 0 a 16 16 0 1 0 -32 0 Z&#xA;             M 93 33 h6 a2.5 2.5 0 0 1 2.5 2.5 v8 a2.5 2.5 0 0 1 -2.5 2.5 h-6 a2.5 2.5 0 0 1 -2.5 -2.5 v-8 a2.5 2.5 0 0 1 2.5 -2.5 Z"></path>
+  </g>
+</svg>
