@@ -51,7 +51,12 @@ markers = [
 ]
 
 [tool.ruff.lint]
+select = [
+    "E",     # pycodestyle errors
+    "F",     # pyflakes
+]
 ignore = [
+    "E501",   # line too long — handled by ruff format
     "E741",   # ambiguous variable name (l in list comprehensions)
     "E402",   # module-level import not at top (needed for sys.path manipulation)
 ]
