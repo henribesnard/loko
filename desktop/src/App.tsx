@@ -10,6 +10,9 @@ import { ResetPasswordPage } from "@/pages/auth/ResetPasswordPage";
 import { VerifyEmailPage } from "@/pages/auth/VerifyEmailPage";
 import { LandingPage } from "@/pages/public/LandingPage";
 import { LegalPage } from "@/pages/public/LegalPage";
+import { InvitePage } from "@/pages/auth/InvitePage";
+import { AccountSettings } from "@/pages/account/AccountSettings";
+import { BotMonitoring } from "@/pages/bot/BotMonitoring";
 import { useAuth } from "@/hooks/useAuth";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import PageErrorBoundary from "@/components/PageErrorBoundary";
@@ -20,6 +23,7 @@ function RequireAuth() {
   const path = location.pathname;
   // Public paths don't need redirect — just go to landing
   if (path === "/" || path === "/login" || path === "/signup" || path === "/verify" || path === "/reset"
+      || path === "/invite"
       || path === "/cgu" || path === "/confidentialite" || path === "/mentions" || path === "/contact") {
     return <Navigate to="/" replace />;
   }
@@ -51,6 +55,7 @@ export default function App() {
           <Route path="/confidentialite" element={<LegalPage page="confidentialite" />} />
           <Route path="/mentions" element={<LegalPage page="mentions" />} />
           <Route path="/contact" element={<LegalPage page="contact" />} />
+          <Route path="/invite" element={<PageErrorBoundary name="Invite"><InvitePage /></PageErrorBoundary>} />
           <Route path="*" element={<RequireAuth />} />
         </Routes>
       </ErrorBoundary>
@@ -69,6 +74,9 @@ export default function App() {
             <Route path="/bot/:id/wizard/:step" element={<PageErrorBoundary name="BotWizard"><BotWizard /></PageErrorBoundary>} />
             <Route path="/bot/:id/playground" element={<PageErrorBoundary name="BotPlayground"><BotPlayground /></PageErrorBoundary>} />
             <Route path="/bot/:id/dashboard" element={<PageErrorBoundary name="BotDashboard"><BotDashboard /></PageErrorBoundary>} />
+            <Route path="/bot/:id/monitoring" element={<PageErrorBoundary name="BotMonitoring"><BotMonitoring /></PageErrorBoundary>} />
+            <Route path="/account" element={<PageErrorBoundary name="Account"><AccountSettings /></PageErrorBoundary>} />
+            <Route path="/account/:tab" element={<PageErrorBoundary name="Account"><AccountSettings /></PageErrorBoundary>} />
             <Route path="*" element={<Navigate to="/bot" replace />} />
           </Routes>
         </main>

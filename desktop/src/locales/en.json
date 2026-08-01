@@ -312,6 +312,160 @@
     "copy": "Copy",
     "copied": "Copied!"
   },
+  "invite": {
+    "joinTitle": "Join {{org}}",
+    "invitedAs": "You have been invited as",
+    "name": "Name",
+    "namePlaceholder": "Your name",
+    "password": "Password",
+    "passwordPlaceholder": "Minimum 12 characters",
+    "accept": "Accept invitation"
+  },
+  "account": {
+    "title": "Settings",
+    "tabs": {
+      "profile": "Profile",
+      "security": "Security",
+      "team": "Team",
+      "billing": "Plan & billing",
+      "privacy": "Privacy & data"
+    },
+    "profile": {
+      "title": "Profile",
+      "name": "Name",
+      "email": "Email",
+      "verified": "Verified",
+      "unverified": "Not verified",
+      "resendVerify": "Resend verification email",
+      "language": "Interface language",
+      "timezone": "Time zone",
+      "save": "Save",
+      "saving": "Saving…",
+      "saved": "Saved"
+    },
+    "security": {
+      "title": "Security",
+      "changePassword": "Change password",
+      "currentPassword": "Current password",
+      "newPassword": "New password",
+      "confirmPassword": "Confirm new password",
+      "updatePassword": "Update password",
+      "passwordMismatch": "Passwords do not match.",
+      "passwordChanged": "Password changed successfully.",
+      "strength": { "weak": "Weak", "medium": "Medium", "strong": "Strong" },
+      "sessions": "Active sessions",
+      "logoutAll": "Log out all other sessions",
+      "logoutSession": "Log out",
+      "currentSession": "Current session",
+      "twoFactor": "Two-factor authentication",
+      "twoFactorDesc": "Secure your account with a one-time code.",
+      "comingSoon": "Coming soon"
+    },
+    "team": {
+      "title": "Team",
+      "invite": "Invite member",
+      "member": "Member",
+      "role": "Role",
+      "status": "Status",
+      "addedOn": "Added on",
+      "roles": { "owner": "Owner", "editor": "Editor", "viewer": "Viewer" },
+      "statuses": { "active": "Active", "pending": "Pending" },
+      "emptyTitle": "You're alone for now",
+      "emptyDesc": "Invite your team to share bot configuration.",
+      "inviteTitle": "Invite members",
+      "inviteEmails": "Email addresses",
+      "inviteEmailsPlaceholder": "marie@company.com, paul@company.com",
+      "editorDesc": "Can create and edit bots, but not manage team or billing.",
+      "viewerDesc": "Can view bots, dashboards and sessions, without editing.",
+      "sendInvitations": "Send invitations",
+      "resend": "Resend",
+      "cancel": "Cancel",
+      "setEditor": "Set as Editor",
+      "setViewer": "Set as Viewer",
+      "remove": "Remove",
+      "lastOwnerTooltip": "Cannot modify the only account owner"
+    },
+    "billing": {
+      "title": "Plan & billing",
+      "changePlan": "Change plan",
+      "quotas": "Quotas",
+      "resetDate": "Resets on",
+      "billingHistory": "Billing history",
+      "noInvoices": "No invoices yet.",
+      "comingSoonTitle": "Coming soon",
+      "comingSoonDesc": "Paid plan management is not yet available."
+    },
+    "privacy": {
+      "title": "Privacy & data",
+      "exportTitle": "Export my data",
+      "exportDesc": "Generate a JSON archive of your bots, documents and settings, in compliance with GDPR.",
+      "exportButton": "Export my data",
+      "exporting": "Generating archive…",
+      "download": "Download archive",
+      "deleteTitle": "Delete my account",
+      "deleteDesc": "This action is irreversible: all your bots, documents and transcripts will be permanently deleted.",
+      "deleteButton": "Delete my account",
+      "deleteModalTitle": "Permanently delete your account?",
+      "deleteModalDesc": "Your published bots, documents, session history and API keys will be erased without recourse.",
+      "deletePassword": "Password",
+      "deleteConfirmLabel": "Type SUPPRIMER to confirm",
+      "deleteConfirmError": "Please type SUPPRIMER to confirm.",
+      "deleteConfirm": "Delete permanently"
+    }
+  },
+  "monitoring": {
+    "title": "Monitoring",
+    "period": { "7d": "7d", "30d": "30d", "90d": "90d" },
+    "compare": "Compare to previous period",
+    "granularity": { "hour": "Hour", "day": "Day" },
+    "exportCsv": "Export CSV",
+    "export": {
+      "overview": "Overview",
+      "intents": "By intent",
+      "sub_motifs": "By sub-motif"
+    },
+    "kpi": {
+      "totalConversations": "Total conversations",
+      "messages": "Messages",
+      "selfcareRate": "Selfcare rate",
+      "escalations": "Escalations",
+      "errors": "Errors",
+      "satisfaction": "Satisfaction"
+    },
+    "funnel": {
+      "title": "Funnel",
+      "received": "Messages received",
+      "classified": "Classified",
+      "answered": "Answered",
+      "surveyed": "Survey shown",
+      "resolved": "Resolved"
+    },
+    "intents": {
+      "title": "Intents",
+      "volume": "Volume",
+      "share": "Share",
+      "selfcare": "Selfcare",
+      "clarification": "Clarif.",
+      "escalation": "Escal.",
+      "confidence": "Confidence",
+      "trend": "Trend",
+      "subMotifs": "Sub-motifs",
+      "viewConversations": "View conversations"
+    },
+    "distribution": "Distribution",
+    "chartTitle": "Conversation volume",
+    "errors": {
+      "title": "Errors",
+      "unavailable": "Response unavailable",
+      "outOfScope": "Out of scope"
+    },
+    "signals": { "title": "Improvement signals" },
+    "empty": {
+      "title": "Your bot hasn't received any conversations yet",
+      "description": "Statistics will appear here after the first exchanges. In the meantime, test the flow in the playground.",
+      "cta": "Open playground"
+    }
+  },
   "errorBoundary": {
     "pageError": "Page Error",
     "errorInPage": "An error occurred in {{name}}.",

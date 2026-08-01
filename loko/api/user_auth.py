@@ -280,8 +280,10 @@ async def login(
             detail="Email non verifie. Verifiez votre boite mail ou demandez un nouveau lien.",
         )
 
-    # Create session
-    session_id = create_session(user["id"])
+    # Create session (with device info for security tab)
+    ua = request.headers.get("user-agent", "")
+    client_ip = request.client.host if request.client else ""
+    session_id = create_session(user["id"], user_agent=ua, ip_address=client_ip)
     _set_session_cookie(response, session_id)
 
     # S6: set CSRF cookie on login

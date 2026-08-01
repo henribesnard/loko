@@ -73,6 +73,26 @@ def send_verification_email(to: str, token: str) -> bool:
     return send_email(to, "Verifiez votre adresse email — LOKO", body)
 
 
+def send_invitation_email(
+    to: str, token: str, org_name: str, inviter_email: str, role: str
+) -> bool:
+    """Send team invitation email. Stub if SMTP not configured."""
+    base_url = os.environ.get("LOKO_BASE_URL", "http://localhost:1420")
+    link = f"{base_url}/invite?token={token}"
+    role_labels = {"owner": "Proprietaire", "editor": "Editeur", "viewer": "Lecteur"}
+    role_label = role_labels.get(role, role)
+    body = (
+        f"Vous avez ete invite a rejoindre {org_name} sur LOKO "
+        f"en tant que {role_label}.\n\n"
+        f"Invite par : {inviter_email}\n\n"
+        f"Cliquez sur le lien suivant pour accepter :\n"
+        f"{link}\n\n"
+        f"Ce lien expire dans 72 heures.\n\n"
+        f"L'equipe LOKO"
+    )
+    return send_email(to, f"Invitation a rejoindre {org_name} — LOKO", body)
+
+
 def send_password_reset_email(to: str, token: str) -> bool:
     """Send password reset link."""
     base_url = os.environ.get("LOKO_BASE_URL", "http://localhost:1420")

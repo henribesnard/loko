@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "react-router-dom";
-import { Bot, Globe, LogOut } from "lucide-react";
+import { Bot, Globe, LogOut, Settings } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { LokoLockup } from "@/components/ui/LokoLockup";
 
@@ -14,6 +14,7 @@ export function Sidebar({ onLogout }: SidebarProps) {
 
   const links = [
     { to: "/bot", icon: Bot, label: t("nav.bots") },
+    { to: "/account", icon: Settings, label: t("nav.settings") },
   ];
 
   const toggleLang = () => {

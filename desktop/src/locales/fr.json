@@ -312,6 +312,160 @@
     "copy": "Copier",
     "copied": "Copié !"
   },
+  "invite": {
+    "joinTitle": "Rejoindre {{org}}",
+    "invitedAs": "Vous avez été invité en tant que",
+    "name": "Nom",
+    "namePlaceholder": "Votre nom",
+    "password": "Mot de passe",
+    "passwordPlaceholder": "Minimum 12 caractères",
+    "accept": "Accepter l'invitation"
+  },
+  "account": {
+    "title": "Paramètres",
+    "tabs": {
+      "profile": "Profil",
+      "security": "Sécurité",
+      "team": "Équipe",
+      "billing": "Plan & facturation",
+      "privacy": "Confidentialité & données"
+    },
+    "profile": {
+      "title": "Profil",
+      "name": "Nom",
+      "email": "E-mail",
+      "verified": "Vérifié",
+      "unverified": "Non vérifié",
+      "resendVerify": "Renvoyer l'e-mail de vérification",
+      "language": "Langue de l'interface",
+      "timezone": "Fuseau horaire",
+      "save": "Enregistrer",
+      "saving": "Enregistrement…",
+      "saved": "Enregistré"
+    },
+    "security": {
+      "title": "Sécurité",
+      "changePassword": "Changer le mot de passe",
+      "currentPassword": "Mot de passe actuel",
+      "newPassword": "Nouveau mot de passe",
+      "confirmPassword": "Confirmer le nouveau mot de passe",
+      "updatePassword": "Mettre à jour le mot de passe",
+      "passwordMismatch": "Les mots de passe ne correspondent pas.",
+      "passwordChanged": "Mot de passe modifié avec succès.",
+      "strength": { "weak": "Faible", "medium": "Moyen", "strong": "Robuste" },
+      "sessions": "Sessions actives",
+      "logoutAll": "Déconnecter toutes les autres sessions",
+      "logoutSession": "Déconnecter",
+      "currentSession": "Session actuelle",
+      "twoFactor": "Authentification à deux facteurs",
+      "twoFactorDesc": "Sécurisez votre compte avec un code à usage unique.",
+      "comingSoon": "Bientôt"
+    },
+    "team": {
+      "title": "Équipe",
+      "invite": "Inviter un membre",
+      "member": "Membre",
+      "role": "Rôle",
+      "status": "Statut",
+      "addedOn": "Ajouté le",
+      "roles": { "owner": "Propriétaire", "editor": "Éditeur", "viewer": "Lecteur" },
+      "statuses": { "active": "Actif", "pending": "En attente" },
+      "emptyTitle": "Vous êtes seul pour l'instant",
+      "emptyDesc": "Invitez votre équipe pour partager la configuration du bot.",
+      "inviteTitle": "Inviter des membres",
+      "inviteEmails": "Adresses e-mail",
+      "inviteEmailsPlaceholder": "marie@organisation.fr, paul@organisation.fr",
+      "editorDesc": "Peut créer et modifier des bots, sans gérer l'équipe ni la facturation.",
+      "viewerDesc": "Peut consulter les bots, dashboards et sessions, sans rien modifier.",
+      "sendInvitations": "Envoyer les invitations",
+      "resend": "Renvoyer",
+      "cancel": "Annuler",
+      "setEditor": "Passer Éditeur",
+      "setViewer": "Passer Lecteur",
+      "remove": "Retirer",
+      "lastOwnerTooltip": "Impossible de modifier le seul propriétaire du compte"
+    },
+    "billing": {
+      "title": "Plan & facturation",
+      "changePlan": "Changer de plan",
+      "quotas": "Quotas",
+      "resetDate": "Réinitialisation le",
+      "billingHistory": "Historique de facturation",
+      "noInvoices": "Aucune facture pour l'instant.",
+      "comingSoonTitle": "Bientôt disponible",
+      "comingSoonDesc": "La gestion des plans payants n'est pas encore activée."
+    },
+    "privacy": {
+      "title": "Confidentialité & données",
+      "exportTitle": "Exporter mes données",
+      "exportDesc": "Générez une archive JSON de vos bots, documents et paramètres, conformément au RGPD.",
+      "exportButton": "Exporter mes données",
+      "exporting": "Génération de l'archive…",
+      "download": "Télécharger l'archive",
+      "deleteTitle": "Supprimer mon compte",
+      "deleteDesc": "Cette action est irréversible : tous vos bots, documents et transcripts seront définitivement supprimés.",
+      "deleteButton": "Supprimer mon compte",
+      "deleteModalTitle": "Supprimer définitivement votre compte ?",
+      "deleteModalDesc": "Vos bots publiés, vos documents, l'historique de sessions et vos clés API seront effacés sans recours possible.",
+      "deletePassword": "Mot de passe",
+      "deleteConfirmLabel": "Tapez SUPPRIMER pour confirmer",
+      "deleteConfirmError": "Veuillez taper SUPPRIMER pour confirmer.",
+      "deleteConfirm": "Supprimer définitivement"
+    }
+  },
+  "monitoring": {
+    "title": "Monitoring",
+    "period": { "7d": "7j", "30d": "30j", "90d": "90j" },
+    "compare": "Comparer à la période précédente",
+    "granularity": { "hour": "Heure", "day": "Jour" },
+    "exportCsv": "Exporter CSV",
+    "export": {
+      "overview": "Vue d'ensemble",
+      "intents": "Par intention",
+      "sub_motifs": "Par sous-motif"
+    },
+    "kpi": {
+      "totalConversations": "Conversations totales",
+      "messages": "Messages",
+      "selfcareRate": "Taux de selfcare",
+      "escalations": "Escalades",
+      "errors": "Erreurs",
+      "satisfaction": "Satisfaction"
+    },
+    "funnel": {
+      "title": "Entonnoir",
+      "received": "Messages reçus",
+      "classified": "Classifiés",
+      "answered": "Répondus",
+      "surveyed": "Enquête proposée",
+      "resolved": "Résolus"
+    },
+    "intents": {
+      "title": "Intentions",
+      "volume": "Volume",
+      "share": "Part",
+      "selfcare": "Selfcare",
+      "clarification": "Clarif.",
+      "escalation": "Escal.",
+      "confidence": "Confiance",
+      "trend": "Tendance",
+      "subMotifs": "Sous-motifs",
+      "viewConversations": "Voir les conversations"
+    },
+    "distribution": "Répartition",
+    "chartTitle": "Volume de conversations",
+    "errors": {
+      "title": "Erreurs",
+      "unavailable": "Réponse indisponible",
+      "outOfScope": "Hors périmètre"
+    },
+    "signals": { "title": "Signaux d'amélioration" },
+    "empty": {
+      "title": "Votre bot n'a pas encore reçu de conversations",
+      "description": "Les statistiques apparaîtront ici dès les premiers échanges. En attendant, testez le parcours dans le playground.",
+      "cta": "Ouvrir le playground"
+    }
+  },
   "errorBoundary": {
     "pageError": "Erreur de page",
     "errorInPage": "Une erreur est survenue dans {{name}}.",
