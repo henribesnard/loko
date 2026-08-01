@@ -440,3 +440,515 @@ def query_session_events(
         return []
     finally:
         conn.close()
+
+
+# ---------------------------------------------------------------------------
+# KPI overview enriched (monitoring dashboard)
+# ---------------------------------------------------------------------------
+
+
+def query_kpi_overview_enriched(
+    bot_id: str, from_date: str, to_date: str
+) -> dict[str, Any]:
+    """Enriched KPI overview: selfcare rate, satisfaction, avg turns."""
+    conn = _get_read_connection()
+    if conn is None:
+        return _empty_kpi_enriched()
+    try:
+        row = conn.execute(
+            """
+            SELECT
+                COUNT(DISTINCT CASE WHEN event_type = 'session_start'
+                      THEN session_id END) AS sessions,
+                COUNT(CASE WHEN event_type = 'message_in' THEN 1 END) AS messages,
+                COUNT(CASE WHEN event_type = 'classification' THEN 1 END) AS classifications,
+                COUNT(CASE WHEN event_type = 'answer_served' THEN 1 END) AS answers,
+                COUNT(CASE WHEN event_type = 'escalade' THEN 1 END) AS escalations,
+                COUNT(CASE WHEN event_type = 'feedback_up' THEN 1 END) AS feedback_up,
+                COUNT(CASE WHEN event_type = 'feedback_down' THEN 1 END) AS feedback_down,
+                COUNT(CASE WHEN event_type = 'error' THEN 1 END) AS errors,
+                COUNT(CASE WHEN event_type = 'garde_fou_inapproprie'
+                      THEN 1 END) AS guardrail_blocks,
+                COUNT(CASE WHEN event_type = 'enquete_shown' THEN 1 END) AS surveys_shown,
+                COUNT(CASE WHEN event_type = 'enquete_answered' THEN 1 END) AS surveys_answered
+            FROM events
+            WHERE bot_id = ? AND ts >= ? AND ts < ?
+            """,
+            (bot_id, from_date, to_date),
+        ).fetchone()
+
+        # Count sessions with escalation (to compute selfcare)
+        escalated_sessions = conn.execute(
+            """
+            SELECT COUNT(DISTINCT session_id) AS cnt
+            FROM events
+            WHERE bot_id = ? AND ts >= ? AND ts < ?
+              AND event_type = 'escalade'
+            """,
+            (bot_id, from_date, to_date),
+        ).fetchone()["cnt"]
+
+        # Average turns per session
+        avg_turns = conn.execute(
+            """
+            SELECT AVG(turn_count) AS avg_turns FROM (
+                SELECT session_id, MAX(turn) AS turn_count
+                FROM events
+                WHERE bot_id = ? AND ts >= ? AND ts < ?
+                  AND turn IS NOT NULL
+                GROUP BY session_id
+            )
+            """,
+            (bot_id, from_date, to_date),
+        ).fetchone()["avg_turns"]
+
+        sessions = row["sessions"]
+        feedbacks = row["feedback_up"] + row["feedback_down"]
+
+        return {
+            "sessions": sessions,
+            "messages": row["messages"],
+            "classifications": row["classifications"],
+            "answers": row["answers"],
+            "escalations": row["escalations"],
+            "escalation_rate": round(row["escalations"] / sessions, 4) if sessions else 0.0,
+            "selfcare_rate": round((sessions - escalated_sessions) / sessions, 4) if sessions else 0.0,
+            "feedback_up": row["feedback_up"],
+            "feedback_down": row["feedback_down"],
+            "satisfaction_rate": round(row["feedback_up"] / feedbacks, 4) if feedbacks else 0.0,
+            "errors": row["errors"],
+            "error_rate": round(row["errors"] / row["messages"], 4) if row["messages"] else 0.0,
+            "guardrail_blocks": row["guardrail_blocks"],
+            "surveys_shown": row["surveys_shown"],
+            "surveys_answered": row["surveys_answered"],
+            "avg_turns": round(avg_turns, 1) if avg_turns else 0.0,
+        }
+    except Exception:
+        logger.warning("query_kpi_overview_enriched failed (fail-open)", exc_info=True)
+        return _empty_kpi_enriched()
+    finally:
+        conn.close()
+
+
+def _empty_kpi_enriched() -> dict[str, Any]:
+    return {
+        "sessions": 0,
+        "messages": 0,
+        "classifications": 0,
+        "answers": 0,
+        "escalations": 0,
+        "escalation_rate": 0.0,
+        "selfcare_rate": 0.0,
+        "feedback_up": 0,
+        "feedback_down": 0,
+        "satisfaction_rate": 0.0,
+        "errors": 0,
+        "error_rate": 0.0,
+        "guardrail_blocks": 0,
+        "surveys_shown": 0,
+        "surveys_answered": 0,
+        "avg_turns": 0.0,
+    }
+
+
+# ---------------------------------------------------------------------------
+# KPI timeseries (sparklines)
+# ---------------------------------------------------------------------------
+
+
+def query_kpi_timeseries(
+    bot_id: str,
+    from_date: str,
+    to_date: str,
+    granularity: str = "day",
+) -> list[dict[str, Any]]:
+    """KPI metrics per time bucket (day or hour) for sparklines/charts.
+
+    Returns one row per bucket with sessions, messages, escalations, etc.
+    """
+    conn = _get_read_connection()
+    if conn is None:
+        return []
+    try:
+        if granularity == "hour":
+            bucket_expr = "STRFTIME('%Y-%m-%dT%H:00', ts)"
+        else:
+            bucket_expr = "DATE(ts)"
+
+        rows = conn.execute(
+            f"""
+            SELECT
+                {bucket_expr} AS bucket,
+                COUNT(DISTINCT CASE WHEN event_type = 'session_start'
+                      THEN session_id END) AS sessions,
+                COUNT(CASE WHEN event_type = 'message_in' THEN 1 END) AS messages,
+                COUNT(CASE WHEN event_type = 'escalade' THEN 1 END) AS escalations,
+                COUNT(CASE WHEN event_type = 'feedback_up' THEN 1 END) AS feedback_up,
+                COUNT(CASE WHEN event_type = 'feedback_down' THEN 1 END) AS feedback_down,
+                COUNT(CASE WHEN event_type = 'error' THEN 1 END) AS errors,
+                COUNT(CASE WHEN event_type = 'answer_served' THEN 1 END) AS answers
+            FROM events
+            WHERE bot_id = ? AND ts >= ? AND ts < ?
+            GROUP BY bucket
+            ORDER BY bucket
+            """,
+            (bot_id, from_date, to_date),
+        ).fetchall()
+
+        return [
+            {
+                "bucket": r["bucket"],
+                "sessions": r["sessions"],
+                "messages": r["messages"],
+                "escalations": r["escalations"],
+                "feedback_up": r["feedback_up"],
+                "feedback_down": r["feedback_down"],
+                "errors": r["errors"],
+                "answers": r["answers"],
+            }
+            for r in rows
+        ]
+    except Exception:
+        logger.warning("query_kpi_timeseries failed (fail-open)", exc_info=True)
+        return []
+    finally:
+        conn.close()
+
+
+# ---------------------------------------------------------------------------
+# Funnel
+# ---------------------------------------------------------------------------
+
+
+def query_funnel(
+    bot_id: str, from_date: str, to_date: str
+) -> list[dict[str, Any]]:
+    """5-step funnel: messages → classified → answered → survey → resolved.
+
+    Each step returns a count and conversion rate from the previous step.
+    """
+    conn = _get_read_connection()
+    if conn is None:
+        return _empty_funnel()
+    try:
+        row = conn.execute(
+            """
+            SELECT
+                COUNT(CASE WHEN event_type = 'message_in' THEN 1 END) AS messages,
+                COUNT(CASE WHEN event_type = 'classification' THEN 1 END) AS classified,
+                COUNT(CASE WHEN event_type = 'answer_served' THEN 1 END) AS answered,
+                COUNT(CASE WHEN event_type = 'enquete_answered' THEN 1 END) AS surveyed,
+                COUNT(DISTINCT CASE WHEN event_type = 'session_start'
+                      THEN session_id END) AS total_sessions
+            FROM events
+            WHERE bot_id = ? AND ts >= ? AND ts < ?
+            """,
+            (bot_id, from_date, to_date),
+        ).fetchone()
+
+        escalated = conn.execute(
+            """
+            SELECT COUNT(DISTINCT session_id) AS cnt
+            FROM events
+            WHERE bot_id = ? AND ts >= ? AND ts < ?
+              AND event_type = 'escalade'
+            """,
+            (bot_id, from_date, to_date),
+        ).fetchone()["cnt"]
+
+        messages = row["messages"]
+        classified = row["classified"]
+        answered = row["answered"]
+        surveyed = row["surveyed"]
+        resolved = row["total_sessions"] - escalated
+
+        steps = [
+            {"step": "messages", "count": messages, "rate": 1.0},
+            {
+                "step": "classified",
+                "count": classified,
+                "rate": round(classified / messages, 4) if messages else 0.0,
+            },
+            {
+                "step": "answered",
+                "count": answered,
+                "rate": round(answered / classified, 4) if classified else 0.0,
+            },
+            {
+                "step": "surveyed",
+                "count": surveyed,
+                "rate": round(surveyed / answered, 4) if answered else 0.0,
+            },
+            {
+                "step": "resolved",
+                "count": max(resolved, 0),
+                "rate": round(max(resolved, 0) / row["total_sessions"], 4) if row["total_sessions"] else 0.0,
+            },
+        ]
+        return steps
+    except Exception:
+        logger.warning("query_funnel failed (fail-open)", exc_info=True)
+        return _empty_funnel()
+    finally:
+        conn.close()
+
+
+def _empty_funnel() -> list[dict[str, Any]]:
+    return [
+        {"step": "messages", "count": 0, "rate": 1.0},
+        {"step": "classified", "count": 0, "rate": 0.0},
+        {"step": "answered", "count": 0, "rate": 0.0},
+        {"step": "surveyed", "count": 0, "rate": 0.0},
+        {"step": "resolved", "count": 0, "rate": 0.0},
+    ]
+
+
+# ---------------------------------------------------------------------------
+# Intent detail (per-intent breakdown for monitoring table)
+# ---------------------------------------------------------------------------
+
+
+def query_intent_detail(
+    bot_id: str, from_date: str, to_date: str, limit: int = 50
+) -> list[dict[str, Any]]:
+    """Per-intent detail: volume, selfcare%, clarifications, escalations,
+    confidence, trend vs previous period."""
+    conn = _get_read_connection()
+    if conn is None:
+        return []
+    try:
+        # Classification volumes + confidence (main query)
+        rows = conn.execute(
+            """
+            SELECT
+                intent_id,
+                COUNT(*) AS volume,
+                AVG(score_top1) AS avg_confidence,
+                AVG(score_margin) AS avg_margin
+            FROM events
+            WHERE bot_id = ? AND ts >= ? AND ts < ?
+              AND event_type = 'classification'
+              AND intent_id IS NOT NULL
+            GROUP BY intent_id
+            ORDER BY volume DESC
+            LIMIT ?
+            """,
+            (bot_id, from_date, to_date, limit),
+        ).fetchall()
+
+        if not rows:
+            return []
+
+        # Escalation counts per intent (separate query to avoid cartesian product)
+        esc_rows = conn.execute(
+            """
+            SELECT intent_id, COUNT(*) AS cnt
+            FROM events
+            WHERE bot_id = ? AND ts >= ? AND ts < ?
+              AND event_type = 'escalade'
+              AND intent_id IS NOT NULL
+            GROUP BY intent_id
+            """,
+            (bot_id, from_date, to_date),
+        ).fetchall()
+        esc_map: dict[str, int] = {r["intent_id"]: r["cnt"] for r in esc_rows}
+
+        # Clarification counts per intent (separate query)
+        clarif_rows = conn.execute(
+            """
+            SELECT intent_id, COUNT(*) AS cnt
+            FROM events
+            WHERE bot_id = ? AND ts >= ? AND ts < ?
+              AND event_type IN ('clarification_inter', 'clarification_intra')
+              AND intent_id IS NOT NULL
+            GROUP BY intent_id
+            """,
+            (bot_id, from_date, to_date),
+        ).fetchall()
+        clarif_map: dict[str, int] = {r["intent_id"]: r["cnt"] for r in clarif_rows}
+
+        # Compute previous period for trend
+        period_days = (
+            date.fromisoformat(to_date) - date.fromisoformat(from_date)
+        ).days
+        prev_from = (date.fromisoformat(from_date) - timedelta(days=period_days)).isoformat()
+        prev_to = from_date
+
+        prev_volumes: dict[str, int] = {}
+        prev_rows = conn.execute(
+            """
+            SELECT intent_id, COUNT(*) AS volume
+            FROM events
+            WHERE bot_id = ? AND ts >= ? AND ts < ?
+              AND event_type = 'classification'
+              AND intent_id IS NOT NULL
+            GROUP BY intent_id
+            """,
+            (bot_id, prev_from, prev_to),
+        ).fetchall()
+        for pr in prev_rows:
+            prev_volumes[pr["intent_id"]] = pr["volume"]
+
+        result = []
+        for r in rows:
+            volume = r["volume"]
+            intent_id = r["intent_id"]
+            escalations = esc_map.get(intent_id, 0)
+            clarifications = clarif_map.get(intent_id, 0)
+            prev_vol = prev_volumes.get(intent_id, 0)
+            trend = round((volume - prev_vol) / prev_vol, 4) if prev_vol else (1.0 if volume else 0.0)
+            selfcare_rate = round((volume - escalations) / volume, 4) if volume else 0.0
+
+            result.append({
+                "intent_id": intent_id,
+                "volume": volume,
+                "selfcare_rate": selfcare_rate,
+                "clarifications": clarifications,
+                "escalations": escalations,
+                "avg_confidence": round(r["avg_confidence"], 4) if r["avg_confidence"] is not None else None,
+                "avg_margin": round(r["avg_margin"], 4) if r["avg_margin"] is not None else None,
+                "trend": trend,
+                "prev_volume": prev_vol,
+            })
+        return result
+    except Exception:
+        logger.warning("query_intent_detail failed (fail-open)", exc_info=True)
+        return []
+    finally:
+        conn.close()
+
+
+# ---------------------------------------------------------------------------
+# Sub-motif detail (drill-down within an intent)
+# ---------------------------------------------------------------------------
+
+
+def query_sub_motif_detail(
+    bot_id: str,
+    intent_id: str,
+    from_date: str,
+    to_date: str,
+) -> list[dict[str, Any]]:
+    """Sub-motif breakdown for a given intent: volume, selfcare%, escalations."""
+    conn = _get_read_connection()
+    if conn is None:
+        return []
+    try:
+        rows = conn.execute(
+            """
+            SELECT
+                COALESCE(e.sub_motif_id, '(none)') AS sub_motif_id,
+                COUNT(*) AS volume,
+                AVG(e.score_top1) AS avg_confidence
+            FROM events e
+            WHERE e.bot_id = ? AND e.ts >= ? AND e.ts < ?
+              AND e.event_type = 'classification'
+              AND e.intent_id = ?
+            GROUP BY sub_motif_id
+            ORDER BY volume DESC
+            """,
+            (bot_id, from_date, to_date, intent_id),
+        ).fetchall()
+
+        if not rows:
+            return []
+
+        # Get escalation counts per sub_motif
+        esc_rows = conn.execute(
+            """
+            SELECT
+                COALESCE(sub_motif_id, '(none)') AS sub_motif_id,
+                COUNT(*) AS escalations
+            FROM events
+            WHERE bot_id = ? AND ts >= ? AND ts < ?
+              AND event_type = 'escalade'
+              AND intent_id = ?
+            GROUP BY sub_motif_id
+            """,
+            (bot_id, from_date, to_date, intent_id),
+        ).fetchall()
+        esc_map: dict[str, int] = {r["sub_motif_id"]: r["escalations"] for r in esc_rows}
+
+        result = []
+        for r in rows:
+            sm = r["sub_motif_id"]
+            volume = r["volume"]
+            esc = esc_map.get(sm, 0)
+            result.append({
+                "sub_motif_id": sm,
+                "volume": volume,
+                "escalations": esc,
+                "selfcare_rate": round((volume - esc) / volume, 4) if volume else 0.0,
+                "avg_confidence": round(r["avg_confidence"], 4) if r["avg_confidence"] is not None else None,
+            })
+        return result
+    except Exception:
+        logger.warning("query_sub_motif_detail failed (fail-open)", exc_info=True)
+        return []
+    finally:
+        conn.close()
+
+
+# ---------------------------------------------------------------------------
+# CSV export
+# ---------------------------------------------------------------------------
+
+
+def export_csv(
+    bot_id: str,
+    from_date: str,
+    to_date: str,
+    view: str = "overview",
+) -> str:
+    """Generate CSV content for the given view.
+
+    Views: overview (KPI timeseries), intents (intent detail), sub_motifs (all).
+    """
+    import csv
+    import io
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+
+    if view == "intents":
+        data = query_intent_detail(bot_id, from_date, to_date, limit=500)
+        writer.writerow([
+            "intent_id", "volume", "selfcare_rate", "clarifications",
+            "escalations", "avg_confidence", "avg_margin", "trend", "prev_volume",
+        ])
+        for row in data:
+            writer.writerow([
+                row["intent_id"], row["volume"], row["selfcare_rate"],
+                row["clarifications"], row["escalations"],
+                row["avg_confidence"], row["avg_margin"],
+                row["trend"], row["prev_volume"],
+            ])
+    elif view == "sub_motifs":
+        # Export sub-motifs for all intents
+        intents = query_intent_detail(bot_id, from_date, to_date, limit=500)
+        writer.writerow([
+            "intent_id", "sub_motif_id", "volume", "escalations",
+            "selfcare_rate", "avg_confidence",
+        ])
+        for intent in intents:
+            subs = query_sub_motif_detail(bot_id, intent["intent_id"], from_date, to_date)
+            for s in subs:
+                writer.writerow([
+                    intent["intent_id"], s["sub_motif_id"], s["volume"],
+                    s["escalations"], s["selfcare_rate"], s["avg_confidence"],
+                ])
+    else:
+        # overview: KPI timeseries
+        data = query_kpi_timeseries(bot_id, from_date, to_date, granularity="day")
+        writer.writerow([
+            "date", "sessions", "messages", "escalations",
+            "feedback_up", "feedback_down", "errors", "answers",
+        ])
+        for row in data:
+            writer.writerow([
+                row["bucket"], row["sessions"], row["messages"],
+                row["escalations"], row["feedback_up"],
+                row["feedback_down"], row["errors"], row["answers"],
+            ])
+
+    return output.getvalue()
