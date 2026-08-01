@@ -269,3 +269,164 @@ class TestSetFitIntegration:
         clf = SetFitClassifier("test-bot", "level1")
         with pytest.raises(RuntimeError, match="Model not loaded"):
             clf.classify("test")
+
+
+# ---------------------------------------------------------------------------
+# A1: Temperature from manifest flows into adapter
+# ---------------------------------------------------------------------------
+
+
+class TestAdapterTemperature:
+    """A1: verify that load_classifier reads calibration temperature from
+    the manifest and applies it via the adapter."""
+
+    @pytest.fixture(autouse=True)
+    def _setup_env(self, tmp_path, monkeypatch):
+        monkeypatch.setenv("LOKO_DATA_DIR", str(tmp_path))
+        self.tmp_path = tmp_path
+
+    @pytest.mark.slow
+    def test_classifier_adapter_applies_manifest_temperature(self):
+        """With temperature != 1.0 in manifest, classify_l1 returns
+        different scores than the raw classifier."""
+        pytest.importorskip("setfit")
+        import json
+
+        from loko.bot.classifier.loader import load_classifier
+        from loko.bot.classifier.manifest import get_manifest_path
+        from loko.bot.classifier.setfit_service import SetFitClassifier
+
+        bot_id = "test-temp-bot"
+        texts = [
+            "ou est mon colis",
+            "suivi de commande",
+            "livraison en cours",
+            "je veux ma facture",
+            "probleme de paiement",
+            "montant incorrect",
+            "retourner un article",
+            "renvoi produit",
+            "remboursement",
+        ]
+        labels = [
+            "livraison", "livraison", "livraison",
+            "facturation", "facturation", "facturation",
+            "retour", "retour", "retour",
+        ]
+
+        # Train
+        clf = SetFitClassifier(bot_id, "level1")
+        clf.train(texts, labels, num_iterations=5, num_epochs=1)
+
+        # Write manifest WITH calibration block (temperature != 1.0)
+        manifest_path = get_manifest_path(bot_id)
+        manifest_path.parent.mkdir(parents=True, exist_ok=True)
+        manifest = {
+            "schema": 1,
+            "bot_id": bot_id,
+            "levels": {"level1": {"files": {}, "labels": sorted(set(labels)), "n_train_examples": len(texts)}},
+            "dataset_hash": "test",
+            "calibration": {"temperature": 1.4, "ece_before": 0.2, "ece_after": 0.1, "method": "temperature_scaling_ece_min", "n_samples": 9},
+        }
+        manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+        # Load via shared loader — should pick up temperature 1.4
+        adapter = load_classifier(bot_id)
+        assert adapter.temperature == 1.4
+
+        # Get raw scores (no temperature) and adapter scores (with temperature)
+        raw_scores = clf.classify("ou est ma commande")
+        adapted_scores = adapter.classify_l1("ou est ma commande")
+
+        # Scores must differ (temperature != 1.0 changes the distribution)
+        raw_dict = dict(raw_scores)
+        adapted_dict = dict(adapted_scores)
+        assert raw_dict != adapted_dict, "Temperature scaling should change score values"
+
+    @pytest.mark.slow
+    def test_classifier_adapter_neutral_without_calibration(self):
+        """Without calibration in manifest, temperature stays at 1.0
+        and scores match the raw classifier."""
+        pytest.importorskip("setfit")
+        import json
+
+        from loko.bot.classifier.loader import load_classifier
+        from loko.bot.classifier.manifest import get_manifest_path
+        from loko.bot.classifier.setfit_service import SetFitClassifier
+
+        bot_id = "test-neutral-bot"
+        texts = [
+            "ou est mon colis",
+            "suivi de commande",
+            "livraison en cours",
+            "je veux ma facture",
+            "probleme de paiement",
+            "montant incorrect",
+            "retourner un article",
+            "renvoi produit",
+            "remboursement",
+        ]
+        labels = [
+            "livraison", "livraison", "livraison",
+            "facturation", "facturation", "facturation",
+            "retour", "retour", "retour",
+        ]
+
+        clf = SetFitClassifier(bot_id, "level1")
+        clf.train(texts, labels, num_iterations=5, num_epochs=1)
+
+        # Manifest WITHOUT calibration block
+        manifest_path = get_manifest_path(bot_id)
+        manifest_path.parent.mkdir(parents=True, exist_ok=True)
+        manifest = {
+            "schema": 1,
+            "bot_id": bot_id,
+            "levels": {"level1": {"files": {}, "labels": sorted(set(labels)), "n_train_examples": len(texts)}},
+            "dataset_hash": "test",
+        }
+        manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+        adapter = load_classifier(bot_id)
+        assert adapter.temperature == 1.0
+
+        # With temperature 1.0, no scaling is applied — the only
+        # difference is the model reload roundtrip (save/load), which
+        # can cause sub-epsilon float drift.  Verify ranking is identical
+        # and score values are within 1e-3.
+        raw_scores = clf.classify("ou est ma commande")
+        adapted_scores = adapter.classify_l1("ou est ma commande")
+        raw_labels = [s[0] for s in raw_scores]
+        adapted_labels = [s[0] for s in adapted_scores]
+        assert raw_labels == adapted_labels, "Ranking should be identical at temperature 1.0"
+        for (_, r_score), (_, a_score) in zip(raw_scores, adapted_scores):
+            assert abs(r_score - a_score) < 1e-3, f"Score drift too large: {r_score} vs {a_score}"
+
+
+# ---------------------------------------------------------------------------
+# A3: loko-eval uses the full adapter (no unwrapping)
+# ---------------------------------------------------------------------------
+
+
+class TestEvalRuntimeParity:
+    """A3: guard test — loko-eval must NOT unwrap adapter._l1."""
+
+    def test_eval_cli_does_not_access_private_l1(self):
+        """Guard: cli.py must not contain 'adapter._l1' access."""
+        import inspect
+
+        from loko.eval import cli
+
+        source = inspect.getsource(cli._load_classifier)
+        assert "._l1" not in source, (
+            "A3 regression: loko-eval must not unwrap adapter._l1 — "
+            "it must use the full adapter with temperature scaling"
+        )
+
+    def test_eval_cli_no_local_classifier_adapter(self):
+        """Guard: cli.py must not define its own _ClassifierAdapter."""
+        from loko.eval import cli
+
+        assert not hasattr(cli, "_ClassifierAdapter"), (
+            "A3 regression: loko-eval must not define a local _ClassifierAdapter — "
+            "it must use SetFitClassifierAdapter from the shared loader"
+        )

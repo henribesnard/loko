@@ -29,6 +29,10 @@ def _load_classifier(bot_dir: Path) -> Any:
 
     Sets LOKO_DATA_DIR so model_store resolves the correct path,
     then delegates to the shared loader (C8).
+
+    A3: returns the full SetFitClassifierAdapter (with calibration
+    temperature) so that loko-eval measures exactly what the runtime
+    executes.
     """
     import os
 
@@ -40,8 +44,7 @@ def _load_classifier(bot_dir: Path) -> Any:
     from loko.bot.errors import ComponentUnavailableError
 
     try:
-        adapter = load_classifier(bot_id)
-        return adapter._l1  # unwrap adapter — CLI wraps with its own _ClassifierAdapter
+        return load_classifier(bot_id)
     except ComponentUnavailableError as exc:
         print(f"Error: {exc}", file=sys.stderr)
         sys.exit(1)
@@ -57,16 +60,6 @@ def _load_config(bot_dir: Path) -> Any:
     from loko.bot.models import BotConfig
 
     return BotConfig.model_validate_json(config_path.read_text(encoding="utf-8"))
-
-
-class _ClassifierAdapter:
-    """Adapt SetFitClassifier to ClassifierProtocol for evaluation."""
-
-    def __init__(self, clf: Any):
-        self._clf = clf
-
-    def classify_l1(self, text: str) -> list[tuple[str, float]]:
-        return self._clf.classify(text)
 
 
 def _parse_sweep(sweep_str: str) -> dict[str, tuple[float, float, float]]:
@@ -131,9 +124,8 @@ def main() -> None:
         print(f"Error: {bot_dir} is not a directory", file=sys.stderr)
         sys.exit(1)
 
-    # Load classifier and config
-    raw_clf = _load_classifier(bot_dir)
-    classifier = _ClassifierAdapter(raw_clf)
+    # Load classifier and config (A3: use full adapter, same as runtime)
+    classifier = _load_classifier(bot_dir)
     config = _load_config(bot_dir)
 
     from loko.eval.runner import (

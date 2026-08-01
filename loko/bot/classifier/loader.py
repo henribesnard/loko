@@ -47,7 +47,32 @@ def load_classifier(bot_id: str) -> Any:
             "Failed to load level 1 classifier from disk",
         )
 
-    return SetFitClassifierAdapter(bot_id, clf)
+    # A1: read calibration temperature from manifest
+    temperature = 1.0
+    try:
+        from loko.bot.classifier.manifest import read_manifest
+
+        manifest = read_manifest(bot_id)
+        if manifest and "calibration" in manifest:
+            temperature = float(manifest["calibration"].get("temperature", 1.0))
+            logger.info(
+                "Bot %s: using calibration temperature %.2f from manifest",
+                bot_id,
+                temperature,
+            )
+        else:
+            logger.info(
+                "Bot %s: manifest sans calibration — temperature neutre (1.0)",
+                bot_id,
+            )
+    except Exception:
+        logger.warning(
+            "Bot %s: could not read calibration from manifest — temperature neutre (1.0)",
+            bot_id,
+            exc_info=True,
+        )
+
+    return SetFitClassifierAdapter(bot_id, clf, temperature=temperature)
 
 
 def load_search_backend(bot_id: str) -> Any:

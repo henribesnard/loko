@@ -541,6 +541,45 @@ def train_bot_classifiers(
         profile["eval_s"] = round(time.perf_counter() - t_eval, 2)
         results["evaluation"] = eval_result.to_dict()
 
+    # --- A2: Calibration — find optimal temperature on training data ---
+    calibration_data: dict[str, Any] | None = None
+    if run_evaluation and len(texts) >= 4:
+        _progress("l1_calibrating")
+        try:
+            from loko.bot.classifier.calibration import (
+                _compute_ece,
+                find_optimal_temperature,
+            )
+
+            scored_samples: list[tuple[list[tuple[str, float]], str]] = []
+            for text, label in zip(texts, labels):
+                raw_scores = classifier.classify(text)
+                scored_samples.append((raw_scores, label))
+
+            ece_before = round(_compute_ece(scored_samples, 1.0), 4)
+            best_t, best_ece = find_optimal_temperature(scored_samples)
+
+            calibration_data = {
+                "temperature": best_t,
+                "ece_before": ece_before,
+                "ece_after": best_ece,
+                "method": "temperature_scaling_ece_min",
+                "n_samples": len(scored_samples),
+            }
+            results["calibration"] = calibration_data
+            logger.info(
+                "Bot %s: calibration T=%.2f, ECE %.4f -> %.4f (%d samples)",
+                config.bot_id,
+                best_t,
+                ece_before,
+                best_ece,
+                len(scored_samples),
+            )
+        except Exception:
+            logger.warning(
+                "Could not compute calibration for bot %s", config.bot_id, exc_info=True
+            )
+
     # --- Level 2 (per intent with sub-motifs) ---
     t_l2 = time.perf_counter()
     for intent in config.intents:
@@ -615,6 +654,7 @@ def train_bot_classifiers(
             dataset_hash=dataset_hash,
             train_metrics=results.get("evaluation"),
             inference_latency_ms=latency,
+            calibration=calibration_data,
         )
         results["manifest"] = "written"
     except Exception:
