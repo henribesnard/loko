@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { BotPlayground } from "@/pages/bot/BotPlayground";
 
 // Mock i18next
@@ -37,10 +37,15 @@ function renderPlayground() {
 describe("BotPlayground", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Pre-set API key so the hook skips auto-generation (single api call)
+    sessionStorage.setItem("loko_api_key_test-bot", "test-key");
+  });
+
+  afterEach(() => {
+    sessionStorage.clear();
   });
 
   it("affiche le titre et le panneau de trace", async () => {
-    // Mock session creation
     mockApi.mockResolvedValueOnce({
       session_id: "sess-1",
       bot_id: "test-bot",
@@ -48,7 +53,7 @@ describe("BotPlayground", () => {
       events: [
         {
           event: "template",
-          data: { text: "Bonjour, comment puis-je vous aider ?", turn_id: "t1" },
+          data: { content: "Bonjour, comment puis-je vous aider ?" },
         },
       ],
     });
@@ -71,7 +76,7 @@ describe("BotPlayground", () => {
       events: [
         {
           event: "template",
-          data: { text: "Bienvenue ! Je suis là pour vous aider.", turn_id: "t1" },
+          data: { content: "Bienvenue ! Je suis là pour vous aider." },
         },
       ],
     });

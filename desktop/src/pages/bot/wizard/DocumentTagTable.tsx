@@ -227,7 +227,7 @@ export function DocumentTagTable({
     field: "bot_intents" | "bot_sub_motifs",
     tagId: string,
   ) => {
-    let newIntents =
+    const newIntents =
       field === "bot_intents"
         ? doc.bot_intents.filter((id) => id !== tagId)
         : [...doc.bot_intents];
