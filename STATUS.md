@@ -1,6 +1,6 @@
 # LOKO — Tableau de bord projet
 
-> Derniere mise a jour : 2026-08-01 (analyse v1.1 — retrait conclusion L2, hypothese H3)
+> Derniere mise a jour : 2026-08-02 (H3 confirmee — calibration/seuils couples)
 > Version courante : **1.3.4** (pyproject.toml)
 
 ---
@@ -29,7 +29,7 @@
 | Calibration temperature (A1) | FAIT | Lecture temperature depuis manifest dans loader.py |
 | Calibration training (A2) | FAIT | find_optimal_temperature() appele en fin d'entrainement |
 | Parite runtime/eval (A3) | FAIT | loko-eval utilise le meme SetFitClassifierAdapter que le runtime |
-| Mesure effet calibration (A4) | FAIT | T=0.60, ECE 3.14%->0.68%, pieges inchanges (9/15). Calibration active mais aiguise (T<1) au lieu d'aplatir — hypothese sur-confiance non testee (v1.1) |
+| Mesure effet calibration (A4) | FAIT | T=0.60, ECE 3.14%->0.68%. **H3 confirmee** : T=0.60 aiguise les scores, regression GNG-3 (-8 pts) est mecanique. Contre-test T=1.0 : GNG-3 remonte a 81% (+9 pts) |
 | Manifest modele (A4/A5) | FAIT | SHA-256 fichiers, labels, metriques, calibration |
 | Verification integrite modele | FAIT | verify_model(): manifest + hash + load + smoke test |
 | Latence inference (B3/L5) | FAIT | measure_inference_latency(): P50/P95, warmup, GC |
@@ -122,20 +122,52 @@ Marqueurs xfail: aucun.
 
 **Seuils utilises** : seuil_haut=0.85, seuil_bas=0.50, seuil_ecart=0.0 (config bot pre-existante, pas sweep-selectionnee).
 **Calibration** : active (T=0.60, ECE 0.0314->0.0068). Tests PASS.
-**Conclusion v1.1** : la conclusion "L2 s'applique" (v1.0) est retiree — l'alternative etait mal posee (fil-tendeur A4 valide seulement si T>1 ; avec T=0.60 l'hypothese de sur-confiance n'a jamais ete testee). Hypothese H3 dominante : la regression GNG-3 (-8 pts) est un effet mecanique de l'aiguisage (T<1 pousse les scores vers le haut, reduisant les rejets avec les seuils pre-calibration). Lecon centrale : calibration et seuils sont couples, les figer independamment invalide les mesures.
+**Conclusion v1.1** : la conclusion "L2 s'applique" (v1.0) est retiree. Hypothese H3 dominante : la regression GNG-3 (-8 pts) est un effet mecanique de l'aiguisage (T<1 pousse les scores vers le haut, reduisant les rejets avec les seuils pre-calibration).
 **GNG-3 erreurs** : dispersees sur 5 classes (help_contact 36%, help_documents/billing/transfer 18% chacun).
 **Analyse** : `ANALYSE_POST_CAMPAGNE_v1.3.4.md` (v1.1, corrections signalees en clair)
 **Artefacts** : `eval/recette-integrale/2026-08-01-v1.3.4/`
 
+### 8b. Re-sweep post-calibration (Action 1, 2026-08-02)
+
+Grille etendue (594 points) : seuil_haut=0.6:0.98:0.02, seuil_bas=0.3:0.85:0.05, seuil_ecart=0.0:0.20:0.10.
+ECART_MIN relaxe a 0.00 (seuil_ecart inoperant avec calibration).
+
+**9 points faisables** (GNG-3>=80%, routes<=5). Selection Pareto : seuil_haut=0.98, seuil_bas=0.75, seuil_ecart=0.00.
+
+| Metrique | Cible | Seuils bot (0.85/0.50) | Re-sweep (0.98/0.75) |
+|---|---|---|---|
+| GNG-1 metier | >= 85% | 81.0% | **73.0%** |
+| GNG-2 conseiller | >= 90% | 87.2% | 87.2% |
+| GNG-3 hors-scope | >= 80% | 72.0% | **81.0%** |
+| Routes directes | <= 5 | 13 | **4** |
+| Pieges | >= 12/15 | 9/15 | 8/15 |
+
+**Conclusion** : avec T=0.60, aucun jeu de seuils ne satisfait GNG-1>=85% ET GNG-3>=80% simultanement. Trade-off irreconciliable.
+
+### 8c. Contre-test H3 (Action 2, 2026-08-02)
+
+Temperature forcee a T=1.0 (calibration desactivee), seuils inchanges (0.85/0.50/0.00).
+
+| Metrique | T=0.60 (calibre) | T=1.0 (neutre) | Delta |
+|---|---|---|---|
+| GNG-1 metier | 81.0% | **77.0%** | -4.0 |
+| GNG-2 conseiller | 87.2% | 87.2% | 0 |
+| GNG-3 hors-scope | 72.0% | **81.0%** | **+9.0** |
+| Pieges | 9/15 | 8/15 | -1 |
+
+**H3 CONFIRMEE.** La regression GNG-3 est entierement mecanique : desactiver la calibration restaure GNG-3 a 81%. Cause racine : T=0.60 pousse les scores hors-perimetre au-dessus de seuil_bas=0.50, empechant le rejet.
+**Artefacts** : `eval/recette-integrale/2026-08-01-v1.3.4-resweep/`, `eval/recette-integrale/2026-08-01-v1.3.4-H3/`
+
 ## 9. Points en attente (decision humaine)
 
-| Item | Blocage | Action requise |
+| Item | Blocage | Statut |
 |---|---|---|
-| Re-sweep avec calibration active | Action 1 (analyse v1.1) | ECART_MIN=0.00, sweep post-calibration — etablir baseline legitimate |
-| Contre-test H3 | Action 2 (analyse v1.1) | T=1.0 memes seuils, re-mesure GNG-3 — confirme/infirme H3 |
-| V3-0 repli bloquant | Action 5 (analyse v1.1) | Faire echouer V3-0 au lieu de retomber silencieusement sur config bot |
-| LOT E2 — hors_perimetre en rejet OOD | Decision humaine | Voir `SPEC_LOT_E2_HORS_PERIMETRE_OOD_LOKO.md` — instruire apres action 1 |
-| V3-7 iteration 2/2 | Decision humaine | Recommandation : suspendre (baseline probablement artefact) |
+| ~~Re-sweep avec calibration active~~ | ~~Action 1~~ | **FAIT** — 9/594 faisables, GNG-1/GNG-3 irreconciliables (section 8b) |
+| ~~Contre-test H3~~ | ~~Action 2~~ | **FAIT — H3 CONFIRMEE** — T=1.0 restaure GNG-3 a 81% (section 8c) |
+| ~~V3-0 repli bloquant~~ | ~~Action 5~~ | **FAIT** — V3-1/2/3/4 SKIP si V3-0 FAIL (commit 3ea5a25) |
+| Calibration + seuils co-optimises | Decision humaine | Prochain entrainement doit sweep avec grille etendue post-calibration |
+| LOT E2 — hors_perimetre en rejet OOD | Decision humaine | Voir `SPEC_LOT_E2_HORS_PERIMETRE_OOD_LOKO.md` — instruire avec resultats action 1 |
+| V3-7 iteration 2/2 | Decision humaine | Recommandation : suspendre (baseline confirmee artefact par H3) |
 | V0-1 fixtures pytest | Bug produit | Relever les fixtures test_assistant a 8 exemples, corriger asyncio |
 | Runner reporting bugs | Outillage | CE PASS/FAIL contradiction, manifest vide, verdicts doubles |
 | Desktop version sync | Intentionnel | desktop/package.json (0.1.0) != pyproject.toml (1.3.4) |
@@ -159,3 +191,6 @@ Marqueurs xfail: aucun.
 | LOT D — Campagne diagnostic | 2026-08-01 | FAIT | eval/recette-integrale/2026-08-01-v1.3.4/ |
 | LOT E2 — OOD rejection | 2026-08-01 | SPEC REDIGEE | SPEC_LOT_E2_HORS_PERIMETRE_OOD_LOKO.md |
 | LOT F2 — STATUS.md | 2026-08-01 | FAIT | STATUS.md (ce fichier) |
+| Action 1 — Re-sweep post-calibration | 2026-08-02 | FAIT | ECART_MIN=0.00, grille 594pts, 9 faisables |
+| Action 2 — Contre-test H3 | 2026-08-02 | FAIT | H3 confirmee, T=1.0 restaure GNG-3=81% |
+| Action 5 — V3-0 bloquant | 2026-08-02 | FAIT | run_campaign.py: V3-1/2/3/4 SKIP si V3-0 FAIL |
