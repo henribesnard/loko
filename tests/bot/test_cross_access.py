@@ -74,30 +74,28 @@ def env(tmp_path, monkeypatch):
         acc._connection = None
 
 
-def test_user_a_can_read_own_bot(env):
+@pytest.mark.asyncio
+async def test_user_a_can_read_own_bot(env):
     """User A can read bot-a."""
     from loko.api.session_middleware import require_tenant_or_ops
     from unittest.mock import MagicMock
-    import asyncio
 
     request = MagicMock()
     request.cookies = {"loko_session": env["session_a"]}
     request.headers = {}
     request.state = MagicMock()
 
-    result = asyncio.get_event_loop().run_until_complete(
-        require_tenant_or_ops(request, "bot-a")
-    )
+    result = await require_tenant_or_ops(request, "bot-a")
     assert result is not None
     assert result["account_id"] == env["acct_a"]["id"]
 
 
-def test_user_b_cannot_read_bot_a(env):
+@pytest.mark.asyncio
+async def test_user_b_cannot_read_bot_a(env):
     """User B must get 404 when trying to read bot-a (not 403)."""
     from loko.api.session_middleware import require_tenant_or_ops
     from fastapi import HTTPException
     from unittest.mock import MagicMock
-    import asyncio
 
     request = MagicMock()
     request.cookies = {"loko_session": env["session_b"]}
@@ -105,9 +103,7 @@ def test_user_b_cannot_read_bot_a(env):
     request.state = MagicMock()
 
     with pytest.raises(HTTPException) as exc_info:
-        asyncio.get_event_loop().run_until_complete(
-            require_tenant_or_ops(request, "bot-a")
-        )
+        await require_tenant_or_ops(request, "bot-a")
 
     # Must be 404 (not 403) to avoid enumeration
     assert exc_info.value.status_code == 404
@@ -127,12 +123,12 @@ def test_list_bots_scoped(env):
     assert bots_b[0]["bot_id"] == "bot-b"
 
 
-def test_no_session_returns_401(env):
+@pytest.mark.asyncio
+async def test_no_session_returns_401(env):
     """No session cookie must return 401."""
     from loko.api.session_middleware import require_tenant_or_ops
     from fastapi import HTTPException
     from unittest.mock import MagicMock
-    import asyncio
 
     request = MagicMock()
     request.cookies = {}
@@ -140,8 +136,6 @@ def test_no_session_returns_401(env):
     request.state = MagicMock()
 
     with pytest.raises(HTTPException) as exc_info:
-        asyncio.get_event_loop().run_until_complete(
-            require_tenant_or_ops(request, "bot-a")
-        )
+        await require_tenant_or_ops(request, "bot-a")
 
     assert exc_info.value.status_code == 401

@@ -1,0 +1,180 @@
+{
+  "mode": "decision",
+  "dataset": "heldout_horsscope.csv",
+  "total": 100,
+  "correct": 82,
+  "accuracy": 0.82,
+  "per_class": {},
+  "confusion": {},
+  "n_errors": 18,
+  "errors": [
+    {
+      "text": "demander une attestation CPAM accident",
+      "expected": "accident",
+      "predicted": "help_documents",
+      "score": 0.984964541458942,
+      "decision_type": "route",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "Information sur aide exceptionnelle pour perte de salaire",
+      "expected": "action_sociale",
+      "predicted": "help_leave",
+      "score": 0.9646955929434707,
+      "decision_type": "route",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "avoir un devis pour une Santelis santé en tant que fonctionnaire",
+      "expected": "adhesion_affiliation",
+      "predicted": "help_leave",
+      "score": 0.707416054671353,
+      "decision_type": "clarify_inter",
+      "correct": false,
+      "detail": "candidates=[('help_leave', 0.707416054671353), ('demande_conseiller', 0.13786199505224261)]"
+    },
+    {
+      "text": "attestation de droits ALD cent-pourcent",
+      "expected": "ald_exotm",
+      "predicted": "help_documents",
+      "score": 0.9799164356527732,
+      "decision_type": "route",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "attestation de carte assurance européenne maladie",
+      "expected": "ceam",
+      "predicted": "help_documents",
+      "score": 0.9955932151424101,
+      "decision_type": "route",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "changer de garantie",
+      "expected": "changement_de_couverture",
+      "predicted": "help_contact",
+      "score": 0.8661014668500778,
+      "decision_type": "route",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "information sur l'adresse postale de la Santelis dont je dépends",
+      "expected": "contact",
+      "predicted": "help_contact",
+      "score": 0.9773872035003978,
+      "decision_type": "route",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "désignation des bénéficiaires de la prestation décès",
+      "expected": "deces",
+      "predicted": "help_leave",
+      "score": 0.9966944655340254,
+      "decision_type": "route",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "question concernant les honoraires facturé par le dentiste",
+      "expected": "dentaire",
+      "predicted": "help_leave",
+      "score": 0.958722046787662,
+      "decision_type": "route",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "changement de prénom",
+      "expected": "donnees_personne",
+      "predicted": "help_contact",
+      "score": 0.9988386123425983,
+      "decision_type": "route",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "attestation assurance voyage",
+      "expected": "offres_essentielles",
+      "predicted": "help_documents",
+      "score": 0.9989258482554618,
+      "decision_type": "route",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "erreur de versement pour remboursement",
+      "expected": "pec_soins_courants",
+      "predicted": "help_billing",
+      "score": 0.9941449926831788,
+      "decision_type": "route",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "remboursement d'une somme du",
+      "expected": "pec_soins_courants",
+      "predicted": "help_billing",
+      "score": 0.9721128344162838,
+      "decision_type": "route",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "remboursement de facture acquittée que je ne comprends pas",
+      "expected": "pec_soins_courants",
+      "predicted": "help_billing",
+      "score": 0.9202353383070868,
+      "decision_type": "route",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "j'ai un souci avec le prélèvement des franchises sécurité sociale",
+      "expected": "pf_fr",
+      "predicted": "help_billing",
+      "score": 0.9045930260659589,
+      "decision_type": "route",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "problème de rejet facture",
+      "expected": "professionel_sante",
+      "predicted": "help_billing",
+      "score": 0.8819731257856973,
+      "decision_type": "route",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "comment faire une demande de dispense à la Santelis",
+      "expected": "vie_du_contrat",
+      "predicted": "help_leave",
+      "score": 0.5100585640237466,
+      "decision_type": "clarify_inter",
+      "correct": false,
+      "detail": "candidates=[('help_leave', 0.5100585640237466), ('help_documents', 0.3096183199633887)]"
+    },
+    {
+      "text": "mise à jour de mes ayants droit",
+      "expected": "vie_du_contrat",
+      "predicted": "help_contact",
+      "score": 0.9790698968393515,
+      "decision_type": "route",
+      "correct": false,
+      "detail": ""
+    }
+  ],
+  "dataset_hash": "bc7da564a9a5b5e28c445360cf78e290fd3801fc4b3ff3141096d0fe08dbb36c",
+  "manifest_reference": {
+    "bot_id": "fa4d8b2d-548f-457b-bf65-acbc61a39cbb",
+    "dataset_hash": "a470379638efc05cb144302240efbee82c9a12897bad2efb2a57154b570cd57a",
+    "trained_at": "2026-08-02T18:49:44.891868+00:00"
+  }
+}

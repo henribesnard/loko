@@ -51,9 +51,9 @@ from setup_campaign_bot import (
 class TestProtocolMatrix:
     """T1: protocol v2.2 matrix invariants."""
 
-    def test_protocol_has_32_lines(self):
+    def test_protocol_has_33_lines(self):
         lines = build_protocol_lines()
-        assert len(lines) == 32, f"expected 32 lines, got {len(lines)}"
+        assert len(lines) == 33, f"expected 33 lines, got {len(lines)}"
 
     def test_protocol_has_6_gates(self):
         lines = build_protocol_lines()
@@ -460,7 +460,7 @@ class TestReportGeneration:
         assert "version" in data
         assert "lines" in data
         assert "gates" in data
-        assert len(data["lines"]) == 32
+        assert len(data["lines"]) == 33
         assert len(data["gates"]) == 6
 
     def test_json_report_lines_have_verdict(self):

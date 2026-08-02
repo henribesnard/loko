@@ -625,6 +625,9 @@ class BotOrchestrator:
         with traces.measure("classification_l1") as ctx:
             scores = self.classifier.classify_l1(text)
             ctx["scores"] = scores
+            # E2: include OOD score in trace if available
+            if hasattr(self.classifier, "last_ood_score") and self.classifier.last_ood_score is not None:
+                ctx["ood_score"] = self.classifier.last_ood_score
 
         event = Event(
             EventType.CLASSIFICATION_L1_DONE,

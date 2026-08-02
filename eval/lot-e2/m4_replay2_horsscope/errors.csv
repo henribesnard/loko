@@ -1,0 +1,19 @@
+text,expected,predicted,score,decision_type,correct,detail
+demander une attestation CPAM accident,accident,help_documents,0.984964541458942,route,False,
+Information sur aide exceptionnelle pour perte de salaire,action_sociale,help_leave,0.9646955929434707,route,False,
+avoir un devis pour une Santelis santé en tant que fonctionnaire,adhesion_affiliation,help_leave,0.707416054671353,clarify_inter,False,"candidates=[('help_leave', 0.707416054671353), ('demande_conseiller', 0.13786199505224261)]"
+attestation de droits ALD cent-pourcent,ald_exotm,help_documents,0.9799164356527732,route,False,
+attestation de carte assurance européenne maladie,ceam,help_documents,0.9955932151424101,route,False,
+changer de garantie,changement_de_couverture,help_contact,0.8661014668500778,route,False,
+information sur l'adresse postale de la Santelis dont je dépends,contact,help_contact,0.9773872035003978,route,False,
+désignation des bénéficiaires de la prestation décès,deces,help_leave,0.9966944655340254,route,False,
+question concernant les honoraires facturé par le dentiste,dentaire,help_leave,0.958722046787662,route,False,
+changement de prénom,donnees_personne,help_contact,0.9988386123425983,route,False,
+attestation assurance voyage,offres_essentielles,help_documents,0.9989258482554618,route,False,
+erreur de versement pour remboursement,pec_soins_courants,help_billing,0.9941449926831788,route,False,
+remboursement d'une somme du,pec_soins_courants,help_billing,0.9721128344162838,route,False,
+remboursement de facture acquittée que je ne comprends pas,pec_soins_courants,help_billing,0.9202353383070868,route,False,
+j'ai un souci avec le prélèvement des franchises sécurité sociale,pf_fr,help_billing,0.9045930260659589,route,False,
+problème de rejet facture,professionel_sante,help_billing,0.8819731257856973,route,False,
+comment faire une demande de dispense à la Santelis,vie_du_contrat,help_leave,0.5100585640237466,clarify_inter,False,"candidates=[('help_leave', 0.5100585640237466), ('help_documents', 0.3096183199633887)]"
+mise à jour de mes ayants droit,vie_du_contrat,help_contact,0.9790698968393515,route,False,

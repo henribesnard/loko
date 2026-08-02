@@ -1,0 +1,162 @@
+{
+  "mode": "decision",
+  "dataset": "heldout_conseiller.csv",
+  "total": 125,
+  "correct": 109,
+  "accuracy": 0.872,
+  "per_class": {},
+  "confusion": {},
+  "n_errors": 16,
+  "errors": [
+    {
+      "text": "Santelis",
+      "expected": "parler_conseiller",
+      "predicted": "hors_perimetre",
+      "score": 0.9646217226982117,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "Santelis obligatoire",
+      "expected": "parler_conseiller",
+      "predicted": "hors_perimetre",
+      "score": 0.9229050278663635,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "c'est au sujet de la Santelis",
+      "expected": "parler_conseiller",
+      "predicted": "hors_perimetre",
+      "score": 0.7421464920043945,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "c'est au sujet de la Santelis et la Santelis",
+      "expected": "parler_conseiller",
+      "predicted": "hors_perimetre",
+      "score": 0.7393501996994019,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "demandes d'informations",
+      "expected": "parler_conseiller",
+      "predicted": "hors_perimetre",
+      "score": 0.32456907629966736,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "je ne peux pas calculer la Santelis je suis en demi-traitement",
+      "expected": "parler_conseiller",
+      "predicted": "hors_perimetre",
+      "score": 0.3160165548324585,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "modification en Santelis santé",
+      "expected": "parler_conseiller",
+      "predicted": "hors_perimetre",
+      "score": 0.8998861312866211,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "mon appel Santelis a été coupé",
+      "expected": "parler_conseiller",
+      "predicted": "hors_perimetre",
+      "score": 0.5371868014335632,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "perte de carte Santelis",
+      "expected": "parler_conseiller",
+      "predicted": "hors_perimetre",
+      "score": 0.7881352305412292,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "qu'est-ce que ça entraîne le fait d'avoir la Santelis et sécu Santelis",
+      "expected": "parler_conseiller",
+      "predicted": "hors_perimetre",
+      "score": 0.6270678043365479,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "renseignement sur la dématérialisation",
+      "expected": "parler_conseiller",
+      "predicted": "hors_perimetre",
+      "score": 0.4646453261375427,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "renseignement sur la prise de la Santelis",
+      "expected": "parler_conseiller",
+      "predicted": "hors_perimetre",
+      "score": 0.5359423756599426,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "résiliation de Santelis",
+      "expected": "parler_conseiller",
+      "predicted": "help_cancellation",
+      "score": 0.9905969500541687,
+      "decision_type": "route",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "sans Santelis",
+      "expected": "parler_conseiller",
+      "predicted": "hors_perimetre",
+      "score": 0.8280812501907349,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "souscrire une Santelis",
+      "expected": "parler_conseiller",
+      "predicted": "hors_perimetre",
+      "score": 0.9101819396018982,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "vous bénéficiez des services de Santelis de la Santelis",
+      "expected": "parler_conseiller",
+      "predicted": "hors_perimetre",
+      "score": 0.6038558483123779,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    }
+  ],
+  "dataset_hash": "4ae34875935d6931e87858467b2818b5381eb1b937abae62cb651a415b7c1326",
+  "manifest_reference": {
+    "bot_id": "fa4d8b2d-548f-457b-bf65-acbc61a39cbb",
+    "dataset_hash": "6180ee3ca8b45aa8b86bf2000355184a65c322a0cd706fff871a9d2305240c36",
+    "trained_at": "2026-08-01T14:59:40.632263+00:00"
+  }
+}

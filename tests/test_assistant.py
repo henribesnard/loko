@@ -38,13 +38,27 @@ def sample_config() -> BotConfig:
                     "ou est mon colis",
                     "suivi livraison",
                     "quand vais-je recevoir ma commande",
+                    "mon colis est en retard",
+                    "je n'ai pas recu mon colis",
+                    "a quelle date sera livre mon colis",
+                    "le livreur n'est pas passe",
+                    "je veux modifier l'adresse de livraison",
                 ],
             ),
             Intent(
                 id="facturation",
                 label="Facturation",
                 definition="Questions sur les factures et paiements",
-                examples=["je veux ma facture", "probleme de paiement"],
+                examples=[
+                    "je veux ma facture",
+                    "probleme de paiement",
+                    "ou est ma facture",
+                    "je n'ai pas recu de facture",
+                    "comment payer ma facture",
+                    "erreur sur ma facture",
+                    "je veux un duplicata de facture",
+                    "montant de ma facture incorrect",
+                ],
             ),
         ],
         journey=JourneyParams(),
@@ -151,10 +165,11 @@ class TestExampleMeta:
         assert meta.origin == "assistant"
 
     def test_intent_with_metadata(self):
+        examples = [f"example {i}" for i in range(8)]
         intent = Intent(
             id="test",
             label="Test",
-            examples=["ex1", "ex2"],
+            examples=examples,
             examples_metadata=[
                 ExampleMeta(index=0, origin="user"),
                 ExampleMeta(index=1, origin="assistant"),
@@ -165,7 +180,8 @@ class TestExampleMeta:
 
     def test_intent_backward_compat(self):
         """Existing intents without metadata should work."""
-        intent = Intent(id="test", label="Test", examples=["ex1"])
+        examples = [f"example {i}" for i in range(8)]
+        intent = Intent(id="test", label="Test", examples=examples)
         assert intent.examples_metadata == []
 
 

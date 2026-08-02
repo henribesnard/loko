@@ -206,6 +206,31 @@ class SetFitClassifier:
 
         return scored[:top_k]
 
+    def encode(self, texts: list[str]) -> list[list[float]]:
+        """E2: Encode texts into embeddings using the model body.
+
+        The model must be loaded (via load() or after train()).
+        Returns list of embedding vectors.
+        """
+        if self._model is None:
+            raise RuntimeError(
+                f"Model not loaded for {self.level} "
+                f"(bot_id={self.bot_id}, intent_id={self.intent_id})"
+            )
+        try:
+            import torch
+
+            with torch.no_grad():
+                emb = self._model.model_body.encode(
+                    texts, show_progress_bar=False, normalize_embeddings=True
+                )
+        except ImportError:
+            emb = self._model.model_body.encode(
+                texts, show_progress_bar=False, normalize_embeddings=True
+            )
+
+        return [list(float(x) for x in vec) for vec in emb]
+
     # ------------------------------------------------------------------
     # Load / Save
     # ------------------------------------------------------------------
@@ -259,15 +284,28 @@ class SetFitClassifier:
 # ---------------------------------------------------------------------------
 
 
-def prepare_l1_training_data(config: BotConfig) -> tuple[list[str], list[str]]:
+def prepare_l1_training_data(
+    config: BotConfig,
+    *,
+    exclude_hors_perimetre: bool = False,
+) -> tuple[list[str], list[str]]:
     """Build training texts and labels for L1 classification from a BotConfig.
 
     Automatically merges built-in demande_conseiller examples.
+
+    Parameters
+    ----------
+    exclude_hors_perimetre : bool
+        E2: If True, exclude hors_perimetre from training data.
+        Its examples are used as OOD validation set instead.
     """
     texts: list[str] = []
     labels: list[str] = []
 
     for intent in config.intents:
+        if exclude_hors_perimetre and intent.id == "hors_perimetre":
+            continue
+
         examples = list(intent.examples)
         for sub_motif in intent.sub_motifs:
             examples.extend(sub_motif.examples)
@@ -284,6 +322,21 @@ def prepare_l1_training_data(config: BotConfig) -> tuple[list[str], list[str]]:
             labels.append(intent.id)
 
     return texts, labels
+
+
+def prepare_ood_validation_data(config: BotConfig) -> list[str]:
+    """E2: Extract hors_perimetre examples for OOD threshold calibration.
+
+    These examples are NOT used for training — only for calibrating
+    the OOD rejection threshold via cross-validation on train.csv.
+    """
+    for intent in config.intents:
+        if intent.id == "hors_perimetre":
+            examples = list(intent.examples)
+            for sub_motif in intent.sub_motifs:
+                examples.extend(sub_motif.examples)
+            return examples
+    return []
 
 
 def prepare_l2_training_data(intent: Intent) -> tuple[list[str], list[str]]:

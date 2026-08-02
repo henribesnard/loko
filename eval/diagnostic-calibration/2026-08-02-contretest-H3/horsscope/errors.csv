@@ -1,0 +1,20 @@
+text,expected,predicted,score,decision_type,correct,detail
+demander une attestation CPAM accident,accident,help_documents,0.7219734191894531,clarify_inter,False,"candidates=[('help_documents', 0.7219734191894531), ('hors_perimetre', 0.21602213382720947)]"
+Information sur aide exceptionnelle pour perte de salaire,action_sociale,help_leave,0.7107462286949158,clarify_inter,False,"candidates=[('help_leave', 0.7107462286949158), ('help_billing', 0.198630228638649)]"
+attestation de droits ALD cent-pourcent,ald_exotm,help_documents,0.8247057199478149,clarify_inter,False,"candidates=[('help_documents', 0.8247057199478149), ('help_leave', 0.1376984566450119)]"
+information sur le check-up,bilan_prevention,help_documents,0.684928834438324,clarify_inter,False,"candidates=[('help_documents', 0.684928834438324), ('help_billing', 0.08680105209350586)]"
+attestation de carte assurance européenne maladie,ceam,help_documents,0.9318896532058716,route,False,
+changer de garantie,changement_de_couverture,help_contact,0.6671774387359619,clarify_inter,False,"candidates=[('help_contact', 0.6671774387359619), ('hors_perimetre', 0.12598128616809845)]"
+changement de rendez-vous,contact,help_contact,0.6673584580421448,clarify_inter,False,"candidates=[('help_contact', 0.6673584580421448), ('hors_perimetre', 0.15035223960876465)]"
+désignation des bénéficiaires de la prestation décès,deces,help_leave,0.5846719741821289,clarify_inter,False,"candidates=[('help_leave', 0.5846719741821289), ('hors_perimetre', 0.33717724680900574)]"
+problème courrier MT-Dents,dentaire,help_contact,0.5672910809516907,clarify_inter,False,"candidates=[('help_contact', 0.5672910809516907), ('hors_perimetre', 0.21611927449703217)]"
+changement de prénom,donnees_personne,help_contact,0.9770759344100952,route,False,
+signaler un changement d'employeur,donnees_personne,help_contact,0.6506901979446411,clarify_inter,False,"candidates=[('help_contact', 0.6506901979446411), ('help_leave', 0.11079686135053635)]"
+attestation assurance voyage,offres_essentielles,help_documents,0.981374204158783,route,False,
+erreur de versement pour remboursement,pec_soins_courants,help_billing,0.919218122959137,route,False,
+remboursement d'une somme du,pec_soins_courants,help_billing,0.8237249255180359,clarify_inter,False,"candidates=[('help_billing', 0.8237249255180359), ('help_contact', 0.041830722242593765)]"
+remboursement de facture acquittée que je ne comprends pas,pec_soins_courants,help_billing,0.6358345150947571,clarify_inter,False,"candidates=[('help_billing', 0.6358345150947571), ('help_contact', 0.11579541862010956)]"
+j'ai un souci avec le prélèvement des franchises sécurité sociale,pf_fr,help_billing,0.8061091303825378,clarify_inter,False,"candidates=[('help_billing', 0.8061091303825378), ('help_leave', 0.07831235975027084)]"
+problème de rejet facture,professionel_sante,help_billing,0.7484754920005798,clarify_inter,False,"candidates=[('help_billing', 0.7484754920005798), ('help_leave', 0.1711442619562149)]"
+transport en VSL,transport,help_transfer,0.8610010743141174,route,False,
+mise à jour de mes ayants droit,vie_du_contrat,help_contact,0.8364158868789673,clarify_inter,False,"candidates=[('help_contact', 0.8364158868789673), ('hors_perimetre', 0.06550003588199615)]"

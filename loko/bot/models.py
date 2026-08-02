@@ -467,6 +467,8 @@ class TraceEvent(BaseModel):
     latency_ms: float = 0.0
     # ORC: session counters snapshot (included in deterministic replay diff)
     counters: dict[str, Any] | None = None
+    # E2: OOD novelty score (present when OOD rejection is active)
+    ood_score: float | None = None
 
 
 # ---------------------------------------------------------------------------

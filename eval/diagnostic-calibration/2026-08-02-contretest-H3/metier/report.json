@@ -1,0 +1,225 @@
+{
+  "mode": "decision",
+  "dataset": "heldout_metier.csv",
+  "total": 100,
+  "correct": 77,
+  "accuracy": 0.77,
+  "per_class": {},
+  "confusion": {},
+  "n_errors": 23,
+  "errors": [
+    {
+      "text": "demande assistance internet",
+      "expected": "help_account",
+      "predicted": "help_account",
+      "score": 0.47220227122306824,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "espace Santelis disponibles",
+      "expected": "help_account",
+      "predicted": "hors_perimetre",
+      "score": 0.8052915930747986,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "reçu un courrier pour mettre sur internet j'ai pas internet",
+      "expected": "help_account",
+      "predicted": "demande_conseiller",
+      "score": 0.3439892828464508,
+      "decision_type": "escalate",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "problème sur mon échéancier Santelis",
+      "expected": "help_billing",
+      "predicted": "help_billing",
+      "score": 0.44891804456710815,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "renseignements sur le prix de la Santelis",
+      "expected": "help_billing",
+      "predicted": "hors_perimetre",
+      "score": 0.44262388348579407,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "démarche à faire pour un déménagement changement de département",
+      "expected": "help_contact",
+      "predicted": "help_contact",
+      "score": 0.457257479429245,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "je souhaite savoir comment rentrer mon numéro d'iban",
+      "expected": "help_contact",
+      "predicted": "help_contact",
+      "score": 0.48388567566871643,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "carte de tiers payant mutualiste",
+      "expected": "help_documents",
+      "predicted": "help_documents",
+      "score": 0.24900582432746887,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "carte tiers payant mutualiste",
+      "expected": "help_documents",
+      "predicted": "help_documents",
+      "score": 0.22564025223255157,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "comment accéder à la carte Santelis",
+      "expected": "help_documents",
+      "predicted": "help_account",
+      "score": 0.2892005443572998,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "demande de carte de tiers payant mutualiste",
+      "expected": "help_documents",
+      "predicted": "help_documents",
+      "score": 0.22339433431625366,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "justificatif des droits",
+      "expected": "help_documents",
+      "predicted": "hors_perimetre",
+      "score": 0.49478304386138916,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "la fiche reflet",
+      "expected": "help_documents",
+      "predicted": "hors_perimetre",
+      "score": 0.7769655585289001,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "me renseigner sur l'attestation de droits",
+      "expected": "help_documents",
+      "predicted": "help_documents",
+      "score": 0.2712094783782959,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "modifier ma carte de Santelis",
+      "expected": "help_documents",
+      "predicted": "help_contact",
+      "score": 0.7418504357337952,
+      "decision_type": "clarify_inter",
+      "correct": false,
+      "detail": "candidates=[('help_contact', 0.7418504357337952), ('hors_perimetre', 0.163777694106102)]"
+    },
+    {
+      "text": "photocopie de mon assurance sociale",
+      "expected": "help_documents",
+      "predicted": "hors_perimetre",
+      "score": 0.8175032734870911,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "renseignements sur l'attestation vitale",
+      "expected": "help_documents",
+      "predicted": "hors_perimetre",
+      "score": 0.7568533420562744,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "besoin d'un imprimé trente-trois seize",
+      "expected": "help_leave",
+      "predicted": "hors_perimetre",
+      "score": 0.8696725368499756,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "percevoir un complément de salaire",
+      "expected": "help_leave",
+      "predicted": "help_leave",
+      "score": 0.49061959981918335,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "renseignement sur le temps partiel thérapeutique",
+      "expected": "help_leave",
+      "predicted": "help_transfer",
+      "score": 0.2576620578765869,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "signaler un cld",
+      "expected": "help_leave",
+      "predicted": "hors_perimetre",
+      "score": 0.32763516902923584,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "versement d'indemnité subrogé",
+      "expected": "help_leave",
+      "predicted": "help_billing",
+      "score": 0.9496960043907166,
+      "decision_type": "route",
+      "correct": false,
+      "detail": ""
+    },
+    {
+      "text": "lien Santelis",
+      "expected": "help_transfer",
+      "predicted": "hors_perimetre",
+      "score": 0.818212628364563,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": ""
+    }
+  ],
+  "dataset_hash": "b63902d9b362ffe04ae21e8b77e90fb8fde438f4bdae8dfac377b18784f93a57",
+  "manifest_reference": {
+    "bot_id": "fa4d8b2d-548f-457b-bf65-acbc61a39cbb",
+    "dataset_hash": "6180ee3ca8b45aa8b86bf2000355184a65c322a0cd706fff871a9d2305240c36",
+    "trained_at": "2026-08-01T14:59:40.632263+00:00"
+  }
+}

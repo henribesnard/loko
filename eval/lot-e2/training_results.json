@@ -1,0 +1,234 @@
+{
+  "level1": {
+    "num_classes": 8,
+    "num_samples": 247,
+    "duration_s": 354.56,
+    "classes": [
+      "demande_conseiller",
+      "help_account",
+      "help_billing",
+      "help_cancellation",
+      "help_contact",
+      "help_documents",
+      "help_leave",
+      "help_transfer"
+    ]
+  },
+  "level2": {
+    "help_account": {
+      "num_classes": 5,
+      "num_samples": 25,
+      "duration_s": 44.02,
+      "classes": [
+        "compte_bloque",
+        "identifiants_perdus",
+        "mot_de_passe_oublie",
+        "premiere_connexion",
+        "probleme_technique"
+      ]
+    }
+  },
+  "evaluation": {
+    "class_names": [
+      "demande_conseiller",
+      "help_account",
+      "help_billing",
+      "help_cancellation",
+      "help_contact",
+      "help_documents",
+      "help_leave",
+      "help_transfer"
+    ],
+    "confusion_matrix": [
+      [
+        36,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        48,
+        0,
+        0,
+        0,
+        1,
+        0,
+        1
+      ],
+      [
+        0,
+        0,
+        22,
+        0,
+        0,
+        0,
+        1,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        21,
+        0,
+        1,
+        0,
+        0
+      ],
+      [
+        1,
+        2,
+        0,
+        0,
+        24,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        1,
+        0,
+        0,
+        30,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        2,
+        0,
+        0,
+        3,
+        26,
+        0
+      ],
+      [
+        1,
+        0,
+        1,
+        0,
+        0,
+        0,
+        1,
+        22
+      ]
+    ],
+    "accuracy": 0.9309,
+    "per_class_f1": {
+      "demande_conseiller": 0.96,
+      "help_account": 0.9505,
+      "help_billing": 0.898,
+      "help_cancellation": 0.9767,
+      "help_contact": 0.9412,
+      "help_documents": 0.9091,
+      "help_leave": 0.8814,
+      "help_transfer": 0.9167
+    },
+    "advice": [
+      {
+        "type": "confused_pair",
+        "pair": [
+          "help_documents",
+          "help_leave"
+        ],
+        "evidence": "both",
+        "n_exemples_faibles": 3,
+        "avg_margin": 0.1369,
+        "suggestion": "Les intentions 'help_documents' et 'help_leave' sont proches en marge (1 exemples avec ecart top1-top2 < 0.15, marge moyenne 0.137). Ajoutez des exemples discriminants entre ces deux intentions. Exemples a faible marge : \"attestation de paiement mutuelle de mes AJ\".",
+        "verbatims": [
+          "attestation de paiement mutuelle de mes AJ"
+        ]
+      },
+      {
+        "type": "confused_pair",
+        "pair": [
+          "help_account",
+          "help_contact"
+        ],
+        "evidence": "cv",
+        "n_exemples_faibles": 2,
+        "suggestion": "'help_contact' et 'help_account' se confondent en CV base (2/27 erreurs). Ajoutez des exemples discriminants entre ces deux intentions."
+      },
+      {
+        "type": "confused_pair",
+        "pair": [
+          "help_billing",
+          "help_leave"
+        ],
+        "evidence": "cv",
+        "n_exemples_faibles": 2,
+        "suggestion": "'help_leave' et 'help_billing' se confondent en CV base (2/31 erreurs). Ajoutez des exemples discriminants entre ces deux intentions."
+      }
+    ],
+    "cv_method": "base_model_frozen_3seeds",
+    "duration_s": 8.68,
+    "n_seeds": 3,
+    "margin_weak_pairs": [
+      {
+        "pair": [
+          "help_documents",
+          "help_leave"
+        ],
+        "count": 1,
+        "avg_margin": 0.1369,
+        "verbatims": [
+          "attestation de paiement mutuelle de mes AJ"
+        ]
+      }
+    ]
+  },
+  "calibration": {
+    "temperature": 0.6,
+    "ece_before": 0.0264,
+    "ece_after": 0.0059,
+    "method": "temperature_scaling_ece_min",
+    "n_samples": 247
+  },
+  "ood": {
+    "threshold": 0.317352,
+    "method": "centroid_cosine_distance",
+    "centroids_hash": "7d99b449efdffc68940017cb750ee824d656eba677e1246bb716bd2abb9addf4",
+    "n_classes": 8,
+    "calibration": {
+      "method": "f1_maximization_train_only",
+      "n_in": 247,
+      "n_out": 26,
+      "best_f1": 0.902,
+      "in_score_range": [
+        0.0085,
+        0.5384
+      ],
+      "out_score_range": [
+        0.1622,
+        0.7439
+      ]
+    }
+  },
+  "inference_latency_ms": {
+    "p50": 36.36,
+    "p95": 56.71,
+    "methodology": {
+      "warmup": 10,
+      "measured": 100,
+      "gc_before": true,
+      "threads_reset": true
+    }
+  },
+  "manifest": "written",
+  "profile": {
+    "l1_train_s": 374.2,
+    "eval_s": 17.27,
+    "ood_s": 1.78,
+    "l2_train_s": 44.02,
+    "latency_measure_s": 6.56,
+    "total_s": 455.8
+  }
+}

@@ -116,19 +116,25 @@ async def test_emit_queue_full(analytics_db):
 @pytest.mark.asyncio
 async def test_emit_fail_open_readonly_db(analytics_db):
     """If analytics.db is read-only, events are dropped but no exception escapes."""
-    from loko.analytics.emitter import AnalyticsEmitter
-    from loko.analytics.db import get_analytics_db
-
-    # Initialize DB first
-    get_analytics_db()
-
-    # Make it read-only (platform-dependent, skip on Windows)
     import sys
 
     if sys.platform == "win32":
         pytest.skip("chmod not available on Windows")
 
+    from loko.analytics.emitter import AnalyticsEmitter
+    from loko.analytics.db import close_analytics_db, get_analytics_db
+
+    # Initialize DB first, then close the singleton so fresh connections
+    # must re-open the file (and fail on read-only).
+    get_analytics_db()
+    close_analytics_db()
+
+    # Make DB and WAL/SHM files read-only
     os.chmod(str(analytics_db), 0o444)
+    for suffix in ("-wal", "-shm"):
+        wal_path = str(analytics_db) + suffix
+        if os.path.exists(wal_path):
+            os.chmod(wal_path, 0o444)
 
     emitter = AnalyticsEmitter()
     emitter.start()
@@ -136,7 +142,8 @@ async def test_emit_fail_open_readonly_db(analytics_db):
     for _ in range(5):
         emitter.emit(_make_event())
 
-    await asyncio.sleep(2)
+    # Wait for at least 2 flush cycles (interval=1s)
+    await asyncio.sleep(3)
     await emitter.stop()
 
     # Events should have been dropped, not crashed
@@ -144,6 +151,10 @@ async def test_emit_fail_open_readonly_db(analytics_db):
 
     # Restore permissions for cleanup
     os.chmod(str(analytics_db), 0o644)
+    for suffix in ("-wal", "-shm"):
+        wal_path = str(analytics_db) + suffix
+        if os.path.exists(wal_path):
+            os.chmod(wal_path, 0o644)
 
 
 @pytest.mark.asyncio

@@ -1,0 +1,81 @@
+{
+  "mode": "pieges",
+  "dataset": "pieges.csv",
+  "total": 15,
+  "correct": 8,
+  "accuracy": 0.5333,
+  "per_class": {},
+  "confusion": {},
+  "n_errors": 7,
+  "errors": [
+    {
+      "text": "modification mot de passe",
+      "expected": "route:help_account",
+      "predicted": "clarify_inter:help_contact|help_account",
+      "score": 0.6277174353599548,
+      "decision_type": "clarify_inter",
+      "correct": false,
+      "detail": "T02: help_account/mot_de_passe_oublie sans clarification | intent=help_contact"
+    },
+    {
+      "text": "RIB coordonnées bancaires",
+      "expected": "clarify_inter:help_contact|help_billing",
+      "predicted": "route:help_contact",
+      "score": 0.9832649827003479,
+      "decision_type": "route",
+      "correct": false,
+      "detail": "T04: ambigu help_contact/cotisations | intent=help_contact"
+    },
+    {
+      "text": "changement de banque pour les prélèvements de cotisations",
+      "expected": "clarify_inter:help_contact|help_billing",
+      "predicted": "route:help_billing",
+      "score": 0.9890311360359192,
+      "decision_type": "route",
+      "correct": false,
+      "detail": "T05: zone grise RIB/prélèvement | intent=help_billing"
+    },
+    {
+      "text": "attestation de paiement",
+      "expected": "clarify_inter:help_leave|help_billing|help_documents",
+      "predicted": "clarify_inter:help_documents|help_leave",
+      "score": 0.6292442679405212,
+      "decision_type": "clarify_inter",
+      "correct": false,
+      "detail": "T06: ambigu help_leave/help_billing/justificatif_droits | intent=help_documents"
+    },
+    {
+      "text": "est-ce qu'il y a une télétransmission entre vous et Santelis",
+      "expected": "route:help_transfer",
+      "predicted": "clarify_inter:help_transfer|demande_conseiller",
+      "score": 0.7873216271400452,
+      "decision_type": "clarify_inter",
+      "correct": false,
+      "detail": "T09: help_transfer direct (contrôle positif) | intent=help_transfer"
+    },
+    {
+      "text": "bilan bucco-dentaire détartrage",
+      "expected": "reject",
+      "predicted": "clarify_inter:help_billing|help_leave",
+      "score": 0.5749956965446472,
+      "decision_type": "clarify_inter",
+      "correct": false,
+      "detail": "T13: hors_périmètre — dentaire non retenu | intent=help_billing"
+    },
+    {
+      "text": "la référence iban et le numéro de carte vitale ne sont pas reconnus",
+      "expected": "route:help_account",
+      "predicted": "clarify_inter:help_contact|hors_perimetre",
+      "score": 0.517410397529602,
+      "decision_type": "clarify_inter",
+      "correct": false,
+      "detail": "T15: piège IBAN+carte vitale — services_en_ligne | intent=help_contact"
+    }
+  ],
+  "dataset_hash": "1a352ef7f73014c82b804aa932c24dfcd0e0e80a073ec3b0db9759701e83cd6e",
+  "manifest_reference": {
+    "bot_id": "fa4d8b2d-548f-457b-bf65-acbc61a39cbb",
+    "dataset_hash": "6180ee3ca8b45aa8b86bf2000355184a65c322a0cd706fff871a9d2305240c36",
+    "trained_at": "2026-08-01T14:59:40.632263+00:00"
+  }
+}

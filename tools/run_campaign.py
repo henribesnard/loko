@@ -135,6 +135,7 @@ def build_protocol_lines() -> list[TestLine]:
         TestLine("CE-7", "Campaign artifacts directory exists", "CE", "CE"),
         TestLine("CE-8", "LLM provider ping (temp 0)", "CE", "CE", skippable=True),
         TestLine("CE-9", "Bot conformity: 9 intents + L2 labels", "CE", "CE"),
+        TestLine("CE-10", "Machine reference declaration", "CE", "CE"),
         # ── V0: Build validation (G-0) ──
         TestLine("V0-1", "pytest: all tests pass", "G-0", "V0"),
         TestLine("V0-2", "ML imports (PyTorch, SetFit)", "G-0", "V0"),
@@ -542,6 +543,102 @@ def exec_ce9(line: TestLine, campaign_dir: Path, **ctx: Any) -> None:
         _mark_fail(line, "; ".join(errors), str(artifact_path))
     else:
         _mark_pass(line, "9 intents, L2 OK", str(artifact_path))
+
+
+def exec_ce10(line: TestLine, campaign_dir: Path, **ctx: Any) -> None:
+    """CE-10: Machine reference declaration.
+
+    Collects CPU, RAM, OS, Python, Docker version and records them
+    as a JSON artifact.  Always PASS — the purpose is traceability,
+    not a gate criterion.
+    """
+    import platform
+
+    specs: dict[str, Any] = {
+        "hostname": platform.node(),
+        "os": f"{platform.system()} {platform.release()}",
+        "os_version": platform.version(),
+        "architecture": platform.machine(),
+        "python": platform.python_version(),
+        "cpu": "(unknown)",
+        "cpu_count": os.cpu_count(),
+        "ram_gb": "(unknown)",
+    }
+
+    # CPU model
+    if platform.system() == "Linux":
+        try:
+            with open("/proc/cpuinfo", encoding="utf-8") as f:
+                for proc_line in f:
+                    if proc_line.startswith("model name"):
+                        specs["cpu"] = proc_line.split(":", 1)[1].strip()
+                        break
+        except OSError:
+            pass
+    elif platform.system() == "Darwin":
+        r = _run_cmd(["sysctl", "-n", "machdep.cpu.brand_string"])
+        if r.returncode == 0 and r.stdout.strip():
+            specs["cpu"] = r.stdout.strip()
+    elif platform.system() == "Windows":
+        r = _run_cmd(
+            ["wmic", "cpu", "get", "Name", "/value"],
+        )
+        if r.returncode == 0:
+            for wl in r.stdout.splitlines():
+                if wl.startswith("Name="):
+                    specs["cpu"] = wl.split("=", 1)[1].strip()
+                    break
+
+    # RAM
+    if platform.system() == "Linux":
+        try:
+            with open("/proc/meminfo", encoding="utf-8") as f:
+                for mem_line in f:
+                    if mem_line.startswith("MemTotal"):
+                        kb = int(mem_line.split()[1])
+                        specs["ram_gb"] = round(kb / 1024 / 1024, 1)
+                        break
+        except OSError:
+            pass
+    elif platform.system() == "Darwin":
+        r = _run_cmd(["sysctl", "-n", "hw.memsize"])
+        if r.returncode == 0 and r.stdout.strip():
+            specs["ram_gb"] = round(int(r.stdout.strip()) / 1024**3, 1)
+    elif platform.system() == "Windows":
+        r = _run_cmd(
+            ["wmic", "ComputerSystem", "get", "TotalPhysicalMemory", "/value"],
+        )
+        if r.returncode == 0:
+            for wl in r.stdout.splitlines():
+                if wl.startswith("TotalPhysicalMemory="):
+                    val = wl.split("=", 1)[1].strip()
+                    if val.isdigit():
+                        specs["ram_gb"] = round(int(val) / 1024**3, 1)
+                    break
+
+    # Docker version
+    docker_result = _run_cmd(["docker", "version", "--format", "{{.Server.Version}}"])
+    specs["docker"] = (
+        docker_result.stdout.strip()
+        if docker_result.returncode == 0
+        else "(unavailable)"
+    )
+
+    # LOKO_MACHINE_ID if set
+    specs["machine_id"] = os.environ.get("LOKO_MACHINE_ID", "(non declare)")
+
+    artifact_path = _save_artifact(
+        campaign_dir,
+        "CE-10_machine.json",
+        json.dumps(specs, ensure_ascii=False, indent=2),
+    )
+
+    summary = (
+        f"{specs['os']}, {specs['cpu']}, "
+        f"{specs['cpu_count']} cores, {specs['ram_gb']} GB RAM, "
+        f"Docker {specs['docker']}"
+    )
+    _mark_pass(line, summary, str(artifact_path))
 
 
 def exec_v0_1(line: TestLine, campaign_dir: Path, **ctx: Any) -> None:
@@ -991,6 +1088,7 @@ EXECUTORS: dict[str, Any] = {
     "CE-7": exec_ce7,
     "CE-8": exec_ce8,
     "CE-9": exec_ce9,
+    "CE-10": exec_ce10,
     "V0-1": exec_v0_1,
     "V0-2": exec_v0_2,
     "V0-3": exec_v0_3,
@@ -1106,15 +1204,11 @@ def generate_report_md(report: CampaignReport) -> str:
     md.append("|---|---|---|---|---|")
 
     for line in report.lines:
-        verdict_emoji = (
-            "PASS"
-            if line.verdict == "PASS"
-            else ("SKIP" if line.verdict == "SKIP" else "FAIL")
-        )
+        verdict_str = line.verdict if line.executed else "NON EXÉCUTÉ"
         artifact_short = Path(line.artifact).name if line.artifact else "-"
         measured = line.measured or line.detail or "NON EXÉCUTÉ"
         md.append(
-            f"| {line.id} | {line.description} | {verdict_emoji} {line.verdict} | {measured} | {artifact_short} |"
+            f"| {line.id} | {line.description} | {verdict_str} | {measured} | {artifact_short} |"
         )
 
     md.append("")
@@ -1126,9 +1220,8 @@ def generate_report_md(report: CampaignReport) -> str:
     md.append("|---|---|---|---|")
 
     for gate in report.gates:
-        verdict_emoji = "PASS" if gate.verdict == "PASS" else "FAIL"
         md.append(
-            f"| {gate.gate_id} | {gate.description} | {verdict_emoji} {gate.verdict} | {gate.detail} |"
+            f"| {gate.gate_id} | {gate.description} | {gate.verdict} | {gate.detail} |"
         )
 
     md.append("")
@@ -1271,7 +1364,7 @@ def run_campaign(
     commit_result = _run_cmd(["git", "rev-parse", "--short", "HEAD"])
     report.commit = commit_result.stdout.strip()
     report.tag = tag or ""
-    report.machine_reference = os.environ.get("LOKO_MACHINE_ID", "(non declare)")
+    report.machine_reference = os.environ.get("LOKO_MACHINE_ID", "(see CE-10)")
 
     if image:
         digest = _run_cmd(["docker", "inspect", "--format", "{{.Id}}", image])
@@ -1292,10 +1385,6 @@ def run_campaign(
         print(f"    {interdit}")
     print()
 
-    if diagnostic:
-        report.anomalies_protocole.append(
-            "MODE DIAGNOSTIC — CAMPAGNE NON OPPOSABLE (CE FAIL bypass via --diagnostic)"
-        )
     if dry_run:
         print("  *** MODE DRY-RUN - les tests V1+ restent NON EXECUTE ***\n")
 
@@ -1364,10 +1453,20 @@ def run_campaign(
                     report._ce_aborted = True  # type: ignore[attr-defined]
                     return report
             elif diagnostic:
-                print(
-                    "  \033[93m*** MODE DIAGNOSTIC — CAMPAGNE NON OPPOSABLE "
-                    "(CE FAIL) ***\033[0m\n"
+                ce_lines_diag = [l for l in report.lines if l.phase == "CE"]
+                ce_has_fails = any(
+                    l.verdict != "PASS" and not (l.verdict == "SKIP" and l.skippable)
+                    for l in ce_lines_diag
                 )
+                if ce_has_fails:
+                    report.anomalies_protocole.append(
+                        "MODE DIAGNOSTIC — CAMPAGNE NON OPPOSABLE "
+                        "(CE FAIL bypass via --diagnostic)"
+                    )
+                    print(
+                        "  \033[93m*** MODE DIAGNOSTIC — CAMPAGNE NON OPPOSABLE "
+                        "(CE FAIL) ***\033[0m\n"
+                    )
 
         # Filter by allowed test IDs (for E1 diagnostic mode)
         if allowed_tests and test_line.id not in allowed_tests:
@@ -1414,6 +1513,20 @@ def run_campaign(
             else ("\033[93m" if status == "SKIP" else "\033[91m")
         )
         print(f"{color}{status}\033[0m  {test_line.measured or test_line.detail or ''}")
+
+    # Populate machine_reference from CE-10 if available
+    ce10 = _find_line(report.lines, "CE-10")
+    if ce10 and ce10.measured:
+        report.machine_reference = ce10.measured
+
+    # Populate manifest_hash from V3-5 if available
+    v3_5 = _find_line(report.lines, "V3-5")
+    if v3_5 and v3_5.measured and not report.manifest_hash:
+        # V3-5 measured format: "manifest_hash=fcecf51e..."
+        for part in v3_5.measured.split(","):
+            if part.strip().startswith("manifest_hash="):
+                report.manifest_hash = part.strip().split("=", 1)[1]
+                break
 
     # Calculate gates
     calculate_gates(report.lines, report.gates)

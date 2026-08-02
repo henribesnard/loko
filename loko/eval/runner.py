@@ -762,6 +762,167 @@ def select_best_thresholds_pareto(
     }
 
 
+def threshold_sweep_4axis(
+    classifier: Any,
+    datasets: dict[str, Path],
+    config: Any,
+    seuil_haut_range: tuple[float, float, float] = (0.6, 0.98, 0.02),
+    seuil_bas_range: tuple[float, float, float] = (0.3, 0.85, 0.05),
+    seuil_ecart_range: tuple[float, float, float] = (0.0, 0.20, 0.10),
+    seuil_ood_range: tuple[float, float, float] = (0.1, 0.6, 0.05),
+) -> list[dict[str, Any]]:
+    """E2 — 4-axis sweep: seuil_haut x seuil_bas x seuil_ecart x seuil_ood.
+
+    Pre-computes inference scores AND OOD scores once per dataset,
+    then evaluates decide() with OOD pre-rejection on every grid point.
+
+    The classifier must have an ood_enabled property and expose
+    _ood_centroids for score computation.
+    """
+    from loko.bot.classifier.ood import ood_score as compute_ood_score
+
+    # Pre-compute scores + OOD scores for each dataset (once)
+    precomputed: dict[str, list[tuple[dict[str, str], list[tuple[str, float]], float | None]]] = {}
+    has_ood = hasattr(classifier, "_ood_centroids") and classifier._ood_centroids is not None
+
+    for label, path in datasets.items():
+        rows = load_dataset(path)
+        scored: list[tuple[dict[str, str], list[tuple[str, float]], float | None]] = []
+        for row in rows:
+            # Temporarily disable OOD rejection to get raw classifier scores
+            original_threshold = getattr(classifier, "_ood_threshold", None)
+            if has_ood:
+                classifier._ood_threshold = None  # Disable OOD for raw scores
+            scores = classifier.classify_l1(row["text"])
+            if has_ood:
+                classifier._ood_threshold = original_threshold
+
+            # Compute OOD score separately
+            ood_sc = None
+            if has_ood:
+                embedding = classifier._l1.encode([row["text"]])[0]
+                ood_sc = compute_ood_score(embedding, classifier._ood_centroids)
+
+            scored.append((row, scores, ood_sc))
+        precomputed[label] = scored
+
+    results: list[dict[str, Any]] = []
+
+    sh = seuil_haut_range[0]
+    while sh <= seuil_haut_range[1] + 1e-9:
+        sb = seuil_bas_range[0]
+        while sb <= seuil_bas_range[1] + 1e-9:
+            if sb >= sh:
+                sb += seuil_bas_range[2]
+                continue
+
+            se = seuil_ecart_range[0]
+            while se <= seuil_ecart_range[1] + 1e-9:
+                so = seuil_ood_range[0]
+                while so <= seuil_ood_range[1] + 1e-9:
+                    modified_journey = config.journey.model_copy(
+                        update={
+                            "seuil_haut": round(sh, 4),
+                            "seuil_bas": round(sb, 4),
+                            "seuil_ecart_clarification": round(se, 4),
+                        },
+                    )
+                    modified_config = config.model_copy(
+                        update={"journey": modified_journey}
+                    )
+
+                    point: dict[str, Any] = {
+                        "seuil_haut": round(sh, 3),
+                        "seuil_bas": round(sb, 3),
+                        "seuil_ecart": round(se, 3),
+                        "seuil_ood": round(so, 3),
+                    }
+
+                    # GNG-1 (metier)
+                    if "metier" in precomputed:
+                        correct = 0
+                        total = len(precomputed["metier"])
+                        for row, scores, ood_sc in precomputed["metier"]:
+                            expected = row["intent"]
+                            # E2: simulate OOD pre-rejection
+                            if ood_sc is not None and ood_sc >= so:
+                                # OOD rejection — effective scores are hors_perimetre
+                                effective_scores = [("hors_perimetre", ood_sc)]
+                            else:
+                                effective_scores = scores
+                            decision = decide(effective_scores, modified_config)
+                            if decision.type == "route" and decision.intent == expected:
+                                correct += 1
+                            elif decision.type == "clarify_inter":
+                                if expected in [c[0] for c in decision.candidates]:
+                                    correct += 1
+                            elif (
+                                decision.type == "escalate"
+                                and expected == "demande_conseiller"
+                            ):
+                                correct += 1
+                            elif decision.type == "reject" and expected == "hors_perimetre":
+                                correct += 1
+                        point["gng1"] = round(correct / total, 4) if total else 0
+
+                    # GNG-2 (conseiller)
+                    if "conseiller" in precomputed:
+                        correct = 0
+                        total = len(precomputed["conseiller"])
+                        for _, scores, ood_sc in precomputed["conseiller"]:
+                            if ood_sc is not None and ood_sc >= so:
+                                effective_scores = [("hors_perimetre", ood_sc)]
+                            else:
+                                effective_scores = scores
+                            decision = decide(effective_scores, modified_config)
+                            if decision.type == "escalate":
+                                correct += 1
+                        point["gng2"] = round(correct / total, 4) if total else 0
+
+                    # GNG-3 (horsscope)
+                    if "horsscope" in precomputed:
+                        correct = 0
+                        routes_directes = 0
+                        total = len(precomputed["horsscope"])
+                        for _, scores, ood_sc in precomputed["horsscope"]:
+                            if ood_sc is not None and ood_sc >= so:
+                                effective_scores = [("hors_perimetre", ood_sc)]
+                            else:
+                                effective_scores = scores
+                            decision = decide(effective_scores, modified_config)
+                            if decision.type in ("reject", "escalate"):
+                                correct += 1
+                            elif decision.type == "route":
+                                routes_directes += 1
+                        point["gng3"] = round(correct / total, 4) if total else 0
+                        point["gng3_routes_directes"] = routes_directes
+
+                    # Pieges
+                    if "pieges" in precomputed:
+                        correct = 0
+                        total = len(precomputed["pieges"])
+                        for row, scores, ood_sc in precomputed["pieges"]:
+                            expected = row.get("expected_behavior", "")
+                            if ood_sc is not None and ood_sc >= so:
+                                effective_scores = [("hors_perimetre", ood_sc)]
+                            else:
+                                effective_scores = scores
+                            decision = decide(effective_scores, modified_config)
+                            if check_expected_behavior(expected, decision):
+                                correct += 1
+                        point["pieges"] = round(correct / total, 4) if total else 0
+                        point["pieges_correct"] = correct
+                        point["pieges_total"] = total
+
+                    results.append(point)
+                    so += seuil_ood_range[2]
+                se += seuil_ecart_range[2]
+            sb += seuil_bas_range[2]
+        sh += seuil_haut_range[2]
+
+    return results
+
+
 _ERRORS_CSV_FIELDNAMES = [
     "text",
     "expected",

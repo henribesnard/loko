@@ -27,6 +27,7 @@ from loko.bot.classifier.setfit_service import (
     SetFitClassifier,
     prepare_l1_training_data,
     prepare_l2_training_data,
+    prepare_ood_validation_data,
     resolve_base_model,
 )
 from loko.bot.models import BotConfig
@@ -499,8 +500,9 @@ def train_bot_classifiers(
     tp = config.training
 
     # --- Level 1 ---
+    # E2: Exclude hors_perimetre from L1 training — it becomes OOD rejection
     _progress("l1_preparing")
-    texts, labels = prepare_l1_training_data(config)
+    texts, labels = prepare_l1_training_data(config, exclude_hors_perimetre=True)
 
     if len(texts) == 0:
         results["level1"] = {"error": "No training data for L1"}
@@ -580,6 +582,65 @@ def train_bot_classifiers(
                 "Could not compute calibration for bot %s", config.bot_id, exc_info=True
             )
 
+    # --- E2: OOD centroid computation + threshold calibration ---
+    ood_data: dict[str, Any] | None = None
+    try:
+        _progress("ood_computing")
+        from loko.bot.classifier.ood import (
+            calibrate_ood_threshold,
+            compute_centroids,
+            save_centroids,
+        )
+
+        t_ood = time.perf_counter()
+
+        # Encode in-distribution training examples with the trained model
+        in_embeddings = classifier.encode(texts)
+
+        # Compute centroids from in-distribution embeddings
+        centroids = compute_centroids(in_embeddings, labels)
+
+        # Save centroids to model directory
+        l1_dir = get_model_dir(config.bot_id, "level1")
+        centroids_hash = save_centroids(centroids, l1_dir)
+
+        # Calibrate OOD threshold using hors_perimetre examples as negative set
+        ood_texts = prepare_ood_validation_data(config)
+        if ood_texts:
+            out_embeddings = classifier.encode(ood_texts)
+            seuil_ood, calibration_info = calibrate_ood_threshold(
+                in_embeddings, out_embeddings, centroids
+            )
+        else:
+            seuil_ood = 0.5
+            calibration_info = {"method": "default", "n_in": len(in_embeddings), "n_out": 0}
+            logger.warning(
+                "Bot %s: no hors_perimetre examples for OOD calibration — using default threshold",
+                config.bot_id,
+            )
+
+        ood_data = {
+            "threshold": seuil_ood,
+            "method": "centroid_cosine_distance",
+            "centroids_hash": centroids_hash,
+            "n_classes": len(centroids),
+            "calibration": calibration_info,
+        }
+        results["ood"] = ood_data
+        profile["ood_s"] = round(time.perf_counter() - t_ood, 2)
+
+        logger.info(
+            "Bot %s: OOD threshold=%.4f, %d centroids, hash=%s",
+            config.bot_id,
+            seuil_ood,
+            len(centroids),
+            centroids_hash[:12],
+        )
+    except Exception:
+        logger.warning(
+            "Could not compute OOD centroids for bot %s", config.bot_id, exc_info=True
+        )
+
     # --- Level 2 (per intent with sub-motifs) ---
     t_l2 = time.perf_counter()
     for intent in config.intents:
@@ -655,6 +716,7 @@ def train_bot_classifiers(
             train_metrics=results.get("evaluation"),
             inference_latency_ms=latency,
             calibration=calibration_data,
+            ood=ood_data,
         )
         results["manifest"] = "written"
     except Exception:

@@ -115,6 +115,12 @@ def main() -> None:
         help="Minimum seuil_ecart for Pareto feasibility (default 0.05). "
         "Set to 0.0 when calibration makes ecart irrelevant.",
     )
+    parser.add_argument(
+        "--sweep-4axis",
+        action="store_true",
+        help="E2: Run 4-axis sweep (seuil_haut x seuil_bas x seuil_ecart x seuil_ood). "
+        "Requires --sweep-datasets and an OOD-enabled classifier.",
+    )
     parser.add_argument("--verbose", "-v", action="store_true")
 
     args = parser.parse_args()
@@ -142,8 +148,62 @@ def main() -> None:
         select_best_thresholds_pareto,
         threshold_sweep,
         threshold_sweep_3axis,
+        threshold_sweep_4axis,
         write_report,
     )
+
+    # E2: 4-axis sweep (with OOD threshold)
+    if args.sweep_4axis and args.sweep_datasets:
+        ds_dict: dict[str, Path] = {}
+        for part in args.sweep_datasets.split(","):
+            label, path_str = part.strip().split("=")
+            p = Path(path_str.strip())
+            if not p.is_file():
+                print(f"Error: dataset '{label}' not found at {p}", file=sys.stderr)
+                sys.exit(1)
+            ds_dict[label.strip()] = p
+
+        sweep_str = (
+            args.sweep
+            or "seuil_haut=0.6:0.98:0.02,seuil_bas=0.3:0.85:0.05,seuil_ecart=0.0:0.20:0.10,seuil_ood=0.1:0.6:0.05"
+        )
+        ranges = _parse_sweep(sweep_str)
+        sh_range = ranges.get("seuil_haut", (0.6, 0.98, 0.02))
+        sb_range = ranges.get("seuil_bas", (0.3, 0.85, 0.05))
+        se_range = ranges.get("seuil_ecart", (0.0, 0.20, 0.10))
+        so_range = ranges.get("seuil_ood", (0.1, 0.6, 0.05))
+
+        results = threshold_sweep_4axis(
+            classifier, ds_dict, config,
+            sh_range, sb_range, se_range, so_range,
+        )
+
+        out_dir.mkdir(parents=True, exist_ok=True)
+
+        sweep_json = out_dir / "sweep_4axis.json"
+        sweep_json.write_text(
+            json.dumps(results, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+
+        print(f"4-axis sweep (E2): {len(results)} points written to {sweep_json}")
+        print(f"Datasets: {', '.join(f'{k}={v}' for k, v in ds_dict.items())}")
+
+        # Filter feasible
+        feasible = [p for p in results if p.get("gng3", 0) >= 0.80 and p.get("gng3_routes_directes", 999) <= 5]
+        print(f"Feasible points (GNG-3>=80%, routes<=5): {len(feasible)}/{len(results)}")
+
+        if feasible:
+            best = max(feasible, key=lambda p: (p.get("gng1", 0), p.get("gng2", 0), p.get("pieges_correct", 0)))
+            print(
+                f"  Best: haut={best['seuil_haut']:.2f} bas={best['seuil_bas']:.2f} "
+                f"ecart={best['seuil_ecart']:.2f} ood={best['seuil_ood']:.3f}"
+            )
+            print(
+                f"    GNG-1={best.get('gng1', 0) * 100:.1f}% GNG-2={best.get('gng2', 0) * 100:.1f}% "
+                f"GNG-3={best.get('gng3', 0) * 100:.1f}%"
+            )
+        return
 
     # M2: 3-axis sweep across multiple datasets
     if args.sweep_datasets:
@@ -300,7 +360,7 @@ def main() -> None:
     if report.errors and args.verbose:
         print("\nTop errors:")
         for e in report.errors[:10]:
-            print(f"  [{e.expected}→{e.predicted}] ({e.decision_type}) {e.text[:60]}")
+            print(f"  [{e.expected}->{e.predicted}] ({e.decision_type}) {e.text[:60]}")
 
     print(f"\nResults written to {out_dir}/")
 

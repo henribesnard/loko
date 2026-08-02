@@ -114,6 +114,7 @@ def write_manifest(
     train_metrics: dict[str, Any] | None = None,
     inference_latency_ms: dict[str, float] | None = None,
     calibration: dict[str, Any] | None = None,
+    ood: dict[str, Any] | None = None,
 ) -> Path:
     """Write the model manifest after successful training.
 
@@ -132,6 +133,9 @@ def write_manifest(
 
     if calibration:
         manifest["calibration"] = calibration
+
+    if ood:
+        manifest["ood"] = ood
 
     for level_name, info in levels.items():
         manifest["levels"][level_name] = {

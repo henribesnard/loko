@@ -1,0 +1,81 @@
+{
+  "mode": "pieges",
+  "dataset": "pieges.csv",
+  "total": 15,
+  "correct": 8,
+  "accuracy": 0.5333,
+  "per_class": {},
+  "confusion": {},
+  "n_errors": 7,
+  "errors": [
+    {
+      "text": "modification mot de passe",
+      "expected": "route:help_account",
+      "predicted": "clarify_inter:help_account|help_contact",
+      "score": 0.8247329445505218,
+      "decision_type": "clarify_inter",
+      "correct": false,
+      "detail": "T02: help_account/mot_de_passe_oublie sans clarification | intent=help_account"
+    },
+    {
+      "text": "RIB coordonnées bancaires",
+      "expected": "clarify_inter:help_contact|help_billing",
+      "predicted": "route:help_contact",
+      "score": 0.9999645867050024,
+      "decision_type": "route",
+      "correct": false,
+      "detail": "T04: ambigu help_contact/cotisations | intent=help_contact"
+    },
+    {
+      "text": "changement de banque pour les prélèvements de cotisations",
+      "expected": "clarify_inter:help_contact|help_billing",
+      "predicted": "route:help_billing",
+      "score": 0.9996323311148566,
+      "decision_type": "route",
+      "correct": false,
+      "detail": "T05: zone grise RIB/prélèvement | intent=help_billing"
+    },
+    {
+      "text": "attestation de paiement",
+      "expected": "clarify_inter:help_leave|help_billing|help_documents",
+      "predicted": "clarify_inter:help_documents|help_leave",
+      "score": 0.5720346840595366,
+      "decision_type": "clarify_inter",
+      "correct": false,
+      "detail": "T06: ambigu help_leave/help_billing/justificatif_droits | intent=help_documents"
+    },
+    {
+      "text": "bilan bucco-dentaire détartrage",
+      "expected": "reject",
+      "predicted": "route:help_billing",
+      "score": 0.9109148683434906,
+      "decision_type": "route",
+      "correct": false,
+      "detail": "T13: hors_périmètre — dentaire non retenu | intent=help_billing"
+    },
+    {
+      "text": "Noemie",
+      "expected": "route:help_transfer",
+      "predicted": "reject:hors_perimetre",
+      "score": 0.384432519212369,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": "T14: mot unique — robustesse entrées ultra-courtes | intent=hors_perimetre"
+    },
+    {
+      "text": "la référence iban et le numéro de carte vitale ne sont pas reconnus",
+      "expected": "route:help_account",
+      "predicted": "reject:hors_perimetre",
+      "score": 0.4099410563307192,
+      "decision_type": "reject",
+      "correct": false,
+      "detail": "T15: piège IBAN+carte vitale — services_en_ligne | intent=hors_perimetre"
+    }
+  ],
+  "dataset_hash": "1a352ef7f73014c82b804aa932c24dfcd0e0e80a073ec3b0db9759701e83cd6e",
+  "manifest_reference": {
+    "bot_id": "fa4d8b2d-548f-457b-bf65-acbc61a39cbb",
+    "dataset_hash": "a470379638efc05cb144302240efbee82c9a12897bad2efb2a57154b570cd57a",
+    "trained_at": "2026-08-02T18:49:44.891868+00:00"
+  }
+}

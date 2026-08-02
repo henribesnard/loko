@@ -1,0 +1,100 @@
+{
+  "selected": {
+    "seuil_haut": 0.98,
+    "seuil_bas": 0.75,
+    "seuil_ecart": 0.0,
+    "gng1": 0.73,
+    "gng2": 0.872,
+    "gng3": 0.81,
+    "gng3_routes_directes": 4,
+    "pieges": 0.5333,
+    "pieges_correct": 8,
+    "pieges_total": 15,
+    "pareto": true
+  },
+  "feasible_count": 9,
+  "pareto_frontier": [
+    {
+      "seuil_haut": 0.98,
+      "seuil_bas": 0.75,
+      "seuil_ecart": 0.0,
+      "gng1": 0.73,
+      "gng2": 0.872,
+      "gng3": 0.81,
+      "gng3_routes_directes": 4,
+      "pieges": 0.5333,
+      "pieges_correct": 8,
+      "pieges_total": 15,
+      "pareto": true
+    },
+    {
+      "seuil_haut": 0.98,
+      "seuil_bas": 0.75,
+      "seuil_ecart": 0.1,
+      "gng1": 0.73,
+      "gng2": 0.872,
+      "gng3": 0.81,
+      "gng3_routes_directes": 4,
+      "pieges": 0.5333,
+      "pieges_correct": 8,
+      "pieges_total": 15,
+      "pareto": true
+    },
+    {
+      "seuil_haut": 0.98,
+      "seuil_bas": 0.75,
+      "seuil_ecart": 0.2,
+      "gng1": 0.73,
+      "gng2": 0.872,
+      "gng3": 0.81,
+      "gng3_routes_directes": 4,
+      "pieges": 0.5333,
+      "pieges_correct": 8,
+      "pieges_total": 15,
+      "pareto": true
+    },
+    {
+      "seuil_haut": 0.98,
+      "seuil_bas": 0.8,
+      "seuil_ecart": 0.0,
+      "gng1": 0.72,
+      "gng2": 0.872,
+      "gng3": 0.83,
+      "gng3_routes_directes": 4,
+      "pieges": 0.6,
+      "pieges_correct": 9,
+      "pieges_total": 15,
+      "pareto": true
+    },
+    {
+      "seuil_haut": 0.98,
+      "seuil_bas": 0.8,
+      "seuil_ecart": 0.1,
+      "gng1": 0.72,
+      "gng2": 0.872,
+      "gng3": 0.83,
+      "gng3_routes_directes": 4,
+      "pieges": 0.6,
+      "pieges_correct": 9,
+      "pieges_total": 15,
+      "pareto": true
+    },
+    {
+      "seuil_haut": 0.98,
+      "seuil_bas": 0.8,
+      "seuil_ecart": 0.2,
+      "gng1": 0.72,
+      "gng2": 0.872,
+      "gng3": 0.83,
+      "gng3_routes_directes": 4,
+      "pieges": 0.6,
+      "pieges_correct": 9,
+      "pieges_total": 15,
+      "pareto": true
+    }
+  ],
+  "warnings": [
+    "Selected point at grid edge - consider extending grid: seuil_haut=0.98 (edge: [0.6, 0.98]), seuil_ecart=0.00 (edge: [0.0, 0.2])"
+  ],
+  "selection_method": "pareto_constrained"
+}
