@@ -112,8 +112,8 @@ class TestGFA2PreFilterBlocking:
 
         # At minimum, the address/phone pattern should catch some
         assert len(blocked) >= 1, (
-            f"GF-A2: no donnees_tiers cases blocked. "
-            f"System rule sys_tiers_address should catch at least 1."
+            "GF-A2: no donnees_tiers cases blocked. "
+            "System rule sys_tiers_address should catch at least 1."
         )
 
     def test_injection_directe_coverage(self):
