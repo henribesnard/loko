@@ -108,6 +108,13 @@ def main() -> None:
             "Implies --sweep with seuil_ecart axis."
         ),
     )
+    parser.add_argument(
+        "--ecart-min",
+        type=float,
+        default=0.05,
+        help="Minimum seuil_ecart for Pareto feasibility (default 0.05). "
+        "Set to 0.0 when calibration makes ecart irrelevant.",
+    )
     parser.add_argument("--verbose", "-v", action="store_true")
 
     args = parser.parse_args()
@@ -152,7 +159,7 @@ def main() -> None:
         # Parse sweep ranges (including seuil_ecart)
         sweep_str = (
             args.sweep
-            or "seuil_haut=0.6:0.98:0.02,seuil_bas=0.3:0.85:0.05,seuil_ecart=0.0:0.20:0.10"
+            or "seuil_haut=0.6:0.9:0.05,seuil_bas=0.3:0.6:0.05,seuil_ecart=0.0:0.25:0.05"
         )
         ranges = _parse_sweep(sweep_str)
         sh_range = ranges.get("seuil_haut", (0.6, 0.9, 0.05))
@@ -174,7 +181,9 @@ def main() -> None:
             "seuil_bas": (sb_range[0], sb_range[1]),
             "seuil_ecart": (se_range[0], se_range[1]),
         }
-        selection = select_best_thresholds_pareto(results, grid_bounds)
+        selection = select_best_thresholds_pareto(
+            results, grid_bounds, ecart_min=args.ecart_min
+        )
 
         out_dir.mkdir(parents=True, exist_ok=True)
 

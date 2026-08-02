@@ -604,6 +604,8 @@ def threshold_sweep_3axis(
 def select_best_thresholds_pareto(
     sweep_results: list[dict[str, Any]],
     grid_bounds: dict[str, tuple[float, float]] | None = None,
+    *,
+    ecart_min: float = 0.05,
 ) -> dict[str, Any]:
     """W3.1 — Pareto-constrained selection of best threshold point.
 
@@ -620,6 +622,9 @@ def select_best_thresholds_pareto(
     grid_bounds : dict[str, tuple[float, float]] | None
         Optional grid bounds for edge detection, e.g.:
         {"seuil_haut": (0.6, 0.9), "seuil_bas": (0.3, 0.6), "seuil_ecart": (0.0, 0.25)}
+    ecart_min : float
+        Minimum seuil_ecart for feasibility (default 0.05). Set to 0.0
+        when calibration makes ecart irrelevant.
 
     Returns
     -------
@@ -642,7 +647,7 @@ def select_best_thresholds_pareto(
     # Hard constraints
     GNG3_MIN = 0.80
     ROUTES_DIRECTES_MAX = 5
-    ECART_MIN = 0.00  # Relaxed (v1.1 action 1): calibration makes ecart irrelevant
+    ECART_MIN = ecart_min
 
     # Filter feasible points
     feasible = []
