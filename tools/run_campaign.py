@@ -1475,7 +1475,9 @@ def run_campaign(
 
         # V3-0 gate: if sweep found no feasible point, skip V3-1/2/3/4
         if v3_0_failed and test_line.id in ("V3-1", "V3-2", "V3-3", "V3-4"):
-            test_line.detail = "V3-0 FAIL — pas de seuils sweep-selectionnes, non execute"
+            test_line.detail = (
+                "V3-0 FAIL — pas de seuils sweep-selectionnes, non execute"
+            )
             test_line.verdict = "SKIP"
             test_line.executed = True
             print(

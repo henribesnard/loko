@@ -782,8 +782,12 @@ def threshold_sweep_4axis(
     from loko.bot.classifier.ood import ood_score as compute_ood_score
 
     # Pre-compute scores + OOD scores for each dataset (once)
-    precomputed: dict[str, list[tuple[dict[str, str], list[tuple[str, float]], float | None]]] = {}
-    has_ood = hasattr(classifier, "_ood_centroids") and classifier._ood_centroids is not None
+    precomputed: dict[
+        str, list[tuple[dict[str, str], list[tuple[str, float]], float | None]]
+    ] = {}
+    has_ood = (
+        hasattr(classifier, "_ood_centroids") and classifier._ood_centroids is not None
+    )
 
     for label, path in datasets.items():
         rows = load_dataset(path)
@@ -861,7 +865,10 @@ def threshold_sweep_4axis(
                                 and expected == "demande_conseiller"
                             ):
                                 correct += 1
-                            elif decision.type == "reject" and expected == "hors_perimetre":
+                            elif (
+                                decision.type == "reject"
+                                and expected == "hors_perimetre"
+                            ):
                                 correct += 1
                         point["gng1"] = round(correct / total, 4) if total else 0
 

@@ -26,7 +26,9 @@ from loko.bot.guardrails import (
     default_ruleset,
 )
 
-DATASET_PATH = Path(__file__).resolve().parent.parent / "eval" / "datasets" / "adversarial.csv"
+DATASET_PATH = (
+    Path(__file__).resolve().parent.parent / "eval" / "datasets" / "adversarial.csv"
+)
 CANARY_DIR = Path(__file__).resolve().parent.parent / "eval" / "canary-documents"
 CANARY_MARKER = "ZORGLUB-4417"
 
@@ -164,8 +166,7 @@ class TestGFA1PreFilterLatency:
 
         # 1ms = 1000us
         assert p95_us < 1000, (
-            f"GF-A1 FAIL: P95 latency {p95_us:.0f}us > 1000us (1ms). "
-            f"P50={p50_us:.0f}us"
+            f"GF-A1 FAIL: P95 latency {p95_us:.0f}us > 1000us (1ms). P50={p50_us:.0f}us"
         )
 
 
@@ -229,9 +230,7 @@ class TestGFA5OutputLeakDetection:
         assert result is not None, "Should detect OpenAI-style key"
 
     def test_detects_loko_key(self):
-        result = check_response_leaks(
-            "Votre clé API est: loko_abc123def456xyz"
-        )
+        result = check_response_leaks("Votre clé API est: loko_abc123def456xyz")
         assert result is not None, "Should detect LOKO API key"
 
     def test_detects_bearer_token(self):
@@ -253,9 +252,7 @@ class TestGFA5OutputLeakDetection:
         assert result is not None, "Should detect stack trace"
 
     def test_detects_python_frame(self):
-        result = check_response_leaks(
-            'File "/app/loko/main.py", line 42, in handler'
-        )
+        result = check_response_leaks('File "/app/loko/main.py", line 42, in handler')
         assert result is not None, "Should detect Python stack frame"
 
     def test_clean_response_passes(self):
@@ -306,7 +303,9 @@ class TestAdversarialSummary:
             print("  GF-A2 Adversarial Coverage Report")
             print("=" * 60)
             for cat, counts in sorted(results.items()):
-                pct = counts["blocked"] / counts["total"] * 100 if counts["total"] else 0
+                pct = (
+                    counts["blocked"] / counts["total"] * 100 if counts["total"] else 0
+                )
                 print(
                     f"  {cat:25s}  {counts['blocked']:2d}/{counts['total']:2d} "
                     f"blocked ({pct:5.1f}%)  "

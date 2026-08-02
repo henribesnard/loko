@@ -128,7 +128,11 @@ def calibrate_ood_threshold(
 
     if not in_scores or not out_scores:
         # Fallback: no calibration possible
-        return 0.5, {"method": "default", "n_in": len(in_scores), "n_out": len(out_scores)}
+        return 0.5, {
+            "method": "default",
+            "n_in": len(in_scores),
+            "n_out": len(out_scores),
+        }
 
     # Score range
     all_scores = in_scores + out_scores
@@ -144,12 +148,16 @@ def calibrate_ood_threshold(
         # in-distribution should be BELOW threshold (not OOD)
         # out-distribution should be ABOVE threshold (OOD)
         tp = sum(1 for s in out_scores if s >= t)  # correctly rejected
-        fp = sum(1 for s in in_scores if s >= t)   # falsely rejected
-        fn = sum(1 for s in out_scores if s < t)   # missed OOD
+        fp = sum(1 for s in in_scores if s >= t)  # falsely rejected
+        fn = sum(1 for s in out_scores if s < t)  # missed OOD
 
         precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
         recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
-        f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0.0
+        f1 = (
+            2 * precision * recall / (precision + recall)
+            if (precision + recall) > 0
+            else 0.0
+        )
 
         if f1 > best_f1:
             best_f1 = f1

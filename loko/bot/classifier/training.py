@@ -613,7 +613,11 @@ def train_bot_classifiers(
             )
         else:
             seuil_ood = 0.5
-            calibration_info = {"method": "default", "n_in": len(in_embeddings), "n_out": 0}
+            calibration_info = {
+                "method": "default",
+                "n_in": len(in_embeddings),
+                "n_out": 0,
+            }
             logger.warning(
                 "Bot %s: no hors_perimetre examples for OOD calibration — using default threshold",
                 config.bot_id,

@@ -161,7 +161,9 @@ class TestCalibrateOodThreshold:
         # Out-distribution: far from centroid
         out_embeddings = [[0.1, 0.9], [0.0, 1.0], [0.05, 0.95]]
 
-        threshold, info = calibrate_ood_threshold(in_embeddings, out_embeddings, centroids)
+        threshold, info = calibrate_ood_threshold(
+            in_embeddings, out_embeddings, centroids
+        )
 
         # Threshold should be between the score ranges
         assert info["best_f1"] > 0.8
@@ -176,7 +178,9 @@ class TestCalibrateOodThreshold:
         in_embeddings = [[0.9, 0.1]]
         out_embeddings = []
 
-        threshold, info = calibrate_ood_threshold(in_embeddings, out_embeddings, centroids)
+        threshold, info = calibrate_ood_threshold(
+            in_embeddings, out_embeddings, centroids
+        )
         assert info["method"] == "default"
 
     def test_calibration_on_train_only(self):
@@ -188,7 +192,9 @@ class TestCalibrateOodThreshold:
         out_embeddings = [[0.5, 0.5]]
 
         # Function signature only accepts in/out embeddings — cannot leak held-out
-        threshold, info = calibrate_ood_threshold(in_embeddings, out_embeddings, centroids)
+        threshold, info = calibrate_ood_threshold(
+            in_embeddings, out_embeddings, centroids
+        )
         assert info["method"] == "f1_maximization_train_only"
 
 

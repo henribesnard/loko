@@ -174,8 +174,13 @@ def main() -> None:
         so_range = ranges.get("seuil_ood", (0.1, 0.6, 0.05))
 
         results = threshold_sweep_4axis(
-            classifier, ds_dict, config,
-            sh_range, sb_range, se_range, so_range,
+            classifier,
+            ds_dict,
+            config,
+            sh_range,
+            sb_range,
+            se_range,
+            so_range,
         )
 
         out_dir.mkdir(parents=True, exist_ok=True)
@@ -190,11 +195,24 @@ def main() -> None:
         print(f"Datasets: {', '.join(f'{k}={v}' for k, v in ds_dict.items())}")
 
         # Filter feasible
-        feasible = [p for p in results if p.get("gng3", 0) >= 0.80 and p.get("gng3_routes_directes", 999) <= 5]
-        print(f"Feasible points (GNG-3>=80%, routes<=5): {len(feasible)}/{len(results)}")
+        feasible = [
+            p
+            for p in results
+            if p.get("gng3", 0) >= 0.80 and p.get("gng3_routes_directes", 999) <= 5
+        ]
+        print(
+            f"Feasible points (GNG-3>=80%, routes<=5): {len(feasible)}/{len(results)}"
+        )
 
         if feasible:
-            best = max(feasible, key=lambda p: (p.get("gng1", 0), p.get("gng2", 0), p.get("pieges_correct", 0)))
+            best = max(
+                feasible,
+                key=lambda p: (
+                    p.get("gng1", 0),
+                    p.get("gng2", 0),
+                    p.get("pieges_correct", 0),
+                ),
+            )
             print(
                 f"  Best: haut={best['seuil_haut']:.2f} bas={best['seuil_bas']:.2f} "
                 f"ecart={best['seuil_ecart']:.2f} ood={best['seuil_ood']:.3f}"

@@ -49,9 +49,7 @@ def _create_accounts_db(db_path: Path) -> None:
     conn.execute(
         "INSERT INTO accounts VALUES ('acc-1', 'Test Account', '2026-01-01T00:00:00Z')"
     )
-    conn.execute(
-        "INSERT INTO users VALUES ('usr-1', 'acc-1', 'test@example.com')"
-    )
+    conn.execute("INSERT INTO users VALUES ('usr-1', 'acc-1', 'test@example.com')")
     conn.commit()
     conn.close()
 
@@ -67,9 +65,7 @@ def _create_bot_data(bots_dir: Path, bot_id: str) -> None:
         "name": "Test Bot",
         "intents": [{"id": "help_account", "label": "Aide compte"}],
     }
-    (bot_dir / "config.json").write_text(
-        json.dumps(config, indent=2), encoding="utf-8"
-    )
+    (bot_dir / "config.json").write_text(json.dumps(config, indent=2), encoding="utf-8")
 
     # Model files (simulated binary)
     models_dir = bot_dir / "models"
@@ -106,7 +102,7 @@ def _create_analytics_db(db_path: Path) -> None:
     conn.execute(
         "INSERT INTO events (event_type, timestamp, payload) "
         "VALUES ('classification', '2026-08-01T12:00:00Z', "
-        "'{\"intent\": \"help_account\", \"score\": 0.92}')"
+        '\'{"intent": "help_account", "score": 0.92}\')'
     )
     conn.commit()
     conn.close()
@@ -283,9 +279,7 @@ class TestBackupRestoreCycle:
             rel = model_file.relative_to(data_dir)
             restored = restore_dir / rel
             assert restored.is_file(), f"Missing restored file: {rel}"
-            assert _sha256(model_file) == _sha256(restored), (
-                f"Hash mismatch for {rel}"
-            )
+            assert _sha256(model_file) == _sha256(restored), f"Hash mismatch for {rel}"
 
     def test_backup_tarball_structure(self, data_env):
         """The tarball must contain the expected structure."""
@@ -328,9 +322,7 @@ class TestBackupRestoreCycle:
         bot_dir = bots_dir / bot_id
         assert bot_dir.is_dir(), f"Bot dir {bot_id} not restored"
 
-        config = json.loads(
-            (bot_dir / "config.json").read_text(encoding="utf-8")
-        )
+        config = json.loads((bot_dir / "config.json").read_text(encoding="utf-8"))
         assert config["bot_id"] == bot_id
 
         manifest = json.loads(
