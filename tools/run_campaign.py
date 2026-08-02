@@ -1312,6 +1312,7 @@ def run_campaign(
         allowed_phases = {"CE", "V0"}
 
     ce_done = False
+    v3_0_failed = False
     for test_line in report.lines:
         # Filter by phase
         if test_line.phase not in allowed_phases:
@@ -1373,6 +1374,18 @@ def run_campaign(
             test_line.detail = "not in scope for this run"
             continue
 
+        # V3-0 gate: if sweep found no feasible point, skip V3-1/2/3/4
+        if v3_0_failed and test_line.id in ("V3-1", "V3-2", "V3-3", "V3-4"):
+            test_line.detail = "V3-0 FAIL — pas de seuils sweep-selectionnes, non execute"
+            test_line.verdict = "SKIP"
+            test_line.executed = True
+            print(
+                f"  [V3]   {test_line.id:6s} "
+                f"{test_line.description[:50]:50s} "
+                f"\033[93mSKIP\033[0m  {test_line.detail}"
+            )
+            continue
+
         executor = EXECUTORS.get(test_line.id, _exec_stub)
         phase_label = f"[{test_line.phase}]"
 
@@ -1389,6 +1402,10 @@ def run_campaign(
             report.anomalies_protocole.append(
                 f"{test_line.id}: exception during execution: {exc}"
             )
+
+        # Track V3-0 failure to gate V3-1/2/3/4
+        if test_line.id == "V3-0" and test_line.verdict != "PASS":
+            v3_0_failed = True
 
         status = test_line.verdict
         color = (

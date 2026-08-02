@@ -152,7 +152,7 @@ def main() -> None:
         # Parse sweep ranges (including seuil_ecart)
         sweep_str = (
             args.sweep
-            or "seuil_haut=0.6:0.9:0.05,seuil_bas=0.3:0.6:0.05,seuil_ecart=0.0:0.25:0.05"
+            or "seuil_haut=0.6:0.98:0.02,seuil_bas=0.3:0.85:0.05,seuil_ecart=0.0:0.20:0.10"
         )
         ranges = _parse_sweep(sweep_str)
         sh_range = ranges.get("seuil_haut", (0.6, 0.9, 0.05))

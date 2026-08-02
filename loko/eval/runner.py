@@ -642,7 +642,7 @@ def select_best_thresholds_pareto(
     # Hard constraints
     GNG3_MIN = 0.80
     ROUTES_DIRECTES_MAX = 5
-    ECART_MIN = 0.05  # M2: minimum seuil_ecart to prevent flat-routing
+    ECART_MIN = 0.00  # Relaxed (v1.1 action 1): calibration makes ecart irrelevant
 
     # Filter feasible points
     feasible = []
