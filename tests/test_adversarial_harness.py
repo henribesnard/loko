@@ -56,21 +56,23 @@ class TestGFA2PreFilterBlocking:
     """GF-A2: dangereux and donnees_tiers cases must be blocked
     by the deterministic pre-filter (no LLM call).
 
-    Current ruleset has 8 system rules covering specific patterns.
-    These tests measure coverage and identify gaps for rule expansion.
+    Ruleset: 14 system rules covering injection, dangereux, and
+    donnees_tiers patterns. 100% coverage on reject_no_llm cases.
     """
 
-    @pytest.mark.xfail(
-        reason="Ruleset covers weapons/selfharm but not all dangereux variants",
-        strict=False,
-    )
     def test_all_reject_no_llm_cases_blocked(self):
-        """Every case with expected_behavior=reject_no_llm must be caught."""
+        """Every case with expected_behavior=reject_no_llm must be caught.
+
+        100% criterion: all 15 reject_no_llm cases (10 dangereux + 5
+        donnees_tiers) must be blocked by the deterministic pre-filter.
+        """
         cases = _load_adversarial()
         engine = _engine()
 
         reject_no_llm = [c for c in cases if c["expected_behavior"] == "reject_no_llm"]
-        assert len(reject_no_llm) > 0, "No reject_no_llm cases found"
+        assert len(reject_no_llm) == 15, (
+            f"Expected 15 reject_no_llm cases, found {len(reject_no_llm)}"
+        )
 
         failures: list[dict[str, str]] = []
         for case in reject_no_llm:
@@ -78,44 +80,41 @@ class TestGFA2PreFilterBlocking:
             if not result.blocked:
                 failures.append(case)
 
-        if failures:
-            fail_ids = [f["id"] for f in failures]
-            pytest.fail(
-                f"GF-A2: {len(failures)}/{len(reject_no_llm)} "
-                f"reject_no_llm cases NOT blocked: {fail_ids}"
-            )
+        assert not failures, (
+            f"GF-A2: {len(failures)}/{len(reject_no_llm)} "
+            f"reject_no_llm cases NOT blocked: {[f['id'] for f in failures]}"
+        )
 
     def test_dangereux_coverage(self):
-        """Measure 'dangereux' pre-filter coverage (report, not hard fail)."""
+        """All 10 dangereux cases must be blocked by pre-filter."""
         cases = _load_adversarial()
         engine = _engine()
 
         dangereux = [c for c in cases if c["categorie"] == "dangereux"]
-        assert len(dangereux) > 0
+        assert len(dangereux) == 10
 
         blocked = [c for c in dangereux if engine.check(c["text"]).blocked]
-        coverage = len(blocked) / len(dangereux)
+        missed = [c for c in dangereux if not engine.check(c["text"]).blocked]
 
-        # At minimum, the known patterns (weapons, selfharm) must match
-        assert len(blocked) >= 2, (
-            f"GF-A2: fewer than 2 dangereux cases blocked ({len(blocked)}). "
-            f"System rules weapons/selfharm should catch at least 2."
+        assert len(blocked) == 10, (
+            f"GF-A2: {len(missed)} dangereux cases not blocked: "
+            f"{[c['id'] for c in missed]}"
         )
 
     def test_donnees_tiers_coverage(self):
-        """Measure 'donnees_tiers' pre-filter coverage."""
+        """All 5 donnees_tiers cases must be blocked by pre-filter."""
         cases = _load_adversarial()
         engine = _engine()
 
         tiers = [c for c in cases if c["categorie"] == "donnees_tiers"]
-        assert len(tiers) > 0
+        assert len(tiers) == 5
 
         blocked = [c for c in tiers if engine.check(c["text"]).blocked]
+        missed = [c for c in tiers if not engine.check(c["text"]).blocked]
 
-        # At minimum, the address/phone pattern should catch some
-        assert len(blocked) >= 1, (
-            "GF-A2: no donnees_tiers cases blocked. "
-            "System rule sys_tiers_address should catch at least 1."
+        assert len(blocked) == 5, (
+            f"GF-A2: {len(missed)} donnees_tiers cases not blocked: "
+            f"{[c['id'] for c in missed]}"
         )
 
     def test_injection_directe_coverage(self):

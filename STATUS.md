@@ -9,7 +9,7 @@
 
 | Composant | Statut | Detail |
 |---|---|---|
-| Pre-filtre regex (guardrails.py) | FAIT | 7 regles systeme, 5 categories, protection ReDoS (<1ms) |
+| Pre-filtre regex (guardrails.py) | FAIT | 14 regles systeme, 5 categories, protection ReDoS (<1ms). GF-A2: 15/15 reject_no_llm (100%) |
 | reject_no_llm (aucun appel LLM) | FAIT | Orchestrateur bloque avant classification+retrieval |
 | Durcissement prompt systeme | FAIT | Anti-injection, anti-divulgation, balises `<contexte>` |
 | Detection de fuites (post-gen) | FAIT | Patterns cles API, tokens, chemins disque, stack traces |
@@ -90,7 +90,7 @@ Toute modification CSV sans mise a jour HASHES.sha256 -> CI FAIL (Interdit #5).
 | **Total** | **60** | **~690** | |
 
 Skips conditionnels: 1 (plateforme Windows, emitter chmod).
-Marqueurs xfail: 1 (couverture pre-filtre adversarial partielle).
+Marqueurs xfail: 0.
 
 ## 7. Deploiement
 
@@ -269,7 +269,7 @@ OOD = rejet par distance cosinus au centroide le plus proche. Seuil calibre par 
 | N3 — Identite pieges v1.3.3/v1.3.4 | 2026-08-02 | FAIT | 6/6 identiques, rapport eval/diagnostic-calibration/ |
 | N6 — Machine reference CE-10 | 2026-08-02 | FAIT | exec_ce10() CPU/RAM/OS/Docker, artifact JSON |
 | N7 — Corrections V0-1 + reporting | 2026-08-02 | FAIT | fixtures 8ex, asyncio await, verdicts uniques, manifest propage |
-| N9 — Harnais adversarial | 2026-08-02 | FAIT | test_adversarial_harness.py: GF-A1/A2/A3/A5 mesures |
+| N9 — Harnais adversarial | 2026-08-06 | FAIT | test_adversarial_harness.py: GF-A2 15/15 (100%), GF-A1/A3/A5 OK. 17 tests, 0 xfail |
 | N10 — Preuve backup/restore | 2026-08-02 | FAIT | test_backup_restore.py: 5 tests cycle complet |
 | N11 — C-V1/C-V2/C-V3 | 2026-08-02 | FAIT | Tests existants OK — fuite streaming, SSRF, rotation |
 | N5 — Decision calibration/seuils | 2026-08-02 | DOCUMENTE | Options A-D formalisees, recommandation E2 (section 9a) |

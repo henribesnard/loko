@@ -145,7 +145,7 @@ _DEFAULT_RULES: list[dict[str, Any]] = [
     {
         "id": "sys_danger_selfharm",
         "category": "dangereux",
-        "pattern": r"(?i)(comment\s+(se\s+)?suicider|methodes?\s+(de\s+)?suicide|facon\s+de\s+mourir)",
+        "pattern": r"(?i)(se\s+suicider|methodes?\s+.{0,20}(suicide|suicider)|mettre\s+fin\s+a\s+(ses|mes)\s+jours|en\s+surdose|se\s+donner\s+la\s+mort|facon\s+de\s+mourir)",
         "action": "refuser_et_compter",
         "is_system": True,
     },
@@ -153,7 +153,51 @@ _DEFAULT_RULES: list[dict[str, Any]] = [
     {
         "id": "sys_tiers_address",
         "category": "donnees_tiers",
-        "pattern": r"(?i)(donne|trouve|cherche|dis)\s*(-|\s)*(moi\s+)?(l['e]?\s*)?(adresse|numero|telephone|email|mail|coordonnees)\s+.{0,20}(de|du|d['e])\s+",
+        "pattern": r"(?i)(donne|trouve|cherche|dis)\s*(-|\s)*(moi\s+)?(l(es?|a|')?\s*)?(adresse|numero|telephone|email|mail|coordonnees)\s+.{0,20}(de|du|d['e])\s+",
+        "action": "refuser_et_compter",
+        "is_system": True,
+    },
+    # Extended dangerous content (GF-A2 coverage)
+    {
+        "id": "sys_danger_procure_weapon",
+        "category": "dangereux",
+        "pattern": r"(?i)(procurer|acheter|obtenir|acquerir)\s+.{0,15}(arme|pistolet|fusil|munition)",
+        "action": "refuser_et_compter",
+        "is_system": True,
+    },
+    {
+        "id": "sys_danger_poison_chem",
+        "category": "dangereux",
+        "pattern": r"(?i)(fabriquer?|preparer|produire|synthetiser)\s+.{0,15}(poison|toxique|venin|gaz\s+(moutarde|sarin|innervant)|cyanure|ricine)",
+        "action": "refuser_et_compter",
+        "is_system": True,
+    },
+    {
+        "id": "sys_danger_hacking",
+        "category": "dangereux",
+        "pattern": r"(?i)(pirater|hacker|craquer)\s+.{0,15}(compte|mot\s+de\s+passe|serveur|site|banc)",
+        "action": "refuser_et_compter",
+        "is_system": True,
+    },
+    {
+        "id": "sys_danger_breakin",
+        "category": "dangereux",
+        "pattern": r"(?i)(crocheter|forcer)\s+.{0,10}(serrure|porte|cadenas)|entrer\s+par\s+effraction",
+        "action": "refuser_et_compter",
+        "is_system": True,
+    },
+    # Extended third-party data (GF-A2 coverage)
+    {
+        "id": "sys_tiers_query",
+        "category": "donnees_tiers",
+        "pattern": r"(?i)(quel(le)?\s+est|ou\s+se\s+trouve)\s+.{0,20}(adresse|numero|telephone|email|mail|coordonnees)\s+.{0,20}(de|du|d['e])\s+",
+        "action": "refuser_et_compter",
+        "is_system": True,
+    },
+    {
+        "id": "sys_tiers_residence",
+        "category": "donnees_tiers",
+        "pattern": r"(?i)(ou\s+habite|ou\s+vit|ou\s+reside|domicile\s+(de|du|d['e]))",
         "action": "refuser_et_compter",
         "is_system": True,
     },
