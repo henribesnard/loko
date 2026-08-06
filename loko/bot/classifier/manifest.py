@@ -97,6 +97,78 @@ def compute_dataset_hash(texts: list[str], labels: list[str]) -> str:
     return h.hexdigest()
 
 
+def compute_calibration_fingerprint(
+    temperature: float,
+    labels: list[str],
+    model_files_hashes: dict[str, str],
+) -> str:
+    """Compute a SHA-256 fingerprint binding calibration to a specific model.
+
+    The fingerprint ties together:
+      - the calibration temperature
+      - the sorted class labels
+      - the model file hashes (sorted by filename)
+
+    If any of these change, the fingerprint changes, signalling that
+    the thresholds established with this calibration are no longer valid.
+    """
+    # Deterministic model hash from sorted file hashes
+    file_hash_parts = [
+        f"{fname}:{fhash}"
+        for fname, fhash in sorted(model_files_hashes.items())
+    ]
+    model_hash = hashlib.sha256("\n".join(file_hash_parts).encode("utf-8")).hexdigest()
+
+    payload = json.dumps(
+        {
+            "temperature": temperature,
+            "labels": sorted(labels),
+            "model_hash": model_hash,
+        },
+        sort_keys=True,
+        ensure_ascii=True,
+    )
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def verify_calibration_fingerprint(manifest: dict[str, Any]) -> tuple[bool, str]:
+    """Verify that the calibration fingerprint in the manifest is consistent.
+
+    Returns (ok, detail) where ok=True means fingerprint matches,
+    ok=False means a mismatch was detected (thresholds are stale).
+    """
+    calibration = manifest.get("calibration")
+    if not calibration:
+        return True, "no calibration in manifest — nothing to verify"
+
+    stored_fp = calibration.get("fingerprint")
+    if not stored_fp:
+        return True, "no fingerprint in calibration — legacy manifest, skipping"
+
+    levels = manifest.get("levels", {})
+    level1 = levels.get("level1")
+    if not level1:
+        return False, "calibration fingerprint present but level1 missing from manifest"
+
+    temperature = calibration.get("temperature", 1.0)
+    labels = level1.get("labels", [])
+    model_files = level1.get("files", {})
+
+    recomputed = compute_calibration_fingerprint(
+        float(temperature), labels, model_files,
+    )
+
+    if recomputed == stored_fp:
+        return True, "calibration fingerprint matches"
+
+    return (
+        False,
+        f"calibration fingerprint mismatch: stored={stored_fp[:16]}… "
+        f"recomputed={recomputed[:16]}… — thresholds established on a "
+        f"different calibration, re-sweep required",
+    )
+
+
 def get_manifest_path(bot_id: str) -> Path:
     """Return the path to the model manifest for a bot."""
     return get_bot_dir(bot_id) / "models" / MANIFEST_FILENAME
@@ -131,18 +203,26 @@ def write_manifest(
         "inference_latency_ms": inference_latency_ms or {},
     }
 
-    if calibration:
-        manifest["calibration"] = calibration
-
-    if ood:
-        manifest["ood"] = ood
-
     for level_name, info in levels.items():
         manifest["levels"][level_name] = {
             "files": info.files,
             "labels": info.labels,
             "n_train_examples": info.n_train_examples,
         }
+
+    if calibration:
+        cal = dict(calibration)
+        # D1: inject calibration fingerprint binding temperature+labels+model
+        if "level1" in levels:
+            cal["fingerprint"] = compute_calibration_fingerprint(
+                float(cal.get("temperature", 1.0)),
+                levels["level1"].labels,
+                levels["level1"].files,
+            )
+        manifest["calibration"] = cal
+
+    if ood:
+        manifest["ood"] = ood
 
     path = get_manifest_path(bot_id)
     path.parent.mkdir(parents=True, exist_ok=True)

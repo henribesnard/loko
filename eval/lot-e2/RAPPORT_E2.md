@@ -127,8 +127,24 @@ Le point optimal OOD (seuil_ood=0.40) vs baseline v1.3.4 (9 classes, pas d'OOD) 
 | Pieges | 9/15 | **10/15** | **+1** |
 | Hmean(GNG) | 79.5% | **81.3%** | **+1.8** |
 
-**Amelioration nette** : +5 pts GNG-3, +1 piege, +1.8 pts hmean, avec
-une degradation minime (-0.8 pts GNG-2).
+### 5.5 Verdict par critere d'acceptation (spec E2 §6)
+
+| # | Critere | Seuil | Mesure | Verdict |
+|---|---|---|---|---|
+| E2-A1 | GNG-3 (rejet hors-scope) | >= 84% | 77.0% | **FAIL** |
+| E2-A2 | GNG-1 (metier) | >= 81% | 81.0% | PASS (limite) |
+| E2-A3 | GNG-2 (conseiller) | >= 88.8% | 86.4% | **FAIL** |
+| E2-A4 | Pieges | >= 9/15 + progression T13 | 10/15 | PASS (partiel — T13 non mesure) |
+| E2-A5 | Determinisme | Rejeu x2 diff vide | 0 differences | PASS |
+| E2-A6 | Latence | Surcout OOD < 2 ms P95 | ~1 ms (produit scalaire 8 vecteurs) | PASS |
+| E2-A7 | Etancheite held-out | Hashes identiques avant/apres | Verifie (guard-datasets CI) | PASS |
+| E2-A8 | Absence fuite calibration | Aucun chemin ne lit heldout_* | Test statique vert | PASS |
+| E2-A9 | Compatibilite | Bot existant publiable | Non mesure (productisation non faite) | **NON MESURE** |
+| E2-A10 | Tracabilite | ood_score dans traces | Present dans TraceEvent | PASS |
+
+**Regle de decision (spec §6)** : E2 est retenu si E2-A1 est atteint sans violer A2 ni A3.
+
+**Verdict : E2 NON RETENU** — A1 (77% < 84%) et A3 (86.4% < 88.8%) non satisfaits. Le delta positif (+5 pts GNG-3, +1 piege, +1.8 pts hmean vs baseline) confirme la direction mais ne constitue pas un critere d'acceptation.
 
 ## 6. M4 — Rejeu deterministe
 
@@ -141,7 +157,7 @@ Pipeline 100% deterministe confirme.
 
 ## 7. Conclusions et recommandations
 
-### 7.1 OOD = amelioration nette, mais insuffisante seule
+### 7.1 OOD : delta positif, criteres d'acceptation non atteints
 
 L'approche OOD par centroides ameliore GNG-3 de +5 a +10 pts selon le
 seuil choisi, avec un cout mesure sur GNG-1/GNG-2. Le meilleur equilibre
@@ -153,6 +169,8 @@ Cependant, aucune configuration ne satisfait les 4 gates simultanement :
 - GNG-2 >= 90% : NON (86.4%)
 - GNG-3 >= 80% : NON (77%)
 - Pieges >= 12/15 : NON (10/15)
+
+Par la regle de decision de la spec E2 §6, le lot est **NON RETENU**.
 
 ### 7.2 Cause racine du trade-off
 

@@ -323,6 +323,18 @@ def check_response_leaks_streaming(accumulated: str) -> str | None:
     return None
 
 
+def check_canary_leak(response: str, marker: str = "ZORGLUB-4417") -> str | None:
+    """D4/GF-A3: detect canary marker in a generated response.
+
+    Returns the marker string if found (case-insensitive), None if clean.
+    This is a belt-and-suspenders defense: canary documents contain
+    injected instructions that should never reach the output.
+    """
+    if marker.lower() in response.lower():
+        return marker
+    return None
+
+
 def check_grounding(
     response: str,
     chunks: list[Any],

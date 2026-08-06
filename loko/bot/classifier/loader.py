@@ -52,10 +52,24 @@ def load_classifier(bot_id: str) -> Any:
     ood_centroids = None
     ood_threshold = None
     try:
-        from loko.bot.classifier.manifest import read_manifest
+        from loko.bot.classifier.manifest import read_manifest, verify_calibration_fingerprint
 
         manifest = read_manifest(bot_id)
         if manifest and "calibration" in manifest:
+            # D1: verify calibration fingerprint before using temperature
+            fp_ok, fp_detail = verify_calibration_fingerprint(manifest)
+            if not fp_ok:
+                logger.critical(
+                    "Bot %s: %s",
+                    bot_id,
+                    fp_detail,
+                )
+                raise ComponentUnavailableError(
+                    "classifier_l1",
+                    bot_id,
+                    f"Calibration fingerprint mismatch — {fp_detail}",
+                )
+
             temperature = float(manifest["calibration"].get("temperature", 1.0))
             logger.info(
                 "Bot %s: using calibration temperature %.2f from manifest",
@@ -95,6 +109,8 @@ def load_classifier(bot_id: str) -> Any:
                     bot_id,
                     len(ood_centroids),
                 )
+    except ComponentUnavailableError:
+        raise  # D1: fingerprint mismatch must not be swallowed
     except Exception:
         logger.warning(
             "Bot %s: could not read calibration from manifest — temperature neutre (1.0)",

@@ -162,6 +162,44 @@ def test_openapi_version():
 
 
 # ---------------------------------------------------------------------------
+# D6 — Artifact path verification
+# ---------------------------------------------------------------------------
+
+
+def test_status_md_artifact_paths_exist():
+    """D6: every eval/ path cited in STATUS.md must resolve to an existing
+    file or directory in the repository.
+
+    A non-existent path in a status document is a defect equivalent to
+    a skipped test (rule 10).
+    """
+    status_path = REPO_ROOT / "STATUS.md"
+    if not status_path.is_file():
+        pytest.skip("STATUS.md not present")
+
+    content = status_path.read_text(encoding="utf-8")
+
+    # Extract paths like eval/..., eval\... (backtick-delimited or bare)
+    path_pattern = re.compile(r"`(eval/[^\s`]+)`")
+    cited_paths = path_pattern.findall(content)
+
+    if not cited_paths:
+        pytest.skip("No eval/ paths found in STATUS.md")
+
+    missing: list[str] = []
+    for p in cited_paths:
+        # Normalize to Path
+        full = REPO_ROOT / p.rstrip("/")
+        if not full.exists():
+            missing.append(p)
+
+    assert not missing, (
+        f"STATUS.md references {len(missing)} non-existent path(s):\n"
+        + "\n".join(f"  - {m}" for m in missing)
+    )
+
+
+# ---------------------------------------------------------------------------
 # V2 — eval/datasets/ integrity — REMOVED (client-specific)
 # ---------------------------------------------------------------------------
 # The frozen datasets were specific to a client case study and have been purged.

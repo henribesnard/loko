@@ -41,6 +41,7 @@ from loko.bot.models import (
 from loko.bot.guardrails import (
     GuardrailEngine,
     GuardrailsConfig,
+    check_canary_leak,
     check_grounding,
     check_response_leaks,
     check_response_leaks_streaming,
@@ -833,7 +834,12 @@ class BotOrchestrator:
 
         # --- GF Layer 3b: output validation (leak detection, always blocking) ---
         # V1: if leak was caught mid-stream, skip full re-scan (already detected)
-        leak = leak_detected_mid_stream or check_response_leaks(full_response)
+        # D4/GF-A3: canary marker check (belt-and-suspenders)
+        leak = (
+            leak_detected_mid_stream
+            or check_response_leaks(full_response)
+            or check_canary_leak(full_response)
+        )
         if leak:
             logger.critical("Leak detected in LLM response: %s", leak)
             traces.add("guardrail_leak", detail={"leak_pattern": leak})

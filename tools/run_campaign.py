@@ -136,6 +136,12 @@ def build_protocol_lines() -> list[TestLine]:
         TestLine("CE-8", "LLM provider ping (temp 0)", "CE", "CE", skippable=True),
         TestLine("CE-9", "Bot conformity: 9 intents + L2 labels", "CE", "CE"),
         TestLine("CE-10", "Machine reference declaration", "CE", "CE"),
+        TestLine(
+            "CE-11",
+            "Separability: per-class F1 CV >= threshold, no confused pair median margin < 0.10",
+            "CE",
+            "CE",
+        ),
         # ── V0: Build validation (G-0) ──
         TestLine("V0-1", "pytest: all tests pass", "G-0", "V0"),
         TestLine("V0-2", "ML imports (PyTorch, SetFit)", "G-0", "V0"),
@@ -641,6 +647,70 @@ def exec_ce10(line: TestLine, campaign_dir: Path, **ctx: Any) -> None:
     _mark_pass(line, summary, str(artifact_path))
 
 
+def exec_ce11(line: TestLine, campaign_dir: Path, **ctx: Any) -> None:
+    """CE-11: Separability gate.
+
+    Runs the separability measurement tool on the bot and checks:
+      - All per-class F1 (CV) >= min_f1 threshold (default 0.50)
+      - No confused pair has median margin < min_margin (default 0.10)
+    """
+    bot_dir = ctx.get("bot_dir")
+    if not bot_dir:
+        _mark_fail(line, "no bot_dir", "bot_dir not provided in context")
+        return
+
+    bot_dir = Path(bot_dir)
+    config_path = bot_dir / "config.json"
+    if not config_path.is_file():
+        _mark_fail(line, "no config.json", f"{config_path} not found")
+        return
+
+    min_f1 = float(ctx.get("ce11_min_f1", 0.50))
+    min_margin = float(ctx.get("ce11_min_margin", 0.10))
+
+    try:
+        from tools.measure_separability import measure_separability
+
+        report = measure_separability(bot_dir, k=5, n_seeds=3)
+    except Exception as exc:
+        _mark_fail(line, f"error: {exc}", str(exc))
+        return
+
+    # Save artifact
+    artifact_path = _save_artifact(
+        campaign_dir,
+        "CE-11_separability.json",
+        json.dumps(report, ensure_ascii=False, indent=2),
+    )
+
+    # Check per-class F1
+    f1_scores = report.get("cross_validation", {}).get("per_class_f1", {})
+    low_f1 = {cls: f1 for cls, f1 in f1_scores.items() if f1 < min_f1}
+
+    # Check margin percentiles — flag classes with P50 < min_margin
+    per_class_margins = report.get("margins", {}).get("per_class_percentiles", {})
+    low_margin_classes = {
+        cls: pctls.get("P50", 0.0)
+        for cls, pctls in per_class_margins.items()
+        if pctls.get("P50", 0.0) < min_margin
+    }
+
+    failures = []
+    if low_f1:
+        failures.append(f"F1 < {min_f1}: {low_f1}")
+    if low_margin_classes:
+        failures.append(f"median margin < {min_margin}: {low_margin_classes}")
+
+    accuracy = report.get("cross_validation", {}).get("accuracy", 0.0)
+    n_classes = report.get("n_classes", 0)
+    summary = f"CV accuracy={accuracy:.1%}, {n_classes} classes"
+
+    if failures:
+        _mark_fail(line, summary, "; ".join(failures))
+    else:
+        _mark_pass(line, summary, str(artifact_path))
+
+
 def exec_v0_1(line: TestLine, campaign_dir: Path, **ctx: Any) -> None:
     """V0-1: pytest all tests pass."""
     result = _run_cmd(
@@ -1089,6 +1159,7 @@ EXECUTORS: dict[str, Any] = {
     "CE-8": exec_ce8,
     "CE-9": exec_ce9,
     "CE-10": exec_ce10,
+    "CE-11": exec_ce11,
     "V0-1": exec_v0_1,
     "V0-2": exec_v0_2,
     "V0-3": exec_v0_3,
@@ -1577,7 +1648,32 @@ def run_campaign(
     )
     print(f"  Rapport JSON : {json_path}")
 
+    # D6: archive campaign artifacts
+    _print_archive_instructions(campaign_path)
+
     return report
+
+
+def _print_archive_instructions(campaign_path: Path) -> None:
+    """Print instructions (or execute) for archiving campaign artifacts.
+
+    Campaign artifacts are gitignored during execution to avoid
+    partial commits. After the campaign completes, they must be
+    archived in the repository for opposability (rule 10).
+    """
+    rel = campaign_path
+    try:
+        rel = campaign_path.relative_to(Path.cwd())
+    except ValueError:
+        pass
+
+    print(f"\n  {'─' * 50}")
+    print("  D6 — Archivage des artefacts de campagne")
+    print(f"  {'─' * 50}")
+    print("  Pour archiver cette campagne dans le depot :")
+    print(f"    git add -f {rel}/")
+    print(f'    git commit -m "archive: campaign {rel.name}"')
+    print(f"  {'─' * 50}\n")
 
 
 # ──────────────────────────────────────────────────────────────────────

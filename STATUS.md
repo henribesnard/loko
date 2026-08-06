@@ -1,50 +1,53 @@
 # LOKO — Tableau de bord projet
 
-> Derniere mise a jour : 2026-08-02 (BLOC 1-4 + E2 mesure — N5/N6/N7/N8/N9/N10/N11/E2-M0:M5)
+> Derniere mise a jour : 2026-08-06 (BLOC 0 — D1/D2/D3/D4/D6/D7)
 > Version courante : **1.3.4** (pyproject.toml)
 
 ---
 
 ## 1. Securite et garde-fous
 
-| Composant | Statut | Detail |
-|---|---|---|
-| Pre-filtre regex (guardrails.py) | FAIT | 14 regles systeme, 5 categories, protection ReDoS (<1ms). GF-A2: 15/15 reject_no_llm (100%) |
-| reject_no_llm (aucun appel LLM) | FAIT | Orchestrateur bloque avant classification+retrieval |
-| Durcissement prompt systeme | FAIT | Anti-injection, anti-divulgation, balises `<contexte>` |
-| Detection de fuites (post-gen) | FAIT | Patterns cles API, tokens, chemins disque, stack traces |
-| Detection fuites streaming | FAIT | Fenetre glissante 200 chars, arret immediat |
-| Compteur d'infractions | FAIT | Session.infractions, max configurable, FIN_FERME ou escalade |
-| Grounding check (ancrage FAQ) | FAIT | n-grammes vs chunks, mode observation (block_low_grounding=false) |
-| Basic-auth Caddy (prod) | FAIT | Toutes routes protegees sur loko.wezon.fr |
-| adversarial.csv (55 cas) | FAIT | 6 categories: injection, dangereux, tiers, contournement, pieges |
-| Documents canari (ZORGLUB-4417) | FAIT | 5 documents avec injection indirecte, README documente |
+| Composant | Livre | Mesure | Detail |
+|---|---|---|---|
+| Pre-filtre regex (guardrails.py) | Oui | Oui | 14 regles systeme, 5 categories, protection ReDoS (<1ms). GF-A2: 15/15 reject_no_llm (100%) |
+| reject_no_llm (aucun appel LLM) | Oui | Oui | Orchestrateur bloque avant classification+retrieval |
+| Durcissement prompt systeme | Oui | Non | Anti-injection, anti-divulgation, balises `<contexte>` — pas de mesure E2E |
+| Detection de fuites (post-gen) | Oui | Oui | Patterns cles API, tokens, chemins disque, stack traces |
+| Detection canari (ZORGLUB-4417) | Oui | Oui | D4: check_canary_leak() integre dans orchestrateur, 8 tests E2E |
+| Detection fuites streaming | Oui | Oui | Fenetre glissante 200 chars, arret immediat |
+| Compteur d'infractions | Oui | Oui | Session.infractions, max configurable, FIN_FERME ou escalade |
+| Grounding check (ancrage FAQ) | Oui | Non | n-grammes vs chunks, mode observation (block_low_grounding=false) |
+| Basic-auth Caddy (prod) | Oui | Non verifie | Toutes routes protegees sur loko.wezon.fr — verification prod pendante (P0-1) |
+| adversarial.csv (55 cas) | Oui | Oui | 6 categories: injection, dangereux, tiers, contournement, pieges |
+| Documents canari (ZORGLUB-4417) | Oui | Oui | 5 documents avec injection indirecte, test E2E D4 vert |
+| Garde calibration/seuils (D1) | Oui | Oui | Fingerprint SHA-256 lie temperature+labels+modele, refus au chargement si mismatch |
+| Rotation master key (D3) | Oui | Oui | CLI `python -m loko.security.rotate_master_key`, test survie au redemarrage |
 
 ## 2. Classifieur et calibration
 
-| Composant | Statut | Detail |
-|---|---|---|
-| SetFit L1 (paraphrase-multilingual-MiniLM-L12-v2) | FAIT | 9 intentions + hors_perimetre + demande_conseiller |
-| SetFit L2 (sous-motifs help_account) | FAIT | 5 sous-labels |
-| Calibration temperature (A1) | FAIT | Lecture temperature depuis manifest dans loader.py |
-| Calibration training (A2) | FAIT | find_optimal_temperature() appele en fin d'entrainement |
-| Parite runtime/eval (A3) | FAIT | loko-eval utilise le meme SetFitClassifierAdapter que le runtime |
-| Mesure effet calibration (A4) | FAIT | T=0.60, ECE 3.14%->0.68%. **H3 confirmee** : T=0.60 aiguise les scores, regression GNG-3 (-8 pts) est mecanique. Contre-test T=1.0 : GNG-3 remonte a 81% (+9 pts) |
-| Manifest modele (A4/A5) | FAIT | SHA-256 fichiers, labels, metriques, calibration |
-| Verification integrite modele | FAIT | verify_model(): manifest + hash + load + smoke test |
-| Latence inference (B3/L5) | FAIT | measure_inference_latency(): P50/P95, warmup, GC |
-| Rejet OOD hors_perimetre (E2) | MESURE | ood.py: centroids, scoring, calibration. M0-M5 complet. Meilleur point (ood=0.40): GNG-1=81%, GNG-2=86.4%, GNG-3=77%, pieges=10/15. Delta vs baseline: GNG-3 +5pts, pieges +1, hmean +1.8pts. Trade-off structurel: aucun point ne satisfait les 4 gates. Rapport: eval/lot-e2/RAPPORT_E2.md |
+| Composant | Livre | Mesure | Detail |
+|---|---|---|---|
+| SetFit L1 (paraphrase-multilingual-MiniLM-L12-v2) | Oui | Oui | 9 intentions + hors_perimetre + demande_conseiller |
+| SetFit L2 (sous-motifs help_account) | Oui | Oui | 5 sous-labels |
+| Calibration temperature (A1) | Oui | Oui | Lecture temperature depuis manifest dans loader.py |
+| Calibration training (A2) | Oui | Oui | find_optimal_temperature() appele en fin d'entrainement |
+| Parite runtime/eval (A3) | Oui | Oui | loko-eval utilise le meme SetFitClassifierAdapter que le runtime |
+| Mesure effet calibration (A4) | Oui | Oui | T=0.60, ECE 3.14%->0.68%. **H3 confirmee** : regression GNG-3 mecanique |
+| Manifest modele (A4/A5) | Oui | Oui | SHA-256 fichiers, labels, metriques, calibration + fingerprint D1 |
+| Verification integrite modele | Oui | Oui | verify_model(): manifest + hash + load + smoke test |
+| Latence inference (B3/L5) | Oui | Oui | measure_inference_latency(): P50/P95, warmup, GC |
+| Rejet OOD hors_perimetre (E2) | Oui | **NON RETENU** | E2-A1 (77%<84%) et E2-A3 (86.4%<88.8%) non atteints. Rapport: `eval/lot-e2/RAPPORT_E2.md` |
 
 ## 3. Logique de decision
 
-| Composant | Statut | Detail |
-|---|---|---|
-| decide_l1() route/clarify/reject/escalate | FAIT | Seuils haut/bas/ecart configurables |
-| Clarification intra-intention | FAIT | Sous-motifs L2 quand confiance L1 haute |
-| Clarification inter-intentions | FAIT | Top-2 proches quand confiance dans zone grise |
-| Escalade demande_conseiller | FAIT | Detection transverse + template escalade |
-| Rejet hors_perimetre | FAIT | Intention hors_perimetre -> template reject |
-| Pieges T01-T15 | FAIT | 15 cas limites documentes et testes |
+| Composant | Livre | Mesure | Detail |
+|---|---|---|---|
+| decide_l1() route/clarify/reject/escalate | Oui | Oui | Seuils haut/bas/ecart configurables, tests parametriques |
+| Clarification intra-intention | Oui | Oui | Sous-motifs L2 quand confiance L1 haute |
+| Clarification inter-intentions | Oui | Oui | Top-2 proches quand confiance dans zone grise |
+| Escalade demande_conseiller | Oui | Oui | Detection transverse + template escalade |
+| Rejet hors_perimetre | Oui | Oui | Intention hors_perimetre -> template reject |
+| Pieges T01-T15 | Oui | Oui | 15 cas limites documentes et testes (9/15 PASS en campagne) |
 
 ## 4. Datasets et evaluation
 
@@ -80,14 +83,16 @@ Toute modification CSV sans mise a jour HASHES.sha256 -> CI FAIL (Interdit #5).
 | Analytics | 6 | ~52 | Emitter, observer, queries, dashboard |
 | Training/ML | 2 | ~26 | Entrainement, classifier, calibration |
 | End-to-end | 3 | ~95 | Protocole FSM, assistant, campagne |
-| Securite | 5 | ~44 | Auth, secrets, guardrails, adversarial (N9), V-corrections |
+| Securite | 6 | ~51 | Auth, secrets, guardrails, adversarial (N9), V-corrections, rotation (D3) |
 | OOD Rejection | 1 | 27 | Centroids, scoring, calibration, adapter, decision, trace, manifest (E2) |
 | Eval CLI | 2 | ~22 | Runner, sweep, 3-axis, 4-axis (E2) |
 | Monitoring | 1 | ~12 | Prometheus metrics |
 | Etat/Persistance | 3 | ~18 | Sessions, locks, train state |
-| Manifest/Integrite | 1 | ~6 | Hash, schema, smoke test |
+| Manifest/Integrite | 2 | ~21 | Hash, schema, smoke test, calibration fingerprint (D1) |
 | Backup/Restore | 1 | 5 | Cycle complet backup-restore (N10) |
-| **Total** | **60** | **~690** | |
+| Canary/RAG E2E | 1 | 8 | Ingestion, retrieval exposure, defense layer (D4) |
+| Repo hygiene | 1 | 6 | Secrets, taille, version, openapi, artefacts (D6) |
+| **Total** | **64** | **~727** | |
 
 Skips conditionnels: 1 (plateforme Windows, emitter chmod).
 Marqueurs xfail: 0.
@@ -191,7 +196,7 @@ OOD = rejet par distance cosinus au centroide le plus proche. Seuil calibre par 
 
 **M4** : Rejeu deterministe x2 — 0 differences (bit-exact).
 
-**Conclusion** : OOD = amelioration nette (+5pts GNG-3, +1 piege) mais les 4 gates restent non satisfaites. Cause racine : corpus trop petit (145 exemples) + textes vagues proches d'aucun centroide. Axes : enrichir donnees, multi-centroides, fine-tuning contrastif.
+**Verdict : E2 NON RETENU** (regle de decision spec §6 : E2-A1 non atteint — 77% < 84%, E2-A3 non atteint — 86.4% < 88.8%). Le delta est positif (+5pts GNG-3, +1 piege) mais les 4 gates restent non satisfaites simultanement. Cause racine : corpus trop petit (145 exemples) + textes vagues proches d'aucun centroide. Axes identifies : enrichir donnees, multi-centroides, fine-tuning contrastif.
 
 **Rapport complet** : `eval/lot-e2/RAPPORT_E2.md`
 
@@ -203,7 +208,7 @@ OOD = rejet par distance cosinus au centroide le plus proche. Seuil calibre par 
 | ~~Contre-test H3~~ | ~~Action 2~~ | **FAIT — H3 CONFIRMEE** — T=1.0 restaure GNG-3 a 81% (section 8c) |
 | ~~V3-0 repli bloquant~~ | ~~Action 5~~ | **FAIT** — V3-1/2/3/4 SKIP si V3-0 FAIL (commit 3ea5a25) |
 | ~~Calibration + seuils co-optimises~~ | ~~Decision humaine~~ | **DOCUMENTE (N5)** — voir section 9a ci-dessous |
-| ~~LOT E2 — hors_perimetre en rejet OOD~~ | ~~Decision humaine~~ | **MESURE (M0-M5)** — Meilleur point: GNG-3 +5pts vs baseline, hmean +1.8pts. Trade-off structurel: 4 gates non satisfaites simultanement. Rapport: eval/lot-e2/RAPPORT_E2.md |
+| ~~LOT E2 — hors_perimetre en rejet OOD~~ | ~~Decision humaine~~ | **MESURE, NON RETENU (M0-M5)** — Regle de decision spec §6 : E2-A1 (77% < 84%) et E2-A3 (86.4% < 88.8%) non atteints. Delta positif (+5pts GNG-3, +1 piege) mais insuffisant. Rapport: eval/lot-e2/RAPPORT_E2.md |
 | ~~V3-7 iteration 2/2~~ | ~~Decision humaine~~ | **SUSPENSION RECOMMANDEE (V3-7)** — voir section 9b ci-dessous |
 | ~~V0-1 fixtures pytest~~ | ~~Bug produit~~ | **FAIT** — fixtures 8 exemples, asyncio await, emitter close_db (N7) |
 | ~~Runner reporting bugs~~ | ~~Outillage~~ | **FAIT** — verdicts uniques, manifest_hash propage, CE bypass conditionnel (N7) |
@@ -244,7 +249,16 @@ OOD = rejet par distance cosinus au centroide le plus proche. Seuil calibre par 
 
 **Statut** : suspension en attente de validation humaine. Reprendre V3-7 iter 2/2 uniquement si E2 est abandonne et qu'une campagne avec seuils re-sweepas (option B) est souhaitee.
 
-## 10. Historique des lots
+## 10. Ecarts connus
+
+| ID | Description | Blocage | Impact |
+|---|---|---|---|
+| D5 | Version/tag : pyproject.toml=1.3.4 mais aucun tag git v1.3.4 | B-N8 (tag = decision de release humaine) | Faible — pas de deploiement imminent |
+| C-V1 | response_replaced : le champ existe mais n'est pas alimente en production | B-C-V1 (necessite refacto orchestrateur) | Moyen — observable uniquement si fuite detectee |
+| P0-1 | Verification prod (basic-auth Caddy, HTTPS, headers) | Necessite acces SSH au VPS | Moyen — deploiement non valide sans verification |
+| GF-A3-live | GF-A3 teste en unit+integration (8 tests) mais pas avec LLM live | Necessite budget API ou mock LLM | Faible — defense canari prouvee sans LLM |
+
+## 11. Historique des lots
 
 | Lot | Date | Statut | Commit |
 |---|---|---|---|
@@ -275,3 +289,9 @@ OOD = rejet par distance cosinus au centroide le plus proche. Seuil calibre par 
 | N5 — Decision calibration/seuils | 2026-08-02 | DOCUMENTE | Options A-D formalisees, recommandation E2 (section 9a) |
 | N8 — Coherence version/tag | 2026-08-02 | FAIT | __init__.py fallback=1.3.4, openapi_w2.json=1.3.4, pip install -e . |
 | V3-7 — Suspension iter 2/2 | 2026-08-02 | RECOMMANDE | Suspension formalisee (section 9b) |
+| D1 — Garde calibration fingerprint | 2026-08-06 | FAIT | manifest.py, loader.py: SHA-256 lie T+labels+modele, fail-closed. 15 tests |
+| D2 — Requalification verdict E2 | 2026-08-06 | FAIT | RAPPORT_E2.md: tableau A1-A10, verdict NON RETENU |
+| D3 — CLI rotation master key | 2026-08-06 | FAIT | rotate_master_key.py: --dry-run, --journal, test survie. 7 tests |
+| D4 — GF-A3 E2E canari via RAG | 2026-08-06 | FAIT | guardrails.py: check_canary_leak(), orchestrator.py integre, 8 tests E2E |
+| D6 — Archivage artefacts campagne | 2026-08-06 | FAIT | run_campaign.py: instructions archivage, test_repo_hygiene.py: verification chemins |
+| D7 — Reprise STATUS.md | 2026-08-06 | FAIT | LIVRE/MESURE colonnes, 727 tests, ecarts connus, historique |
